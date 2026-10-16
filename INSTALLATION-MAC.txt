@@ -1,0 +1,34 @@
+MON BUDGET — NOUVEAU VISUEL
+
+Installation sur Mac (Node.js 22 ou plus requis; Node.js 24 recommandé)
+
+MISE À JOUR DE VOTRE APPLICATION EXISTANTE
+1. Arrêtez le serveur actuel dans Terminal avec Control + C.
+2. Faites une copie complète de votre dossier actuel de Mon Budget,
+   incluant le dossier data. Gardez cette copie comme sauvegarde.
+3. Décompressez cette archive. Depuis le dossier Mon-Budget extrait,
+   copiez uniquement ces trois fichiers dans votre dossier actuel :
+   app.css, app.js et index.html. Acceptez leur remplacement.
+4. Conservez votre dossier data et votre server.js actuels.
+   Cette mise à jour visuelle est prévue pour Mon Budget v2.1.0.
+5. Dans Terminal, ouvrez votre dossier actuel et lancez : npm start
+   Astuce : tapez cd suivi d'un espace, glissez le dossier depuis le
+   Finder dans Terminal, puis appuyez sur Entrée. Tapez ensuite npm start.
+6. Dans Safari, ouvrez http://127.0.0.1:3030
+   Rechargez avec Cmd + Option + R pour afficher le nouveau visuel.
+
+NOUVELLE INSTALLATION SANS DONNÉES EXISTANTES
+Ouvrez Terminal dans le dossier Mon-Budget extrait, puis lancez npm start.
+Ouvrez http://127.0.0.1:3030 dans Safari.
+Aucune commande npm install n'est nécessaire.
+Une base vide est créée dans data à l'intérieur du dossier de lancement.
+
+IMPORTANT
+Ne supprimez ni ne remplacez jamais votre dossier data existant.
+Ne lancez pas deux serveurs sur la même base.
+L'archive ne contient aucune donnée financière ni base SQLite.
+Les calculs et le serveur ne sont pas modifiés par la refonte visuelle.
+La navigation et les dialogues ont été vérifiés dans Chromium.
+Safari et vos données réelles restent à vérifier sur votre Mac.
+Pour revenir à l'ancien visuel, arrêtez le serveur et restaurez les trois
+fichiers visuels depuis votre sauvegarde, en conservant les données actuelles.

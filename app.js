@@ -511,3 +511,18 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
  render=function(s){originalRender(s);try{update(s)}catch(err){console.error('Composants v2.1 :',err)}};
  reloadActuals();
 })();
+
+// Workspace presentation; budget calculations remain in the existing renderers.
+(()=>{
+ const icons={dashboard:'◫',comptes:'▤',transactions:'↗',enveloppes:'◈',recurrences:'↻',prevision:'⌁',calendrier:'▦',virements:'⇄',exceptions:'≡'};
+ const title=document.getElementById('workspace-title');
+ document.querySelectorAll('.app-shell-nav [data-view]').forEach(button=>{
+  button.dataset.icon=icons[button.dataset.view]||'·';
+  button.addEventListener('click',()=>{title.textContent=button.textContent;});
+  if(button.classList.contains('active'))title.textContent=button.textContent;
+ });
+ const chart=document.getElementById('v2-chart');
+ const axis=document.createElement('div');axis.className='chart-axis';
+ for(const text of ['Aujourd’hui','Dans 15 jours','Dans 30 jours']){const label=document.createElement('span');label.textContent=text;axis.append(label)}
+ chart.after(axis);
+})();

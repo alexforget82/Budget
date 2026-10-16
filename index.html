@@ -1,15 +1,7 @@
 <!DOCTYPE html>
-<html lang="fr-CA"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Mon Budget local 2.1</title>
+<html lang="fr-CA"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Mon Budget — Votre espace financier</title>
 
-<link rel="stylesheet" href="/app.css"></head><body><h1>Mon Budget local</h1><p class="sub">Version 2.1 · Mac · Données locales · Prévision 90 jours</p><div class="cards"><div class="card">Fonds admissibles<div class="number" id="cash"></div></div><div class="card">Enveloppes réservées<div class="number" id="reserved"></div></div><div class="card">Disponible maintenant<div class="number green" id="safe"></div></div><div class="card">Plus bas disponible sur 90 jours<div class="number" id="low"></div></div></div><div class="sts-heading"><div><h2>Safe-to-Spend par période</h2><p class="sub">Montant prudent : le plus bas disponible prévu avant la fin de la période, après les factures et réserves.</p></div><span class="sts-label">Prévision locale</span></div>
-<div class="sts-windows" aria-label="Safe-to-Spend selon la période">
- <div class="sts-window"><div class="sts-title">Aujourd’hui</div><div class="sts-amount" id="sts-today">—</div><small>Argent disponible maintenant</small></div>
- <div class="sts-window"><div class="sts-title">Cette semaine</div><div class="sts-amount" id="sts-week">—</div><small id="sts-week-detail">Jusqu’à dimanche inclus</small></div>
- <div class="sts-window"><div class="sts-title">Jusqu’à la paie</div><div class="sts-amount" id="sts-pay">—</div><small id="sts-pay-detail">Recherche de la prochaine paie</small></div>
-</div><p class="sts-explain">Les montants de la semaine et jusqu’à la paie affichent le <b>minimum de Safe-to-Spend projeté</b> sur la période, pas un solde bancaire. La paie est détectée parmi les revenus récurrents versés sur un compte inclus. Si aucune paie n'est prévue dans les 30 jours, aucun montant n'est inventé.</p>
-<p class="warning"><b>Important :</b> les règles récurrentes servent à la <b>prévision uniquement</b> : elles ne déclenchent aucun virement bancaire et ne modifient pas automatiquement les soldes réels. Les transactions doivent être enregistrées manuellement. La v1.6 rapproche automatiquement une transaction réelle avec une seule occurrence prévue lorsque le compte, le montant, la description et la date (±3 jours) concordent. Les cas ambigus restent à vérifier : aucune transaction n’est modifiée automatiquement.</p><p id="error" role="alert"></p>
-
-<nav class="app-shell-nav" aria-label="Écrans de l'application">
+<link rel="stylesheet" href="/app.css"></head><body><header class="workspace-header"><div><p class="eyebrow">VOTRE ESPACE FINANCIER</p><h1 id="workspace-title">Tableau de bord</h1><p class="sub">Une vision claire pour décider en toute confiance.</p></div><span class="privacy-badge">● Données locales</span></header><nav class="app-shell-nav" aria-label="Écrans de l'application"><div class="brand"><span class="brand-mark" aria-hidden="true">m<span>.</span></span><strong>mon budget<small>Chaque dollar a sa place.</small></strong></div><p class="nav-caption">MON ESPACE</p>
 <button type="button" data-view="dashboard" class="active">Tableau de bord</button>
 <button type="button" data-view="comptes">Comptes</button>
 <button type="button" data-view="transactions">Transactions</button>
@@ -19,11 +11,19 @@
 <button type="button" data-view="virements">Virements</button>
 <button type="button" data-view="exceptions">Exceptions</button>
 <button type="button" class="quick-add" id="open-transaction">+ Transaction</button>
-</nav>
+</nav><div class="cards"><div class="card">Fonds admissibles<div class="number" id="cash"></div></div><div class="card">Enveloppes réservées<div class="number" id="reserved"></div></div><div class="card">Disponible maintenant<div class="number green" id="safe"></div></div><div class="card">Plus bas disponible sur 90 jours<div class="number" id="low"></div></div></div><div class="sts-heading"><div><h2>Ce que vous pouvez dépenser</h2><p class="sub">Montant prudent : le plus bas disponible prévu avant la fin de la période, après les factures et réserves.</p></div><span class="sts-label">Prévision locale</span></div>
+<div class="sts-windows" aria-label="Safe-to-Spend selon la période">
+ <div class="sts-window"><div class="sts-title">Aujourd’hui</div><div class="sts-amount" id="sts-today">—</div><small>Argent disponible maintenant</small></div>
+ <div class="sts-window"><div class="sts-title">Cette semaine</div><div class="sts-amount" id="sts-week">—</div><small id="sts-week-detail">Jusqu’à dimanche inclus</small></div>
+ <div class="sts-window"><div class="sts-title">Jusqu’à la paie</div><div class="sts-amount" id="sts-pay">—</div><small id="sts-pay-detail">Recherche de la prochaine paie</small></div>
+</div><p class="sts-explain">Les montants de la semaine et jusqu’à la paie affichent le <b>minimum de Safe-to-Spend projeté</b> sur la période, pas un solde bancaire. La paie est détectée parmi les revenus récurrents versés sur un compte inclus. Si aucune paie n'est prévue dans les 30 jours, aucun montant n'est inventé.</p>
+<details class="budget-note"><summary>Comment fonctionnent les prévisions ?</summary><p class="warning"><b>Important :</b> les règles récurrentes servent à la <b>prévision uniquement</b> : elles ne déclenchent aucun virement bancaire et ne modifient pas automatiquement les soldes réels. Les transactions doivent être enregistrées manuellement. La v1.6 rapproche automatiquement une transaction réelle avec une seule occurrence prévue lorsque le compte, le montant, la description et la date (±3 jours) concordent. Les cas ambigus restent à vérifier : aucune transaction n’est modifiée automatiquement.</p></details><p id="error" role="alert"></p>
+
+
 <div class="app-dashboard view-active" id="app-dashboard">
  <div class="v21-sts-tools"><button type="button" id="v21-sts-detail">Comprendre mon Safe-to-Spend</button><button type="button" id="v21-refresh">Actualiser les calculs</button><small id="v21-last-update">—</small></div>
- <p class="dashboard-intro">Ton disponible, tes périodes et les prochaines opérations en un coup d'œil.</p>
- <div class="v2-dashboard-chart"><h2>Évolution du Safe-to-Spend · 30 jours</h2><svg id="v2-chart" viewBox="0 0 800 190" role="img" aria-label="Évolution projetée du Safe-to-Spend" preserveAspectRatio="none"></svg></div>
+ <p class="dashboard-intro">Votre budget en perspective. Anticipez les prochains jours.</p>
+ <div class="v2-dashboard-chart"><h2>Votre disponible sur 30 jours</h2><svg id="v2-chart" viewBox="0 0 800 190" role="img" aria-label="Évolution projetée du Safe-to-Spend" preserveAspectRatio="none"></svg></div>
  <div class="v2-dashboard-chart"><h2>Enveloppes</h2><div id="v2-envelope-progress"></div></div>
  <div class="upcoming"><h2>Prochains mouvements prévus</h2><div id="dashboard-upcoming">Chargement…</div></div>
 </div>
