@@ -6,7 +6,7 @@ MISE À JOUR DE VOTRE APPLICATION EXISTANTE
 1. Arrêtez le serveur actuel dans Terminal avec Control + C.
 2. Faites une copie complète de votre dossier actuel de Mon Budget,
    incluant le dossier data. Gardez cette copie comme sauvegarde.
-3. Décompressez cette archive. Depuis le dossier Mon-Budget extrait,
+3. Décompressez cette archive. Depuis le dossier extrait (Budget-main sur GitHub),
    copiez uniquement ces trois fichiers dans votre dossier actuel :
    app.css, app.js et index.html. Acceptez leur remplacement.
 4. Conservez votre dossier data et votre server.js actuels.

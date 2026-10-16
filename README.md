@@ -36,3 +36,35 @@ Au premier lancement de la v2.1, une copie des fichiers SQLite est créée dans 
 ## Vérifications réalisées
 
 Tests sur des bases SQLite temporaires : prévision 90 jours, comptes et cartes de crédit, dépenses d'enveloppes, modification/suppression de transactions et virements, rapprochement manuel avec montants différents, refus des doublons et données invalides, déplacement et restauration d'occurrence, budget exceptionnel, migration depuis v1.8 et création d'une sauvegarde. Vérification de l'interface dans Chromium avec réponses API simulées (onglets, Safe-to-Spend, calendrier, 90 lignes de prévision, fenêtres et formulaires), sans erreur JavaScript observée. Safari n'a pas pu être testé ici.
+
+
+## Interface améliorée
+
+Le tableau de bord présente les enveloppes et les cinq prochains mouvements à côté de la prévision sur ordinateur. Sur mobile, les panneaux s’empilent et le graphique adapte ses dimensions à la largeur disponible.
+
+- Graphique gradué en dollars avec dates, seuil de zéro et remplissage sous la courbe.
+- Résumé du début de période, du minimum et de la fin, calculé sur les 30 journées fournies par le serveur.
+- Survol ou toucher pour consulter une journée; au clavier, Tab atteint le point sélectionné, les flèches changent de jour, Début/Fin atteignent les extrémités.
+- Tableau accessible avec les montants et mouvements de chaque journée; avertissement lorsque le minimum prévu est négatif.
+- États vides accompagnés d’actions, navigation avec icônes vectorielles, confirmation des enregistrements et erreurs dans les fenêtres de saisie.
+
+Les montants des enveloppes représentent les réserves actuelles, rapportées au budget par période; ils ne sont pas un taux de dépenses. Les règles financières et la base de données ne changent pas.
+
+![Tableau de bord avec données fictives](docs/tableau-de-bord.png)
+
+[Aperçu mobile avec données fictives](docs/mobile.png)
+
+Pour mettre à jour sur Mac, consultez [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt). Remplacez uniquement `app.css`, `app.js` et `index.html` après sauvegarde. Conservez votre dossier `data`.
+
+### Vérification de l’interface (facultatif pour le développement)
+
+L’application n’a toujours aucune dépendance npm. Le test navigateur nécessite séparément Python 3, Playwright pour Python et Chromium :
+
+```sh
+python3 -m venv /tmp/budget-ui-venv
+/tmp/budget-ui-venv/bin/python -m pip install playwright
+/tmp/budget-ui-venv/bin/python -m playwright install chromium
+/tmp/budget-ui-venv/bin/python tests/ui-smoke.py
+```
+
+Le test utilise un serveur sur un port libre et une base temporaire contenant uniquement des données fictives. Il ne lit ni ne modifie votre dossier `data`. `CHROMIUM_PATH` permet de choisir un exécutable Chromium existant. Les captures sont conservées dans un dossier temporaire dont le chemin est affiché. Safari réel reste à vérifier sur Mac.

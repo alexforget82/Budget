@@ -233,15 +233,15 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
    let count=0;
    for(const day of s.forecast||[]){
      for(const ev of day.events||[]){
-       if(count>=8)break;
+       if(count>=5)break;
        const row=document.createElement('div');row.className='upcoming-row';
-       const left=document.createElement('span');left.textContent=day.date+' · '+(ev.description||ev.type);
+       const tile=document.createElement('div');tile.className='movement-date';const d=new Date(day.date+'T12:00:00');const dayNumber=document.createElement('strong');dayNumber.textContent=d.getDate();const month=document.createElement('span');month.textContent=d.toLocaleDateString('fr-CA',{month:'short'});tile.append(dayNumber,month);const left=document.createElement('div');left.className='movement-description';const label=document.createElement('strong');label.textContent=ev.description||types[ev.type]||'Mouvement';const category=document.createElement('small');category.textContent=types[ev.type]||'Mouvement prévu';left.append(label,category);
        const right=document.createElement('strong');right.textContent=(ev.type==='expense'?'−':ev.type==='income'?'+':'')+money(ev.amount_cents);
-       row.append(left,right);host.append(row);count++;
+       right.className='movement-amount '+(ev.type==='income'?'positive':'');row.append(tile,left,right);host.append(row);count++;
      }
-     if(count>=8)break;
+     if(count>=5)break;
    }
-   if(!count)host.textContent='Aucun mouvement à venir dans la prévision.';
+   if(!count)budgetEmpty(host,'Rien de prévu pour le moment','Ajoutez vos revenus et factures récurrents pour construire votre prévision.','Ajouter une récurrence',()=>window.appOpenEditor('recurring'));
  }
  const oldRender=render;
  render=function(s){oldRender(s);refreshUpcoming(s)};
@@ -324,7 +324,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
     const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.className='danger';deleteButton.textContent='Supprimer';deleteButton.onclick=()=>window.v2Delete('transaction',t.id);
     right.append(amount,editButton,deleteButton);row.append(left,right);host.append(row);
    }
-   if(!records.length)host.textContent='Aucune transaction pour ces filtres.';
+   if(!records.length)budgetEmpty(host,'Aucune transaction à afficher','Enregistrez une opération ou ajustez les filtres pour retrouver votre historique.','Ajouter une transaction',()=>window.appOpenEditor('transaction'));
    by('v2-pages').textContent='Page '+data.page+' / '+data.pages+' · '+data.count+' opérations';
    by('v2-prev').disabled=page<=1;by('v2-next').disabled=page>=data.pages;
   }catch(e){by('v2-transaction-list').textContent=e.message}
@@ -451,30 +451,18 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   safeText(host,'p','Cette semaine et jusqu’à la paie utilisent le minimum projeté sur leur période, et non la somme de toutes les lignes. Les virements internes entre comptes inclus ont un effet nul.');
  }
  function drawDashboard(s){
-  const svg=el('v2-chart');if(svg){
-   svg.replaceChildren();const values=(s.forecast||[]).slice(0,30).map(d=>d.safe_cents);
-   if(values.length){
-    const min=Math.min(0,...values),max=Math.max(0,...values),range=Math.max(1,max-min);
-    const points=values.map((v,i)=>(20+i*760/Math.max(1,values.length-1))+','+(170-(v-min)*145/range)).join(' ');
-    const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
-    line.setAttribute('points',points);line.setAttribute('fill','none');line.setAttribute('stroke','#3486bd');line.setAttribute('stroke-width','3');line.setAttribute('stroke-linejoin','round');svg.append(line);
-    const zero=document.createElementNS('http://www.w3.org/2000/svg','line');
-    const y=170-(0-min)*145/range;
-    for(const [k,v] of Object.entries({x1:20,y1:y,x2:780,y2:y,stroke:'#be6b6b','stroke-dasharray':'5 5'}))zero.setAttribute(k,v);
-    svg.append(zero);
-   }
-  }
+  drawBudgetChart(s);
   const host=el('v2-envelope-progress');if(host){
    host.replaceChildren();
    for(const e of (s.envelopes||[]).slice(0,8)){
     const row=document.createElement('div');row.className='v2-progress-item';
     const head=document.createElement('div');head.className='v2-progress-head';
-    safeText(head,'span',e.name);safeText(head,'span',fmt(e.reserved_cents)+' / '+fmt(e.budget_cents));row.append(head);
+    safeText(head,'span',e.name);safeText(head,'span',fmt(e.reserved_cents));row.append(head);
     const track=document.createElement('div');track.className='v2-progress-track';
     const fill=document.createElement('div');fill.className='v2-progress-fill';
-    fill.style.width=(Math.min(100,Math.max(0,e.reserved_cents/Math.max(1,e.budget_cents)*100)))+'%';track.append(fill);row.append(track);host.append(row);
+    fill.style.width=(Math.min(100,Math.max(0,e.reserved_cents/Math.max(1,e.budget_cents)*100)))+'%';track.append(fill);row.append(track);const note=safeText(row,'small',e.budget_cents>0?'Réservé · budget par période '+fmt(e.budget_cents):'Réservé · sans budget par période');note.className='envelope-budget-note';host.append(row);
    }
-   if(!s.envelopes?.length)safeText(host,'p','Aucune enveloppe pour le moment.');
+   if(!s.envelopes?.length)budgetEmpty(host,'Une place pour chaque projet','Réservez une partie de votre disponible pour l’épicerie, les sorties ou vos projets.','Créer une enveloppe',()=>window.appOpenEditor('envelope'));
   }
  }
  function update(s){
@@ -521,8 +509,120 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   button.addEventListener('click',()=>{title.textContent=button.textContent;});
   if(button.classList.contains('active'))title.textContent=button.textContent;
  });
- const chart=document.getElementById('v2-chart');
- const axis=document.createElement('div');axis.className='chart-axis';
- for(const text of ['Aujourd’hui','Dans 15 jours','Dans 30 jours']){const label=document.createElement('span');label.textContent=text;axis.append(label)}
- chart.after(axis);
+
+})();
+
+function budgetEmpty(host,title,description,label,action){
+ const box=document.createElement('div');box.className='empty-state';
+ const mark=document.createElement('span');mark.className='empty-state-mark';mark.textContent='+';mark.setAttribute('aria-hidden','true');
+ const heading=document.createElement('h3');heading.textContent=title;
+ const copy=document.createElement('p');copy.textContent=description;
+ box.append(mark,heading,copy);
+ if(label){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.onclick=action;box.append(button)}
+ host.append(box);
+}
+
+// The chart presents the server forecast without changing its financial rules.
+function drawBudgetChart(s){
+ const svg=document.getElementById('v2-chart');if(!svg)return;
+ const days=(s.forecast||[]).slice(0,30);const panel=svg.closest('.v2-dashboard-chart');
+ let stats=panel.querySelector('.forecast-metrics');
+ if(!stats){
+  stats=document.createElement('div');stats.className='forecast-metrics';svg.before(stats);
+  const viewport=document.createElement('div');viewport.className='chart-viewport';svg.before(viewport);viewport.append(svg);
+  let measuredWidth=0;const observer=new ResizeObserver(entries=>{const width=Math.round(entries[0].contentRect.width);if(width>0&&width!==measuredWidth){measuredWidth=width;requestAnimationFrame(()=>{if(state)drawBudgetChart(state)})}});observer.observe(viewport);
+  const detail=document.createElement('div');detail.className='chart-selection';detail.id='chart-selection';detail.setAttribute('aria-live','polite');viewport.after(detail);
+  const legend=document.createElement('p');legend.className='chart-legend';legend.innerHTML='<span>Disponible projeté</span><span>Seuil de 0 $</span><small>Survolez, touchez ou utilisez les flèches sur un point.</small>';detail.after(legend);
+  const table=document.createElement('details');table.className='chart-table';table.innerHTML='<summary>Consulter les montants jour par jour</summary><div class="scroll"><table><caption>Disponible prévu pour les 30 prochains jours</caption><thead><tr><th scope="col">Date</th><th scope="col">Mouvements prévus</th><th scope="col">Disponible</th></tr></thead><tbody></tbody></table></div>';legend.after(table);
+ }
+ svg.replaceChildren();stats.replaceChildren();
+ const tbody=panel.querySelector('.chart-table tbody');tbody.replaceChildren();
+ if(!days.length){panel.querySelector('.chart-selection').textContent='Aucune prévision disponible.';return}
+ const date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short'});
+ const values=days.map(d=>d.safe_cents),minValue=Math.min(...values),lowIndex=values.indexOf(minValue),last=days.at(-1);
+ for(const [label,value,caption,negative] of [
+  ['Au début',money(values[0]),date(days[0].date),values[0]<0],
+  ['Point le plus bas',money(minValue),date(days[lowIndex].date),minValue<0],
+  ['À la fin',money(last.safe_cents),date(last.date),last.safe_cents<0]
+ ]){const metric=document.createElement('div');const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;amount.classList.toggle('negative',negative);const note=document.createElement('small');note.textContent=caption;metric.append(name,amount,note);stats.append(metric)}
+ let alert=panel.querySelector('.forecast-alert');
+ if(!alert){alert=document.createElement('p');alert.className='forecast-alert';stats.after(alert)}
+ alert.hidden=minValue>=0;alert.textContent='Disponible négatif prévu le '+date(days[lowIndex].date)+' : '+money(minValue)+'. Vérifiez les mouvements de cette période.';
+ const ns='http://www.w3.org/2000/svg';
+ const add=(tag,attributes,text)=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attributes))node.setAttribute(key,value);if(text!==undefined)node.textContent=text;svg.append(node);return node};
+ const W=Math.max(320,Math.round(svg.parentElement.clientWidth)||800),H=260,L=68,R=W-16,T=20,B=210;
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.setAttribute('role','group');svg.setAttribute('aria-label','Disponible projeté : '+money(minValue)+' au minimum, '+money(last.safe_cents)+' en fin de période.');
+ const rawRange=Math.max(10000,Math.max(0,...values)-Math.min(0,...values));
+ const rough=rawRange/4,unit=10**Math.floor(Math.log10(rough));const step=[1,2,5,10].map(n=>n*unit).find(n=>n>=rough);
+ const bottom=Math.floor(Math.min(0,...values)/step)*step,top=Math.max(bottom+step,Math.ceil(Math.max(0,...values)/step)*step);
+ const x=i=>L+i*(R-L)/Math.max(1,days.length-1),y=v=>B-(v-bottom)*(B-T)/(top-bottom);
+ const axisMoney=v=>(v/100).toLocaleString('fr-CA',{maximumFractionDigits:0})+' $';
+ for(let v=bottom;v<=top;v+=step){const zero=v===0;add('line',{x1:L,y1:y(v),x2:R,y2:y(v),class:zero?'chart-zero':'chart-grid'});add('text',{x:L-12,y:y(v)+4,'text-anchor':'end',class:'chart-tick'},axisMoney(v))}
+ const points=days.map((d,i)=>[x(i),y(d.safe_cents)]);
+ const defs=add('defs',{});const gradient=document.createElementNS(ns,'linearGradient');gradient.id='budget-chart-fill';gradient.setAttribute('x2','0');gradient.setAttribute('y2','1');
+ for(const [offset,opacity] of [['0%','.18'],['100%','.015']]){const stop=document.createElementNS(ns,'stop');stop.setAttribute('offset',offset);stop.setAttribute('stop-color','#43856b');stop.setAttribute('stop-opacity',opacity);gradient.append(stop)}defs.append(gradient);
+ add('path',{d:'M '+points.map(p=>p.join(',')).join(' L ')+` L ${x(days.length-1)},${B} L ${L},${B} Z`,fill:'url(#budget-chart-fill)',class:'chart-area'});
+ add('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#43856b','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke',class:'forecast-line'});
+ for(const i of [...new Set([0,Math.floor((days.length-1)/2),days.length-1])])add('text',{x:x(i),y:244,'text-anchor':i===0?'start':i===days.length-1?'end':'middle',class:'chart-tick'},date(days[i].date));
+ const guide=add('line',{x1:L,x2:L,y1:T,y2:B,class:'chart-guide'});
+ const selection=panel.querySelector('.chart-selection');let selected=lowIndex;const dots=[];
+ const choose=(index,focus=false)=>{
+  selected=index;const d=days[index];guide.setAttribute('x1',x(index));guide.setAttribute('x2',x(index));
+  dots.forEach((dot,i)=>{dot.setAttribute('tabindex',i===index?'0':'-1');dot.setAttribute('r',i===index?5.5:3);dot.classList.toggle('selected',i===index)});
+  selection.replaceChildren();const label=document.createElement('div');const title=document.createElement('strong');title.textContent=new Date(d.date+'T12:00:00').toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'});const note=document.createElement('span');note.textContent=(d.events||[]).map(e=>e.description||types[e.type]||'Mouvement').join(' · ')||'Aucun mouvement prévu';label.append(title,note);const value=document.createElement('strong');value.textContent=money(d.safe_cents);value.className=d.safe_cents<0?'negative':'';selection.append(label,value);
+  if(focus)dots[index].focus();
+ };
+ days.forEach((d,i)=>{
+  const dot=add('circle',{cx:x(i),cy:y(d.safe_cents),r:3,class:'chart-dot'+(d.safe_cents<0?' below-zero':''),role:'button',tabindex:'-1','aria-label':date(d.date)+' : '+money(d.safe_cents),'aria-describedby':'chart-selection'});
+  dot.addEventListener('focus',()=>choose(i));dot.addEventListener('click',()=>choose(i));
+  dot.addEventListener('keydown',e=>{let next;if(e.key==='ArrowRight')next=Math.min(days.length-1,i+1);if(e.key==='ArrowLeft')next=Math.max(0,i-1);if(e.key==='Home')next=0;if(e.key==='End')next=days.length-1;if(next!==undefined){e.preventDefault();choose(next,true)}if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(i)}});dots.push(dot);
+  const row=document.createElement('tr');for(const text of [date(d.date),(d.events||[]).map(e=>e.description||types[e.type]||'Mouvement').join(', ')||'—',money(d.safe_cents)]){const td=document.createElement('td');td.textContent=text;row.append(td)}tbody.append(row);
+ });
+ svg.onpointermove=e=>{if(e.pointerType==='touch')return;const bounds=svg.getBoundingClientRect();const position=(e.clientX-bounds.left)*W/bounds.width;choose(Math.max(0,Math.min(days.length-1,Math.round((position-L)/(R-L)*(days.length-1)))))};
+ svg.onclick=e=>{const bounds=svg.getBoundingClientRect();choose(Math.max(0,Math.min(days.length-1,Math.round(((e.clientX-bounds.left)*W/bounds.width-L)/(R-L)*(days.length-1)))))};
+ svg.onpointerleave=()=>{if(!svg.contains(document.activeElement))choose(lowIndex)};
+ choose(selected);
+}
+
+(()=>{
+ const descriptions={dashboard:'Une vision claire pour décider en toute confiance.',comptes:'Vos soldes réels et les comptes inclus dans votre disponible.',transactions:'Retrouvez vos opérations et gardez votre budget à jour.',enveloppes:'Organisez votre argent selon vos priorités.',recurrences:'Anticipez vos revenus, factures et virements réguliers.',prevision:'Explorez votre disponible et vos mouvements jour par jour.',calendrier:'Visualisez vos opérations au fil du mois.',virements:'Déplacez de l’argent entre vos comptes.',exceptions:'Ajustez une occurrence sans changer votre règle habituelle.'};
+ const paths={dashboard:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',comptes:'M3 7h18v13H3z M3 7l13-4v4 M16 12h5v4h-5z',transactions:'M4 7h16 M16 3l4 4-4 4 M20 17H4 M8 13l-4 4 4 4',enveloppes:'M3 5h18v14H3z M3 5l9 7 9-7',recurrences:'M20 8a8 8 0 0 0-14-2L3 9 M3 3v6h6 M4 16a8 8 0 0 0 14 2l3-3 M15 15h6v6',prevision:'M3 3v18h18 M6 15l5-5 4 3 6-8',calendrier:'M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6',virements:'M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4',exceptions:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6'};
+ const subtitle=document.querySelector('.workspace-header .sub');
+ document.querySelectorAll('.app-shell-nav [data-view]').forEach(button=>{
+  const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');icon.classList.add('nav-icon');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',paths[button.dataset.view]);icon.append(path);button.prepend(icon);
+  const update=()=>subtitle.textContent=descriptions[button.dataset.view];button.addEventListener('click',update);if(button.classList.contains('active'))update();
+ });
+ document.getElementById('dashboard-envelopes').onclick=()=>document.querySelector('[data-view="enveloppes"]').click();
+ document.getElementById('dashboard-recurring').onclick=()=>document.querySelector('[data-view="recurrences"]').click();
+ // The compact explanations remain accessible without dominating every visit.
+ const explanation=document.querySelector('.sts-explain');const note=document.querySelector('.budget-note');if(explanation&&note)note.append(explanation);
+ document.querySelector('.app-dashboard .dashboard-intro')?.remove();
+ const refresh=document.getElementById('v21-refresh');const original=refresh.onclick;
+ refresh.onclick=async function(){this.disabled=true;this.textContent='Actualisation…';try{await original()}finally{this.disabled=false;this.textContent='Actualiser les calculs'}};
+})();
+
+// Keep feedback next to the action, including errors inside modal editors.
+(()=>{
+ const feedback=document.createElement('div');feedback.className='save-notification';feedback.setAttribute('role','status');feedback.hidden=true;document.body.append(feedback);let dismissTimer;
+ const originalSend=send;
+ send=async function(url,data){
+  clearTimeout(dismissTimer);feedback.hidden=true;
+  const dialog=document.querySelector('dialog[open]');
+  dialog?.querySelector('.form-feedback')?.remove();
+  const buttons=dialog?[...dialog.querySelectorAll('form button:not([type]),form button[type="submit"]')]:[];
+  buttons.forEach(button=>button.disabled=true);
+  let ok;
+  try{ok=await originalSend(url,data)}finally{buttons.forEach(button=>button.disabled=false)}
+  if(ok){clearTimeout(dismissTimer);feedback.textContent='✓ Modification enregistrée';feedback.hidden=false;dismissTimer=setTimeout(()=>feedback.hidden=true,3500)}
+  else if(dialog?.open){const error=document.createElement('p');error.className='form-feedback';error.setAttribute('role','alert');error.textContent=document.getElementById('error').textContent||'Enregistrement impossible. Vérifiez les informations saisies.';dialog.querySelector('.dialog-heading').after(error)}
+  return ok;
+ };
+ const originalRender=render;
+ render=function(s){
+  originalRender(s);
+  let welcome=document.getElementById('budget-welcome');
+  if(!welcome){welcome=document.createElement('aside');welcome.id='budget-welcome';welcome.className='welcome-banner';const copy=document.createElement('div');const heading=document.createElement('strong');heading.textContent='Votre budget commence ici';const text=document.createElement('p');text.textContent='Ajoutez un premier compte et son solde actuel. Vous pourrez ensuite organiser vos enveloppes et vos prévisions.';copy.append(heading,text);const button=document.createElement('button');button.type='button';button.textContent='Ajouter mon premier compte';button.onclick=()=>window.appOpenEditor('account');welcome.append(copy,button);document.querySelector('.cards').before(welcome)}
+  welcome.hidden=!!s.accounts?.length;
+ };
 })();
