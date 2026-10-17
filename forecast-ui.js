@@ -42,7 +42,7 @@
  function draw(){
   if(!current)return;
   const summary=$('planning-real-summary');summary.replaceChildren();
-  for(const [label,value,caption] of [['Solde réel aujourd’hui',current.cash_cents,'Comptes inclus · opérations enregistrées'],['Réservé actuellement',current.reserved_cents+(current.credit_reserved_cents||0),'Enveloppes et remboursement des cartes'],['Disponible aujourd’hui',current.safe_cents,'Solde réel moins les enveloppes et les cartes']]){const card=node('div',undefined,'trajectory-metric');card.append(node('span',label),node('strong',money(value)),node('small',caption));summary.append(card);}
+  for(const [label,value,caption] of [['Solde réel aujourd’hui',current.cash_cents,'Comptes inclus · opérations enregistrées'],['Réservé actuellement',current.reserved_cents,'Argent affecté aux enveloppes'],['Disponible aujourd’hui',current.safe_cents,'Solde réel moins les réserves d’enveloppes']]){const card=node('div',undefined,'trajectory-metric');card.append(node('span',label),node('strong',money(value)),node('small',caption));summary.append(card);}
   const rows=(current.planning?.rows||[]).filter(r=>(!month.value||r.date.startsWith(month.value))&&(status.value==='all'||r.status===status.value));
   info.textContent='Suivi des prévisions depuis le '+day(current.planning?.since||current.forecast[0].date)+'. Les périodes antérieures à l’activation ne sont pas reconstituées. Pour une enveloppe, les achats de la période remplacent son budget prévu. Utilisez « Encore des achats » si la période n’est pas terminée.';
   totals.replaceChildren();const expenses=rows.filter(r=>r.type==='expense'),completed=expenses.filter(r=>r.status==='actual');

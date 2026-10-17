@@ -111,7 +111,7 @@ Les autres parcours navigateur restent réussis. Les captures publiées utilisen
 - Dépense liée prioritaire pour sa période; une règle ponctuelle ne supprime pas les futures périodes d’enveloppe.
 - Dépenses en retard encore déduites; revenus en retard non utilisés avant confirmation.
 - Rapprochement automatique unique, cas ambigus non rapprochés, association manuelle d’un montant différent et rétablissement après suppression du réel.
-- Réserves de remboursement des cartes; achat sans sortie bancaire immédiate, puis virement réduisant le solde sans double déduction du disponible.
+- Aucune réserve de remboursement des cartes : dette et achat sans déduction automatique du disponible; seuls les virements de remboursement prévus ou réels réduisent le solde et le disponible.
 - Exceptions de budget, report des réserves, annulations et déplacements ciblés.
 - Migration additive, copie SQLite préalable, export/restauration des nouveaux suivis et compatibilité des exports JSON v3 antérieurs.
 

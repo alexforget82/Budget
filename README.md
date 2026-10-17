@@ -44,13 +44,13 @@ Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun v
 
 ## Prévision complète et suivi réel (3.1)
 
-Dans **Planifier → Prévision**, choisissez une date (jusqu’à 90 jours) et consultez séparément le **solde bancaire prévu**, les **réserves d’enveloppes**, le montant **réservé aux cartes** et le **disponible prévu**. Le sélecteur de courbe permet de passer du disponible au solde bancaire. Le disponible réel d’aujourd’hui reste distinct de la simulation des mouvements attendus aujourd’hui.
+Dans **Planifier → Prévision**, choisissez une date (jusqu’à 90 jours) et consultez séparément le **solde bancaire prévu**, les **réserves d’enveloppes**, le **disponible prévu**. Le sélecteur de courbe permet de passer du disponible au solde bancaire. Le disponible réel d’aujourd’hui reste distinct de la simulation des mouvements attendus aujourd’hui.
 
 - Enveloppe en **Dépense prévue** : son budget est une sortie bancaire à chaque date programmée. Exemple : 230 $ les 22 et 29 octobre et le 5 novembre = 690 $ de dépenses projetées au 5 novembre.
 - Choisissez le compte de chaque enveloppe. Sans compte attribué, la dépense est tout de même déduite du total des comptes inclus, avec un avertissement; elle n’est pas attribuée arbitrairement à un compte.
 - Enveloppe **Réserve seulement** : adaptée à l’épargne, sans sortie bancaire automatique. Ses renouvellements continuent de réserver l’argent.
 - Revenus, dépenses, virements, budgets exceptionnels, annulations et dates déplacées sont intégrés. Une règle peut maintenant être **ponctuelle**. Une dépense récurrente peut être liée à une enveloppe : elle remplace la dépense automatique de cette enveloppe pour la période correspondante, sans masquer les autres périodes.
-- Les soldes dus sur les cartes sont **réservés pour leur remboursement** : ils réduisent désormais le disponible. Un achat augmente cette réserve; le remboursement réduit le compte bancaire et libère la réserve correspondante, sans compter deux fois la dépense. Le solde bancaire projeté ne baisse qu’au virement de remboursement.
+- Les soldes dus sur les cartes ne créent **aucune réserve automatique** et ne sont pas déduits du Safe-to-Spend. Les achats sur crédit augmentent la dette suivie séparément. Seuls les virements de remboursement prévus ou enregistrés réduisent le solde bancaire et le disponible.
 
 Dans **Planifier → Prévu / Réel**, les cartes présentent **Prévu / Réel / Écart**, avec des filtres de mois et de statut. Les transactions réelles sans prévision associée sont également visibles et sont déjà incluses dans les soldes.
 

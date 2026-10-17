@@ -52,12 +52,10 @@ export function buildForecast({accounts,envelopes,recurring,overrides=[],moves=[
   if(row.status==='planned'&&row.date<today)row.status='pending';
   row.simulation_on=row.date<today?today:row.date;
  }
- for(const a of accounts.filter(a=>a.kind==='credit'&&(a.balance_cents>0||rows.some(r=>r.type==='expense'&&r.account_id===a.id))))if(!rows.some(r=>r.type==='transfer'&&r.to_account_id===a.id&&['planned','pending'].includes(r.status)&&r.remaining_cents!==0))warnings.push({code:'credit_payment',account_id:a.id,message:a.name+' : aucun remboursement prévu sur la période. Ajoutez un virement pour prévoir la sortie bancaire.'});
  const futureActuals=transactions.filter(t=>t.happened_on>today);
  if(futureActuals.length)warnings.push({code:'future_actuals',message:futureActuals.length+' transaction(s) datée(s) dans le futur sont déjà intégrées aux soldes réels. Utilisez une opération prévue pour les prochains paiements.'});
  const balances=new Map(accounts.map(a=>[a.id,a.balance_cents])),reserves=new Map(envelopes.map(e=>[e.id,e.reserved_cents]));
  let reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0),unassigned=0;
- const creditReserve=()=>accounts.filter(a=>a.kind==='credit').reduce((n,a)=>n+Math.max(0,balances.get(a.id)||0),0);
  const days=[],cash=()=>accounts.filter(included).reduce((n,a)=>n+(balances.get(a.id)||0),0)-unassigned;
  const consume=(id,amount)=>{const release=Math.min(reserves.get(id)||0,amount);reserves.set(id,(reserves.get(id)||0)-release);reserved-=release;return release;};
  for(let n=0;n<horizon;n++){
@@ -71,7 +69,7 @@ export function buildForecast({accounts,envelopes,recurring,overrides=[],moves=[
   for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0)){
    // Unconfirmed past income must not finance today's spending.
    if(row.status==='pending'&&row.type==='income')continue;
-   const amount=row.remaining_cents,account=accountMap.get(row.account_id),before=cash()-reserved-creditReserve();
+   const amount=row.remaining_cents,account=accountMap.get(row.account_id),before=cash()-reserved;
    if(row.type==='income')balances.set(row.account_id,(balances.get(row.account_id)||0)+amount);
    if(row.type==='expense'){
     if(account)balances.set(account.id,(balances.get(account.id)||0)+(account.kind==='credit'?amount:-amount));else unassigned+=amount;
@@ -83,9 +81,9 @@ export function buildForecast({accounts,envelopes,recurring,overrides=[],moves=[
     balances.set(row.to_account_id,(balances.get(row.to_account_id)||0)+(target?.kind==='credit'?-amount:amount));
    }
    if(row.type==='reserve'){reserved+=amount;if(row.envelope_id)reserves.set(row.envelope_id,(reserves.get(row.envelope_id)||0)+amount);}
-   events.push({...row,amount_cents:amount,sts_impact_cents:cash()-reserved-creditReserve()-before,credit_charge:row.type==='expense'&&account?.kind==='credit',transfer_internal:row.type==='transfer'&&included(account)&&included(accountMap.get(row.to_account_id)),envelope_spending:row.source==='envelope',overdue:row.status==='pending'});
+   events.push({...row,amount_cents:amount,sts_impact_cents:cash()-reserved-before,credit_charge:row.type==='expense'&&account?.kind==='credit',transfer_internal:row.type==='transfer'&&included(account)&&included(accountMap.get(row.to_account_id)),envelope_spending:row.source==='envelope',overdue:row.status==='pending'});
   }
-  days.push({date,cash_cents:cash(),reserved_cents:reserved,credit_reserved_cents:creditReserve(),safe_cents:cash()-reserved-creditReserve(),account_balances:accounts.map(a=>({id:a.id,balance_cents:balances.get(a.id)})),events});
+  days.push({date,cash_cents:cash(),reserved_cents:reserved,credit_reserved_cents:0,safe_cents:cash()-reserved,account_balances:accounts.map(a=>({id:a.id,balance_cents:balances.get(a.id)})),events});
  }
  return {days,rows:rows.sort((a,b)=>a.date.localeCompare(b.date)||a.description.localeCompare(b.description,'fr')),warnings,since};
 }

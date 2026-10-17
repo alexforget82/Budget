@@ -144,10 +144,10 @@ class BudgetAPI(unittest.TestCase):
   for r in old['tables']['recurring']:del r['one_time']
   old['tables']['app_settings']=[r for r in old['tables']['app_settings'] if r['key']!='forecast_tracking_since']
   self.post('/api/backup/validate',{'backup':old});self.post('/api/backup/restore',{'backup':old,'confirm':'REMPLACER'});s=self.get('/api/state');self.assertEqual(s['envelopes'][0]['name'],'Courses');self.assertIsNone(s['envelopes'][0]['forecast_account_id']);self.assertTrue(any(w['code']=='envelope_account' for w in s['planning']['warnings']))
- def test_credit_debt_reserved_and_repayment_not_counted_twice(self):
-  aid=self.account(balance=2000);cid=self.account('credit',100)
-  s=self.get('/api/state');self.assertEqual(s['safe_cents'],190000);self.assertEqual(s['credit_reserved_cents'],10000)
-  s=self.transaction(cid,-25);self.assertEqual(s['safe_cents'],187500)
+ def test_credit_debt_never_reserved_and_only_repayments_reduce_available(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000)
+  s=self.get('/api/state');self.assertEqual(s['safe_cents'],200000);self.assertEqual(s['credit_reserved_cents'],0);self.assertTrue(all(d['safe_cents']==200000 and d['credit_reserved_cents']==0 for d in s['forecast']))
+  s=self.transaction(cid,-25);self.assertEqual(s['safe_cents'],200000);self.assertEqual(s['spending_windows']['today_cents'],200000)
   s=self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':125,'description':'Remboursement','happened_on':DAY});self.assertEqual(s['safe_cents'],187500);self.assertEqual(s['credit_reserved_cents'],0)
 
  def test_additive_legacy_migration_preserves_data(self):

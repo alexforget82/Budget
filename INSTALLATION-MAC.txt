@@ -57,11 +57,10 @@ PRÉVISION ET RÉEL (3.1)
   le budget de leur période. Cliquez Encore des achats si vous prévoyez
   d'autres achats, puis Terminer la période quand tout est passé.
 - Associer un réel permet de rapprocher une facture au montant différent.
-- Les sommes dues sur les cartes sont désormais réservées : le disponible
-  peut donc baisser après mise à jour. Le remboursement est un virement;
-  il ne déduit pas la dépense deux fois.
+- Aucune réserve automatique pour les cartes : seuls les virements de
+  remboursement prévus ou enregistrés réduisent le disponible.
 - Vérifiez les avertissements (enveloppes à planifier, comptes à choisir,
-  remboursements de cartes et mouvements passés à confirmer).
+  mouvements passés à confirmer).
 - Le suivi commence à la mise à jour. Les prévisions passées ne sont pas
   reconstituées. Une copie avant migration est créée dans data/backups/
   budget-before-planning-v4.sqlite. Les anciens exports JSON v3 restent

@@ -119,7 +119,7 @@ function renderForecast(days){
   summary.append(left,chips,available,arrow);details.append(summary);
   const body=document.createElement('div');body.className='forecast-day-body';
   const stats=document.createElement('div');stats.className='forecast-day-stats';
-  for(const [name,value] of [['Solde admissible',day.cash_cents],['Réserves',day.reserved_cents],['Remboursement des cartes',day.credit_reserved_cents||0],['Disponible projeté',day.safe_cents]]){const item=document.createElement('span');const label=document.createElement('small');label.textContent=name;const strong=document.createElement('strong');strong.textContent=money(value);item.append(label,strong);stats.append(item)}body.append(stats);
+  for(const [name,value] of [['Solde admissible',day.cash_cents],['Réserves',day.reserved_cents],['Disponible projeté',day.safe_cents]]){const item=document.createElement('span');const label=document.createElement('small');label.textContent=name;const strong=document.createElement('strong');strong.textContent=money(value);item.append(label,strong);stats.append(item)}body.append(stats);
   if(day.events.length){const groups=document.createElement('div');groups.className='forecast-day-groups';
    for(const type of order){const entries=day.events.filter(e=>e.type===type);if(!entries.length)continue;
     const box=document.createElement('div');box.className='forecast-event-group '+type;
@@ -462,7 +462,6 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   for(const a of s.sts_breakdown?.accounts||[]){const row=document.createElement('div');row.className='v21-sts-line';safeText(row,'span',a.name);safeText(row,'span',fmt(a.balance_cents));host.append(row)}
   safeText(host,'h3','Enveloppes déjà réservées');
   for(const e of s.sts_breakdown?.envelopes||[]){const row=document.createElement('div');row.className='v21-sts-line';safeText(row,'span',e.name);safeText(row,'span','−'+fmt(e.reserved_cents));host.append(row)}
-  safeText(host,'h3','Réservé au remboursement des cartes');for(const e of s.sts_breakdown?.credit||[]){const row=document.createElement('div');row.className='v21-sts-line';safeText(row,'span',e.name);safeText(row,'span','−'+fmt(e.reserved_cents));host.append(row)}
   safeText(host,'h3','Mouvements à venir (effet sur le disponible)');
   for(const event of s.sts_breakdown?.events||[]){const row=document.createElement('div');row.className='v21-sts-line';safeText(row,'span',event.date+' · '+event.description);safeText(row,'span',(event.impact_cents>0?'+':'')+fmt(event.impact_cents));host.append(row)}
   safeText(host,'p','Cette semaine et jusqu’à la paie utilisent le minimum projeté sur leur période, et non la somme de toutes les lignes. Les virements internes entre comptes inclus ont un effet nul.');
