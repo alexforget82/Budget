@@ -5,3 +5,34 @@ html[data-theme=dark] [data-night-surface]{background-color:#23382c!important;bo
 @media(max-width:600px){.life-panel{padding:16px}.life-tabs button{flex:1 1 42%}.life-appearance{margin-top:10px}.workspace-header{flex-wrap:wrap}.life-metrics{grid-template-columns:1fr 1fr}.life-metrics strong{font-size:19px}.life-form{grid-template-columns:1fr}}
 
 .life-preview:empty,.life-message:empty{display:none}.life-signal.green{border-left:4px solid #5cba86}.life-signal.orange{border-left:4px solid #e8aa43}.life-signal.red{border-left:4px solid #e56e71}
+
+/* Fluid workspace: browser zoom changes the available CSS viewport naturally. */
+html{min-height:100%}
+body{width:100%;max-width:none;margin:0;min-height:100vh;min-height:100svh}
+@media(min-width:1151px){body{padding-inline:calc(238px + clamp(20px,2.4vw,44px)) clamp(20px,2.4vw,44px)}}
+@media(min-width:761px){.app-shell-nav{left:0;max-height:100vh;max-height:100dvh}}
+.workspace-header{flex-wrap:wrap;min-width:0}
+.workspace-header>div:first-child{flex:1 1 260px;min-width:0}
+.v41-header-tools{max-width:none;flex:1 1 330px;min-width:0}
+.life-appearance{flex:0 1 auto;min-width:0}
+body>section,.app-dashboard,.v47-grid,.life-panel,.life-metrics>div,.life-form>label{min-width:0}
+.life-row,.life-list>div,.life-metrics strong,.workspace-header h1{overflow-wrap:anywhere}
+.life-list>div>span{min-width:0;flex-basis:240px}
+.life-tabs button{white-space:normal}
+@media(max-width:760px){
+ body{padding-inline:16px}
+ .workspace-header{gap:12px}
+ .workspace-header>div:first-child,.v41-header-tools{flex-basis:100%}
+ .v41-header-tools{justify-content:flex-start;margin-top:0}
+ .app-shell-nav{max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain}
+ .life-appearance{margin-top:0}
+}
+html[data-theme=dark]{background:#111d18}
+html[data-theme=dark] .app-shell-nav button[data-view],
+html[data-theme=dark] .app-shell-nav .mobile-navigation-trigger{background:#192a22!important;color:#d5e7d9!important;border-color:#48614e!important}
+html[data-theme=dark] .app-shell-nav button[data-view]:is(.active,.planning-hub-active,[aria-current=page]){background:#284b39!important;color:#edf9f0!important}
+html[data-theme=dark] .app-shell-nav button[data-view]:hover,
+html[data-theme=dark] .app-shell-nav .mobile-navigation-trigger:hover{background:#2c4435!important;color:#fff!important}
+html[data-theme=dark] .v41-header-tools .v41-header-action{background:#23382c!important;color:#e2eee5!important;border-color:#48614e!important}
+html[data-theme=dark] .v41-header-tools .v41-header-action:disabled{background:#23382c!important;color:#b0c4b4!important;opacity:1;border-style:dashed!important}
+html[data-theme=dark] :is(.app-shell-nav button,.v41-header-action):focus-visible{outline:3px solid #91d5a5;outline-offset:2px}

@@ -1,9 +1,9 @@
-VERSION 5.0 — PAIE, PROJETS ET MODE SOMBRE
+VERSION 5.0.1 — AFFICHAGE ADAPTATIF ET PLEINE LARGEUR
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge doit indiquer v5.0.
+Rechargez Safari sur Mac et iPhone : le badge doit indiquer v5.0.1.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
 et budget-v50.css.
 
@@ -308,3 +308,7 @@ la date et la fréquence. Réutilisez le virement récurrent existant s’il y e
 Aucune réserve automatique du solde de carte n’est créée. Les paiements déjà
 saisis doivent être associés dans À confirmer, pour éviter de les déduire deux fois.
 L’application ne transmet aucun paiement à votre banque.
+
+Affichage adaptatif : la largeur fixe est supprimée. Agrandissez ou réduisez
+la fenêtre et conservez votre zoom préféré (dont 85 %) : le contenu se réorganise.
+Les boutons de navigation et de recherche sont plus lisibles en mode sombre.

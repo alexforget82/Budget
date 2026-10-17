@@ -1,6 +1,6 @@
 {
   "name": "mon-budget-local",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "private": true,
   "type": "module",
   "scripts": {

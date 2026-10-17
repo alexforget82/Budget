@@ -1,4 +1,4 @@
-# Mon Budget 5.0
+# Mon Budget 5.0.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,18 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.0.1 : toute la largeur du navigateur
+
+La limite fixe de 1 600 pixels est retirée. L’application utilise la largeur disponible, avec des marges de confort, et le menu reste ancré à gauche sur ordinateur. L’en-tête, les actions et les cartes se réorganisent lorsque la fenêtre rétrécit ou que le zoom augmente. Le menu compact reste accessible sur les petites fenêtres et les écrans de téléphone. Le zoom choisi dans le navigateur est respecté, sans compensation artificielle de la taille du texte.
+
+Le fond sombre couvre aussi les grands écrans. Les boutons Planifier, Rechercher et Annuler utilisent des couleurs sombres explicites, y compris au survol, au clavier et lorsqu’Annuler est désactivé.
+
+Le parcours `python3 tests/responsive-v501-ui.py` vérifie six écrans en clair et en sombre sur des largeurs de 320 à 3 440 pixels CSS, dont les largeurs correspondant à une fenêtre de 1 440 pixels à 50 %, 67 %, 75 %, 85 %, 100 %, 125 %, 150 % et 200 %. Il vérifie la largeur réellement occupée, l’absence de débordement de la page, le menu compact et un contraste texte/fond d’au moins 4,5 pour les boutons corrigés. Ce sont des vérifications des largeurs disponibles après zoom; elles ne pilotent pas le réglage natif de Safari.
+
+La mise à jour utilise le même raccourci permanent et conserve les données. Après rechargement, le badge indique **v5.0.1**.
+
+Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-largeur-sombre.png) · [pleine largeur en clair](docs/v501-pleine-largeur-clair.png).
 
 ## Nouveautés 5.0 : préparer la paie et choisir son apparence
 
@@ -20,7 +32,7 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.0**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.0.1**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 
