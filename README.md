@@ -18,7 +18,7 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
 5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
 
-Les nouveaux fichiers `budget-features.js` et `features.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+Les fichiers `budget-features.js`, `features.js` et `planner.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
 La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
 Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).
@@ -131,3 +131,25 @@ python3 -m venv /tmp/budget-ui-venv
 ```
 
 `CHROMIUM_PATH` permet de choisir un exécutable existant. Les captures sont enregistrées dans un dossier temporaire indiqué à la fin. Voir [TESTS.md](TESTS.md) pour les résultats et leurs limites. Safari et Finder réels restent à vérifier sur Mac.
+
+
+## Comptes et Planifier — interface repensée
+
+Une seule entrée **Planifier** dans le menu principal ouvre un espace avec onglets : Vue d’ensemble, Récurrences, Enveloppes, Objectifs et Calendrier. Sur mobile, le menu des écrans se déplie; le bouton d’ajout de transaction reste visible.
+
+- **Comptes** : synthèse des soldes bancaires, fonds inclus et cartes; cartes individuelles, interrupteurs d’inclusion et modification. La comparaison de solde s’ouvre à la demande.
+- **Prévision** : horizons de 30, 60 et 90 jours, courbe du disponible, début/minimum/fin, avertissement sous zéro et détail d’une journée. Un curseur accessible au clavier, les dates et les cartes de semaines permettent de parcourir la période. Quatre semaines sont présentées à la fois; les autres sont accessibles par les flèches. La liste quotidienne complète sur 90 jours reste disponible dans un volet fermé par défaut.
+- **Enveloppes** : réserves, budgets, renouvellements et dépenses par période dans des cartes. Le budget exceptionnel est rangé dans un volet.
+- **Récurrences** : cartes filtrables par type; prochaine occurrence visible dans la prévision, modification, pause et suppression. Le rapprochement manuel s’ouvre au besoin.
+- **Objectifs** : cartes de progression et formulaire dans une fenêtre dédiée.
+- **Calendrier** : grille mensuelle sur ordinateur et mobile, repères sur les jours avec mouvements et détail au clic.
+
+Ces vues lisent les prévisions du serveur; elles ne modifient pas les règles financières. Les cartes de semaine correspondent à des blocs de sept jours à partir du premier jour de la prévision, pas nécessairement du lundi au dimanche. Le minimum affiché correspond à l’horizon sélectionné.
+
+![Comptes avec données fictives](docs/comptes.png)
+
+![Prévision 90 jours avec données fictives](docs/prevision-90-jours.png)
+
+[Aperçu des enveloppes](docs/enveloppes.png) · [Aperçu des récurrences](docs/recurrences.png) · [Prévision mobile](docs/mobile-prevision.png)
+
+Test supplémentaire : `python3 tests/planning-ui.py` (mêmes prérequis Playwright que les autres tests navigateur).

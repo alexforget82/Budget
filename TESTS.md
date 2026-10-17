@@ -60,3 +60,23 @@ Les réponses HTTP 400 des saisies et sauvegardes volontairement invalides sont 
 Safari réel, Finder/macOS, les permissions/quarantaine du lanceur et les données personnelles de l’utilisateur restent à vérifier sur Mac. Le lanceur `.command` n’est pas une application Mac autonome signée.
 
 Les tests ne couvrent pas tous les historiques possibles, toutes les migrations très anciennes, les conventions de tous les relevés bancaires, les combinaisons de jours fériés et de récurrences ou les très grandes bases. Les contrôles des calculs existants ne constituent pas une nouvelle certification exhaustive du moteur financier. Vérifiez vos soldes et vos enveloppes sur une copie avant utilisation quotidienne.
+
+
+## Comptes et Planifier — vérifications de la nouvelle interface
+
+`python3 tests/planning-ui.py` : **réussi dans Chromium**, avec des comptes, enveloppes, objectifs et récurrences fictifs.
+
+- Neuf entrées visibles dans le menu principal, treize écrans accessibles; onglets de Planifier et menu mobile dépliant.
+- Cartes de comptes, éditeurs et comparaison de solde à la demande; interrupteur d’inclusion vérifié contre l’API.
+- Cartes d’enveloppes, éditeur et outil exceptionnel fermé par défaut.
+- Cartes et filtres de récurrences; rapprochement manuel fermé par défaut.
+- Horizons 30/60/90 jours; minimum et détails égaux aux montants fournis par le serveur.
+- Curseur clavier Début/Fin, changement de date, navigation de semaines et sélection d’une journée; dernière semaine partielle.
+- Liste détaillée de 90 jours conservée dans un volet; développement des 90 journées vérifié.
+- Avertissement négatif et accès au creux prévu.
+- Calendrier mensuel, jours avec mouvements et détail d’une journée.
+- Comptes, prévision, enveloppes, récurrences, objectifs et calendrier vérifiés à 375, 390, 768, 1024 et 1440 pixels, sans débordement de page.
+- Comparaison de toutes les tables avant et après la navigation : aucun changement des données financières par l’exploration de ces vues.
+- Aucune erreur JavaScript ou console inattendue. Les autres parcours navigateur et les treize tests automatisés restent réussis.
+
+Les captures de ces vues dans `docs/` sont fictives. Safari réel reste à vérifier sur Mac.

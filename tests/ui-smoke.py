@@ -1,3 +1,4 @@
+from ui_navigation import navigate as navigate_view
 import json,os,subprocess,tempfile,time,urllib.request,datetime,socket,shutil
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -34,11 +35,11 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    page.locator('.chart-table summary').click();assert page.locator('.chart-table tbody tr').count()==30;page.locator('.chart-table summary').click()
    page.evaluate('scrollTo(0,0)');page.screenshot(path=str(artifacts/'desktop.png'),full_page=True)
    for view in ['comptes','transactions','enveloppes','recurrences','prevision','calendrier','virements','exceptions','bilan','importer','objectifs','sauvegardes','dashboard']:
-    page.locator(f'[data-view="{view}"]').click();assert page.locator('#workspace-title').inner_text()==page.locator(f'[data-view="{view}"]').inner_text()
+    navigate_view(page,view);assert page.locator('#workspace-title').inner_text()==page.locator(f'[data-view="{view}"]').inner_text()
     for width in [390,1440]:
      page.set_viewport_size({'width':width,'height':900});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),(view,width)
-   page.locator('#dashboard-envelopes').click();assert page.locator('#section-enveloppes').is_visible();page.locator('[data-view="dashboard"]').click()
-   page.locator('#dashboard-recurring').click();assert page.locator('#section-recurrences').is_visible();page.locator('[data-view="dashboard"]').click()
+   page.locator('#dashboard-envelopes').click();assert page.locator('#section-enveloppes').is_visible();navigate_view(page,'dashboard')
+   page.locator('#dashboard-recurring').click();assert page.locator('#section-recurrences').is_visible();navigate_view(page,'dashboard')
    page.locator('#open-transaction').click();assert page.locator('#transaction-dialog').is_visible();page.locator('#close-transaction').click()
    for width in [375,390,768,1024,1440]:
     page.set_viewport_size({'width':width,'height':900});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),width

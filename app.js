@@ -348,7 +348,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   for(let day=1;day<=days;day++){
    const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
    const f=forecast.get(key),real=allReal.filter(t=>t.happened_on===key),sum=real.reduce((v,t)=>v+t.amount_cents,0);
-   const button=document.createElement('button');button.type='button';button.className='cal-cell'+(f?.safe_cents<0?' negative':'');
+   const button=document.createElement('button');button.type='button';button.className='cal-cell'+(f?.safe_cents<0?' negative':'')+((real.length||(f?.events||[]).length)?' has-movements':'');button.dataset.date=key;button.setAttribute('aria-label',dateLabel(key)+' · '+(real.length+(f?.events||[]).length)+' mouvement(s)'+(f?' · disponible prévu '+money(f.safe_cents):''));
    const d=document.createElement('strong');d.textContent=day;button.append(d);
    if(real.length){const t=document.createElement('small');t.textContent='Réel '+money(sum);button.append(t)}
    if(f){const t=document.createElement('small');t.textContent='Prévu STS '+money(f.safe_cents);button.append(t)}
