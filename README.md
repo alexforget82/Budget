@@ -1,4 +1,4 @@
-# Mon Budget 3.5
+# Mon Budget 3.6
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,16 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Virements dans Transactions — v3.6
+
+La fenêtre **Nouvelle transaction** propose maintenant **Dépense**, **Revenu** et **Virement**. Pour un virement, choisissez le compte source, le compte destination, le montant et la date, puis **Déjà effectué** ou **Prévu à une date précise**. Un virement prévu peut être unique ou se répéter chaque semaine, aux 2 semaines, chaque mois, aux 3 mois, aux 6 mois ou chaque année.
+
+Un virement effectué modifie les deux soldes sans créer de revenu ni de dépense. Un virement prévu utilise le calendrier et le moteur de prévision existants; les soldes réels changent seulement lors de sa confirmation dans **À confirmer**. Si le virement réel est déjà saisi, associez-le pour éviter un double débit. L’application ne fait aucun paiement auprès des banques.
+
+Les dernières opérations de virement sont consultables dans Transactions, sous **Virements entre comptes — dernières opérations**. Le lien **Voir tous les virements** ouvre l’historique dédié; les filtres et totaux du registre de dépenses/revenus restent propres à ces transactions. Un remboursement de carte ne crée toujours aucune réserve automatique.
+
+[Aperçu de la saisie d’un virement](docs/saisie-virement.png) — données fictives.
 
 ## Fréquences de factures — v3.5
 

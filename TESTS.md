@@ -176,3 +176,7 @@ Les tests API refusent un nouveau paiement implicite lorsqu’un virement réel 
 ## Fréquences étendues — v3.5
 
 Le test API des factures vérifie les six fréquences, les fins de mois et années bissextiles, le refus d’exceptions hors échéance, les occurrences trimestrielles/semestrielles/annuelles dans la prévision, la sauvegarde/restauration et la migration de l’ancienne contrainte SQLite en conservant les règles et leurs liens. Le parcours `tests/planning-ui.py` vérifie l’interface des récurrences et les vues de prévision.
+
+## Saisie des virements — v3.6
+
+`python3 tests/transaction-transfers-ui.py` : réussi. Vérification du choix Virement dans la fenêtre Transactions, refus des comptes identiques, soldes banque/carte après un virement réel, absence de revenu/dépense et de réserve de crédit, virement unique prévu puis confirmé sans double débit, sept choix de répétition, règle trimestrielle, enregistrement avec poursuite de saisie, dernières opérations, retour au mode Dépense, erreur serveur visible sans écriture et cinq largeurs d’écran. Le parcours existant `tests/transactions-ui.py` a aussi réussi; `npm test` conserve ses 70 tests réussis.
