@@ -230,6 +230,17 @@ class BudgetAPI(unittest.TestCase):
   s=remote('/api/accounts',valid,data=account);self.assertEqual(s['cash_cents'],50000);self.assertEqual(self.get('/api/state')['cash_cents'],50000)
   self.call('/api/state',status=403,headers={'Host':'budget.exemple.ts.net'})
 
+ def test_read_only_purchase_and_move_simulations_use_full_forecast(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000);excluded=self.account('savings',3000);self.post('/api/accounts/inclusion',{'id':excluded,'included':False});day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
+  self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':day(1),'forecast_account_id':cid})
+  s=self.post('/api/card-payments',{'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':day(2)});before=self.get('/api/backup/export')['tables']
+  result=self.post('/api/simulate',{'kind':'purchase','account_id':aid,'amount':100,'date':day(1)});self.assertEqual(result['baseline'],s['forecast']);self.assertEqual(result['scenario'][0]['cash_cents'],200000);self.assertEqual(result['scenario'][1]['cash_cents'],190000);self.assertEqual(result['scenario'][2]['cash_cents'],167000)
+  result=self.post('/api/simulate',{'kind':'purchase','account_id':cid,'amount':100,'date':day(1)});self.assertEqual(result['scenario'][1]['cash_cents'],200000);self.assertEqual(result['scenario'][2]['cash_cents'],167000);self.assertTrue(all(d['credit_reserved_cents']==0 for d in result['scenario']))
+  result=self.post('/api/simulate',{'kind':'purchase','account_id':excluded,'amount':3100,'date':day(1)});self.assertEqual(result['scenario'][1]['cash_cents'],200000);self.assertEqual(next(a for a in result['scenario'][1]['account_balances'] if a['id']==excluded)['balance_cents'],-10000)
+  erow=next(r for r in s['planning']['rows'] if r['source']=='envelope');result=self.post('/api/simulate',{'kind':'move','key':erow['key'],'new_on':day(3)});self.assertEqual(result['scenario'][2]['cash_cents'],200000);self.assertEqual(result['scenario'][9]['cash_cents'],154000)
+  for data in [{'kind':'purchase','amount':-1,'account_id':aid,'date':DAY},{'kind':'purchase','amount':100,'account_id':999,'date':DAY},{'kind':'purchase','amount':100,'account_id':aid,'date':day(90)},{'kind':'move','key':'bad','new_on':DAY},{'kind':'unknown'}]:self.post('/api/simulate',data,400)
+  self.assertEqual(self.get('/api/backup/export')['tables'],before)
+
  def test_extended_bill_frequencies_dates_backup_and_migration(self):
   aid=self.account(balance=2000)
   cases=[('weekly','2028-01-31','2028-02-07'),('biweekly','2028-01-31','2028-02-14'),('monthly','2028-01-31','2028-02-29'),('quarterly','2028-01-31','2028-04-30'),('semiannual','2028-08-31','2029-02-28'),('yearly','2028-02-29','2029-02-28')]

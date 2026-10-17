@@ -8,3 +8,12 @@ def navigate(page,view):
  button.click()
  if view in labels:
   page.locator('section.view-active .planning-tabs').get_by_role('button',name=labels[view],exact=True).click()
+
+
+def navigate_legacy(page,view):
+ """Exercise the retained audit tools explicitly after the v4 redesign."""
+ navigate(page,view)
+ identifier={'prevision':'v4-forecast-audit','calendrier':'v4-calendar-audit'}.get(view)
+ if identifier:
+  detail=page.locator('#'+identifier)
+  if detail.count() and detail.get_attribute('open') is None:detail.locator(':scope > summary').click()

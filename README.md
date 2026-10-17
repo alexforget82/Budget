@@ -1,4 +1,4 @@
-# Mon Budget 3.7
+# Mon Budget 4.0
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,28 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## La version 4.0 : planifier par date
+
+**Calendrier** : vrai mois avec le disponible prévu en fin de journée et deux événements principaux, vue semaine adaptée au toucher sur iPhone, navigation au clavier (flèches et Début), distinction des opérations réelles et prévues. Un panneau de journée présente les comptes, les enveloppes, les virements et leur effet sur le disponible. Les mouvements sans effet de renouvellement à 0 $ restent dans l’audit plutôt que dans les cases.
+
+**Prévision** : horizons 30, 60 et 90 jours, disponible réel actuel, point le plus bas et disponible à la date choisie. Le graphique propose le disponible après réserves ou le solde bancaire prévu. Sélectionnez une date au clavier, avec le curseur, sur la courbe ou dans le champ date. « Pourquoi ce montant ? » explique le solde de départ, les revenus, les dépenses, les enveloppes, les virements et les réserves. Des alertes indiquent le premier passage sous zéro, les opérations à confirmer et les comptes d’enveloppes manquants.
+
+**Simulateur d’achat** : choisissez le montant, la date et le compte pour comparer les deux trajectoires. Le moteur complet recalcule les enveloppes et les paiements de cartes calculés. L’achat simulé est un achat **supplémentaire hors enveloppe**; il ne remplace pas un achat déjà prévu. Une carte sans plan de remboursement ne produit aucune sortie bancaire automatique. Un compte exclu peut devenir négatif sans faire baisser le disponible global; son solde propre est affiché. La simulation ne crée aucune transaction, aucune réserve et aucune règle dans la base. Elle est effacée à la prochaine actualisation des données.
+
+**Déplacer une échéance** : « Déplacer » ouvre d’abord une comparaison sans écriture. « Appliquer ce report… » ouvre ensuite le formulaire de report existant, avec sa validation des données actuelles, avant tout enregistrement. Les soldes réels restent inchangés. Le calendrier sélectionne la nouvelle date après application.
+
+**Ajout à une date** : préparez une dépense, un revenu ou un virement unique depuis le panneau de journée. Dans le futur, l’ajout crée un brouillon de récurrence unique, à enregistrer explicitement. Pour aujourd’hui, vous pouvez aussi choisir de saisir une opération déjà effectuée. Dans le passé, l’ajout prépare une opération réelle.
+
+**Prévu contre réel** : le résumé porte sur les dépenses terminées et rapprochées du mois actuel. Le passé du calendrier affiche les opérations réelles, sans inventer un ancien solde ni une courbe historique. Les calculs antérieurs dépendent des règles actuelles; aucun historique immuable des anciennes prévisions n’est ajouté. Le suivi complet et les anciennes vues détaillées restent disponibles.
+
+La règle financière reste identique : aucune réserve automatique pour les dettes de cartes; leurs remboursements datés influencent le solde bancaire. Les opérations rapprochées ne sont pas déduites une deuxième fois. Le format des sauvegardes JSON est inchangé; aucune nouvelle migration de base n’est nécessaire pour la 4.0.
+
+[Aperçu calendrier](docs/v4-calendrier.png) · [Aperçu prévision](docs/v4-prevision.png) · [Calendrier iPhone](docs/v4-calendrier-iphone.png) · [Prévision iPhone](docs/v4-prevision-iphone.png) — données fictives.
+
+### Installer la 4.0
+
+Si le mode automatique est installé, téléchargez le ZIP, décompressez-le puis lancez **Installer acces automatique.command**. La base active du dossier fixe est sauvegardée et conservée; ne recopiez pas une ancienne base par-dessus. Si vous êtes encore en mode manuel, arrêtez le serveur et suivez les instructions de copie du dossier `data` ci-dessous. Gardez tous les fichiers ensemble, y compris **planning-v4.js** et **planning-v4.css**, puis rechargez Safari sur Mac et iPhone.
 
 ## Sans fenêtre Terminal — v3.7
 

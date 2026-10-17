@@ -2,7 +2,7 @@
 import importlib.util,os,shutil,sys,tempfile,datetime
 from pathlib import Path
 sys.dont_write_bytecode=True
-from ui_navigation import navigate
+from ui_navigation import navigate_legacy as navigate
 from playwright.sync_api import sync_playwright,expect
 spec=importlib.util.spec_from_file_location('budget_api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-forecast-ui-'))

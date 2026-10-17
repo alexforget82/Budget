@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 3
+# Vérifications — Mon Budget 4.0
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **72 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **73 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 2 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 26 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 27 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -187,3 +187,13 @@ Le test API des factures vérifie les six fréquences, les fins de mois et anné
 `python3 tests/mac-service-simulation.py` : réussi, avec un vrai serveur Node et une vraie base SQLite temporaires, mais un **launchctl simulé**. Vérifie première installation, copie des données vers le dossier fixe, serveur détaché, nouvelle installation pendant son exécution, préservation de la base active même sans base dans le dossier téléchargé, sauvegardes SQLite, arrêt/désactivation sans suppression des données et refus d’arrêter un serveur manuel indépendant.
 
 `bash -n` réussit sur les quatre lanceurs `.command`. `npm test` : 46 tests Node + 26 tests API réussis. L’agent macOS réel, sa relance après ouverture de session, Finder, la veille et Tailscale/Safari restent à vérifier sur les appareils de l’utilisateur. Aucun service du Mac de l’utilisateur n’a été installé à distance.
+
+## Refonte 4.0
+
+`npm test` : **46 tests Node + 27 tests API réussis**. La simulation compare sa base aux prévisions réellement retournées par l’application. Elle vérifie un achat sur compte inclus, un achat sur carte répercuté sur son prochain paiement, un achat sur compte exclu (solde propre négatif sans changement global), le déplacement d’une dépense d’enveloppe, les entrées invalides et l’absence totale d’écriture dans les tables exportées.
+
+`python3 tests/planning-v4-ui.py` : réussi. Vérifie les horizons 30/60/90 jours, les montants exacts du serveur, le choix de courbe, la sélection au clavier/date, la simulation sur carte et sa seconde courbe, le calendrier mois/semaine et son clavier, le passé réel sans solde inventé, l’ajout préparé à une date sans enregistrement, le déplacement prévisualisé puis appliqué via le formulaire existant, l’accès à la confirmation, le résumé d’une dépense rapprochée (120 $ prévus contre 115 $ réels), les alertes négatives et le budget vide. Vérification des deux écrans et du simulateur aux largeurs 375, 390, 768, 1024 et 1440 px; aucun débordement de page, aucune erreur JavaScript, aucune écriture financière lors de la consultation.
+
+Les parcours `ui-smoke.py`, `workflows-ui.py`, `transactions-ui.py`, `transaction-transfers-ui.py`, `planning-ui.py`, `forecast-ui.py`, `planning-workflow-ui.py` et `card-payments-ui.py` ont réussi. Les quatre derniers ouvrent explicitement les outils d’audit conservés pour vérifier leurs anciens parcours; le test 4.0 vérifie les nouvelles vues par défaut.
+
+`mac-service-simulation.py` a réussi après le changement de version : l’installateur copie aussi les nouveaux fichiers JavaScript et CSS dans le dossier fixe et conserve la base. L’installation macOS/Tailscale réelle et Safari sur iPhone restent à vérifier sur les appareils de l’utilisateur. Les captures de démonstration contiennent uniquement des données fictives.

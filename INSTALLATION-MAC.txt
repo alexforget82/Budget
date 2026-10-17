@@ -1,3 +1,16 @@
+VERSION 4.0 — CALENDRIER, PREVISIONS ET SIMULATIONS
+Si vous utilisez le service automatique : décompressez le nouveau ZIP et lancez
+Installer acces automatique.command. Il conserve la base active du dossier fixe,
+la sauvegarde et redémarre la nouvelle application. Ne recopiez pas une ancienne
+copie de data sur la base active. Rechargez ensuite Safari sur Mac et iPhone.
+
+Si vous utilisez encore le mode manuel, arrêtez d’abord le serveur et conservez
+une copie complète de votre dossier. Copiez data dans le nouveau dossier du ZIP
+et relancez l’accès privé ou installez le mode automatique décrit ci-dessous.
+Gardez TOUS les fichiers, notamment planning-v4.js et planning-v4.css.
+Le format de sauvegarde JSON reste compatible et la 4.0 ne modifie pas le schéma.
+Les simulations n’enregistrent rien. L’application ne fait aucun paiement bancaire.
+
 MODE AUTOMATIQUE — VERSION 3.7
 Pour ne plus garder Terminal ouvert, utilisez Installer acces automatique.command.
 Première installation : arrêtez l’ancien serveur avec Control + C et copiez votre
