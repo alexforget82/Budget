@@ -26,5 +26,35 @@
  let suggestionTimer,ticket=0;const tx=document.getElementById('transaction');for(const name of ['happened_on','account_id','direction'])tx.elements[name].addEventListener('change',()=>window.budgetClearRuleSuggestion?.(),true);for(const name of ['description','happened_on','account_id','direction'])tx.elements[name].addEventListener(name==='description'?'input':'change',()=>{clearTimeout(suggestionTimer);const t=++ticket;suggestionTimer=setTimeout(async()=>{try{const r=await request('suggest',{description:tx.elements.description.value,date:tx.elements.happened_on.value,account_id:Number(tx.elements.account_id.value),direction:tx.elements.direction.value});if(t===ticket&&r.rule)window.budgetApplyRuleSuggestion?.(r.rule);}catch{}},250);});
  const old=render;render=function(s){old(s);latest=s;if(s.life){if(!saving)applyTheme(s.life.theme);draw();}};if(typeof state!=='undefined'&&state){latest=state;if(state.life){applyTheme(state.life.theme);draw();}}
 })();
-/* Adapt legacy surfaces that predate theme tokens, including dynamically opened editors. */
-(()=>{let pending=false;const color=s=>{const m=s.match(/[\d.]+/g);return m&&m.length>=3?m.map(Number):null;};function audit(){pending=false;const dark=document.documentElement.dataset.theme==='dark';for(const n of document.body.querySelectorAll('*')){if(n.namespaceURI!=='http://www.w3.org/1999/xhtml')continue;for(const a of ['data-night-surface','data-night-ink','data-night-border'])n.removeAttribute(a);if(!dark)continue;const c=getComputedStyle(n),bg=color(c.backgroundColor),ink=color(c.color),border=color(c.borderTopColor);if(bg&&(bg.length<4||bg[3]>.8)&&Math.min(...bg.slice(0,3))>155){const [r,g,b]=bg;let tone='neutral';if(r-g>8&&r-b>8)tone=g-b>12?'orange':'red';else if(b-r>7&&b-g>4)tone=r-g>5?'purple':'blue';else if(g-r>5)tone='green';n.setAttribute('data-night-surface',tone);}if(ink&&Math.max(...ink.slice(0,3))<175)n.setAttribute('data-night-ink','');if(border&&Math.min(...border.slice(0,3))>155)n.setAttribute('data-night-border','');}}function schedule(){if(!pending){pending=true;requestAnimationFrame(audit);}}new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});schedule();})();
+/* Adapt legacy surfaces and measure text contrast against their actual background. */
+(()=>{
+ let pending=false;const inlineColors=new WeakMap(),flags=['data-night-surface','data-night-ink','data-night-border'];
+ const color=s=>{const m=s.match(/[\d.]+/g);return m&&m.length>=3?m.map(Number):null;};
+ const luminance=c=>c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+ const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+ const blend=(a,b)=>a.slice(0,3).map((v,i)=>v*(a[3]??1)+b[i]*(1-(a[3]??1)));
+ const palette={neutral:[213,231,217],green:[158,225,179],red:[255,179,175],orange:[255,211,139],blue:[166,200,255],purple:[220,192,255],dark:[16,37,26]};
+ function tone([r,g,b]){if(r-g>8&&r-b>8)return g-b>12?'orange':'red';if(b-r>7&&b-g>4)return r-g>5?'purple':'blue';return g-r>5?'green':'neutral';}
+ function audit(){
+  pending=false;document.documentElement.classList.add('contrast-checking');const finish=()=>requestAnimationFrame(()=>document.documentElement.classList.remove('contrast-checking'));const dark=document.documentElement.dataset.theme==='dark',nodes=[...document.body.querySelectorAll('*')].filter(n=>n.namespaceURI==='http://www.w3.org/1999/xhtml'&&!/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(n.tagName));
+  for(const n of nodes){for(const a of flags)n.removeAttribute(a);const saved=inlineColors.get(n);if(saved){if(saved.value)n.style.setProperty('color',saved.value,saved.priority);else n.style.removeProperty('color');inlineColors.delete(n);}}
+  if(!dark){finish();return;}
+  const backgrounds=new WeakMap();function background(n){if(!n)return [17,29,24];if(backgrounds.has(n))return backgrounds.get(n);const bg=color(getComputedStyle(n).backgroundColor)||[0,0,0,0],out=bg[3]===1||bg.length===3?bg.slice(0,3):blend(bg,background(n.parentElement));backgrounds.set(n,out);return out;}
+  for(const n of nodes){
+   let c=getComputedStyle(n);const bg=color(c.backgroundColor),border=color(c.borderTopColor);
+   if(bg&&(bg.length<4||bg[3]>.8)&&Math.min(...bg.slice(0,3))>155)n.setAttribute('data-night-surface',tone(bg));
+   if(border&&Math.min(...border.slice(0,3))>155)n.setAttribute('data-night-border','');
+   if(![...n.childNodes].some(t=>t.nodeType===Node.TEXT_NODE&&t.textContent.trim())&&!/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName))continue;
+   c=getComputedStyle(n);const ink=color(c.color),surface=background(n);if(!ink)continue;
+   const large=parseFloat(c.fontSize)>=24||(parseFloat(c.fontSize)>=18.66&&parseInt(c.fontWeight)>=700),minimum=large?3:4.5;
+   if(ratio(blend(ink,surface),surface)>=minimum)continue;
+   let key=tone(ink);if(ratio(palette[key],surface)<minimum)key=ratio(palette.dark,surface)>ratio(palette.neutral,surface)?'dark':'neutral';n.setAttribute('data-night-ink',key);
+   // A few older ID selectors use !important; restore any original inline color in light mode.
+   const actual=color(getComputedStyle(n).color);if(actual&&ratio(blend(actual,surface),surface)<minimum){inlineColors.set(n,{value:n.style.getPropertyValue('color'),priority:n.style.getPropertyPriority('color')});n.style.setProperty('color','rgb('+palette[key].join(',')+')','important');}
+  }
+  finish();
+ }
+ function schedule(){if(!pending){pending=true;requestAnimationFrame(audit);}}
+ new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','disabled']});
+ new MutationObserver(()=>{document.documentElement.classList.add('theme-changing');schedule();requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('theme-changing')));}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});schedule();
+})();

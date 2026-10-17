@@ -19,7 +19,7 @@ function main(){
  if(chosen.status!==0){if(chosen.stderr?.includes('-128'))return;throw Error(chosen.stderr||'Impossible de choisir le dossier.');}
  const version=JSON.parse(fs.readFileSync(new URL('./package.json',import.meta.url))).version;
  const folder=validateUpdateFolder(chosen.stdout.trim(),version);
- const result=spawnSync(process.execPath,[path.join(folder,'mac-service.js'),'install'],{cwd:folder,stdio:'inherit'});
+ const result=spawnSync(process.execPath,[path.join(folder,'mac-service.js'),'install','--no-open'],{cwd:folder,stdio:'inherit'});
  if(result.error)throw result.error;process.exitCode=result.status??1;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))try{main();}catch(e){console.error(e.message);process.exitCode=1;}

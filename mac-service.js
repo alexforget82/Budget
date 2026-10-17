@@ -22,6 +22,10 @@ export const shellQuote=s=>"'"+String(s).replaceAll("'","'\"'\"'")+"'";
 export function shortcutScript(node,script,action=''){
  return '#!/bin/bash\n'+shellQuote(node)+' '+shellQuote(script)+(action?' '+shellQuote(action):'')+'\nBUDGET_RESULT=$?\nif [ "$BUDGET_RESULT" -ne 0 ]; then read -r -p "Appuyez sur Entrée pour fermer."; fi\nexit "$BUDGET_RESULT"\n';
 }
+// Existing installations and explicit quiet updates never open browser or Finder windows.
+export function openAfterInstall({firstInstall,quiet,shortcuts,origin},open){
+ if(firstInstall&&!quiet){open(shortcuts);open(origin);}
+}
 function command(exe,args,allowFailure=false){const r=spawnSync(exe,args,{encoding:'utf8'});if(r.error)throw r.error;if(r.status&&!allowFailure)throw Error((r.stderr||r.stdout||exe+' a échoué').trim());return r;}
 async function status(){try{const r=await fetch('http://127.0.0.1:3030/api/private/status',{signal:AbortSignal.timeout(1500)});return r.ok?await r.json():null;}catch{return null;}}
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
@@ -53,6 +57,7 @@ async function main(){
  const running=await status(),targetKey=createHash('sha256').update(path.join(root,'data')).digest('hex');
  if(running&&(!loaded||running.data_key!==targetKey))throw Error('Un budget est déjà ouvert dans une fenêtre Terminal. Arrêtez-le avec Control + C dans cette fenêtre, puis relancez cette installation. Tailscale peut rester connecté.');
  const existingData=path.join(root,'data','budget.sqlite'),incomingData=path.join(source,'data','budget.sqlite');
+ const firstInstall=!fs.existsSync(existingData);
  if(!fs.existsSync(existingData)&&!fs.existsSync(incomingData))throw Error('Placez votre dossier data actuel à côté de ce fichier avant la première installation. Aucun budget vide n’a été créé.');
  if(loaded){command('/bin/launchctl',['bootout',service]);for(let i=0;i<50&&await status();i++)await delay(200);if(await status())throw Error('Le serveur précédent ne s’est pas arrêté. Aucune mise à jour effectuée.');}
  fs.mkdirSync(root,{recursive:true,mode:0o700});fs.mkdirSync(logs,{recursive:true,mode:0o700});fs.mkdirSync(agents,{recursive:true,mode:0o700});
@@ -82,8 +87,10 @@ async function main(){
  for(const [name,script,action] of [['Ouvrir Mon Budget.command','mac-service.js','open'],['Mettre a jour Mon Budget.command','mac-update.js',''],['Desactiver Mon Budget.command','mac-service.js','stop']]){
   const file=path.join(shortcuts,name);fs.writeFileSync(file,shortcutScript(process.execPath,path.join(root,script),action),{mode:0o700});fs.chmodSync(file,0o700);
  }
- console.log('Raccourcis permanents : '+shortcuts);command('/usr/bin/open',[shortcuts],true);
+ console.log('Raccourcis permanents : '+shortcuts);
  console.log('Pour les prochaines versions, utilisez Mettre a jour Mon Budget.command et choisissez le nouveau dossier téléchargé.');
- console.log('Gardez Tailscale connecté, le Mac allumé et le couvercle ouvert.');command('/usr/bin/open',[ready.origin],true);
+ console.log('Gardez Tailscale connecté, le Mac allumé et le couvercle ouvert.');
+ openAfterInstall({firstInstall,quiet:process.argv.includes('--no-open'),shortcuts,origin:ready.origin},target=>command('/usr/bin/open',[target],true));
+ if(!firstInstall||process.argv.includes('--no-open'))console.log('Mise à jour terminée. Actualisez votre onglet Safari déjà ouvert.');
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{console.error('\n'+e.message);process.exitCode=1;});

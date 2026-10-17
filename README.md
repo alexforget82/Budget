@@ -1,4 +1,4 @@
-# Mon Budget 5.0.1
+# Mon Budget 5.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,17 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.1 : lisibilité et mises à jour discrètes
+
+- Le numéro de version est déplacé tout en bas du menu gauche, sous **+ Transaction**. Il reste visible sous les commandes du menu compact sur téléphone.
+- Le mode sombre vérifie aussi le contraste des anciens libellés et boutons sur leur fond effectif. Les couleurs de texte sont corrigées au besoin, en conservant les repères de couleur quand ils restent lisibles. Les textes d’aide dans les champs et les commandes désactivées sont plus lisibles. Le retour au mode clair restaure les couleurs d’origine, même pour les anciens styles intégrés dans les éléments.
+- Une mise à jour d’une installation existante ne lance plus de nouvelle fenêtre Safari ni de fenêtre Finder. Le service redémarre en arrière-plan : **actualisez votre onglet déjà ouvert**. Cela fonctionne aussi si la v5.1 est lancée par un ancien raccourci de mise à jour. Le raccourci **Ouvrir Mon Budget.command** continue d’ouvrir le budget à la demande; une première installation peut toujours ouvrir l’adresse automatiquement.
+- Les catégories et les transactions existantes sont conservées. La reprise de catégories Lunch Money nécessite votre liste ou export : aucune catégorie personnelle n’est inventée ni remplacée par cette version.
+
+`npm test` vérifie 52 tests Node et 60 tests API. `python3 tests/budget-v51-ui.py` vérifie l’emplacement du numéro de version, le contraste des catégories et des fenêtres de saisie, les changements clair/sombre, la restauration des anciens styles et l’affichage mobile. Les tests du service Mac vérifient qu’une mise à jour ne demande aucune ouverture de Safari ou Finder; l’exécution réelle du service reste à faire sur macOS.
+
+Aperçus avec données fictives : [catégories en mode sombre](docs/v51-categories-sombre.png) · [sur iPhone](docs/v51-categories-iphone.png).
 
 ## Nouveautés 5.0.1 : toute la largeur du navigateur
 
@@ -32,7 +43,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.0.1**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 
@@ -465,5 +476,5 @@ Vérification supplémentaire : `python3 tests/transactions-ui.py` (Playwright/C
 
 ## Vérifier la v5.0
 
-`npm test` vérifie 50 tests Node et 60 tests d’intégration API avec des bases temporaires.
+`npm test` vérifie 52 tests Node et 60 tests d’intégration API avec des bases temporaires.
 `python3 tests/budget-v50-ui.py` vérifie la répartition de paie, les projets, les règles et la priorité du choix manuel, le bilan, les chiffres expliqués, la persistance Clair/Sombre/Automatique et cinq largeurs de fenêtre. Les parcours `ui-smoke.py`, `dashboard-v47-ui.py` et `planning-v4-ui.py` couvrent aussi la navigation, les fenêtres de saisie, la personnalisation, le calendrier et les prévisions. Ces parcours utilisent Playwright et Chromium. Le service macOS est couvert par les tests de génération et de validation de l’installateur; l’installation réelle doit être exécutée sur votre Mac.

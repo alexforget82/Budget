@@ -32,3 +32,11 @@ test('update folder refuses downgrades and unrelated applications',t=>{
 test('incomplete release is rejected before its installer can execute',t=>{
  const dir=fixture(t);release(dir);fs.unlinkSync(path.join(dir,'server.js'));assert.throws(()=>validateUpdateFolder(dir,'4.0.1'));
 });
+
+import {openAfterInstall} from '../mac-service.js';
+test('an existing installation never opens Safari or Finder, including calls from an older updater',()=>{
+ const opened=[];openAfterInstall({firstInstall:false,quiet:false,shortcuts:'/Applications/Mon Budget',origin:'https://budget.ts.net'},target=>opened.push(target));assert.deepEqual(opened,[]);
+});
+test('a quiet update opens nothing, while a first installation keeps its opening shortcuts',()=>{
+ const opened=[],options={firstInstall:true,quiet:true,shortcuts:'/Applications/Mon Budget',origin:'https://budget.ts.net'};openAfterInstall(options,target=>opened.push(target));assert.deepEqual(opened,[]);openAfterInstall({...options,quiet:false},target=>opened.push(target));assert.deepEqual(opened,[options.shortcuts,options.origin]);
+});

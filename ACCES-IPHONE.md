@@ -39,7 +39,7 @@ Le budget est installé dans **`~/Library/Application Support/Mon Budget`**. Sa 
 
 ### Mises à jour suivantes
 
-À partir de la 4.0.1, téléchargez et décompressez la nouvelle version, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command**, puis sélectionnez ce nouveau dossier. Vous pouvez aussi exécuter explicitement son installateur avec Bash, comme indiqué ci-dessus. Il n’est plus nécessaire de recopier `data`. Le programme arrête son service, sauvegarde la base active, remplace les fichiers de l’application et redémarre la nouvelle version. Il réutilise toujours les données du dossier fixe, même si une copie de `data` se trouve dans le ZIP décompressé.
+À partir de la 4.0.1, téléchargez et décompressez la nouvelle version, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command**, puis sélectionnez ce nouveau dossier. Vous pouvez aussi exécuter explicitement son installateur avec Bash, comme indiqué ci-dessus. Il n’est plus nécessaire de recopier `data`. Le programme arrête son service, sauvegarde la base active, remplace les fichiers de l’application et redémarre la nouvelle version. Il réutilise toujours les données du dossier fixe, même si une copie de `data` se trouve dans le ZIP décompressé. À partir de la v5.1, une mise à jour n’ouvre plus Safari ni Finder : actualisez votre onglet existant après le message de fin. Le raccourci Ouvrir Mon Budget.command reste disponible si vous souhaitez ouvrir le budget.
 
 **Copier des fichiers ou télécharger un ZIP ne déclenche pas de code automatiquement.** Il faut lancer ce fichier pour appliquer une mise à jour. Le démarrage à l’ouverture de session, lui, est automatique. Cette version ne télécharge aucune mise à jour toute seule.
 
