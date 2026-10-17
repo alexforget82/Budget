@@ -34,6 +34,20 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_dashboard_layout_devices_validation_and_financial_readonly(self):
+  aid=self.account();state=self.get('/api/state');initial=self.get('/api/backup/export')['tables'];desktop=copy.deepcopy(state['dashboard_layout']['desktop']);mobile=state['dashboard_layout']['mobile'];desktop['layout'].reverse();desktop['layout'][0]['visible']=False;desktop['layout'][1]['width']='full'
+  out=self.post('/api/dashboard-layout',{'device':'desktop','layout':desktop['layout'],'expected_revision':desktop['revision']});self.assertEqual(out['dashboard_layout']['desktop']['layout'],desktop['layout']);self.assertEqual(out['dashboard_layout']['mobile'],mobile);after=self.get('/api/backup/export')['tables']
+  for table in initial:
+   if table!='app_settings':self.assertEqual(initial[table],after[table])
+  self.assertEqual(self.get('/api/state')['forecast'],state['forecast']);self.assertEqual(self.get('/api/state')['safe_cents'],100000)
+  before=self.get('/api/backup/export')['tables']
+  for layout in [[],desktop['layout'][:-1],desktop['layout']+[desktop['layout'][0]],[{**b,'visible':'false'} for b in desktop['layout']],[{**b,'width':'evil'} for b in desktop['layout']]]:self.post('/api/dashboard-layout',{'device':'desktop','layout':layout,'expected_revision':out['dashboard_layout']['desktop']['revision']},400)
+  self.post('/api/dashboard-layout',{'device':'other','layout':desktop['layout'],'expected_revision':desktop['revision']},400);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_dashboard_layout_conflicts_restart_and_backup_restore(self):
+  self.account();state=self.get('/api/state')['dashboard_layout'];payload={'device':'mobile','layout':copy.deepcopy(state['mobile']['layout']),'expected_revision':state['mobile']['revision']};payload['layout'][0]['visible']=False;out=self.post('/api/dashboard-layout',payload);before=self.get('/api/backup/export')['tables'];self.post('/api/dashboard-layout',{**payload,'layout':list(reversed(payload['layout']))},409);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  backup=self.get('/api/backup/export');self.stop();self.start();self.assertEqual(self.get('/api/state')['dashboard_layout'],out['dashboard_layout']);self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/state')['dashboard_layout'],out['dashboard_layout'])
+ def test_dashboard_personalization_does_not_break_financial_undo(self):
+  aid=self.account();state=self.transaction(aid,-25);token=state['support41']['undo']['token'];layout=state['dashboard_layout']['desktop'];layout['layout'][0]['visible']=False;out=self.post('/api/dashboard-layout',{'device':'desktop','layout':layout['layout'],'expected_revision':layout['revision']});self.assertTrue(self.get('/api/state')['support41']['undo']['available']);state=self.post('/api/support/undo',{'token':token});self.assertEqual(state['cash_cents'],100000);self.assertEqual(state['dashboard_layout'],out['dashboard_layout']);self.assertFalse(state['transactions'])
  def make_category(self,name):return next(c['id'] for c in self.post('/api/categories',{'name':name})['categories'] if c['name']==name)
  def make_subcategory(self,parent,name):return next(c['id'] for c in self.post('/api/subcategories',{'category_id':parent,'name':name})['subcategories'] if c['category_id']==parent and c['name']==name)
  def test_subcategories_assignment_report_filter_and_metadata_edit(self):

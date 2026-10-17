@@ -1,9 +1,10 @@
+import {dashboardSetting} from './dashboard-layout.js';
 // v4.1 support tools. Financial mutations still go through the existing ledger.
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 export function createSupport({db,dir,features,today,cents,validDate}){
- const q=(sql,...a)=>db.prepare(sql).all(...a),hash=b=>createHash('sha256').update(JSON.stringify(b.tables)).digest('hex');
+ const q=(sql,...a)=>db.prepare(sql).all(...a),hash=b=>createHash('sha256').update(JSON.stringify({...b.tables,app_settings:b.tables.app_settings.filter(s=>!dashboardSetting(s.key))})).digest('hex');
  const folder=path.join(dir,'backups'),undoFile=path.join(dir,'last-change.json');let backupError=null,undoError=null;
  const get=key=>{try{const v=JSON.parse(q('SELECT value FROM app_settings WHERE key=?','v41_'+key)[0]?.value||'[]');return Array.isArray(v)?v.filter(i=>i&&typeof i.id==='string'&&typeof i.name==='string'&&(key==='profiles'?Array.isArray(i.config?.headers)&&i.config.mapping&&['ISO','DMY','MDY'].includes(i.config.date_format):i.payload?.kind==='purchase'&&validDate(i.payload.date))):[];}catch{return [];}};
  const put=(key,value)=>db.prepare('INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('v41_'+key,JSON.stringify(value));
@@ -14,7 +15,7 @@ export function createSupport({db,dir,features,today,cents,validDate}){
   return {profiles:get('profiles'),scenarios:get('scenarios'),undo:{available,token:available?u.token:null,label:available?u.label:null,error:undoError},backup:{last_date:files.at(-1)?.slice(6,16)||null,count:files.length,dates:files.map(f=>f.slice(6,16)),last_at:lastAt,error:backupError}};
  }
  function recordUndo(before,route){const after=features.exportBackup();if(hash(before)===hash(after))return;try{const temp=undoFile+'.tmp';fs.writeFileSync(temp,JSON.stringify({token:randomUUID(),label:route,after:hash(after),before}),{mode:0o600});fs.renameSync(temp,undoFile);undoError=null;}catch(e){undoError='La dernière modification ne peut pas être annulée : '+e.message;}}
- function undo(x){const u=undoRecord();if(!u||u.token!==x.token||u.after!==hash(features.exportBackup()))throw Error('Le budget a changé depuis cette modification. Actualisez; aucune donnée n’a été remplacée.');const result=features.post('/api/backup/restore',{backup:u.before,confirm:'REMPLACER'});fs.unlinkSync(undoFile);return result;}
+ function undo(x){const u=undoRecord();if(!u||u.token!==x.token||u.after!==hash(features.exportBackup()))throw Error('Le budget a changé depuis cette modification. Actualisez; aucune donnée n’a été remplacée.');const backup=structuredClone(u.before);backup.tables.app_settings=backup.tables.app_settings.filter(s=>!dashboardSetting(s.key)).concat(features.exportBackup().tables.app_settings.filter(s=>dashboardSetting(s.key)));const result=features.post('/api/backup/restore',{backup,confirm:'REMPLACER'});fs.unlinkSync(undoFile);return result;}
  function dailyBackup(force=false){try{fs.mkdirSync(folder,{recursive:true,mode:0o700});const file=path.join(folder,'daily-'+today()+'.json');if(force||!fs.existsSync(file)){const tmp=file+'.tmp';fs.writeFileSync(tmp,JSON.stringify(features.exportBackup()),{mode:0o600});fs.renameSync(tmp,file);}const files=fs.readdirSync(folder).filter(f=>/^daily-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();for(const old of files.slice(0,-30))fs.unlinkSync(path.join(folder,old));backupError=null;}catch(e){backupError='Sauvegarde quotidienne impossible : '+e.message;}}
  function search(term){const normalize=s=>String(s??'').normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA'),needle=normalize(term).trim();if(needle.length<2||needle.length>100)return {results:[]};const results=[];
   for(const [table,kind,column,route] of [['accounts','Compte','name','comptes'],['envelopes','Enveloppe','name','enveloppes'],['recurring','Récurrence','description','recurrences'],['transactions','Transaction','description','transactions'],['account_transfers','Virement','description','virements'],['goals','Objectif','name','objectifs']]){

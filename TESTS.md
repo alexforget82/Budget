@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.6
+# Vérifications — Mon Budget 4.7
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **101 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **104 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,13 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 51 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 54 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+
+La 4.7 ajoute trois tests API : validation des six blocs et des paramètres, sauvegarde indépendante téléphone/ordinateur, refus des modifications concurrentes sans écritures, conservation après redémarrage et restauration JSON, soldes et prévisions inchangés, maintien de l’annulation financière après une personnalisation et conservation des dispositions lors de cette annulation. Total : 50 tests Node et 54 tests API.
+
+`python3 tests/dashboard-v47-ui.py` : glisser-déposer natif, ordre réel des éléments, largeur, masquage, rechargement, navigation, disposition mobile distincte, boutons Monter/Descendre, tous les blocs masqués puis retour aux valeurs par défaut, coupure réseau simulée et nouvelle tentative, conflit entre deux fenêtres avec les deux résolutions possibles. Largeurs 375/390/768/1024/1440, aucun débordement ni erreur JavaScript. La base est comparée avant/après (seuls les réglages de disposition changent); les prévisions sont identiques. Captures fictives.
+
+Régressions exécutées en 4.7 : `tests/ui-smoke.py`, `tests/budget-v44-ui.py`, `tests/planning-ui.py` et `tests/mac-service-simulation.py`. La simulation de service vérifie la copie des nouveaux fichiers et les données conservées avec un faux launchctl. macOS, Safari iOS et Tailscale réels ne sont pas accessibles depuis cet environnement.
 
 La 4.6 ajoute cinq tests API intégrés : sous-catégories homonymes dans des parents différents et doublons refusés; affectation, modification, rapport et filtre d’une transaction; archivage sans perte d’historique et refus des nouvelles affectations archivées; aperçu de fusion sans écritures, refus d’un jeton périmé, regroupement des enfants, addition des plafonds et annulation exacte; sauvegarde complète, contrôle de cohérence parent/enfant, import CSV avec valeur par défaut ou colonne et restauration d’un ancien JSON; migration réelle d’un schéma SQLite 4.5 avec copie cohérente préalable et préservation des identifiants et des soldes. Plusieurs de ces vérifications partagent un même test.
 

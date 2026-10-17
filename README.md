@@ -1,4 +1,4 @@
-# Mon Budget 4.6
+# Mon Budget 4.7
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,22 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 4.7 : tableau de bord personnalisable
+
+Dans **Tableau de bord → Personnaliser**, organisez six blocs : Soldes et disponible, Disponible par période, Points à surveiller, Prévision sur 30 jours, Vos enveloppes et Prochains mouvements.
+
+- **Déplacer** : sur ordinateur, glissez la poignée d’un bloc vers un autre. La page défile près du bord pendant un déplacement. Les boutons **Monter / Descendre** permettent aussi de changer l’ordre, au clavier ou sur téléphone.
+- **Afficher / masquer** : décochez Afficher. Pendant la personnalisation, la barre du bloc reste accessible même si son contenu est masqué. Si tous les blocs sont masqués, le bouton Personnaliser reste disponible.
+- **Largeur** : choisissez Largeur normale ou Pleine largeur sur ordinateur. Sur les petits écrans, les blocs s’empilent pour rester lisibles; le téléphone n’affiche pas de réglage de largeur.
+- **Deux dispositions** : téléphone (largeur de fenêtre jusqu’à 760 px) et ordinateur. Chacune a son ordre, ses blocs visibles et ses largeurs. Passer d’un format à l’autre ne remplace pas la disposition de l’autre format.
+- **Enregistrement automatique** : les choix sont sauvegardés dans les données de l’application. Le statut précise l’enregistrement en cours ou terminé. Ils sont conservés après une mise à jour et inclus dans les sauvegardes JSON.
+- **Connexion interrompue** : le brouillon reste affiché et Réessayer l’enregistrement permet de le sauvegarder. Ne quittez pas la page avant confirmation d’enregistrement. Si cette disposition a été modifiée dans une autre fenêtre, choisissez Charger la version enregistrée ou Conserver mes choix; aucun écrasement silencieux.
+- **Rétablir la disposition par défaut** restaure uniquement le format actuellement affiché. Terminer quitte le mode personnalisation.
+
+Ces réglages déplacent les blocs existants : pas de copie de chiffres ni de nouveau calcul financier. Les soldes, réserves, transactions, prévisions et règles du Safe-to-Spend restent identiques. Personnaliser ne remplace pas l’annulation de la dernière opération financière; une annulation financière conserve les dispositions actuelles.
+
+Aperçus avec données fictives : [mode Personnaliser](docs/v47-personnalisation.png) · [tableau de bord](docs/v47-dashboard.png) · [sur iPhone](docs/v47-iphone.png).
 
 ## Nouveautés 4.6 : sous-catégories, archivage et fusion
 
@@ -36,7 +52,7 @@ Aperçus fictifs : [Catégories sur ordinateur](docs/v45-categories.png) · [sur
 
 ## Nouveautés 4.4 : vos enveloppes, expliquées et plus faciles à utiliser
 
-Le badge indique désormais **v4.6**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
+Le badge indique désormais **v4.7**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
 
 - **Voir la fiche**, dans Enveloppes et Budgets libres : réserve restante, achats du mois, budget effectif de la période (y compris une exception), prochain renouvellement non encore effectué et opérations associées. Les dix dernières opérations sont affichées; **Afficher tout l’historique** donne accès aux autres par pages de 50, avec accès à leur éditeur existant. Les opérations importées sans effet sur les soldes sont identifiées.
 - **Configurer l’usage**, depuis la fiche : achats au fil de la période, paiement à date fixe ou budget libre. Pour plusieurs enveloppes, cochez **Sélectionner**, puis **Configurer la sélection**. L’aperçu indique les réserves conservées, le mode et le budget choisis, les éventuels paiements distincts conservés et le minimum prévu sur 90 jours. Rien ne change avant confirmation. Un changement intervenu ailleurs invalide l’aperçu; un minimum négatif exige une confirmation explicite. L’annulation protégée reste disponible après l’application.
@@ -71,7 +87,7 @@ Aperçus avec données fictives : [budget réservé sur iPhone](docs/v43-budget-
 
 ## Nouveautés 4.2 : Budgets libres
 
-Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.6**.
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.7**.
 
 - **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
 - **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.
