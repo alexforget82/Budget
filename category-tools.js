@@ -1,5 +1,12 @@
 import {createHash} from 'node:crypto';
 export const normalizeCategory=value=>String(value).normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA').replace(/\s+/g,' ').trim();
+export const lunchMoneyGroups=[
+ {name:'Revenus',categories:['Salaire Alex','Salaire Jenny','Allocation canadienne pour enfants','Allocation famille','Rente RRQ','Rente FRV',"Remboursement d'assurance", "Remboursement d'impôt",'Autres revenus']},
+ {name:'Dépenses fixes',categories:['Frais bancaires','Hydro-Québec','Ligne de crédit','Marge de crédit','REEE','MNP','Pension alimentaire','Cellulaires','TELUS','IPTV','Abonnements numériques','Assurances Vie','Assurances Auto','Assurance Habitation','Paiement auto','Permis et Plaque','Garderie','Taxes (municipales et scolaires)']},
+ {name:'Dépenses variables',categories:['Anaïs : Dépenses personnelles','Essence Alex','Essence Jenny','Epicerie','Restaurant','Couches et Lait','Médicaments','Pharmacie']},
+ {name:'Dépenses non mensuelles',categories:['Piscine et terrassement','Vêtements','Electroniques','Scolarité','Activités','Meubles et fournitures','Quincaillerie et outils','Essentiel pour la maison','Santé : Rendez-vous et achats','Auto : Entretien et pièces','Maison : Entretien et amélioration']},
+ {name:'Transfert',categories:['Ajustement de solde','Paiement de carte de crédit','Transfert entre comptes']}
+];
 export function createCategoryTools({db,atomic,exportBackup,today}){
  const q=(sql,...a)=>db.prepare(sql).all(...a),run=(sql,...a)=>db.prepare(sql).run(...a);
  const parent=id=>q('SELECT * FROM categories WHERE id=?',Number(id))[0];
@@ -11,7 +18,23 @@ export function createCategoryTools({db,atomic,exportBackup,today}){
   if(limit!==null&&(!Number.isSafeInteger(limit)||limit>1e12))throw Error('Plafond combiné trop élevé.');
   return {source,target,mapping,count:q('SELECT COUNT(*) n FROM transactions WHERE category_id=?',source.id)[0].n,source_limit_cents:sourceLimit,target_limit_cents:targetLimit,combined_limit_cents:limit,token:createHash('sha256').update(JSON.stringify([exportBackup().tables,today(),source.id,target.id])).digest('hex')};
  }
+ const groupKey='category_groups_v511';
+ function catalog(){let assignments={};try{const value=JSON.parse(q('SELECT value FROM app_settings WHERE key=?',groupKey)[0]?.value||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))for(const [id,group] of Object.entries(value))if(/^\d+$/.test(id)&&lunchMoneyGroups.some(g=>g.name===group))assignments[id]=group;}catch{}return {groups:lunchMoneyGroups.map(g=>g.name),assignments};}
+ function saveGroups(assignments){run('INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',groupKey,JSON.stringify(assignments));}
+ function catalogPreview(){
+  const catalogName=value=>normalizeCategory(value).replace(/[’‘]/g,"'"),categories=q('SELECT * FROM categories'),children=q('SELECT * FROM subcategories'),aliases={'Restaurant':['Restaurants'],'Essentiel pour la maison':['Essentiels pour la maison']},names=['Conjoint','Jenny','Alex'];
+  const rows=lunchMoneyGroups.flatMap(group=>group.categories.map(name=>{const existing=categories.find(c=>catalogName(c.name)===catalogName(name))||categories.find(c=>(aliases[name]||[]).some(a=>catalogName(c.name)===catalogName(a)));return {name,group:group.name,existing_id:existing?.id||null,existing_name:existing?.name||null,action:existing?(existing.archived?'reactivate':'reuse'):'create',children:name==='Frais bancaires'?names.map(child=>{const old=children.find(c=>c.category_id===existing?.id&&normalizeCategory(c.name)===normalizeCategory(child));return {name:child,existing_id:old?.id||null,action:old?(old.archived?'reactivate':'reuse'):'create'};}):[]};}));
+  return {rows,create_count:rows.filter(r=>r.action==='create').length,reuse_count:rows.filter(r=>r.action==='reuse').length,reactivate_count:rows.filter(r=>r.action==='reactivate').length,token:createHash('sha256').update(JSON.stringify([exportBackup().tables,today(),rows])).digest('hex')};
+ }
  function post(route,x){
+  if(route==='/api/categories/catalog-preview')return catalogPreview();
+  if(route==='/api/categories/catalog-apply'){
+   const preview=catalogPreview();if(x.token!==preview.token)throw Error('Le budget a changé depuis l’aperçu. Recommencez.');
+   atomic(()=>{const assignments=catalog().assignments;for(const row of preview.rows){const id=row.existing_id||Number(run('INSERT INTO categories(name) VALUES(?)',row.name).lastInsertRowid);if(row.action==='reactivate')run('UPDATE categories SET archived=0 WHERE id=?',id);assignments[id]=row.group;for(const child of row.children){if(child.existing_id){if(child.action==='reactivate')run('UPDATE subcategories SET archived=0 WHERE id=?',child.existing_id);}else run('INSERT INTO subcategories(category_id,name) VALUES(?,?)',id,child.name);}}saveGroups(assignments);});return;
+  }
+  if(route==='/api/categories/group'){
+   const c=parent(x.id);if(!c||!(x.group===null||lunchMoneyGroups.some(g=>g.name===x.group)))throw Error('Catégorie ou groupe invalide.');const assignments=catalog().assignments;if(x.group===null)delete assignments[c.id];else assignments[c.id]=x.group;saveGroups(assignments);return;
+  }
   if(route==='/api/categories/merge-preview')return mergePreview(x);
   if(route==='/api/categories/merge'){
    const p=mergePreview(x);if(x.token!==p.token)throw Error('Le budget a changé depuis l’aperçu. Recommencez.');
@@ -29,5 +52,5 @@ export function createCategoryTools({db,atomic,exportBackup,today}){
   if(route==='/api/subcategories/archive'){const s=q('SELECT * FROM subcategories WHERE id=?',Number(x.id))[0];if(!s||typeof x.archived!=='boolean'||x.expected_archived!==s.archived)throw Error('Sous-catégorie modifiée. Actualisez.');run('UPDATE subcategories SET archived=? WHERE id=?',x.archived?1:0,s.id);return;}
   throw Error('Action inconnue.');
  }
- return {post,subcategoryId};
+ return {post,subcategoryId,catalog};
 }

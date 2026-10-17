@@ -1,4 +1,4 @@
-# Mon Budget 5.1
+# Mon Budget 5.1.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -8,12 +8,30 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Nouveautés 5.1.1 : votre liste Lunch Money
+
+Dans **Catégories → Reprendre ma liste Lunch Money**, vérifiez l’aperçu puis choisissez **Ajouter ces catégories et groupes**. Cette étape s’effectue dans votre budget local après la mise à jour; télécharger le ZIP seul ne modifie pas les catégories.
+
+La liste reprend vos **49 catégories** dans cinq groupes : Revenus, Dépenses fixes, Dépenses variables, Dépenses non mensuelles et Transfert. Les groupes sont des titres d’organisation : ils ne prennent pas le niveau des sous-catégories. Sous **Frais bancaires**, **Conjoint**, **Jenny** et **Alex** sont ajoutées comme sous-catégories. Vous pouvez ensuite créer autant de sous-catégories que nécessaire sous chaque catégorie, avec un seul niveau.
+
+- Les catégories déjà présentes sont réutilisées, y compris les différences d’accents et de casse. Restaurant réutilise Restaurants, et Essentiel pour la maison réutilise Essentiels pour la maison si ces noms existent déjà. Les noms et identifiants existants sont conservés.
+- Les catégories absentes de votre liste restent disponibles dans Autres catégories conservées. Les catégories archivées correspondantes à réactiver sont signalées dans l’aperçu.
+- Une nouvelle application de la liste ne crée pas de doublons. Un aperçu devenu périmé est refusé; l’ajout est atomique et compatible avec l’annulation et les sauvegardes.
+- **Filtrer par groupe** et la recherche permettent de retrouver une catégorie. Le choix **Groupe** sur chaque fiche permet de la déplacer. Les sélecteurs de catégories des transactions et imports reprennent aussi ces regroupements.
+- Les libellés du groupe Transfert ne changent pas le type d’une opération : utilisez **Virements** pour déplacer de l’argent ou payer une carte, et **Comptes → Vérifier avec votre banque** pour un ajustement. L’ajout ne crée aucun revenu, aucune dépense ni réserve automatique.
+
+Les transactions, comptes, plafonds et réserves existants restent identiques lors de l’ajout. Les nouveaux noms ne créent pas de budgets ou d’échéances dans la prévision.
+
+`npm test` vérifie 52 tests Node et 62 tests API. Le parcours `python3 tests/lunch-categories-ui.py` vérifie l’aperçu, les catégories conservées, les groupes, les sous-catégories et leur utilisation dans une transaction réelle, ainsi que l’affichage sombre et mobile.
+
+Aperçus avec données fictives : [Frais bancaires et ses sous-catégories](docs/v511-frais-bancaires.png) · [sur iPhone](docs/v511-frais-bancaires-iphone.png).
+
 ## Nouveautés 5.1 : lisibilité et mises à jour discrètes
 
 - Le numéro de version est déplacé tout en bas du menu gauche, sous **+ Transaction**. Il reste visible sous les commandes du menu compact sur téléphone.
 - Le mode sombre vérifie aussi le contraste des anciens libellés et boutons sur leur fond effectif. Les couleurs de texte sont corrigées au besoin, en conservant les repères de couleur quand ils restent lisibles. Les textes d’aide dans les champs et les commandes désactivées sont plus lisibles. Le retour au mode clair restaure les couleurs d’origine, même pour les anciens styles intégrés dans les éléments.
 - Une mise à jour d’une installation existante ne lance plus de nouvelle fenêtre Safari ni de fenêtre Finder. Le service redémarre en arrière-plan : **actualisez votre onglet déjà ouvert**. Cela fonctionne aussi si la v5.1 est lancée par un ancien raccourci de mise à jour. Le raccourci **Ouvrir Mon Budget.command** continue d’ouvrir le budget à la demande; une première installation peut toujours ouvrir l’adresse automatiquement.
-- Les catégories et les transactions existantes sont conservées. La reprise de catégories Lunch Money nécessite votre liste ou export : aucune catégorie personnelle n’est inventée ni remplacée par cette version.
+- Les catégories et les transactions existantes sont conservées. La reprise de votre liste Lunch Money est disponible à partir de la v5.1.1, avec un aperçu avant ajout.
 
 `npm test` vérifie 52 tests Node et 60 tests API. `python3 tests/budget-v51-ui.py` vérifie l’emplacement du numéro de version, le contraste des catégories et des fenêtres de saisie, les changements clair/sombre, la restauration des anciens styles et l’affichage mobile. Les tests du service Mac vérifient qu’une mise à jour ne demande aucune ouverture de Safari ou Finder; l’exécution réelle du service reste à faire sur macOS.
 
@@ -43,7 +61,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.1**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 

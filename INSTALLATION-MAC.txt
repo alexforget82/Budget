@@ -1,9 +1,9 @@
-VERSION 5.1 — LISIBILITE, VERSION EN BAS ET MISE A JOUR DISCRETE
+VERSION 5.1.1 — CATEGORIES LUNCH MONEY ET GROUPES
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v5.1.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v5.1.1.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
 et budget-v50.css.
 
@@ -315,4 +315,7 @@ Les boutons de navigation et de recherche sont plus lisibles en mode sombre.
 
 La mise à jour n’ouvre plus Safari ni Finder. Actualisez votre onglet existant.
 Le numéro de version se trouve sous le bouton + Transaction.
-Les catégories Lunch Money seront reprises une fois votre liste fournie.
+Catégories > Reprendre ma liste Lunch Money > Ajouter ces catégories et groupes.
+La liste est ajoutée après vérification de l’aperçu, sans modifier les transactions.
+Frais bancaires contient les sous-catégories Conjoint, Jenny et Alex.
+Les groupes ne prennent pas le niveau des sous-catégories.
