@@ -1,4 +1,4 @@
-# Mon Budget 3.6
+# Mon Budget 3.7
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,14 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Sans fenêtre Terminal — v3.7
+
+**Installer acces automatique.command** installe le budget en arrière-plan et le démarre à chaque ouverture de session Mac. À la première installation seulement, arrêtez l’ancien serveur avec Control + C et placez votre dossier `data` à côté du nouvel installateur. Vous pourrez fermer Terminal une fois le service prêt.
+
+L’application et les données actives résident ensuite dans `~/Library/Application Support/Mon Budget`. Pour les mises à jour suivantes, décompressez le nouveau ZIP et relancez son installateur : il sauvegarde la base active, remplace l’application et la redémarre, sans recopier les données. Le téléchargement ou la copie de fichiers ne déclenche pas l’installation. **Desactiver acces automatique.command** arrête le service et supprime son démarrage automatique sans effacer les données.
+
+Tailscale doit rester connecté, le Mac allumé et son couvercle ouvert. Le démarrage se fait après ouverture de session, pas avant la connexion au Mac. [Installation et fonctionnement détaillés](ACCES-IPHONE.md#recommandé--fonctionner-sans-fenêtre-terminal--v37). L’intégration macOS/Tailscale réelle reste à vérifier sur le Mac; les essais de cycle du service utilisent un environnement simulé.
 
 ## Virements dans Transactions — v3.6
 
@@ -37,6 +45,8 @@ La configuration du plan ne modifie pas vos soldes réels. Une copie SQLite est 
 [Aperçu du plan de remboursement](docs/remboursement-carte.png) · [Aperçu mobile](docs/mobile-remboursement.png) — données fictives.
 
 ## Mettre à jour sur Mac
+
+Si vous avez installé le mode automatique, relancez uniquement **Installer acces automatique.command** depuis le nouveau ZIP. Les étapes suivantes concernent le mode manuel.
 
 **La v3 modifie aussi le serveur. La mise à jour des trois fichiers visuels ne suffit plus.**
 

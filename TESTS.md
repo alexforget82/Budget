@@ -4,7 +4,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **70 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **72 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -12,6 +12,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
+| `tests/mac-service.test.js` | 2 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
 | `tests/api-tests.py` | 26 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
@@ -180,3 +181,9 @@ Le test API des factures vérifie les six fréquences, les fins de mois et anné
 ## Saisie des virements — v3.6
 
 `python3 tests/transaction-transfers-ui.py` : réussi. Vérification du choix Virement dans la fenêtre Transactions, refus des comptes identiques, soldes banque/carte après un virement réel, absence de revenu/dépense et de réserve de crédit, virement unique prévu puis confirmé sans double débit, sept choix de répétition, règle trimestrielle, enregistrement avec poursuite de saisie, dernières opérations, retour au mode Dépense, erreur serveur visible sans écriture et cinq largeurs d’écran. Le parcours existant `tests/transactions-ui.py` a aussi réussi; `npm test` conserve ses 70 tests réussis.
+
+## Service macOS — v3.7
+
+`python3 tests/mac-service-simulation.py` : réussi, avec un vrai serveur Node et une vraie base SQLite temporaires, mais un **launchctl simulé**. Vérifie première installation, copie des données vers le dossier fixe, serveur détaché, nouvelle installation pendant son exécution, préservation de la base active même sans base dans le dossier téléchargé, sauvegardes SQLite, arrêt/désactivation sans suppression des données et refus d’arrêter un serveur manuel indépendant.
+
+`bash -n` réussit sur les quatre lanceurs `.command`. `npm test` : 46 tests Node + 26 tests API réussis. L’agent macOS réel, sa relance après ouverture de session, Finder, la veille et Tailscale/Safari restent à vérifier sur les appareils de l’utilisateur. Aucun service du Mac de l’utilisateur n’a été installé à distance.

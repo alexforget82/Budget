@@ -2,6 +2,36 @@
 
 Les données restent dans le dossier `data` de votre Mac. Le Mac et l’iPhone consultent **la même base**, sans serveur d’hébergement à louer. Le Mac doit rester allumé et connecté à Internet. Le budget n’est pas publié sur le Web public.
 
+## Recommandé : fonctionner sans fenêtre Terminal — v3.7
+
+Une installation unique permet de fermer Terminal et de démarrer le budget automatiquement à **l’ouverture de votre session Mac**. Tailscale doit lui aussi être connecté sur le Mac; activez son ouverture à la connexion dans ses réglages. Après un redémarrage, ouvrez votre session au moins une fois, puis vous pouvez verrouiller le Mac.
+
+### Première installation
+
+1. Dans l’ancienne fenêtre **Acces prive iPhone.command**, faites **Control + C** pour arrêter le serveur. Laissez Tailscale connecté.
+2. Gardez une copie complète de votre dossier actuel. Téléchargez le nouveau ZIP et décompressez-le dans un nouveau dossier.
+3. Copiez votre dossier **data** actuel dans ce nouveau dossier, à côté de `server.js`.
+4. Double-cliquez sur **Installer acces automatique.command**. Le programme vérifie Tailscale, installe le budget et ouvre son adresse privée.
+5. Quand le message indique que le budget fonctionne en arrière-plan, vous pouvez fermer Terminal. Vérifiez l’accès depuis Safari sur l’iPhone.
+
+Le budget est installé dans **`~/Library/Application Support/Mon Budget`**. Sa base active devient **`~/Library/Application Support/Mon Budget/data/budget.sqlite`**. Le dossier téléchargé sert uniquement d’installateur; son ancienne copie des données n’est plus la base utilisée. Ne lancez plus `npm start` ni l’ancien lanceur depuis un autre dossier en parallèle.
+
+### Mises à jour suivantes
+
+Téléchargez et décompressez la nouvelle version, puis double-cliquez sur **Installer acces automatique.command** dans ce nouveau dossier. Il n’est plus nécessaire de recopier `data`. Le programme arrête son service, sauvegarde la base active, remplace les fichiers de l’application et redémarre la nouvelle version. Il réutilise toujours les données du dossier fixe, même si une copie de `data` se trouve dans le ZIP décompressé.
+
+**Copier des fichiers ou télécharger un ZIP ne déclenche pas de code automatiquement.** Il faut lancer ce fichier pour appliquer une mise à jour. Le démarrage à l’ouverture de session, lui, est automatique. Cette version ne télécharge aucune mise à jour toute seule.
+
+### Arrêter ou désactiver
+
+Double-cliquez sur **Desactiver acces automatique.command**, fourni dans le ZIP. Le budget s’arrête et son démarrage automatique est supprimé. Vos données restent intactes dans le dossier fixe. Tailscale reste connecté; son relais ne peut plus joindre le serveur arrêté. Pour réactiver le budget, relancez l’installateur; il réutilise vos données du dossier fixe.
+
+Les sauvegardes avant installation/mise à jour se trouvent dans **`~/Library/Application Support/Mon Budget/data/backups`**. Les journaux de diagnostic sont dans **`~/Library/Logs/Mon Budget`** (`budget.log` et `budget-error.log`). Le service utilise un agent personnel `~/Library/LaunchAgents/ca.monbudget.private.plist`, sans mot de passe administrateur, et garde le Mac éveillé contre la veille automatique. Le Mac doit rester alimenté, connecté et **couvercle ouvert**. Une fermeture de session ou l’arrêt du Mac interrompt l’accès.
+
+Le cycle d’installation a été testé avec un `launchctl` simulé et un vrai serveur/base temporaire. L’installation effective de l’agent macOS, les permissions et le redémarrage de session restent à vérifier sur votre Mac.
+
+Les étapes ci-dessous décrivent aussi l’ancien **mode manuel**, qui nécessite de garder Terminal ouvert. Choisissez un seul mode à la fois.
+
 ## 1. Installer Tailscale sur vos deux appareils
 
 - Sur le **Mac**, installez Tailscale depuis [le site officiel](https://tailscale.com/download), ouvrez-le et connectez-vous à votre compte personnel.
@@ -34,7 +64,7 @@ Le lanceur :
 - Configure **Tailscale Serve**, sans activer **Funnel**, et affiche votre adresse HTTPS personnelle.
 - Garde le Mac éveillé contre la veille automatique lorsqu’il a lancé le serveur. Le Mac peut être verrouillé et son écran éteint.
 
-Gardez la fenêtre Terminal du serveur ouverte. **Control + C** arrête le serveur lancé par ce fichier et rend alors le budget inaccessible à distance. Après un redémarrage du Mac, relancez ce fichier. Ce n’est pas encore un service de démarrage automatique.
+Gardez la fenêtre Terminal du serveur ouverte. **Control + C** arrête le serveur lancé par ce fichier et rend alors le budget inaccessible à distance. Après un redémarrage du Mac, relancez ce fichier. Ce mode manuel ne démarre pas automatiquement; utilisez l’installateur ci-dessus pour le mode automatique.
 
 Gardez le Mac alimenté et le couvercle ouvert. Fermer le couvercle, mettre le Mac en veille ou le déconnecter d’Internet peut interrompre l’accès, même si le lanceur empêchait la veille automatique. Si le lanceur réutilise un serveur déjà ouvert, réglez aussi la veille dans les réglages du Mac.
 

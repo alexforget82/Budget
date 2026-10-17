@@ -1,3 +1,22 @@
+MODE AUTOMATIQUE — VERSION 3.7
+Pour ne plus garder Terminal ouvert, utilisez Installer acces automatique.command.
+Première installation : arrêtez l’ancien serveur avec Control + C et copiez votre
+dossier data dans le nouveau dossier téléchargé, à côté de server.js.
+L’installateur place ensuite application et données dans :
+~/Library/Application Support/Mon Budget
+C’est désormais le dossier de données actif. Conservez votre ancienne copie.
+
+Mises à jour suivantes : décompressez le nouveau ZIP et lancez son installateur.
+Ne recopiez plus data; la base active est conservée et sauvegardée avant mise à jour.
+Copier des fichiers ne déclenche pas l’installation automatiquement.
+Vous pouvez fermer Terminal quand le service est prêt. Il redémarre à l’ouverture
+de session Mac. Gardez Tailscale connecté, le Mac allumé et le couvercle ouvert.
+Ne lancez pas npm start ni l’ancien accès privé en parallèle.
+Desactiver acces automatique.command arrête le service sans supprimer vos données.
+Voir ACCES-IPHONE.md pour les détails et les journaux de diagnostic.
+
+INSTRUCTIONS DU MODE MANUEL :
+
 MON BUDGET 3.3 — INSTALLATION ET MISE À JOUR SUR MAC
 
 Node.js 22.13 ou plus est requis. Node.js 24 LTS est recommandé.
