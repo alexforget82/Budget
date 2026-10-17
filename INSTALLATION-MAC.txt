@@ -1,3 +1,16 @@
+VERSION 4.5 — ONGLET CATEGORIES
+Téléchargez et décompressez le ZIP. Ouvrez votre raccourci permanent
+Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
+puis choisissez le nouveau dossier téléchargé. La base active est conservée
+et sauvegardée; ne recopiez pas un ancien dossier data.
+Rechargez Safari sur Mac et iPhone et vérifiez le badge v4.5.
+
+Menu principal > Catégories > Nouvelle catégorie > Créer.
+La catégorie sera disponible dans les transactions, imports et rapports.
+Mes catégories permet de rechercher et de renommer vos catégories.
+Les transactions, plafonds, soldes et réserves existants sont conservés.
+Les plafonds mensuels restent dans Bilan; les catégories ne réservent pas d’argent.
+
 VERSION 4.4 — FICHES D’ENVELOPPES ET CONFIGURATION GUIDEE
 Téléchargez et décompressez le ZIP. Depuis ~/Applications/Mon Budget,
 ouvrez votre raccourci permanent Mettre a jour Mon Budget.command,

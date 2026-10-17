@@ -1,4 +1,4 @@
-# Mon Budget 4.4
+# Mon Budget 4.5
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -8,9 +8,19 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Nouveautés 4.5 : un onglet pour vos catégories
+
+Le menu principal propose désormais **Catégories**, accessible aussi sur iPhone. Entrez le nom de votre catégorie dans **Nouvelle catégorie**, puis cliquez sur **Créer**. Elle apparaît immédiatement dans les choix des transactions, des imports CSV, des filtres et des plafonds du bilan.
+
+La liste **Mes catégories** permet de rechercher un nom sans tenir compte des accents ou des majuscules. **Modifier** ouvre le formulaire de renommage de la catégorie choisie. Les noms en double sont refusés; renommer conserve l’identifiant, les transactions et les plafonds existants. Les catégories servent à classer les achats : elles ne créent aucune réserve ou dépense.
+
+Les boutons **Gérer les catégories** de Transactions et **Gérer mes catégories** du Bilan ouvrent ce nouvel onglet. Les plafonds mensuels restent dans Bilan. Vos catégories et votre budget actuels sont conservés; aucune migration de données supplémentaire n’est requise.
+
+Aperçus fictifs : [Catégories sur ordinateur](docs/v45-categories.png) · [sur iPhone](docs/v45-categories-iphone.png).
+
 ## Nouveautés 4.4 : vos enveloppes, expliquées et plus faciles à utiliser
 
-Le badge indique **v4.4**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
+Le badge indique désormais **v4.5**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
 
 - **Voir la fiche**, dans Enveloppes et Budgets libres : réserve restante, achats du mois, budget effectif de la période (y compris une exception), prochain renouvellement non encore effectué et opérations associées. Les dix dernières opérations sont affichées; **Afficher tout l’historique** donne accès aux autres par pages de 50, avec accès à leur éditeur existant. Les opérations importées sans effet sur les soldes sont identifiées.
 - **Configurer l’usage**, depuis la fiche : achats au fil de la période, paiement à date fixe ou budget libre. Pour plusieurs enveloppes, cochez **Sélectionner**, puis **Configurer la sélection**. L’aperçu indique les réserves conservées, le mode et le budget choisis, les éventuels paiements distincts conservés et le minimum prévu sur 90 jours. Rien ne change avant confirmation. Un changement intervenu ailleurs invalide l’aperçu; un minimum négatif exige une confirmation explicite. L’annulation protégée reste disponible après l’application.
@@ -26,7 +36,7 @@ Aperçus avec données fictives : [tableau de bord](docs/v44-tableau-de-bord.png
 
 ## Nouveautés 4.3 : catégories et budgets mensuels réservés
 
-**Transactions → Gérer les catégories**, ou **Bilan → Modifier les catégories** : renommez une catégorie existante. Son identifiant, les anciennes transactions et son plafond mensuel sont conservés. Les doublons de noms (y compris accents/casse/espaces) et les formulaires devenus périmés sont refusés. L’annulation protégée permet de revenir au nom précédent.
+**Transactions → Gérer les catégories**, ou **Catégories → Modifier les catégories** : renommez une catégorie existante. Son identifiant, les anciennes transactions et son plafond mensuel sont conservés. Les doublons de noms (y compris accents/casse/espaces) et les formulaires devenus périmés sont refusés. L’annulation protégée permet de revenir au nom précédent.
 
 **Planifier → Enveloppes → + Budget mensuel réservé** prépare une enveloppe mensuelle en mode **Budget réservé (achats variables)**, avec le premier du mois prochain proposé comme début. Modifiez la date si nécessaire. Ce mode existait sous le libellé « Réserve seulement (épargne) »; la 4.3 le rend explicite pour Restaurant, Pharmacie, Médicaments ou Couches et lait. Aucun changement de mode n’est imposé aux enveloppes existantes.
 
@@ -45,7 +55,7 @@ Aperçus avec données fictives : [budget réservé sur iPhone](docs/v43-budget-
 
 ## Nouveautés 4.2 : Budgets libres
 
-Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.4**.
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.5**.
 
 - **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
 - **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.

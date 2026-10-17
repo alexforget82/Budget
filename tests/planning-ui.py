@@ -18,7 +18,7 @@ try:
  with sync_playwright() as p:
   path=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');browser=p.chromium.launch(**({'executable_path':path} if path else {}));page=browser.new_page(viewport={'width':1440,'height':1050});page.set_default_timeout(8000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
   page.goto(f.base);page.wait_for_selector('.bank-card',state='attached')
-  assert page.locator('.app-shell-nav button:visible[data-view]').count()==9
+  assert page.locator('.app-shell-nav button:visible[data-view]').count()==10
   navigate(page,'comptes');assert page.locator('.bank-card').count()==3;assert page.locator('.bank-card.credit input').count()==0;assert page.locator('#balance-form').is_hidden();page.evaluate('scrollTo(0,0)');page.screenshot(path=str(images/'comptes.png'),full_page=True)
   page.locator(f'.bank-card[data-account-id="{checking}"] button',has_text='Modifier').click();expect(page.locator('dialog[open]')).to_be_visible();page.keyboard.press('Escape')
   page.get_by_role('button',name='Comparer un solde',exact=True).click();expect(page.locator('#balance-form')).to_be_visible();page.keyboard.press('Escape')
@@ -47,6 +47,6 @@ try:
   f.post('/api/accounts/update',{'id':checking,'name':'Compte quotidien','kind':'checking','balance':-8000,'included':True});page.reload();navigate(page,'prevision');expect(page.locator('.trajectory-alert')).to_be_visible();page.locator('.trajectory-alert button').click();assert 'negative' in page.locator('.selected-day-value').get_attribute('class');page.screenshot(path=str(images/'prevision-negative.png'),full_page=True)
   assert not errors,errors
   browser.close()
- print('PASS: cards/editors, 9 visible sidebar routes, planning tabs, recurrence filters, 30/60/90 horizons, exact server metrics, slider keyboard endpoints, week/day selection, complete daily disclosure, calendar, six views at five widths, no financial changes from browsing; inclusion toggle via API.')
+ print('PASS: cards/editors, 10 visible sidebar routes, planning tabs, recurrence filters, 30/60/90 horizons, exact server metrics, slider keyboard endpoints, week/day selection, complete daily disclosure, calendar, six views at five widths, no financial changes from browsing; inclusion toggle via API.')
  print('Captures fictives :',images)
 finally:f.tearDown()

@@ -1,4 +1,4 @@
-# Vérifications — Mon Budget 4.4
+# Vérifications — Mon Budget 4.5
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
@@ -14,6 +14,10 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
 | `tests/api-tests.py` | 46 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+
+La 4.5 conserve les mêmes API et les mêmes calculs financiers. `python3 tests/categories-v45-ui.py` vérifie le nouvel onglet du menu principal, la création persistante, la disponibilité immédiate dans les cinq sélecteurs concernés, le refus des doublons accentués, la recherche sans accents, la recherche vide de résultats, le renommage d’une catégorie déjà utilisée et la conservation de la transaction et du solde. Il vérifie aussi les liens depuis Transactions/Bilan et la navigation mobile aux largeurs 375/390/768/1024/1440 : aucun débordement, aucune mutation en consultant les écrans, aucune erreur JavaScript. Données fictives uniquement.
+
+Régressions exécutées pour cette version : `tests/workflows-ui.py`, `tests/planning-ui.py` et `tests/budget-v43-ui.py`. La suite générale compte toujours 50 tests Node et 46 tests API, sans modification du schéma ou des règles de réserve.
 
 La 4.4 ajoute quatre tests API intégrés :
 
