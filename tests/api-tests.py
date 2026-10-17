@@ -230,6 +230,29 @@ class BudgetAPI(unittest.TestCase):
   s=remote('/api/accounts',valid,data=account);self.assertEqual(s['cash_cents'],50000);self.assertEqual(self.get('/api/state')['cash_cents'],50000)
   self.call('/api/state',status=403,headers={'Host':'budget.exemple.ts.net'})
 
+ def test_support_undo_restores_expense_and_envelope_once(self):
+  aid=self.account();s=self.post('/api/envelopes',{'name':'Réserve','reserved':20,'budget':0,'frequency':'none'});eid=s['envelopes'][0]['id'];before=self.get('/api/backup/export')['tables']
+  s=self.transaction(aid,-30,envelope_id=eid);self.assertTrue(s['support41']['undo']['available']);token=s['support41']['undo']['token'];self.assertEqual(s['cash_cents'],97000)
+  s=self.post('/api/support/undo',{'token':token});self.assertEqual(s['cash_cents'],100000);self.assertEqual(self.get('/api/backup/export')['tables'],before);self.assertFalse(s['support41']['undo']['available']);self.post('/api/support/undo',{'token':token},400)
+ def test_support_undo_rejects_a_stale_token_without_losing_new_changes(self):
+  aid=self.account();s=self.transaction(aid,-10);token=s['support41']['undo']['token'];self.transaction(aid,-20);before=self.get('/api/backup/export')['tables'];self.post('/api/support/undo',{'token':token},400);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_support_profiles_scenarios_persist_and_restore(self):
+  aid=self.account();config={'headers':['Date','Description','Montant'],'delimiter':';','account_id':aid,'date_format':'DMY','invert_sign':True,'mapping':{'date':'0','description':'1','amount':'2'}}
+  s=self.post('/api/support/profiles',{'name':'CIBC','config':config});self.assertEqual(s['support41']['profiles'][0]['config']['account_id'],aid);self.assertNotIn('csv',s['support41']['profiles'][0]['config']);self.post('/api/support/profiles',{'name':'Invalide','config':{**config,'mapping':{'date':999}}},400)
+  s=self.post('/api/support/scenarios',{'name':'Après la paie','payload':{'kind':'purchase','account_id':aid,'amount':250,'date':DAY}});self.assertEqual(s['support41']['scenarios'][0]['payload']['amount'],250);self.assertEqual(s['cash_cents'],100000)
+  backup=self.get('/api/backup/export');self.stop();self.start();self.assertEqual(len(self.get('/api/state')['support41']['profiles']),1);self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables']);sid=self.get('/api/state')['support41']['scenarios'][0]['id'];self.post('/api/support/scenarios/delete',{'id':sid});self.assertEqual(self.get('/api/state')['support41']['scenarios'],[])
+ def test_support_daily_backup_retention_and_download(self):
+  aid=self.account();folder=self.dir/'data'/'backups'
+  for days in range(1,33):
+   date=(datetime.date.today()-datetime.timedelta(days=days)).isoformat();(folder/('daily-'+date+'.json')).write_text('{}')
+  keep=folder/'manual-keep.json';keep.write_text('{}');s=self.post('/api/support/backup',{});self.assertEqual(s['support41']['backup']['count'],30);self.assertTrue(keep.exists());saved=self.get('/api/support/backup?date='+DAY);self.assertEqual(saved['tables'],self.get('/api/backup/export')['tables']);self.get('/api/state');self.call('/api/support/backup?date=../../private-access',status=400)
+ def test_support_guided_reconciliation_is_read_only_and_credit_aware(self):
+  aid=self.account();cid=self.account('credit',200);self.transaction(cid,-25,description='Achat carte');self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':10,'description':'Paiement','happened_on':DAY});before=self.get('/api/backup/export')['tables'];out=self.post('/api/support/reconcile',{'account_id':cid,'balance':240,'since':DAY});self.assertEqual(out['delta_cents'],2500);self.assertEqual(len(out['transactions']),1);self.assertEqual(len(out['transfers']),1);self.assertEqual(out['candidates'][0]['description'],'Achat carte');self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_support_global_search_finds_accents_in_full_history(self):
+  aid=self.account();self.transaction(aid,-10,description='Épicerie ancienne')
+  for i in range(55):self.transaction(aid,-1,description='Autre '+str(i))
+  before=self.get('/api/backup/export')['tables'];results=self.get('/api/support/search?q=epicerie')['results'];self.assertEqual(len(results),1);self.assertEqual(results[0]['record']['description'],'Épicerie ancienne');self.assertEqual(results[0]['kind'],'Transaction');self.assertEqual(self.get('/api/backup/export')['tables'],before)
+
  def test_read_only_purchase_and_move_simulations_use_full_forecast(self):
   aid=self.account(balance=2000);cid=self.account('credit',5000);excluded=self.account('savings',3000);self.post('/api/accounts/inclusion',{'id':excluded,'included':False});day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
   self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':day(1),'forecast_account_id':cid})

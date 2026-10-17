@@ -293,6 +293,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   dialog.showModal();
  }
  window.v2Edit=edit;
+ window.budgetEditRecord=(kind,row)=>{if(kind==='transfer'){state.transfers=state.transfers.filter(t=>t.id!==row.id);state.transfers.push(row);}else{records=records.filter(t=>t.id!==row.id);records.push(row);}edit(kind,row.id);};
  by('v2-edit-close').onclick=()=>dialog.close();
  by('v2-edit-form').onsubmit=async e=>{
   e.preventDefault();

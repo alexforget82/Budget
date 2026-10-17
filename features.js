@@ -55,6 +55,14 @@
   by('goal-cancel').onclick=resetGoal;
   by('goal-form').onsubmit=async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));x.target=Number(x.target);x.saved=Number(x.saved);if(await mutate('/api/goals',x))resetGoal();};
 
+  let csvHeaders=[];
+  window.budgetCSVConfiguration=()=>{const x=csvInput();return {headers:csvHeaders,delimiter:x.delimiter,account_id:x.account_id,date_format:x.date_format,invert_sign:x.invert_sign,mapping:x.mapping};};
+  window.budgetApplyCSVProfile=config=>{
+   if(JSON.stringify(csvHeaders)!==JSON.stringify(config.headers)||by('csv-file-info').dataset.delimiter!==config.delimiter||!current.accounts.some(a=>a.id===Number(config.account_id)))return false;
+   by('csv-account').value=config.account_id;by('csv-date-format').value=config.date_format;by('csv-invert').checked=config.invert_sign;by('csv-balance-mode').value='history';
+   for(const select of by('csv-columns').querySelectorAll('select'))select.value=config.mapping[select.dataset.column]??'';
+   invalidateCSV();return true;
+  };
   function csvInput(){return {csv,delimiter:by('csv-file-info').dataset.delimiter,account_id:by('csv-account').value,category_id:by('csv-category').value||null,date_format:by('csv-date-format').value,invert_sign:by('csv-invert').checked,affects_balance:by('csv-balance-mode').value==='balance',mapping:Object.fromEntries([...by('csv-columns').querySelectorAll('select')].map(select=>[select.dataset.column,select.value]))};}
   function invalidateCSV(){preview=null;by('csv-preview').hidden=true;by('csv-status').textContent='';}
   for(const id of ['csv-account','csv-category','csv-date-format','csv-invert','csv-balance-mode'])by(id).addEventListener('change',invalidateCSV);
@@ -67,7 +75,7 @@
       for(const [key,label] of [['date','Date'],['description','Description'],['amount','Montant signé'],['debit','Débit (si séparé)'],['credit','Crédit (si séparé)'],['category','Catégorie (facultatif)']]){
         const field=node('label',label),select=node('select');select.dataset.column=key;select.add(new Option('Non utilisé',''));info.headers.forEach((header,index)=>select.add(new Option(header||'Colonne '+(index+1),index)));const guessed=info.headers.findIndex(header=>guesses[key].test(header));if(guessed>=0)select.value=String(guessed);select.onchange=invalidateCSV;field.append(select);columns.append(field);
       }
-      by('csv-mapping').hidden=false;
+      csvHeaders=info.headers;by('csv-mapping').hidden=false;document.dispatchEvent(new CustomEvent('budget:csv-ready',{detail:{headers:info.headers,delimiter:info.delimiter}}));
     }catch(e){by('csv-status').textContent=e.message;}
   };
   function selectionSummary(){

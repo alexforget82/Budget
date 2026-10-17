@@ -1,3 +1,18 @@
+VERSION 4.1 — VERSION VISIBLE ET OUTILS DE FIABILITE
+Décompressez le nouveau ZIP. Ouvrez le raccourci permanent
+Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
+puis choisissez le nouveau dossier téléchargé. Le service conserve sa base active
+et en fait une copie avant mise à jour. Ne recopiez pas une ancienne base dessus.
+Rechargez Safari sur Mac et iPhone : le badge v4.1 doit apparaître en haut.
+Gardez tous les fichiers, y compris budget-support.js, budget-v41.js et budget-v41.css.
+
+Nouveautés : rapprochement guidé dans Comptes, profils de formats CSV,
+recherche globale, annulation protégée de la dernière modification et copies
+quotidiennes (30 dates maximum). Profils/scénarios restent dans les sauvegardes JSON.
+L’annulation n’est possible qu’une fois et refuse de remplacer un changement ultérieur.
+Les copies quotidiennes restent sur le Mac; conservez aussi une copie ailleurs.
+Aucune réserve automatique pour les dettes de cartes n’est ajoutée.
+
 VERSION 4.0.1 — EVITER LES OUVERTURES REPETEES DANS CONFIDENTIALITE
 Pour installer cette version si macOS bloque le fichier téléchargé :
 1. Ouvrez Terminal.

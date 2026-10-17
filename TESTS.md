@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.0.1
+# Vérifications — Mon Budget 4.1
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **77 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **83 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 27 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 33 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -203,3 +203,11 @@ Les parcours `ui-smoke.py`, `workflows-ui.py`, `transactions-ui.py`, `transactio
 `npm test` : 50 tests Node + 27 tests API réussis. Les nouveaux tests exécutent les raccourcis générés avec Bash dans des chemins contenant espaces et apostrophes, vérifient que les arguments sont transmis littéralement et que les dossiers incomplets, les autres applications et les versions anciennes sont refusés avant exécution. Le validateur ne prétend pas vérifier une signature d’authenticité.
 
 `mac-service-simulation.py` vérifie aussi la création des trois raccourcis permanents avec permissions 0700, l’ouverture d’un service existant sans deuxième serveur et la conservation de la base après mise à jour. Aucun changement global Gatekeeper ni aucune suppression de quarantaine n’est effectué. Finder, osascript et Gatekeeper réels ne sont pas disponibles dans cet environnement Linux; leur comportement reste à vérifier sur le Mac.
+
+## Fiabilité et version visible — 4.1
+
+`npm test` : **50 tests Node + 33 tests API**, aucun échec. Les six nouveaux tests API couvrent l’annulation d’une dépense avec restauration exacte de la réserve et des soldes, l’utilisation unique de cette annulation, le refus d’un ancien jeton après une autre écriture, les profils/scénarios persistants et sauvegardables, les configurations invalides, les 30 dates de sauvegarde, le téléchargement sécurisé par date, le maintien des autres fichiers, le rapprochement de carte sans écriture et la recherche avec accents hors pagination.
+
+`python3 tests/budget-v41-ui.py` : réussi. Vérifie le badge réel v4.1, la recherche puis l’ouverture d’un éditeur sans sauvegarde, la comparaison bancaire sans écriture puis la correction explicitement notée et son annulation, le profil CSV mémorisé et reconnu au rechargement (colonnes, compte, signe, retour au mode historique), l’aperçu de l’import, la copie quotidienne téléchargeable, le scénario enregistré/repris sans opération réelle, le prochain revenu, le filtre partagé et le solde propre d’une carte, le saut de mois. Recherche, rapprochement et cinq écrans testés à 375/390/768/1024/1440 px, sans débordement ni erreur JavaScript. Les changements de saisie invalident les comparaisons devenues obsolètes.
+
+Les parcours navigateur existants et le cycle du service Mac simulé sont conservés. Les tests utilisent uniquement des données fictives et des bases temporaires. L’exécution effective des raccourcis Finder, du service macOS et de Safari/iPhone reste à vérifier sur les appareils de l’utilisateur.

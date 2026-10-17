@@ -1,4 +1,4 @@
-# Mon Budget 4.0.1
+# Mon Budget 4.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,32 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 4.1 : savoir où vous en êtes
+
+Le badge **v4.1** apparaît dans l’en-tête sur Mac et iPhone. Sa valeur vient du serveur réellement consulté; son infobulle indique la version complète. Actualisez la page après une mise à jour.
+
+- **Rapprochement guidé** dans Comptes → « Rapprocher avec ma banque ». Saisissez le solde bancaire actuel et la date de début des opérations à examiner. La comparaison ne modifie rien. Examinez transactions et virements, ouvrez leur éditeur, préparez une opération manquante, ou corrigez explicitement le solde avec une note. Une piste du même montant n’est pas un doublon confirmé. Pour les cartes, saisissez le montant dû positif; une vérification de solde ne se transforme jamais en revenu/dépense.
+- **Profils CSV** dans Importer CSV. Mémorisez titres des colonnes, séparateur, compte, format de date et signe sous un nom de banque. Un profil exact et unique est réappliqué au prochain fichier; si plusieurs profils correspondent, choisissez celui du bon compte. Aucun fichier bancaire ni identifiant de connexion n’est enregistré dans le profil. La réutilisation remet le mode **historique sans effet sur les soldes**; l’aperçu, les doublons et la confirmation restent obligatoires avant import.
+- **Recherche globale** dans l’en-tête, ou Cmd + K sur Mac / Ctrl + K. Recherche sans distinction d’accents dans comptes, enveloppes, récurrences, transactions, virements et objectifs, y compris les opérations hors pagination. Jusqu’à 15 résultats par type. Un résultat d’opération ouvre son éditeur sans l’enregistrer.
+- **Annuler la dernière modification** dans l’en-tête. Après confirmation, l’ensemble du budget revient à l’état précédant cette dernière écriture, soldes et associations compris. Une copie de sécurité est créée. Il s’agit d’une seule annulation, sans rétablissement en chaîne. Si une autre modification est intervenue, même sur l’autre appareil, la demande ancienne est refusée. Certaines modifications de préférences rendent aussi une ancienne annulation indisponible. Le point temporaire est conservé dans `data/last-change.json`, hors des sauvegardes exportées.
+- **Copies quotidiennes** dans Sauvegardes. Une copie JSON est créée au démarrage du serveur puis au changement de journée vérifié chaque minute pendant son exécution. Jusqu’à 30 dates sont conservées dans `data/backups/daily-AAAA-MM-JJ.json`. La date/heure de la dernière copie réussie et les erreurs éventuelles sont affichées. Téléchargez une copie datée pour la restaurer avec le parcours existant. « Actualiser la copie d’aujourd’hui » remplace seulement le point de la journée actuelle. Les autres fichiers de sauvegarde ne sont pas supprimés. Ces copies restent sur le même Mac : conservez aussi une copie ailleurs.
+
+### Mieux explorer les prévisions
+
+Les **filtres de comptes** du calendrier et des prévisions limitent les opérations affichées. La courbe et les grands montants restent le disponible global; le panneau de journée ajoute séparément le solde propre du compte sélectionné, ou le montant dû pour une carte. Aucun compte n’est exclu du calcul par ce filtre visuel.
+
+Le repère de **prochain revenu** indique la date, sa description et le minimum avant sa réception, sans dépenser le revenu à l’avance. La détection porte sur le premier revenu prévu dans un compte inclus au cours des 30 prochains jours; elle ne suppose pas qu’un revenu est forcément un salaire.
+
+Les **scénarios d’achat enregistrés** conservent uniquement nom, montant, compte et date. Leur reprise prépare le simulateur; comparez à nouveau pour recalculer avec les données courantes. Si la date sort de l’horizon, la date proposée est ajustée et doit être vérifiée. Ils ne créent aucune transaction. Limite : 20 profils et 20 scénarios, dans la limite de taille des préférences.
+
+Le calendrier permet aussi d’**aller directement à un mois**, sans multiplier les clics sur les flèches. Les prévisions restent limitées à 90 jours; les dates plus éloignées n’affichent aucun solde inventé.
+
+Aucune réserve automatique pour les dettes de cartes n’est ajoutée. Aucune connexion bancaire payante ou synchronisation bancaire automatique n’est nécessaire. Le format des sauvegardes est conservé : profils et scénarios utilisent les paramètres existants, sans nouvelle table.
+
+[Aperçu version et prévisions](docs/v41-prevision.png) · [Rapprochement bancaire](docs/v41-rapprochement.png) · [Version sur iPhone](docs/v41-iphone.png) — données fictives.
+
+Pour installer : décompressez le ZIP, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command** dans `~/Applications/Mon Budget`, puis choisissez le nouveau dossier. Les données actives restent dans le dossier fixe et sont sauvegardées avant remplacement. Ne recopiez pas une ancienne base par-dessus. Rechargez Safari et vérifiez le badge **v4.1**. Gardez tous les fichiers ensemble, notamment `budget-support.js`, `budget-v41.js` et `budget-v41.css`.
 
 ## Ouverture Mac simplifiée — v4.0.1
 

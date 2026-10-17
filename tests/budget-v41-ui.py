@@ -1,0 +1,40 @@
+"""v4.1 workflow checks on fictitious accounts and an isolated database."""
+import importlib.util,os,shutil,sys,tempfile,datetime
+from pathlib import Path
+sys.dont_write_bytecode=True
+from ui_navigation import navigate
+from playwright.sync_api import sync_playwright,expect
+spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
+f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v41-ui-'))
+def day(n):return (datetime.date.today()+datetime.timedelta(days=n)).isoformat()
+try:
+ aid=f.account(balance=1000);cid=f.account('credit',200)
+ for id,name,kind,balance in [(aid,'Conjoint','checking',1000),(cid,'CIBC','credit',200)]:f.post('/api/accounts/update',{'id':id,'name':name,'kind':kind,'balance':balance,'included':kind!='credit'})
+ f.transaction(aid,-10,description='Épicerie à retrouver');f.post('/api/recurring',{'description':'Paie','amount':800,'type':'income','account_id':aid,'start_on':day(3),'frequency':'biweekly'})
+ with sync_playwright() as p:
+  executable=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');browser=p.chromium.launch(**({'executable_path':executable} if executable else {}));page=browser.new_page(viewport={'width':1440,'height':1100});page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v4.1');before=f.get('/api/backup/export')['tables']
+  page.keyboard.press('Control+k');search=page.locator('#v41-search');expect(search).to_be_visible();page.locator('#v41-search-input').fill('epicerie');expect(search.locator('.v41-search-row')).to_have_count(1);search.locator('.v41-search-row').click();expect(page.locator('#v2-edit')).to_be_visible();expect(page.locator('#v2-edit-form [name="description"]')).to_have_value('Épicerie à retrouver');page.locator('#v2-edit-close').click();assert f.get('/api/backup/export')['tables']==before
+  navigate(page,'comptes');page.get_by_role('button',name='Rapprocher avec ma banque',exact=True).click();bank=page.locator('#v41-bank-dialog');bank.locator('[name="account_id"]').select_option(str(aid));bank.locator('[name="balance"]').fill('985');bank.get_by_role('button',name='Comparer sans modifier',exact=True).click();expect(bank).to_contain_text('Écart : -5,00');assert f.get('/api/backup/export')['tables']==before;bank.screenshot(path=str(images/'rapprochement.png'));bank.locator('.v41-correction summary').click();bank.locator('.v41-correction input').fill('Écart vérifié avec le relevé');bank.get_by_role('button',name='Enregistrer cette correction',exact=True).click();expect(bank).to_contain_text('Solde corrigé');assert f.get('/api/state')['cash_cents']==98500;bank.get_by_role('button',name='Fermer',exact=True).click()
+  page.locator('#v41-undo').click();undo=page.locator('#v41-undo-dialog');undo.get_by_role('button',name='Confirmer l’annulation',exact=True).click();expect(undo).not_to_be_visible();assert f.get('/api/state')['cash_cents']==99000;expect(page.locator('#v41-undo')).to_be_disabled();assert f.get('/api/backup/export')['tables']==before
+  # Remember CSV columns and account, while forcing history mode upon reuse.
+  navigate(page,'importer');upload={'name':'cibc.csv','mimeType':'text/csv','buffer':('Quand;Libelle banque;Valeur\n'+api.DAY+';Marché;15,00').encode()};page.locator('#csv-file').set_input_files(upload);expect(page.locator('#csv-mapping')).to_be_visible()
+  for key,index in [('date','0'),('description','1'),('amount','2')]:page.locator(f'#csv-columns select[data-column="{key}"]').select_option(index)
+  page.locator('#csv-account').select_option(str(cid));page.locator('#csv-invert').check();page.locator('#v41-profile-name').fill('CIBC carte');page.get_by_role('button',name='Mémoriser ce format',exact=True).click();expect(page.locator('#v41-profiles')).to_contain_text('Format et compte mémorisés');assert f.get('/api/state')['cash_cents']==99000
+  page.reload();navigate(page,'importer');page.locator('#csv-file').set_input_files(upload);expect(page.locator('#v41-profiles')).to_contain_text('Profil appliqué');expect(page.locator('#csv-account')).to_have_value(str(cid));expect(page.locator('#csv-invert')).to_be_checked();expect(page.locator('#csv-balance-mode')).to_have_value('history');page.locator('#csv-preview-button').click();expect(page.locator('#csv-preview-rows')).to_contain_text('-15,00');assert f.get('/api/state')['cash_cents']==99000
+  navigate(page,'sauvegardes');expect(page.locator('#v41-backups')).to_contain_text('Dernière copie réussie');page.get_by_role('button',name='Actualiser la copie d’aujourd’hui',exact=True).click();with_download=page.locator('#v41-backups a')
+  with page.expect_download() as download:with_download.click()
+  assert download.value.suggested_filename.endswith('.json')
+  # Saved scenarios are parameters, not ledger operations; resuming requires recomputation.
+  navigate(page,'prevision');expect(page.locator('#v41-payday')).to_contain_text('Paie');page.locator('#v4-sim-open').click();sim=page.locator('#v4-simulator');sim.locator('[name="amount"]').fill('100');sim.get_by_role('button',name='Comparer les prévisions',exact=True).click();expect(page.locator('#v41-scenario-name')).to_be_visible();page.locator('#v41-scenario-name').fill('Achat après la paie');sim.get_by_role('button',name='Enregistrer ce scénario',exact=True).click();expect(sim).not_to_be_visible();page.locator('.v41-saved-scenarios summary').click();page.get_by_role('button',name='Reprendre ce scénario',exact=True).click();expect(sim.locator('[name="amount"]')).to_have_value('100');sim.get_by_role('button',name='Fermer',exact=True).click();assert f.get('/api/state')['cash_cents']==99000
+  page.locator('#v4-forecast .v41-account-filter').select_option(str(cid));expect(page.locator('#v4-forecast-day .v41-own-balance')).to_contain_text('Montant dû · CIBC');navigate(page,'calendrier');expect(page.locator('#v4-calendar .v41-account-filter')).to_have_value(str(cid));page.locator('#v41-calendar-month').fill('2027-06');page.locator('#v41-calendar-month').dispatch_event('change');expect(page.locator('#v4-cal-title')).to_contain_text('2027');page.locator('#v4-cal-today').click();page.locator('#v4-calendar .v41-account-filter').select_option('')
+  before=f.get('/api/backup/export')['tables']
+  for width in [375,390,768,1024,1440]:
+   page.set_viewport_size({'width':width,'height':1000})
+   for view in ['comptes','prevision','calendrier','importer','sauvegardes']:
+    navigate(page,view);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,view)
+   page.locator('.v41-header-tools').get_by_role('button',name='Rechercher…',exact=True).click();assert search.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width;search.get_by_role('button',name='Fermer',exact=True).click()
+   navigate(page,'comptes');page.get_by_role('button',name='Rapprocher avec ma banque',exact=True).click();assert bank.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width;bank.get_by_role('button',name='Fermer',exact=True).click()
+  page.set_viewport_size({'width':1440,'height':1100});navigate(page,'prevision');page.locator('.v41-saved-scenarios').evaluate('(e)=>e.open=false');page.screenshot(path=str(images/'version-et-prevision.png'),full_page=True);page.set_viewport_size({'width':390,'height':844});page.screenshot(path=str(images/'iphone-version.png'),full_page=True);assert f.get('/api/backup/export')['tables']==before;assert not errors,errors;browser.close()
+ print('PASS: live v4.1 badge, accent search/edit draft, read-only bank comparison then correction and protected undo, remembered CSV account/columns/sign with history default, daily backup download, saved scenario resumption, payday marker, shared account filter and own card balance, month jump, five widths and no browsing writes.')
+ print('Captures fictives :',images)
+finally:f.tearDown()
