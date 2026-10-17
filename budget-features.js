@@ -39,7 +39,7 @@ export function bankAmount(value){
   return Math.round(amount*100);
 }
 
-const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status'];
+const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status','envelope_occurrence_moves','envelope_actual_links'];
 const categoryDefaults=['Épicerie','Logement','Transport','Restaurants','Santé','Loisirs','Abonnements','Achats','Revenus','Autres'];
 
 export function createFeatures({db,dir,cents,validDate,today,atomic,addTransaction}){
@@ -60,11 +60,14 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     const result=structuredClone(backup);
     if(result?.format!=='mon-budget'||result.version!==1||!result.tables)return result;
     const legacy=!Object.hasOwn(result.tables,'envelope_period_status')&&Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='forecast_tracking_since')&&Array.isArray(result.tables.envelopes)&&result.tables.envelopes.every(e=>!Object.hasOwn(e,'forecast_account_id'))&&Array.isArray(result.tables.recurring)&&result.tables.recurring.every(r=>!Object.hasOwn(r,'one_time'));
-    if(!legacy)return result;
+    if(legacy){
     result.tables.envelope_period_status=[];
     for(const row of result.tables.envelopes||[]){if(!Object.hasOwn(row,'forecast_account_id'))row.forecast_account_id=null;if(!Object.hasOwn(row,'forecast_spend'))row.forecast_spend=1;if(!Object.hasOwn(row,'planning_since'))row.planning_since=today();}
     for(const row of result.tables.recurring||[])if(!Object.hasOwn(row,'one_time'))row.one_time=0;
     if(Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='forecast_tracking_since'))result.tables.app_settings.push({key:'forecast_tracking_since',value:today()});
+    }
+    const oldActions=Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='planning_actions_v1')&&!Object.hasOwn(result.tables,'envelope_occurrence_moves')&&!Object.hasOwn(result.tables,'envelope_actual_links');
+    if(oldActions){result.tables.envelope_occurrence_moves=[];result.tables.envelope_actual_links=[];result.tables.app_settings.push({key:'planning_actions_v1',value:'1'});}
     return result;
   }
   function validateBackup(backup){
@@ -94,6 +97,10 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
       if(stage.prepare("SELECT id FROM accounts WHERE kind='credit' AND included!=0").all().length)throw Error('Compte de crédit invalide.');
       if(stage.prepare("SELECT id FROM recurring WHERE (type!='reserve' AND account_id IS NULL) OR (type='transfer' AND (to_account_id IS NULL OR to_account_id=account_id)) OR (type='reserve' AND envelope_id IS NULL)").all().length)throw Error('Règle récurrente invalide.');
       for(const link of stage.prepare('SELECT * FROM reconciliation_links').all()){const table=link.actual_type==='transaction'?'transactions':'account_transfers';if(!stage.prepare(`SELECT id FROM ${table} WHERE id=?`).get(link.actual_id))throw Error('Rapprochement invalide.');}
+      for(const link of stage.prepare('SELECT * FROM envelope_actual_links').all()){
+       const t=stage.prepare('SELECT * FROM transactions WHERE id=?').get(link.transaction_id);
+       if(!t||t.amount_cents>=0||t.envelope_id!==link.envelope_id||stage.prepare("SELECT 1 FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?").get(link.transaction_id))throw Error('Association d’enveloppe invalide.');
+      }
       const activation=stage.prepare("SELECT value FROM app_settings WHERE key='renewal_activation'").get();if(!activation||!validDate(activation.value)||stage.prepare("SELECT value FROM app_settings WHERE key='features_v3'").get()?.value!=='1')throw Error('Paramètres de sauvegarde invalides.');
       stage.exec('COMMIT');return Object.fromEntries(tables.map(t=>[t,backup.tables[t].length]));
     }catch(e){if(/constraint|datatype mismatch/i.test(e.message))throw Error('Sauvegarde invalide : des valeurs ou des liens sont incompatibles.');throw e;}finally{stage.close();}
@@ -158,5 +165,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.1.1',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.2.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

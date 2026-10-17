@@ -30,9 +30,9 @@
   const save=button('Associer cette opération',async()=>{save.disabled=true;const ok=await send('/api/reconcile/link',{recurring_id:row.recurring_id,occurrence_on:row.original_on,actual_type:row.type==='transfer'?'transfer':'transaction',actual_id:Number(select.value)});save.disabled=false;if(ok)matchDialog.close();});save.disabled=!candidates.length;inner.append(save);matchDialog.showModal();
  }
  function drawWarnings(){
-  warnings.replaceChildren();const items=current.planning?.warnings||[],pending=(current.planning?.rows||[]).filter(r=>r.status==='pending');
+  warnings.replaceChildren();const items=current.planning?.warnings||[],pending=(current.planning?.rows||[]).filter(r=>['planned','pending'].includes(r.status)&&r.type!=='reserve'&&r.remaining_cents>0&&r.date<=current.forecast[0].date);
   dashboardNotice.replaceChildren();dashboardNotice.hidden=!items.length&&!pending.length;
-  if(items.length||pending.length){dashboardNotice.append(node('strong',pending.length?pending.length+' mouvement(s) passé(s) à confirmer':'Prévision à compléter'),node('span',items.length+' point(s) de configuration à vérifier.'),button('Vérifier la prévision',()=>document.querySelector('[data-view="suivi"]').click()));}
+  if(items.length||pending.length){dashboardNotice.append(node('strong',pending.length?pending.length+' mouvement(s) à confirmer':'Prévision à compléter'),node('span',items.length+' point(s) de configuration à vérifier.'),button('Voir les opérations à confirmer',()=>window.budgetOpenPlanningQueue?.()));}
   if(!items.length&&!pending.length)return;
   const detail=node('details',undefined,'advanced-tool');detail.open=true;detail.append(node('summary','Fiabilité de la prévision · '+items.length+' point(s) à vérifier'));
   if(pending.length)detail.append(node('p','Les dépenses et virements passés non confirmés restent déduits à partir d’aujourd’hui. Les revenus en retard ne financent pas votre disponible avant confirmation.'));
@@ -54,9 +54,9 @@
    const values=node('div',undefined,'review-values');for(const [label,value] of [['Prévu',row.planned_cents],['Réel',row.actual_cents],['Écart',row.variance_cents]]){const item=node('div');item.append(node('span',label),node('strong',value===null?'—':money(value)));values.append(item);}card.append(values);
    const actions=node('div',undefined,'review-actions');
    if(row.source==='envelope'){
-    if(row.status==='actual')actions.append(button('Encore des achats',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.date,status:'open'})));
-    else if(row.status!=='skipped'){actions.append(button(row.actual_cents===null?'Confirmer sans dépense':'Terminer la période',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.date,status:'complete'})),button('Annuler la dépense prévue',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.date,status:'skipped'})));}
-    actions.append(button('Calcul automatique',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.date,status:'auto'})));
+    if(row.status==='actual')actions.append(button('Encore des achats',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'open'})));
+    else if(row.status!=='skipped'){actions.append(button(row.actual_cents===null?'Confirmer sans dépense':'Terminer la période',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'complete'})),button('Annuler la dépense prévue',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'skipped'})));}
+    actions.append(button('Calcul automatique',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'auto'})));
    }else {
     if(['planned','pending'].includes(row.status)&&row.type!=='reserve')actions.append(button('Associer un réel',()=>match(row)));
     if(['planned','pending'].includes(row.status))actions.append(button('Annuler cette occurrence',()=>send('/api/overrides',{recurring_id:row.recurring_id,occurrence_on:row.original_on,amount:0})));

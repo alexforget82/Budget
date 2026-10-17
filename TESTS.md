@@ -4,13 +4,13 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **32 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **44 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
 | `tests/csv.test.js` | 5 | BOM, CSV multiligne, guillemets échappés, tabulations, CRLF, lignes vides, limites de taille, montants localisés, signes et refus des valeurs invalides |
-| `tests/forecast.test.js` | 14 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
-| `tests/api-tests.py` | 13 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
+| `tests/api-tests.py` | 19 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -125,3 +125,28 @@ Les autres parcours navigateur restent réussis. Les captures publiées utilisen
 - Navigation sans mutation des tables financières et aucune erreur JavaScript ou console inattendue.
 
 Les quatre autres parcours navigateur restent réussis. Le suivi commence à l’activation; les prévisions historiques antérieures ne sont pas reconstituées. Les calculs utilisent les règles actuelles, sans journal immuable des anciennes versions de règles. Les rapprochements ambigus et opérations futures déjà saisies comme réelles exigent une vérification. Safari et les données réelles de l’utilisateur restent à vérifier sur Mac.
+
+## À confirmer et explication du solde (3.2)
+
+`npm test` : **44 tests réussis** (5 CSV, 20 moteur et 19 API), sans échec ni test ignoré.
+
+- Confirmation atomique de revenus, dépenses et virements avec un montant différent; détection des doubles validations et des fiches obsolètes; rejet des dates réelles futures sans mutation financière.
+- Association d’un réel existant sans réappliquer le solde; affectation et retrait d’enveloppe conservant les montants réellement réservés.
+- Enveloppe confirmée en retard rattachée à sa période d’origine; absence de double comptage dans la période actuelle; suppression rétablissant la prévision.
+- Report et modification d’une seule occurrence, enveloppes et récurrences; annulation sans opération bancaire; identité d’origine conservée.
+- Achats automatiques d’enveloppes rapprochés selon les dates déplacées; dates identiques ambiguës laissées à associer explicitement.
+- Pour chacune des 90 dates : solde réel de départ + impacts classés = solde bancaire projeté, puis moins les réserves = disponible projeté.
+- Virements internes et réservations sans impact bancaire; dette de carte exclue des réserves, remboursement pris en compte et remboursement marchand sur crédit réduisant la dette.
+- Conservation et restauration des nouvelles associations; compatibilité des exports antérieurs; rejet d’un export actuel auquel manque une nouvelle table.
+
+`python3 tests/planning-workflow-ui.py` : **réussi dans Chromium**, avec données fictives dans une base temporaire.
+
+- Liste quotidienne, filtres, historique, association d’une dépense déjà saisie sans débit supplémentaire.
+- Deux achats d’enveloppe de 100 $ puis 115 $ remplaçant un budget de 230 $; montant restant correctement affiché puis fermeture de la période.
+- Paie et virement confirmés avec des montants corrigés; vérification des soldes exacts par API; aucune réserve automatique pour la carte.
+- Report, modification d’une occurrence et annulation sans changement des soldes réels.
+- Formulaire périmé : erreur visible dans la fenêtre, sans nouvelle opération.
+- Explication et groupes de mouvements conformes à la simulation pour la date choisie; mise à jour au clavier Début/Fin.
+- Liste, prévision et fenêtre de confirmation à 375, 390, 768, 1024 et 1440 pixels sans débordement; exploration sans modification des tables financières.
+
+Les cinq autres parcours navigateur ont également réussi. Une erreur HTTP 400 du formulaire obsolète est attendue et distinguée des erreurs inattendues. Les captures publiées sont fictives. Safari et l’historique réel de l’utilisateur restent à vérifier sur son Mac.

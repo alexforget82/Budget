@@ -1,4 +1,4 @@
-MON BUDGET 3.1 — INSTALLATION ET MISE À JOUR SUR MAC
+MON BUDGET 3.2 — INSTALLATION ET MISE À JOUR SUR MAC
 
 Node.js 22.13 ou plus est requis. Node.js 24 LTS est recommandé.
 Aucune commande npm install n’est nécessaire.
@@ -14,7 +14,8 @@ MISE À JOUR RECOMMANDÉE — NOUVEAU DOSSIER
    Le ZIP ne contient aucun dossier data; il n’y a rien à remplacer.
 5. Gardez tous les nouveaux fichiers applicatifs ensemble : server.js,
    budget-features.js, index.html, app.css, app.js, features.js, planner.js,
-   transactions.js, forecast-engine.js, forecast-ui.js et package.json.
+   transactions.js, forecast-engine.js, forecast-ui.js, planning-actions.js,
+   planning-workflow.js et package.json.
    IMPORTANT : contrairement à la mise à jour visuelle précédente, remplacer
    seulement trois fichiers ne suffit plus.
 6. Ouvrez Lancer Mon Budget.command dans ce NOUVEAU dossier, ou lancez
@@ -46,6 +47,27 @@ NOUVELLE INSTALLATION
 Gardez tous les fichiers du dossier Budget-main ensemble.
 Lancez npm start depuis ce dossier ou ouvrez le lanceur .command.
 Une base vide est créée dans data dans le dossier de lancement.
+
+NOUVEAUTÉS (3.2)
+- Planifier > Prévu / Réel > À confirmer : traiter les opérations en retard,
+  celles d'aujourd'hui et les prochaines échéances.
+- Confirmer le réel : montant et date réellement passés. Si l'opération
+  est déjà enregistrée, choisir Déjà saisie pour l'associer sans redébiter
+  le compte. Les virements sont enregistrés comme un seul virement.
+- Pour plusieurs achats d'enveloppe, décocher Aucun autre achat prévu
+  pour cette période. Le reste du budget reste projeté.
+- Modifier le prévu, Reporter ou Annuler n'affecte qu'une occurrence,
+  sans modifier les soldes bancaires réels.
+- Historique complet : retrouver les opérations traitées et annulées.
+- Planifier > Prévision : choisir une date et consulter Pourquoi ce solde ?
+  pour voir les revenus, factures, enveloppes, virements et réserves.
+  Chaque groupe peut être développé pour consulter les mouvements.
+- Aucune réserve automatique pour les cartes : ce fonctionnement reste
+  inchangé. Seuls les remboursements prévus ou réels sont pris en compte.
+- Copie SQLite avant migration : data/backups/
+  budget-before-planning-actions.sqlite. Les exports JSON v3/v3.1 restent
+  restaurables. Le suivi utilise les règles actuelles, sans reconstituer
+  les prévisions antérieures à son activation.
 
 PRÉVISION ET RÉEL (3.1)
 - Planifier > Prévision : choisir une date, puis lire le solde bancaire

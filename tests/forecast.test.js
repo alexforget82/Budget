@@ -67,3 +67,26 @@ test('rollover and exceptional budgets change reserves without inventing bank mo
 test('a one-time linked expense replaces only its own envelope period, not future weekly groceries',()=>{
  const s=run({recurring:[rule({envelope_id:1,amount_cents:23000,one_time:1})]});assert.equal(at(s,'2026-11-05').cash_cents,131000);assert.equal(s.rows.filter(r=>r.source==='envelope'&&r.date==='2026-10-29').length,1);
 });
+
+test('every bank bridge reconciles starting cash, categorized impacts, closing balance and reserves',()=>{
+ const s=run({accounts:[account,{id:2,kind:'savings',included:0,balance_cents:50000},{id:3,kind:'credit',included:0,balance_cents:500000}],recurring:[rule({type:'income',amount_cents:100000}),rule({id:2,type:'transfer',to_account_id:2,amount_cents:10000}),rule({id:3,amount_cents:20000}),rule({id:4,type:'expense',account_id:3,amount_cents:5000})]});
+ for(const day of s.days){const c=day.bridge;assert.equal(c.opening_cash_cents+c.income_cents+c.expense_cents+c.envelope_cents+c.transfer_cents,day.cash_cents);assert.equal(c.closing_cash_cents-c.reserved_cents,day.safe_cents);assert.equal(c.closing_safe_cents,day.safe_cents);}
+ const c=at(s,'2026-10-22').bridge;assert.equal(c.opening_cash_cents,200000);assert.equal(c.income_cents,100000);assert.equal(c.expense_cents,-20000);assert.equal(c.envelope_cents,-23000);assert.equal(c.transfer_cents,-10000);assert.equal(c.closing_cash_cents,247000);
+});
+test('internal transfers and reserve-only renewals explain zero bank movement without hiding them',()=>{
+ const s=run({accounts:[account,{id:2,kind:'savings',included:1,balance_cents:0}],envelopes:[{...envelope,forecast_spend:0}],recurring:[rule({type:'transfer',to_account_id:2,amount_cents:5000})]});const d=at(s,'2026-10-22');assert.equal(d.bridge.transfer_cents,0);assert.equal(d.cash_cents,200000);assert.equal(d.events.length,2);assert.ok(d.events.every(e=>e.cash_impact_cents===0));
+});
+test('an actual transaction explicitly linked to an old envelope occurrence is never counted in a newer period',()=>{
+ const s=run({today:'2026-10-30',accounts:[{...account,balance_cents:178500}],envelopes:[{...envelope,reserved_cents:1500}],transactions:[{id:1,envelope_id:1,account_id:1,amount_cents:-21500,happened_on:'2026-10-30'}],envelopeLinks:[{transaction_id:1,envelope_id:1,occurrence_on:'2026-10-22'}],periods:[{envelope_id:1,occurrence_on:'2026-10-22',status:'complete'}]});
+ const old=s.rows.find(r=>r.original_on==='2026-10-22'),next=s.rows.find(r=>r.original_on==='2026-10-29');assert.equal(old.actual_cents,21500);assert.equal(old.status,'actual');assert.equal(next.actual_cents,null);assert.equal(next.remaining_cents,23000);
+});
+test('postponing an envelope expense moves only spending; automatic actual matching follows effective dates',()=>{
+ const args={envelopeMoves:[{envelope_id:1,occurrence_on:'2026-10-22',new_on:'2026-10-30'}]},s=run(args);assert.equal(at(s,'2026-10-22').cash_cents,200000);assert.equal(at(s,'2026-10-29').cash_cents,177000);assert.equal(at(s,'2026-10-30').cash_cents,154000);const moved=s.rows.find(r=>r.original_on==='2026-10-22');assert.equal(moved.date,'2026-10-30');assert.equal(moved.key,'env-1|2026-10-22');
+ const matched=run({...args,transactions:[{id:1,envelope_id:1,account_id:1,amount_cents:-21500,happened_on:'2026-10-30'}]});assert.equal(matched.rows.find(r=>r.original_on==='2026-10-22').actual_cents,21500);assert.equal(matched.rows.find(r=>r.original_on==='2026-10-29').actual_cents,null);
+});
+test('two envelope occurrences moved onto the same day remain ambiguous until explicitly associated',()=>{
+ const s=run({envelopeMoves:[{envelope_id:1,occurrence_on:'2026-10-22',new_on:'2026-10-29'}],transactions:[{id:1,envelope_id:1,account_id:1,amount_cents:-21500,happened_on:'2026-10-29'}]});assert.equal(s.rows.filter(r=>r.date==='2026-10-29'&&r.status==='actual').length,0);
+});
+test('a planned credit-card refund reduces debt, with no bank cash or available change',()=>{
+ const s=run({accounts:[account,{id:2,name:'Carte',kind:'credit',included:0,balance_cents:50000}],envelopes:[],recurring:[rule({type:'income',account_id:2,amount_cents:5000,one_time:1})]});const d=at(s,'2026-10-22');assert.equal(d.account_balances.find(a=>a.id===2).balance_cents,45000);assert.equal(d.cash_cents,200000);assert.equal(d.safe_cents,200000);assert.equal(d.bridge.income_cents,0);
+});

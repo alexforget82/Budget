@@ -1,4 +1,4 @@
-# Mon Budget 3.1
+# Mon Budget 3.2
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -18,7 +18,7 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
 5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
 
-Les fichiers `budget-features.js`, `features.js`, `planner.js` et `transactions.js`, `forecast-engine.js` et `forecast-ui.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+Les fichiers `budget-features.js`, `features.js`, `planner.js`, `transactions.js`, `forecast-engine.js`, `forecast-ui.js`, `planning-actions.js` et `planning-workflow.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
 La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
 Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).
@@ -41,6 +41,32 @@ Ce lanceur nécessite Node.js et n’est pas une application `.app` signée et a
 Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun virement bancaire. Les soldes bancaires et les transactions sont saisis ou importés manuellement. Sans paie prévue sur 30 jours, aucun montant « jusqu’à la paie » n’est inventé.
 
 ![Tableau de bord avec données fictives](docs/tableau-de-bord.png)
+
+## À confirmer et explication du solde (3.2)
+
+**Planifier → Prévu / Réel → À confirmer** est le point de départ quotidien. La liste distingue les opérations en retard, celles d’aujourd’hui et les prochaines échéances. Les filtres donnent accès aux opérations à traiter, aux sept prochains jours ou aux 90 jours disponibles. Les réservations internes n’apparaissent pas comme des paiements bancaires à confirmer. Les éléments sans configuration complète restent signalés.
+
+- **Confirmer le réel** : indiquez le montant effectivement passé et sa date. Si la transaction est déjà saisie, choisissez **Déjà saisie — associer l’opération** pour ne pas la débiter à nouveau. La confirmation crée, au besoin, une seule transaction ou un seul virement, puis le rattache à son échéance.
+- **Enveloppe avec plusieurs achats** : décochez **Aucun autre achat prévu pour cette période**. Seul le budget restant reste projeté; une confirmation ultérieure termine la période. Le total réel peut différer du budget initial.
+- **Modifier le prévu** : change le budget de cette occurrence, sans modifier les autres dates ni les soldes réels.
+- **Reporter** : déplace une seule sortie ou un seul revenu, dans la limite des 90 jours autorisés. Pour une enveloppe, le renouvellement de la réserve conserve sa date habituelle; seule la dépense est déplacée.
+- **Annuler** : retire l’occurrence de la simulation sans créer de transaction. L’**Historique complet** permet de la retrouver et de la rétablir.
+
+Une confirmation d’enveloppe conserve le lien avec sa période d’origine même si l’achat est enregistré plus tard. La suppression de cet achat rétablit la prévision correspondante. Deux validations de la même fiche ne créent pas deux opérations; une fiche devenue obsolète affiche une erreur et propose d’actualiser la liste. Les montants réels doivent être datés d’aujourd’hui ou d’un jour passé.
+
+Dans **Planifier → Prévision**, choisissez une date. Le panneau **Pourquoi ce solde ?** explique :
+
+**Solde réel de départ + revenus prévus − factures − dépenses d’enveloppes + virements nets = solde bancaire prévu.** Les réserves d’enveloppes restantes sont ensuite déduites pour obtenir le disponible prévu.
+
+Chaque groupe se déplie pour voir les mouvements et leur effet bancaire exact. Un virement entre deux comptes inclus est visible avec un effet net nul; un paiement de carte ou un virement vers un compte exclu apparaît comme une sortie. Les revenus en retard non confirmés ne sont pas ajoutés au solde. Les opérations réelles déjà enregistrées sont comprises dans le solde de départ. Les chiffres se mettent à jour avec la date, le curseur ou l’horizon.
+
+**Aucune réserve automatique n’est créée pour les cartes**, conformément au fonctionnement choisi. Cette mise à jour ne change pas cette règle.
+
+La migration est additive et crée une copie cohérente dans `data/backups/budget-before-planning-actions.sqlite`. Les anciens exports JSON v3 et v3.1 restent restaurables. Le suivi est recalculé à partir des règles actuelles; il ne constitue pas une archive immuable des anciennes prévisions.
+
+![À confirmer — données fictives](docs/a-confirmer.png)
+
+![Explication d’un solde — données fictives](docs/explication-solde.png)
 
 ## Prévision complète et suivi réel (3.1)
 

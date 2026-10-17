@@ -150,6 +150,66 @@ class BudgetAPI(unittest.TestCase):
   s=self.transaction(cid,-25);self.assertEqual(s['safe_cents'],200000);self.assertEqual(s['spending_windows']['today_cents'],200000)
   s=self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':125,'description':'Remboursement','happened_on':DAY});self.assertEqual(s['safe_cents'],187500);self.assertEqual(s['credit_reserved_cents'],0)
 
+ def planning_action(self,row,action='confirm',status=200,**extra):
+  return self.post('/api/planning/action',{'key':row['key'],'signature':row['signature'],'action':action,**extra},status)
+ def test_atomic_planning_confirmations_income_expense_transfer_and_duplicate_guard(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000)
+  def rule(kind,amount,**extra):
+   s=self.post('/api/recurring',{'description':'À confirmer '+kind,'type':kind,'amount':amount,'account_id':aid,'start_on':DAY,'frequency':'monthly','one_time':True,**extra});return next(r for r in s['planning']['rows'] if r['recurring_id']==s['recurring'][0]['id'])
+  expense=rule('expense',100);before=self.get('/api/backup/export')['tables'];future=(datetime.date.today()+datetime.timedelta(days=1)).isoformat()
+  self.planning_action(expense,status=400,amount=90,happened_on=future);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  s=self.planning_action(expense,amount=90,happened_on=DAY);self.assertEqual(next(a for a in s['accounts'] if a['id']==aid)['balance_cents'],191000);self.assertEqual(s['forecast'][0]['cash_cents'],191000);self.assertEqual(s['safe_cents'],191000)
+  before=self.get('/api/backup/export')['tables'];self.planning_action(expense,status=400,amount=90,happened_on=DAY);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  income=rule('income',500);s=self.planning_action(income,amount=450,happened_on=DAY);self.assertEqual(s['cash_cents'],236000)
+  transfer=rule('transfer',125,to_account_id=cid);s=self.planning_action(transfer,amount=100,happened_on=DAY);self.assertEqual(s['cash_cents'],226000);self.assertEqual(s['safe_cents'],226000);self.assertEqual(next(a for a in s['accounts'] if a['id']==cid)['balance_cents'],490000)
+  self.assertEqual(len(s['calendar_actuals']),2);self.assertEqual(len(s['calendar_transfers']),1);self.assertEqual(len(s['reconciliation_links']),3)
+ def test_late_envelope_confirmation_preserves_period_and_deletion_reopens_it(self):
+  aid=self.account(balance=2000);old=(datetime.date.today()-datetime.timedelta(days=14)).isoformat()
+  s=self.post('/api/envelopes',{'name':'Épicerie en retard','reserved':230,'budget':230,'frequency':'weekly','start_on':old,'forecast_account_id':aid});eid=s['envelopes'][0]['id']
+  backup=self.get('/api/backup/export');backup['tables']['envelopes'][0]['planning_since']=old
+  next(x for x in backup['tables']['app_settings'] if x['key']=='forecast_tracking_since')['value']=old
+  self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});row=next(r for r in self.get('/api/state')['planning']['rows'] if r['original_on']==old)
+  s=self.planning_action(row,amount=215,happened_on=DAY,account_id=aid);oldrow=next(r for r in s['planning']['rows'] if r['original_on']==old);todayrow=next(r for r in s['planning']['rows'] if r['original_on']==DAY)
+  self.assertEqual(oldrow['actual_cents'],21500);self.assertEqual(oldrow['status'],'actual');self.assertIsNone(todayrow['actual_cents']);self.assertEqual(todayrow['remaining_cents'],23000);self.assertEqual(s['cash_cents'],178500);self.assertEqual(s['envelope_details'][0]['spent_cents'],0)
+  backup=self.get('/api/backup/export');self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])
+  s=self.post('/api/transactions/delete',{'id':s['transactions'][0]['id']});self.assertEqual(s['cash_cents'],200000);self.assertEqual(next(r for r in s['planning']['rows'] if r['original_on']==old)['remaining_cents'],23000);self.assertEqual(s['planning']['envelope_actual_links'],[])
+ def test_planning_associates_existing_actual_without_reapplying_bank_balance(self):
+  aid=self.account(balance=2000);s=self.post('/api/envelopes',{'name':'Courses','reserved':230,'budget':230,'frequency':'weekly','start_on':DAY,'forecast_account_id':aid});eid=s['envelopes'][0]['id']
+  s=self.transaction(aid,-215,description='Marché déjà saisi');tid=s['transactions'][0]['id'];row=s['planning']['rows'][0]
+  s=self.planning_action(row,actual_id=tid,account_id=aid);self.assertEqual(s['cash_cents'],178500);self.assertEqual(s['reserved_cents'],1500);self.assertEqual(s['planning']['rows'][0]['actual_cents'],21500);self.assertEqual(len(s['calendar_actuals']),1)
+  rule=self.post('/api/recurring',{'description':'Vérification association unique','type':'expense','amount':220,'account_id':aid,'start_on':DAY,'frequency':'monthly','one_time':True})['recurring'][0]['id']
+  before=self.get('/api/backup/export')['tables'];self.post('/api/reconcile/link',{'recurring_id':rule,'occurrence_on':DAY,'actual_type':'transaction','actual_id':tid},400);self.assertEqual(self.get('/api/backup/export')['tables'],before);self.post('/api/recurring/delete',{'id':rule})
+  self.planning_action(row,status=400,actual_id=tid,account_id=aid)
+  s=self.post('/api/transactions/update',{'id':tid,'account_id':aid,'amount':-215,'description':'Sans enveloppe','happened_on':DAY,'envelope_id':None});self.assertEqual(s['cash_cents'],178500);self.assertEqual(s['reserved_cents'],23000);self.assertEqual(s['planning']['envelope_actual_links'],[])
+  s=self.post('/api/recurring',{'description':'Facture attendue','type':'expense','amount':220,'account_id':aid,'start_on':DAY,'frequency':'monthly','one_time':True});row=next(r for r in s['planning']['rows'] if r['source']=='recurring')
+  s=self.planning_action(row,actual_id=tid);self.assertEqual(s['cash_cents'],178500);self.assertEqual(next(r for r in s['planning']['rows'] if r['source']=='recurring')['actual_cents'],21500)
+ def test_planning_moves_adjusts_and_skips_only_one_occurrence_without_bank_changes(self):
+  aid=self.account(balance=2000);day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
+  s=self.post('/api/envelopes',{'name':'Courses','reserved':230,'budget':230,'frequency':'weekly','start_on':day(7),'forecast_account_id':aid});eid=s['envelopes'][0]['id'];key=f'env-{eid}|{day(7)}'
+  find=lambda s:next(r for r in s['planning']['rows'] if r['key']==key)
+  original=find(s);s=self.planning_action(original,'move',new_on=day(10));self.assertEqual(find(s)['date'],day(10));self.assertEqual(find(s)['original_on'],day(7))
+  self.planning_action(original,'adjust',status=400,amount=200)
+  s=self.planning_action(find(s),'adjust',amount=200);self.assertEqual(find(s)['planned_cents'],20000);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(9))['cash_cents'],200000);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(10))['cash_cents'],180000)
+  s=self.planning_action(find(s),'skip');self.assertEqual(find(s)['status'],'skipped');self.assertEqual(next(d for d in s['forecast'] if d['date']==day(10))['cash_cents'],200000);self.assertEqual(next(r for r in s['planning']['rows'] if r['original_on']==day(14))['planned_cents'],23000)
+  self.assertEqual(s['cash_cents'],200000);self.assertEqual(s['calendar_actuals'],[])
+  s=self.post('/api/recurring',{'description':'Facture unique','type':'expense','amount':100,'account_id':aid,'start_on':day(2),'frequency':'monthly','one_time':True});key=next(r['key'] for r in s['planning']['rows'] if r['source']=='recurring')
+  s=self.planning_action(find(s),'move',new_on=day(5));s=self.planning_action(find(s),'adjust',amount=80);self.assertEqual(find(s)['planned_cents'],8000);s=self.planning_action(find(s),'skip');self.assertEqual(find(s)['status'],'skipped');self.assertEqual(s['cash_cents'],200000)
+ def test_bank_bridge_reconciles_each_date_and_ignores_card_debt(self):
+  aid=self.account(balance=2000);excluded=self.account('savings',500);self.account('credit',5000)
+  self.post('/api/accounts/inclusion',{'id':excluded,'included':False})
+  self.post('/api/envelopes',{'name':'Courses','reserved':230,'budget':230,'frequency':'weekly','start_on':DAY,'forecast_account_id':aid})
+  for kind,amount,extra in [('income',1000,{}),('expense',100,{}),('transfer',50,{'to_account_id':excluded})]:self.post('/api/recurring',{'description':'Prévu '+kind,'type':kind,'amount':amount,'account_id':aid,'start_on':DAY,'frequency':'monthly','one_time':True,**extra})
+  s=self.get('/api/state');first=s['forecast'][0];self.assertEqual(first['cash_cents'],262000);self.assertEqual(first['bridge']['opening_cash_cents'],200000)
+  for d in s['forecast']:
+   c=d['bridge'];self.assertEqual(c['opening_cash_cents']+sum(c[k] for k in ['income_cents','expense_cents','envelope_cents','transfer_cents']),d['cash_cents']);self.assertEqual(c['closing_cash_cents']-c['reserved_cents'],d['safe_cents'])
+  before=self.get('/api/backup/export')['tables'];self.get('/api/state');self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_planning_action_backup_compatibility_and_missing_new_table_rejected(self):
+  self.account();backup=self.get('/api/backup/export');old=copy.deepcopy(backup)
+  for name in ['envelope_actual_links','envelope_occurrence_moves']:del old['tables'][name]
+  old['tables']['app_settings']=[s for s in old['tables']['app_settings'] if s['key']!='planning_actions_v1']
+  self.post('/api/backup/validate',{'backup':old});self.post('/api/backup/restore',{'backup':old,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/state')['cash_cents'],100000)
+  bad=copy.deepcopy(backup);del bad['tables']['envelope_actual_links'];before=self.get('/api/backup/export')['tables'];self.post('/api/backup/restore',{'backup':bad,'confirm':'REMPLACER'},400);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+
  def test_additive_legacy_migration_preserves_data(self):
   self.stop();dbpath=self.dir/'data'/'budget.sqlite';dbpath.unlink()
   for suffix in ['-wal','-shm']:
