@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.0
+# Vérifications — Mon Budget 4.0.1
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **73 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **77 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -12,7 +12,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
-| `tests/mac-service.test.js` | 2 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
+| `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
 | `tests/api-tests.py` | 27 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
@@ -197,3 +197,9 @@ Le test API des factures vérifie les six fréquences, les fins de mois et anné
 Les parcours `ui-smoke.py`, `workflows-ui.py`, `transactions-ui.py`, `transaction-transfers-ui.py`, `planning-ui.py`, `forecast-ui.py`, `planning-workflow-ui.py` et `card-payments-ui.py` ont réussi. Les quatre derniers ouvrent explicitement les outils d’audit conservés pour vérifier leurs anciens parcours; le test 4.0 vérifie les nouvelles vues par défaut.
 
 `mac-service-simulation.py` a réussi après le changement de version : l’installateur copie aussi les nouveaux fichiers JavaScript et CSS dans le dossier fixe et conserve la base. L’installation macOS/Tailscale réelle et Safari sur iPhone restent à vérifier sur les appareils de l’utilisateur. Les captures de démonstration contiennent uniquement des données fictives.
+
+## Ouverture et mise à jour macOS — v4.0.1
+
+`npm test` : 50 tests Node + 27 tests API réussis. Les nouveaux tests exécutent les raccourcis générés avec Bash dans des chemins contenant espaces et apostrophes, vérifient que les arguments sont transmis littéralement et que les dossiers incomplets, les autres applications et les versions anciennes sont refusés avant exécution. Le validateur ne prétend pas vérifier une signature d’authenticité.
+
+`mac-service-simulation.py` vérifie aussi la création des trois raccourcis permanents avec permissions 0700, l’ouverture d’un service existant sans deuxième serveur et la conservation de la base après mise à jour. Aucun changement global Gatekeeper ni aucune suppression de quarantaine n’est effectué. Finder, osascript et Gatekeeper réels ne sont pas disponibles dans cet environnement Linux; leur comportement reste à vérifier sur le Mac.

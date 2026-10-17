@@ -2,6 +2,27 @@
 
 Les données restent dans le dossier `data` de votre Mac. Le Mac et l’iPhone consultent **la même base**, sans serveur d’hébergement à louer. Le Mac doit rester allumé et connecté à Internet. Le budget n’est pas publié sur le Web public.
 
+## Ouverture bloquée par macOS — v4.0.1
+
+Les fichiers `.command` d’un nouveau ZIP peuvent être signalés comme téléchargés et non signés. Les modifier ne peut pas lever un blocage qui empêche leur exécution. Mon Budget n’est pas une application signée/notariée par Apple.
+
+Pour installer la 4.0.1 sans repasser par Réglages système, utilisez **Terminal** une fois, uniquement pour le ZIP obtenu depuis votre propre dépôt GitHub :
+
+1. Décompressez le ZIP 4.0.1. Si le service automatique est déjà installé, ne recopiez pas `data`; sa base active sera conservée. Sinon, arrêtez l’ancien serveur avec Control + C et placez le dossier `data` dans le nouveau dossier comme pour une première installation.
+2. Ouvrez Terminal et tapez `bash` suivi d’un espace, sans appuyer sur Entrée.
+3. Glissez **Installer acces automatique.command** depuis Finder dans Terminal. Son chemin complet s’ajoute à la commande.
+4. Appuyez sur Entrée et attendez le message de réussite. Cela exécute explicitement cet installateur avec Bash, sans changer les protections globales du Mac.
+
+La 4.0.1 crée trois raccourcis permanents dans **`~/Applications/Mon Budget`** :
+
+- **Ouvrir Mon Budget.command** : ouvre l’adresse privée du service installé, sans lancer de deuxième serveur.
+- **Mettre a jour Mon Budget.command** : demande de sélectionner le dossier du nouveau ZIP décompressé, vérifie qu’il contient une version complète de Mon Budget au moins aussi récente, puis exécute son installateur. Sélectionnez uniquement une version téléchargée depuis votre dépôt GitHub : le contrôle du format n’est pas une signature d’authenticité.
+- **Desactiver Mon Budget.command** : arrête le service et désactive le démarrage automatique sans effacer les données.
+
+Le dossier des raccourcis s’ouvre à la fin de l’installation. Pour le retrouver : Finder → **Aller → Aller au dossier…**, puis `~/Applications/Mon Budget`. Vous pouvez placer un alias du raccourci sur le Bureau. Le service continue de démarrer à l’ouverture de session.
+
+Pour les prochaines mises à jour, utilisez **le raccourci permanent**, puis choisissez le nouveau dossier téléchargé. Vous n’avez plus à ouvrir chaque nouveau `.command` téléchargé. Les raccourcis sont écrits localement par l’installateur; aucune désactivation de Gatekeeper ni suppression d’attribut de quarantaine n’est effectuée. Le comportement effectif de Gatekeeper et les éventuelles politiques de votre Mac restent à vérifier sur l’appareil.
+
 ## Recommandé : fonctionner sans fenêtre Terminal — v3.7
 
 Une installation unique permet de fermer Terminal et de démarrer le budget automatiquement à **l’ouverture de votre session Mac**. Tailscale doit lui aussi être connecté sur le Mac; activez son ouverture à la connexion dans ses réglages. Après un redémarrage, ouvrez votre session au moins une fois, puis vous pouvez verrouiller le Mac.
@@ -18,7 +39,7 @@ Le budget est installé dans **`~/Library/Application Support/Mon Budget`**. Sa 
 
 ### Mises à jour suivantes
 
-Téléchargez et décompressez la nouvelle version, puis double-cliquez sur **Installer acces automatique.command** dans ce nouveau dossier. Il n’est plus nécessaire de recopier `data`. Le programme arrête son service, sauvegarde la base active, remplace les fichiers de l’application et redémarre la nouvelle version. Il réutilise toujours les données du dossier fixe, même si une copie de `data` se trouve dans le ZIP décompressé.
+À partir de la 4.0.1, téléchargez et décompressez la nouvelle version, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command**, puis sélectionnez ce nouveau dossier. Vous pouvez aussi exécuter explicitement son installateur avec Bash, comme indiqué ci-dessus. Il n’est plus nécessaire de recopier `data`. Le programme arrête son service, sauvegarde la base active, remplace les fichiers de l’application et redémarre la nouvelle version. Il réutilise toujours les données du dossier fixe, même si une copie de `data` se trouve dans le ZIP décompressé.
 
 **Copier des fichiers ou télécharger un ZIP ne déclenche pas de code automatiquement.** Il faut lancer ce fichier pour appliquer une mise à jour. Le démarrage à l’ouverture de session, lui, est automatique. Cette version ne télécharge aucune mise à jour toute seule.
 

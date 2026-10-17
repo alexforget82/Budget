@@ -1,3 +1,20 @@
+VERSION 4.0.1 — EVITER LES OUVERTURES REPETEES DANS CONFIDENTIALITE
+Pour installer cette version si macOS bloque le fichier téléchargé :
+1. Ouvrez Terminal.
+2. Tapez bash suivi d’un espace, sans appuyer sur Entrée.
+3. Glissez Installer acces automatique.command du nouveau dossier dans Terminal.
+4. Appuyez sur Entrée. Utilisez uniquement le ZIP obtenu de votre dépôt GitHub.
+Si le service automatique est déjà installé, NE recopiez PAS une ancienne base.
+Pour une première installation, arrêtez l’ancien serveur et placez data à côté
+comme expliqué plus bas.
+
+L’installateur crée les raccourcis dans ~/Applications/Mon Budget.
+Utilisez ensuite Ouvrir Mon Budget.command pour ouvrir le budget et
+Mettre a jour Mon Budget.command pour choisir le dossier du prochain ZIP.
+Ces raccourcis restent à la même place. Aucun besoin d’ouvrir le nouveau lanceur
+iPhone téléchargé à chaque mise à jour. Les données actives sont conservées.
+Aucune protection globale macOS n’est désactivée. Voir ACCES-IPHONE.md.
+
 VERSION 4.0 — CALENDRIER, PREVISIONS ET SIMULATIONS
 Si vous utilisez le service automatique : décompressez le nouveau ZIP et lancez
 Installer acces automatique.command. Il conserve la base active du dossier fixe,

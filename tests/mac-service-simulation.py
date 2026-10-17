@@ -47,8 +47,13 @@ sys.exit(2)
  # First install copies data to the stable folder and starts a detached server.
  p=run('install');assert 'arrière-plan' in p.stdout;s=status();assert s['cash_cents']==123456
  root=home/'Library'/'Application Support'/'Mon Budget';assert (root/'data'/'budget.sqlite').exists();assert (home/'Library'/'LaunchAgents'/'ca.monbudget.private.plist').exists()
+ shortcuts=home/'Applications'/'Mon Budget'
+ for name in ['Ouvrir Mon Budget.command','Mettre a jour Mon Budget.command','Desactiver Mon Budget.command']:
+  file=shortcuts/name;assert file.exists();assert file.stat().st_mode&0o777==0o700
+  assert str(root) in file.read_text();assert 'xattr' not in file.read_text()
+ run('open');assert status()['cash_cents']==123456
  # Install again while running: stop only this service, keep the stable database.
- (incoming/'data'/'budget.sqlite').unlink();run('install');assert status()['cash_cents']==123456
+ (incoming/'data'/'budget.sqlite').unlink();run('install');assert status()['cash_cents']==123456;assert (root/'mac-update.js').exists()
  assert len(list((root/'data'/'backups').glob('budget-before-service-update-*.sqlite')))==2
  run('stop');assert not state.exists();assert not (home/'Library'/'LaunchAgents'/'ca.monbudget.private.plist').exists();assert (root/'data'/'budget.sqlite').exists()
  # A separately launched budget is detected, never killed or overwritten.

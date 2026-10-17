@@ -12,3 +12,23 @@ test('macOS installer refuses unsupported platforms without trying to install a 
  if(process.platform==='darwin')return;
  const r=spawnSync(process.execPath,['mac-service.js','install'],{encoding:'utf8'});assert.equal(r.status,1);assert.match(r.stderr,/nécessite macOS/);
 });
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {shortcutScript} from '../mac-service.js';
+import {validateUpdateFolder} from '../mac-update.js';
+function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),"budget Alex's & Jenny "));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
+function release(dir,version='4.0.1'){fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:'mon-budget-local',version}));for(const name of ['mac-service.js','mac-update.js','server.js','index.html','planning-v4.js','planning-v4.css','Acces prive iPhone.command'])fs.writeFileSync(path.join(dir,name),'');}
+test('permanent shortcut passes paths and arguments literally through bash',t=>{
+ const dir=fixture(t),script=path.join(dir,"open ' budget.js"),shortcut=path.join(dir,'Ouvrir.command');fs.writeFileSync(script,'console.log(JSON.stringify(process.argv.slice(2)))');fs.writeFileSync(shortcut,shortcutScript(process.execPath,script,"open ' $BUDGET_RESULT ; &"));const r=spawnSync('/bin/bash',[shortcut],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(r.stdout),["open ' $BUDGET_RESULT ; &"]);
+});
+test('update folder accepts complete same/newer releases without writing to them',t=>{
+ const dir=fixture(t);release(dir);const before=fs.readdirSync(dir);assert.equal(validateUpdateFolder(dir,'4.0.1'),dir);assert.equal(validateUpdateFolder(dir,'3.9.9'),dir);assert.deepEqual(fs.readdirSync(dir),before);
+});
+test('update folder refuses downgrades and unrelated applications',t=>{
+ const dir=fixture(t);release(dir,'4.0.0');assert.throws(()=>validateUpdateFolder(dir,'4.0.1'),/ancienne/);fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:'other-app',version:'9.0.0'}));assert.throws(()=>validateUpdateFolder(dir,'4.0.1'),/Mon Budget/);
+});
+test('incomplete release is rejected before its installer can execute',t=>{
+ const dir=fixture(t);release(dir);fs.unlinkSync(path.join(dir,'server.js'));assert.throws(()=>validateUpdateFolder(dir,'4.0.1'));
+});

@@ -18,6 +18,10 @@ export function servicePlist(node,root,logs){return `<?xml version="1.0" encodin
 <key>StandardOutPath</key><string>${xml(path.join(logs,'budget.log'))}</string>
 <key>StandardErrorPath</key><string>${xml(path.join(logs,'budget-error.log'))}</string>
 </dict></plist>\n`;}
+export const shellQuote=s=>"'"+String(s).replaceAll("'","'\"'\"'")+"'";
+export function shortcutScript(node,script,action=''){
+ return '#!/bin/bash\n'+shellQuote(node)+' '+shellQuote(script)+(action?' '+shellQuote(action):'')+'\nBUDGET_RESULT=$?\nif [ "$BUDGET_RESULT" -ne 0 ]; then read -r -p "Appuyez sur Entrée pour fermer."; fi\nexit "$BUDGET_RESULT"\n';
+}
 function command(exe,args,allowFailure=false){const r=spawnSync(exe,args,{encoding:'utf8'});if(r.error)throw r.error;if(r.status&&!allowFailure)throw Error((r.stderr||r.stdout||exe+' a échoué').trim());return r;}
 async function status(){try{const r=await fetch('http://127.0.0.1:3030/api/private/status',{signal:AbortSignal.timeout(1500)});return r.ok?await r.json():null;}catch{return null;}}
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
@@ -31,13 +35,18 @@ async function main(){
   child.on('error',e=>{console.error(e.message);awake.kill();process.exitCode=1;});
   child.on('exit',code=>{awake.kill();process.exitCode=code||0;});return;
  }
+ if(action==='open'){
+  const s=await status(),key=createHash('sha256').update(path.join(root,'data')).digest('hex');
+  if(!s?.enabled||s.data_key!==key||!/^https:\/\//.test(s.origin||''))throw Error('Le service du budget ne répond pas. Relancez son installateur; Tailscale doit rester connecté.');
+  command('/usr/bin/open',[s.origin]);return;
+ }
  if(action==='stop'){
   const loaded=command('/bin/launchctl',['print',service],true).status===0;
   if(loaded)command('/bin/launchctl',['bootout',service]);
   if(fs.existsSync(plist))fs.unlinkSync(plist);
   console.log('Démarrage automatique désactivé. Le budget est arrêté. Vos données sont conservées dans '+root+'/data');return;
  }
- if(action!=='install')throw Error('Action attendue : install, stop ou run.');
+ if(action!=='install')throw Error('Action attendue : install, open, stop ou run.');
  const major=Number(process.versions.node.split('.')[0]);if(major<22||(major===22&&Number(process.versions.node.split('.')[1])<13))throw Error('Node.js 22.13 ou plus est requis.');
  // Never stop an arbitrary Node process or a server from another budget folder.
  const loaded=command('/bin/launchctl',['print',service],true).status===0;
@@ -68,6 +77,13 @@ async function main(){
  if(!ready)throw Error('Le service est installé mais ne répond pas. Consultez '+path.join(logs,'budget-error.log')+'.');
  console.log('\nMon Budget '+version+' fonctionne en arrière-plan. Vous pouvez fermer Terminal.');
  console.log('Démarrage automatique à chaque ouverture de session Mac.');console.log('Données utilisées : '+data);console.log('Accès iPhone : '+ready.origin);
+ const shortcuts=path.join(home,'Applications','Mon Budget');fs.mkdirSync(shortcuts,{recursive:true,mode:0o700});
+ // Write content locally; do not copy downloaded Finder metadata or strip quarantine.
+ for(const [name,script,action] of [['Ouvrir Mon Budget.command','mac-service.js','open'],['Mettre a jour Mon Budget.command','mac-update.js',''],['Desactiver Mon Budget.command','mac-service.js','stop']]){
+  const file=path.join(shortcuts,name);fs.writeFileSync(file,shortcutScript(process.execPath,path.join(root,script),action),{mode:0o700});fs.chmodSync(file,0o700);
+ }
+ console.log('Raccourcis permanents : '+shortcuts);command('/usr/bin/open',[shortcuts],true);
+ console.log('Pour les prochaines versions, utilisez Mettre a jour Mon Budget.command et choisissez le nouveau dossier téléchargé.');
  console.log('Gardez Tailscale connecté, le Mac allumé et le couvercle ouvert.');command('/usr/bin/open',[ready.origin],true);
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{console.error('\n'+e.message);process.exitCode=1;});

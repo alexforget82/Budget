@@ -1,4 +1,4 @@
-# Mon Budget 4.0
+# Mon Budget 4.0.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,14 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Ouverture Mac simplifiée — v4.0.1
+
+L’installateur crée des raccourcis permanents dans **`~/Applications/Mon Budget`** : **Ouvrir Mon Budget.command**, **Mettre a jour Mon Budget.command** et **Desactiver Mon Budget.command**. Pour les mises à jour suivantes, utilisez le raccourci permanent et choisissez le dossier du nouveau ZIP; vous n’avez plus à ouvrir un nouveau fichier `.command` téléchargé à chaque version. Les données actives du service sont conservées.
+
+Si macOS bloque le premier installateur, ouvrez Terminal, tapez **`bash` suivi d’un espace**, glissez **Installer acces automatique.command** depuis le nouveau dossier dans Terminal, puis appuyez sur Entrée. Faites-le uniquement pour la version obtenue depuis votre dépôt GitHub. Le service installé doit déjà avoir ses données, ou une première installation doit contenir votre dossier `data`.
+
+Cette version ne signe pas l’application auprès d’Apple, ne désactive pas Gatekeeper et ne retire aucun attribut de quarantaine. Le cycle du service est testé en simulation; le comportement réel de Finder/Gatekeeper reste à vérifier sur le Mac. [Instructions détaillées](ACCES-IPHONE.md#ouverture-bloquée-par-macos--v401).
 
 ## La version 4.0 : planifier par date
 
