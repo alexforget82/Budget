@@ -18,7 +18,7 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
 5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
 
-Les fichiers `budget-features.js`, `features.js` et `planner.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+Les fichiers `budget-features.js`, `features.js`, `planner.js` et `transactions.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
 La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
 Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).
@@ -153,3 +153,26 @@ Ces vues lisent les prévisions du serveur; elles ne modifient pas les règles f
 [Aperçu des enveloppes](docs/enveloppes.png) · [Aperçu des récurrences](docs/recurrences.png) · [Prévision mobile](docs/mobile-prevision.png)
 
 Test supplémentaire : `python3 tests/planning-ui.py` (mêmes prérequis Playwright que les autres tests navigateur).
+
+
+## Transactions au quotidien
+
+L’historique regroupe les opérations par journée, avec catégorie, compte, montant et état de révision. Un clic sur **À vérifier / Révisée** change l’état sans toucher au montant. **Modifier** ouvre l’éditeur; le menu `•••` propose la suppression et la préparation d’une nouvelle opération similaire.
+
+- Recherche sans distinction de casse ou d’accents : `cafe` retrouve `CAFÉ`. Les caractères `%`, `_` et `\` sont recherchés littéralement.
+- Filtres rapides Tout / Dépenses / Revenus / À vérifier, compte et périodes prédéfinies. Catégorie, dates personnalisées et état de révision restent dans les filtres avancés.
+- Totaux des dépenses, revenus et opérations à vérifier calculés sur **tous les résultats filtrés**, au-delà de la page de 50 lignes. Ils décrivent les transactions, pas votre solde bancaire.
+- Une requête de recherche plus ancienne ne remplace pas les résultats d’une recherche plus récente. En cas d’erreur de lecture, les totaux sont retirés et un bouton de nouvelle tentative apparaît.
+- Après suppression de la dernière opération d’une page, l’historique revient à une page existante.
+
+L’ajout commence par Dépense/Revenu, le montant et la description. Les commerces récents proposent la catégorie de leur dernière opération lorsqu’elle est du même type. La proposition reste modifiable et ne remplace pas une catégorie choisie manuellement. Le compte et le montant ne sont pas copiés par ces suggestions. Un changement Dépense/Revenu efface la catégorie précédente avant une éventuelle nouvelle proposition.
+
+**Enregistrer et continuer** conserve l’éditeur ouvert et efface le montant et la description après succès. **Refaire cette opération** prépare une copie à la date du jour, avec compte, catégorie et enveloppe; elle n’est enregistrée qu’après confirmation dans le formulaire et modifie alors les soldes comme une nouvelle opération réelle. Fermer la fenêtre conserve le brouillon dans la page en cours.
+
+![Historique avec données fictives](docs/transactions.png)
+
+![Saisie avec données fictives](docs/saisie-transaction.png)
+
+[Aperçu mobile de l’historique](docs/mobile-transactions.png)
+
+Vérification supplémentaire : `python3 tests/transactions-ui.py` (Playwright/Chromium comme les autres parcours).

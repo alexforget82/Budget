@@ -210,8 +210,8 @@ function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM acco
   return {id:e.id,spent_cents:spent,available_cents:e.reserved_cents,next_renewal:next,period_start:periodStart};
  });
  const sts_breakdown={accounts:accounts.filter(a=>a.kind!=='credit'&&a.included).map(a=>({name:a.name,balance_cents:a.balance_cents})),envelopes:envelopes.filter(e=>e.reserved_cents>0).map(e=>({name:e.name,reserved_cents:e.reserved_cents})),windows:{week_end:windows.week_end,payday_date:windows.payday_date},events:projected.slice(0,30).flatMap(d=>d.events.filter(ev=>ev.sts_impact_cents).map(ev=>({date:d.date,description:ev.description,impact_cents:ev.sts_impact_cents,type:ev.type}))) };return {...features.state(),accounts,envelopes,recurring,overrides,forecast:projected,envelope_details:envelopeDetails,envelope_budget_overrides:envelopeOverrides,sts_breakdown,reconciliation_links:manual,recurring_moves:moves,reconciliation:{matched_count:reconciled.size,method:"Montant, compte, description et date (±3 jours); correspondances ambiguës ignorées"},spending_windows:windows,transfers:q('SELECT t.*,a.name from_name,b.name to_name FROM account_transfers t JOIN accounts a ON a.id=t.from_account_id JOIN accounts b ON b.id=t.to_account_id ORDER BY t.id DESC LIMIT 30'),transactions:q('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id ORDER BY t.id DESC LIMIT 50'),cash_cents:cash,reserved_cents:reserved,safe_cents:cash-reserved}}
-const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js']]);
-const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8'};
+const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js'],['/transactions.js','transactions.js']]);
+const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8','transactions.js':'text/javascript; charset=utf-8'};
 function accountEffect(accountId,amount){const kind=db.prepare('SELECT kind FROM accounts WHERE id=?').get(accountId)?.kind;if(!kind)throw Error('Compte introuvable');return kind==='credit'?-amount:amount}
 function restoreEnvelope(id,amount,effect=null){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=reserved_cents+? WHERE id=?',effect??-amount,id)}
 function applyEnvelope(id,amount){if(!id||amount>=0)return 0;const effect=Math.min(q('SELECT reserved_cents FROM envelopes WHERE id=?',id)[0].reserved_cents,-amount);run('UPDATE envelopes SET reserved_cents=reserved_cents-? WHERE id=?',effect,id);return effect;}
@@ -270,9 +270,11 @@ function transferChange(x,remove=false){
   }
  });
 }
+const normalizeSearch=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+db.function('budget_search',{deterministic:true},normalizeSearch);
 function listTransactions(url,all=false){
  const u=new URL(url,'http://localhost'),params=u.searchParams,where=[],args=[];
- if(params.get('search')){where.push('LOWER(t.description) LIKE ?');args.push('%'+params.get('search').toLowerCase().slice(0,80)+'%')}
+ if(params.get('search')){where.push("budget_search(t.description) LIKE ? ESCAPE '\\'");args.push('%'+normalizeSearch(params.get('search').slice(0,80)).replace(/[\\%_]/g,c=>'\\'+c)+'%')}
  if(params.get('account')){where.push('t.account_id=?');args.push(Number(params.get('account')))}
  if(params.get('category')){where.push('t.category_id=?');args.push(Number(params.get('category')))}
  if(params.get('envelope')){where.push('t.envelope_id=?');args.push(Number(params.get('envelope')))}
@@ -281,10 +283,10 @@ function listTransactions(url,all=false){
  if(params.get('to')&&validDate(params.get('to'))){where.push('t.happened_on<=?');args.push(params.get('to'))}
  if(params.get('kind')==='expense'||params.get('kind')==='income')where.push('t.amount_cents'+(params.get('kind')==='expense'?'<':'>')+'0');
  const filter=where.length?' WHERE '+where.join(' AND '):'';
- const count=db.prepare('SELECT COUNT(*) n FROM transactions t'+filter).get(...args).n;
+ const totals=db.prepare('SELECT COUNT(*) count,COALESCE(SUM(CASE WHEN amount_cents>0 THEN amount_cents ELSE 0 END),0) income_cents,COALESCE(SUM(CASE WHEN amount_cents<0 THEN -amount_cents ELSE 0 END),0) expense_cents,COALESCE(SUM(CASE WHEN reviewed=0 THEN 1 ELSE 0 END),0) pending_count FROM transactions t'+filter).get(...args);const count=totals.count;
  const page=Math.max(1,Math.min(100000,Number(params.get('page'))||1)),limit=50;
  const rows=db.prepare('SELECT t.*,a.name account_name,e.name envelope_name,c.name category_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id LEFT JOIN categories c ON c.id=t.category_id'+filter+' ORDER BY t.happened_on DESC,t.id DESC'+(all?'':' LIMIT ? OFFSET ?')).all(...args,...(all?[]:[limit,(page-1)*limit]));
- return {rows,count,page,pages:Math.max(1,Math.ceil(count/limit))};
+ return {rows,count,page,pages:Math.max(1,Math.ceil(count/limit)),summary:{...totals,net_cents:totals.income_cents-totals.expense_cents}};
 }
 
 http.createServer(async(req,res)=>{try{

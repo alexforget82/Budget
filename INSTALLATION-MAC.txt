@@ -13,8 +13,8 @@ MISE À JOUR RECOMMANDÉE — NOUVEAU DOSSIER
    dossier, au même niveau que server.js. Ne déplacez pas l’original.
    Le ZIP ne contient aucun dossier data; il n’y a rien à remplacer.
 5. Gardez tous les nouveaux fichiers applicatifs ensemble : server.js,
-   budget-features.js, index.html, app.css, app.js, features.js, planner.js
-   et package.json.
+   budget-features.js, index.html, app.css, app.js, features.js, planner.js,
+   transactions.js et package.json.
    IMPORTANT : contrairement à la mise à jour visuelle précédente, remplacer
    seulement trois fichiers ne suffit plus.
 6. Ouvrez Lancer Mon Budget.command dans ce NOUVEAU dossier, ou lancez

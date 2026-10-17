@@ -4,12 +4,12 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **13 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **14 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
 | `tests/csv.test.js` | 5 | BOM, CSV multiligne, guillemets échappés, tabulations, CRLF, lignes vides, limites de taille, montants localisés, signes et refus des valeurs invalides |
-| `tests/api-tests.py` | 8 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 9 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -77,6 +77,25 @@ Les tests ne couvrent pas tous les historiques possibles, toutes les migrations 
 - Calendrier mensuel, jours avec mouvements et détail d’une journée.
 - Comptes, prévision, enveloppes, récurrences, objectifs et calendrier vérifiés à 375, 390, 768, 1024 et 1440 pixels, sans débordement de page.
 - Comparaison de toutes les tables avant et après la navigation : aucun changement des données financières par l’exploration de ces vues.
-- Aucune erreur JavaScript ou console inattendue. Les autres parcours navigateur et les treize tests automatisés restent réussis.
+- Aucune erreur JavaScript ou console inattendue. Les autres parcours navigateur et la suite automatisée reste réussie.
 
 Les captures de ces vues dans `docs/` sont fictives. Safari réel reste à vérifier sur Mac.
+
+
+## Transactions — historique et saisie simplifiés
+
+Un test API supplémentaire porte la suite `npm test` à **14 tests réussis** (5 CSV et 9 API). Il vérifie les totaux sur toutes les pages, les filtres, les descriptions récentes avec catégories et la recherche sans accents avec `%`, `_` et `\` traités littéralement.
+
+`python3 tests/transactions-ui.py` : **réussi dans Chromium**, sur une base temporaire.
+
+- Totaux identiques sur les différentes pages et recalculés sur l’ensemble des résultats filtrés.
+- Recherche accentuée; une réponse ancienne volontairement retardée ne remplace pas une recherche plus récente.
+- Marquage d’une opération comme révisée, filtres rapides, catégories et périodes.
+- Historique et éditeur vérifiés à 375, 390, 768, 1024 et 1440 pixels sans débordement horizontal.
+- Proposition de catégorie depuis un commerce récent; choix manuel préservé et catégorie effacée lors d’un changement Dépense/Revenu.
+- Enregistrement en continu : fenêtre conservée, montant/description effacés après succès, puis deuxième opération enregistrée; soldes exacts vérifiés par API.
+- Copie d’opération préparée à la date du jour sans création à la fermeture du brouillon; saisie d’un revenu et signe du solde vérifiés.
+- Suppression de la dernière opération d’une page : retour automatique à la page précédente.
+- Réponse HTTP 503 volontaire : totaux retirés, nouvelle tentative fonctionnelle. Cette erreur attendue est distinguée des erreurs inattendues.
+
+Les autres parcours navigateur restent réussis. Les captures publiées utilisent uniquement des données fictives. Safari réel reste à vérifier sur Mac.

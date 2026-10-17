@@ -53,6 +53,18 @@ class BudgetAPI(unittest.TestCase):
   export=list(csv.reader(io.StringIO(self.call('/api/transactions/export',raw=True)),delimiter=';'));self.assertEqual(len(export),58)
   self.assertEqual(self.get(f'/api/transactions/list?category={cat}&account={aid}')['count'],55)
   self.transaction(aid,-1,description='=HYPERLINK("unsafe")');export=self.call('/api/transactions/export',raw=True);self.assertIn("'=HYPERLINK",export)
+ def test_register_totals_recent_categories_and_literal_accent_search(self):
+  from urllib.parse import urlencode
+  aid=self.account();cat=self.get('/api/state')['categories'][0]['id']
+  for _ in range(52):self.transaction(aid,-2.35,description='CAFÉ du Coin',category_id=cat)
+  income=self.transaction(aid,100,description='Salaire')['transactions'][0]['id']
+  self.post('/api/transactions/review',{'id':income,'reviewed':True})
+  data=self.get('/api/transactions/list');self.assertEqual(data['count'],53);self.assertEqual(len(data['rows']),50);self.assertEqual(data['summary'],{'count':53,'expense_cents':12220,'income_cents':10000,'net_cents':-2220,'pending_count':52});self.assertEqual(self.get('/api/transactions/list?page=2')['summary'],data['summary'])
+  found=self.get('/api/transactions/list?'+urlencode({'search':'cafe'}));self.assertEqual(found['count'],52);self.assertEqual(found['summary']['expense_cents'],12220)
+  self.assertEqual(self.get('/api/transactions/list?'+urlencode({'search':'CAFÉ','category':cat}))['count'],52)
+  for description,search in [('Rabais 10%','%'),('Frais_A','_'),('Chemin\\boutique','\\')]:
+   self.transaction(aid,-1,description=description);self.assertEqual(self.get('/api/transactions/list?'+urlencode({'search':search}))['count'],1)
+  recent=next(r for r in self.get('/api/state')['recent_descriptions'] if r['description']=='CAFÉ du Coin');self.assertEqual(recent['category_id'],cat);self.assertEqual(recent['amount_cents'],-235)
  def test_csv_localized_dates_quotes_duplicates_and_history(self):
   aid=self.account();payload=self.csv_data(aid,'Date;Description;Montant\n15/03/2026;"Marché; local";-12,50\n16/03/2026;"Note ""test""\nsuite";1 234,56',date_format='DMY')
   info=self.post('/api/import/inspect',{'csv':payload['csv']});self.assertEqual(info['delimiter'],';');self.assertEqual(info['count'],2)

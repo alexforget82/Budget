@@ -55,12 +55,12 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    page.locator('#transaction').evaluate('(form)=>form.noValidate=true')
    page.locator('#transaction [name="amount"]').fill('0')
    page.locator('#transaction [name="description"]').fill('Essai de validation')
-   page.locator('#transaction button').click()
+   page.locator('#transaction').get_by_role('button',name='Enregistrer',exact=True).click()
    page.wait_for_selector('#transaction-dialog .form-feedback');assert page.locator('#transaction-dialog').is_visible()
    errors[:]=[e for e in errors if '400 (Bad Request)' not in e]
    before=get('/api/state')['accounts'];balance=next(a['balance_cents'] for a in before if a['id']==aid)
    page.locator('#transaction [name="amount"]').fill('5')
-   page.locator('#transaction button').click();page.wait_for_selector('#transaction-dialog',state='hidden');page.wait_for_selector('.save-notification:not([hidden])')
+   page.locator('#transaction').get_by_role('button',name='Enregistrer',exact=True).click();page.wait_for_selector('#transaction-dialog',state='hidden');page.wait_for_selector('.save-notification:not([hidden])')
    assert next(a['balance_cents'] for a in get('/api/state')['accounts'] if a['id']==aid)==balance-500
    # Empty and constant data, and no forecast rows, are independent presentation cases.
    empty=get('/api/state');empty.update(accounts=[],envelopes=[],recurring=[],transactions=[],transfers=[],cash_cents=0,reserved_cents=0,safe_cents=0)

@@ -309,27 +309,42 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
  };
  const filterIds=['v2-search','v2-account','v2-review','v2-kind','v3-category-filter','v3-date-from','v3-date-to'];
  const query=()=>{const p=new URLSearchParams({page});if(by('v2-search').value)p.set('search',by('v2-search').value);if(by('v2-account').value)p.set('account',by('v2-account').value);if(by('v2-review').value)p.set('reviewed',by('v2-review').value);if(by('v2-kind').value)p.set('kind',by('v2-kind').value);for(const [id,key] of [['v3-category-filter','category'],['v3-date-from','from'],['v3-date-to','to']])if(by(id).value)p.set(key,by(id).value);return p};
+ let recordsTicket=0,recordsController;
  async function loadRecords(){
+  const ticket=++recordsTicket;recordsController?.abort();recordsController=new AbortController();
+  const host=by('v2-transaction-list');host.setAttribute('aria-busy','true');
+  document.dispatchEvent(new CustomEvent('budget:transactions-loading'));
   try{
-   const r=await fetch('/api/transactions/list?'+query(),{cache:'no-store'});if(!r.ok)throw Error('Liste indisponible');
-   const data=await r.json();records=data.rows;allCount=data.count;
-   const host=by('v2-transaction-list');host.replaceChildren();
+   const r=await fetch('/api/transactions/list?'+query(),{cache:'no-store',signal:recordsController.signal});if(!r.ok)throw Error('Liste indisponible');
+   const data=await r.json();if(ticket!==recordsTicket)return;
+   if(data.count&&data.page>data.pages){page=data.pages;return loadRecords()}
+   page=data.page;records=data.rows;allCount=data.count;host.replaceChildren();
+   const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
    let last='';
    for(const t of records){
-    if(last!==t.happened_on){last=t.happened_on;const heading=document.createElement('div');heading.className='v2-date';heading.textContent=dateLabel(last);host.append(heading)}
-    const row=document.createElement('div');row.className='v2-row';
-    const left=document.createElement('div');left.innerHTML='<strong>'+esc(t.description)+'</strong><br><small>'+esc(t.account_name)+(t.category_name?' · '+esc(t.category_name):' · Non classé')+(t.envelope_name?' · '+esc(t.envelope_name):'')+(t.affects_balance===0?' · Historique importé':'')+' · '+(t.reviewed?'Révisée':'À vérifier')+'</small>';
-    const right=document.createElement('div');right.className='actions';
-    const amount=document.createElement('strong');amount.textContent=centsFmt(t.amount_cents);
-    const editButton=document.createElement('button');editButton.type='button';editButton.textContent='Modifier';editButton.onclick=()=>edit('transaction',t.id);
-    const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.className='danger';deleteButton.textContent='Supprimer';deleteButton.onclick=()=>window.v2Delete('transaction',t.id);
-    right.append(amount,editButton,deleteButton);row.append(left,right);host.append(row);
+    if(last!==t.happened_on){last=t.happened_on;const heading=node('h3',last===today()?'Aujourd’hui':new Date(last+'T12:00:00').toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long',year:last.slice(0,4)!==today().slice(0,4)?'numeric':undefined}),'ledger-date');host.append(heading)}
+    const row=node('article',undefined,'ledger-row'+(t.amount_cents>0?' income':' expense'));row.dataset.transactionId=t.id;
+    const avatar=node('span',t.description.trim().split(/\s+/).slice(0,2).map(w=>Array.from(w)[0]).join('').toLocaleUpperCase('fr-CA'),'merchant-mark');avatar.setAttribute('aria-hidden','true');
+    const info=node('div',undefined,'ledger-description'),name=node('button',t.description,'ledger-name');name.type='button';name.setAttribute('aria-label','Modifier '+t.description);name.onclick=()=>edit('transaction',t.id);
+    const meta=node('div',undefined,'ledger-meta');meta.append(node('span',t.account_name));if(t.affects_balance===0)meta.append(node('span','Historique importé','history-badge'));info.append(name,meta);
+    const category=node('div',undefined,'ledger-category');category.append(node('span',t.category_name||'Non classé','category-tag'+(t.category_id?'':' unclassified')));if(t.envelope_name)category.append(node('small',t.envelope_name));
+    const amount=node('strong',(t.amount_cents>0?'+':'')+centsFmt(t.amount_cents),'ledger-amount');
+    const review=node('button',t.reviewed?'Révisée':'À vérifier','review-pill'+(t.reviewed?' reviewed':''));review.type='button';review.setAttribute('aria-pressed',String(!!t.reviewed));review.setAttribute('aria-label',(t.reviewed?'Marquer à vérifier : ':'Marquer comme révisée : ')+t.description);review.onclick=async()=>{review.disabled=true;const ok=await send('/api/transactions/review',{id:t.id,reviewed:!t.reviewed});if(!ok)review.disabled=false;};
+    const actions=node('div',undefined,'ledger-actions'),editButton=node('button','Modifier','ledger-edit');editButton.type='button';editButton.onclick=()=>edit('transaction',t.id);
+    const more=node('details',undefined,'ledger-menu'),label=node('summary','•••');label.setAttribute('aria-label','Autres actions pour '+t.description);const menu=node('div',undefined,'ledger-menu-items');
+    const repeat=node('button','Refaire cette opération');repeat.type='button';repeat.onclick=()=>{more.open=false;window.dispatchEvent(new CustomEvent('budget:repeat-transaction',{detail:t}));};
+    const remove=node('button','Supprimer','danger');remove.type='button';remove.onclick=()=>window.v2Delete('transaction',t.id);menu.append(repeat,remove);more.append(label,menu);actions.append(editButton,more);
+    row.append(avatar,info,category,amount,review,actions);host.append(row);
    }
-   if(!records.length)budgetEmpty(host,'Aucune transaction à afficher','Enregistrez une opération ou ajustez les filtres pour retrouver votre historique.','Ajouter une transaction',()=>window.appOpenEditor('transaction'));
-   by('v2-pages').textContent='Page '+data.page+' / '+data.pages+' · '+data.count+' opérations';
+   if(!records.length)budgetEmpty(host,'Aucune opération dans cette vue','Ajoutez une transaction ou élargissez vos filtres pour retrouver votre historique.','Ajouter une transaction',()=>window.appOpenEditor('transaction'));
+   by('v2-pages').textContent='Page '+data.page+' / '+data.pages+' · '+data.count+' opération'+(data.count===1?'':'s');
    by('v2-prev').disabled=page<=1;by('v2-next').disabled=page>=data.pages;
-  }catch(e){by('v2-transaction-list').textContent=e.message}
+   document.dispatchEvent(new CustomEvent('budget:transactions-loaded',{detail:data}));
+  }catch(e){if(ticket!==recordsTicket||e.name==='AbortError')return;host.textContent='Impossible de charger les opérations. Réessayez dans un instant.';document.dispatchEvent(new CustomEvent('budget:transactions-error'));}
+  finally{if(ticket===recordsTicket)host.setAttribute('aria-busy','false');}
  }
+ window.budgetRefreshTransactions=()=>{page=1;loadRecords()};
+
  let searchTimer;
  for(const id of filterIds)by(id).addEventListener(id==='v2-search'?'input':'change',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{page=1;loadRecords()},220)});
  by('v2-prev').onclick=()=>{page=Math.max(1,page-1);loadRecords()};
