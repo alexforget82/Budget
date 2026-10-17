@@ -1,3 +1,20 @@
+VERSION 4.2 — BUDGETS LIBRES
+Décompressez le ZIP et ouvrez Mettre a jour Mon Budget.command depuis
+~/Applications/Mon Budget. Choisissez le nouveau dossier téléchargé.
+Votre base active est sauvegardée et conservée; ne recopiez pas une ancienne base.
+Rechargez Safari sur Mac et iPhone et vérifiez le badge v4.2.
+Gardez tous les fichiers, notamment free-budgets.js, free-budgets-ui.js et free-budgets.css.
+
+Dans Planifier > Budgets libres :
+- Vos enveloppes sans renouvellement, budget 0 et Réserve seulement sont reprises
+  automatiquement, avec le même identifiant et le même historique.
+- Préparer mes neuf postes propose les postes demandés à 0 $, sans toucher
+  aux enveloppes existantes de même nom. La création reste à confirmer.
+- Ajouter de l’argent montre d’abord l’effet sur la réserve et le Safe-to-Spend.
+- Libérer remet une partie de la réserve dans le disponible libre.
+- Saisir un achat prépare la transaction associée; rien n’est saisi à votre place.
+Aucune réserve automatique pour les dettes de cartes n’est ajoutée.
+
 VERSION 4.1 — VERSION VISIBLE ET OUTILS DE FIABILITE
 Décompressez le nouveau ZIP. Ouvrez le raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,

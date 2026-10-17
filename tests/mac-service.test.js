@@ -19,7 +19,7 @@ import path from 'node:path';
 import {shortcutScript} from '../mac-service.js';
 import {validateUpdateFolder} from '../mac-update.js';
 function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),"budget Alex's & Jenny "));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
-function release(dir,version='4.0.1'){fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:'mon-budget-local',version}));for(const name of ['mac-service.js','mac-update.js','server.js','index.html','planning-v4.js','planning-v4.css','budget-support.js','budget-v41.js','budget-v41.css','Acces prive iPhone.command'])fs.writeFileSync(path.join(dir,name),'');}
+function release(dir,version='4.0.1'){fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:'mon-budget-local',version}));for(const name of ['mac-service.js','mac-update.js','server.js','index.html','planning-v4.js','planning-v4.css','budget-support.js','budget-v41.js','budget-v41.css','free-budgets.js','free-budgets-ui.js','free-budgets.css','Acces prive iPhone.command'])fs.writeFileSync(path.join(dir,name),'');}
 test('permanent shortcut passes paths and arguments literally through bash',t=>{
  const dir=fixture(t),script=path.join(dir,"open ' budget.js"),shortcut=path.join(dir,'Ouvrir.command');fs.writeFileSync(script,'console.log(JSON.stringify(process.argv.slice(2)))');fs.writeFileSync(shortcut,shortcutScript(process.execPath,script,"open ' $BUDGET_RESULT ; &"));const r=spawnSync('/bin/bash',[shortcut],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(r.stdout),["open ' $BUDGET_RESULT ; &"]);
 });

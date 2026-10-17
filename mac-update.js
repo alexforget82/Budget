@@ -10,7 +10,7 @@ export function validateUpdateFolder(folder,currentVersion){
  const incoming=version(manifest.version),current=version(currentVersion);
  if(manifest.name!=='mon-budget-local'||!incoming||!current)throw Error('Choisissez le dossier complet de Mon Budget décompressé depuis votre dépôt GitHub.');
  for(let i=0;i<3;i++){if(incoming[i]<current[i])throw Error('Cette version est plus ancienne que la version installée.');if(incoming[i]>current[i])break;}
- for(const name of ['mac-service.js','mac-update.js','server.js','index.html','planning-v4.js','planning-v4.css','budget-support.js','budget-v41.js','budget-v41.css','Acces prive iPhone.command'])if(!fs.statSync(path.join(root,name)).isFile())throw Error('Version incomplète : '+name);
+ for(const name of ['mac-service.js','mac-update.js','server.js','index.html','planning-v4.js','planning-v4.css','budget-support.js','budget-v41.js','budget-v41.css','free-budgets.js','free-budgets-ui.js','free-budgets.css','Acces prive iPhone.command'])if(!fs.statSync(path.join(root,name)).isFile())throw Error('Version incomplète : '+name);
  return root;
 }
 function main(){

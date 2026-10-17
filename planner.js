@@ -6,7 +6,7 @@
  const cash=v=>(v/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
  const date=(value,long=false)=>new Date(value+'T12:00:00').toLocaleDateString('fr-CA',long?{weekday:'long',day:'numeric',month:'long'}:{day:'numeric',month:'short'});
  const symbol=(name)=>{const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');const p=document.createElementNS(svg.namespaceURI,'path');p.setAttribute('d',({account:'M3 7h18v14H3z M3 7l13-4v4 M16 12h5v4h-5z',savings:'M4 9h16v12H4z M8 9V4h8v5 M9 15h6',credit:'M3 5h18v14H3z M3 10h18 M6 15h4',envelope:'M3 5h18v14H3z M3 5l9 7 9-7',income:'M5 17L19 3 M8 3h11v11',expense:'M5 7l14 14 M8 21h11V10',transfer:'M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4',reserve:'M12 3l9 9-9 9-9-9z'})[name]||'M3 12h18');svg.append(p);return svg;};
- const pages=['comptes','enveloppes','recurrences','prevision','objectifs','calendrier','suivi'];
+ const pages=['comptes','enveloppes','budgets-libres','recurrences','prevision','objectifs','calendrier','suivi'];
  for(const name of pages){
   const section=$('section-'+name);section.classList.add('designed-page');section.classList.remove('is-collapsed');
   const help=el('details',undefined,'context-help');help.append(el('summary','Quelques repères pour bien commencer'));
@@ -14,13 +14,13 @@
   if(help.children.length>1)section.append(help);
   section.querySelector('.section-toggle')?.setAttribute('hidden','');
  }
- const names={suivi:'Du prévu au réel',comptes:'Vos comptes, en toute clarté',enveloppes:'De l’argent pour vos priorités',recurrences:'Votre rythme financier',prevision:'Les prochaines semaines, en clair',objectifs:'Faites place à vos projets',calendrier:'Votre mois, en un regard'};
- const intros={suivi:'Vos attentes, vos opérations enregistrées et les écarts à comprendre.',comptes:'Vos soldes au même endroit. Choisissez ce qui entre dans votre disponible.',enveloppes:'Gardez vos réserves visibles et ajustez-les à votre quotidien.',recurrences:'Revenus, factures et virements : tout ce qui revient, au même endroit.',prevision:'Une trajectoire claire, puis les détails à votre rythme.',objectifs:'Un cap, une progression et la satisfaction d’avancer.',calendrier:'Repérez vos journées importantes et consultez leurs mouvements.'};
+ const names={'budgets-libres':'De la place pour vos envies',suivi:'Du prévu au réel',comptes:'Vos comptes, en toute clarté',enveloppes:'De l’argent pour vos priorités',recurrences:'Votre rythme financier',prevision:'Les prochaines semaines, en clair',objectifs:'Faites place à vos projets',calendrier:'Votre mois, en un regard'};
+ const intros={'budgets-libres':'Maison, outils, vêtements… mettez de côté à votre rythme, sans montant fixe.',suivi:'Vos attentes, vos opérations enregistrées et les écarts à comprendre.',comptes:'Vos soldes au même endroit. Choisissez ce qui entre dans votre disponible.',enveloppes:'Gardez vos réserves visibles et ajustez-les à votre quotidien.',recurrences:'Revenus, factures et virements : tout ce qui revient, au même endroit.',prevision:'Une trajectoire claire, puis les détails à votre rythme.',objectifs:'Un cap, une progression et la satisfaction d’avancer.',calendrier:'Repérez vos journées importantes et consultez leurs mouvements.'};
  for(const name of pages){const section=$('section-'+name),head=section.querySelector('.section-head');if(head){head.querySelector('h2').textContent=names[name];const intro=el('p',intros[name],'page-intro');head.after(intro);}}
  // A small contextual navigation makes planning feel like a connected workspace.
- for(const name of ['enveloppes','objectifs','recurrences','prevision','calendrier','suivi']){
+ for(const name of ['enveloppes','budgets-libres','objectifs','recurrences','prevision','calendrier','suivi']){
   const nav=el('nav',undefined,'planning-tabs');nav.setAttribute('aria-label','Planifier votre budget');
-  for(const [key,label] of [['prevision','Prévision'],['suivi','Prévu / Réel'],['recurrences','Récurrences'],['enveloppes','Enveloppes'],['objectifs','Objectifs'],['calendrier','Calendrier']]){const b=action(label,()=>document.querySelector(`[data-view="${key}"]`).click());b.setAttribute('aria-current',key===name?'page':'false');nav.append(b);}
+  for(const [key,label] of [['prevision','Prévision'],['suivi','Prévu / Réel'],['recurrences','Récurrences'],['enveloppes','Enveloppes'],['budgets-libres','Budgets libres'],['objectifs','Objectifs'],['calendrier','Calendrier']]){const b=action(label,()=>document.querySelector(`[data-view="${key}"]`).click());b.setAttribute('aria-current',key===name?'page':'false');nav.append(b);}
   $('section-'+name).prepend(nav);
  }
  function compactActions(name){const section=$('section-'+name),bar=section.querySelector('.view-toolbar');if(bar){bar.classList.add('page-actions');section.querySelector('.section-head').append(bar);}return bar;}
@@ -58,6 +58,7 @@
  };
  renderEnvelopes=function(items){
   const host=$('envelopes');host.replaceChildren();host.className='envelope-card-grid';
+  const freeIds=new Set((state?.free_budgets?.items||[]).map(e=>e.id));items=items.filter(e=>!freeIds.has(e.id));
   for(const envelope of items){
    const details=state?.envelope_details?.find(d=>d.id===envelope.id);const card=el('article',undefined,'envelope-tile');card.dataset.envelopeId=envelope.id;
    const top=el('div',undefined,'bank-card-top'),icon=el('span',undefined,'tile-icon');icon.append(symbol('envelope'));const name=el('div');name.append(el('h3',envelope.name),el('span',envelope.active?'Réserve active':'En pause','card-caption'));top.append(icon,name);card.append(top,el('p','Disponible dans l’enveloppe','card-caption balance-caption'),el('div',cash(envelope.reserved_cents),'bank-balance'));
@@ -156,7 +157,7 @@
  // Keep a single planning entry in the sidebar; contextual tabs expose its views.
  const hub=document.querySelector('.app-shell-nav [data-view="prevision"]');
  for(const child of [...hub.childNodes])if(child.nodeType===Node.TEXT_NODE)child.textContent='Planifier';
- const planningKeys=['enveloppes','objectifs','recurrences','prevision','calendrier','suivi'];
+ const planningKeys=['enveloppes','budgets-libres','objectifs','recurrences','prevision','calendrier','suivi'];
  for(const key of planningKeys){const navButton=document.querySelector(`.app-shell-nav [data-view="${key}"]`);if(key!=='prevision')navButton.classList.add('planning-subroute');}
  document.querySelectorAll('.app-shell-nav [data-view]').forEach(button=>button.addEventListener('click',()=>{
    const inPlanning=planningKeys.includes(button.dataset.view);hub.classList.toggle('planning-hub-active',inPlanning);

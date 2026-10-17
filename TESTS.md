@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.1
+# Vérifications — Mon Budget 4.2
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **83 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **89 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 33 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 39 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -211,3 +211,11 @@ Les parcours `ui-smoke.py`, `workflows-ui.py`, `transactions-ui.py`, `transactio
 `python3 tests/budget-v41-ui.py` : réussi. Vérifie le badge réel v4.1, la recherche puis l’ouverture d’un éditeur sans sauvegarde, la comparaison bancaire sans écriture puis la correction explicitement notée et son annulation, le profil CSV mémorisé et reconnu au rechargement (colonnes, compte, signe, retour au mode historique), l’aperçu de l’import, la copie quotidienne téléchargeable, le scénario enregistré/repris sans opération réelle, le prochain revenu, le filtre partagé et le solde propre d’une carte, le saut de mois. Recherche, rapprochement et cinq écrans testés à 375/390/768/1024/1440 px, sans débordement ni erreur JavaScript. Les changements de saisie invalident les comparaisons devenues obsolètes.
 
 Les parcours navigateur existants et le cycle du service Mac simulé sont conservés. Les tests utilisent uniquement des données fictives et des bases temporaires. L’exécution effective des raccourcis Finder, du service macOS et de Safari/iPhone reste à vérifier sur les appareils de l’utilisateur.
+
+## Budgets libres — 4.2
+
+`npm test` : **50 tests Node + 39 tests API**, aucun échec. Les six nouveaux cas API vérifient la reprise automatique sans écriture d’une enveloppe de réserve, les neuf suggestions répétables sans doublon, la conservation des identifiants et achats, l’alimentation et la libération sans transaction/virement, le refus d’un aperçu périmé, l’annulation exacte d’une allocation, le minimum projeté et l’acquittement requis avant une réservation négative, les achats banque/carte et la réserve de crédit nulle, l’achat ponctuel prévu sans double déduction, la mise en pause, la suppression sans historique avec restitution de réserve, le refus de reprise programmée et la sauvegarde/restauration sans nouveau format.
+
+`python3 tests/free-budgets-ui.py` : réussi. Parcours du sous-onglet et du badge v4.2, réutilisation d’une ancienne Maison avec achats, séparation des enveloppes régulières, neuf suggestions sans répétition ni changement d’une ancienne Outils, reprise explicite de cette Outils, aperçu sans écriture, réservation, achat réel sur la bonne enveloppe sans deuxième baisse du disponible libre, libération, refus après changement depuis l’autre appareil, acquittement négatif, création à zéro, pause/réactivation et suppression d’un budget vide. La recherche tolère les accents. Les cinq vues et les formulaires d’aperçu sont vérifiés à 375/390/768/1024/1440 px, sans débordement ni erreur JavaScript, et la consultation ne change pas les tables financières.
+
+Les parcours 4.0/4.1, enveloppes, prévisions, cartes, import/restauration et le cycle du service Mac simulé restent validés. Les captures ne contiennent que des données fictives. L’intégration Finder/Tailscale et Safari/iPhone réelle reste à vérifier sur les appareils de l’utilisateur.

@@ -1,4 +1,4 @@
-# Mon Budget 4.1
+# Mon Budget 4.2
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,35 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 4.2 : Budgets libres
+
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique **v4.2**.
+
+- **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
+- **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.
+- **Libérer** remet une partie de la réserve dans le disponible libre, dans la limite du montant restant. Les soldes bancaires restent inchangés.
+- **Saisir un achat** ouvre une dépense réelle déjà associée au bon budget, sans l’enregistrer. Les achats associés du mois, le total historique et les cinq derniers achats sont consultables sur chaque carte. Les achats datés dans le futur ne font pas partie de ces statistiques historiques.
+- **Modifier** permet de renommer ou mettre en pause un budget. Une pause conserve sa réserve et son historique; réactivez-le pour ajouter ou libérer de l’argent. Un budget sans transaction ni récurrence associée peut être supprimé avec confirmation du montant libéré; un budget avec historique doit être mis en pause. La dernière modification reste annulable via la protection 4.1.
+- Une **recherche locale** retrouve rapidement un budget parmi les cartes. La recherche globale ouvre aussi directement un budget libre.
+
+### Reprendre vos enveloppes actuelles
+
+Une enveloppe **sans renouvellement**, avec **budget par période à 0 $** et **Réserve seulement**, apparaît automatiquement dans Budgets libres au lieu d’Enveloppes. Aucun montant, identifiant ou achat n’est modifié : il s’agit de la même enveloppe, pas d’un deuxième budget. Les budgets en pause restent comptabilisés dans les réserves.
+
+Pour une autre enveloppe sans programmation récurrente, utilisez **Reprendre une enveloppe**. L’aperçu explique la reprise : budget théorique remis à 0, Réserve seulement activée, montant réservé et historique conservés. Une programmation récurrente active empêche cette reprise; les enveloppes régulières restent dans leur sous-onglet. Un achat ponctuel prévu lié à un budget libre peut continuer à être suivi par le moteur existant, sans introduire un renouvellement du budget.
+
+### Effet sur le Safe-to-Spend
+
+Réserver 50 $ diminue de 50 $ le disponible libre, sans changer vos comptes. Un achat couvert de 30 $ **depuis un compte inclus** diminue à la fois le solde bancaire et la réserve de 30 $ : le disponible libre ne baisse pas une deuxième fois. La part d’un achat qui dépasse la réserve reste une dépense sur le disponible.
+
+Sur **carte de crédit**, le fonctionnement existant est conservé : l’achat augmente le montant dû et consomme la réserve; le remboursement est un virement distinct qui affecte le compte bancaire à sa date. Aucune réserve automatique pour les dettes de cartes n’est ajoutée. Vérifiez les prévisions et programmez les remboursements que vous souhaitez prendre en compte. Les opérations importées en mode historique gardent leur absence d’effet sur les soldes et les réserves.
+
+Les catégories restent indépendantes pour le classement et les rapports; aucun nouveau compte bancaire ni aucune catégorie n’est créé automatiquement par ces budgets. Le format de sauvegarde reste identique, sans nouvelle table : les budgets et leurs achats utilisent les enveloppes et liens existants.
+
+[Aperçu Budgets libres](docs/v42-budgets-libres.png) · [Aperçu de réservation sur iPhone](docs/v42-reservation-iphone.png) · [Écran iPhone](docs/v42-iphone.png) — données fictives.
+
+**Mise à jour** : décompressez le ZIP, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command** dans `~/Applications/Mon Budget`, puis choisissez le nouveau dossier. Ne recopiez pas une ancienne base : les données actives sont conservées et sauvegardées. Rechargez Safari et vérifiez le badge **v4.2**. Conservez tous les fichiers du ZIP, notamment `free-budgets.js`, `free-budgets-ui.js` et `free-budgets.css`.
 
 ## Nouveautés 4.1 : savoir où vous en êtes
 
