@@ -4,12 +4,13 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **14 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **32 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
 | `tests/csv.test.js` | 5 | BOM, CSV multiligne, guillemets échappés, tabulations, CRLF, lignes vides, limites de taille, montants localisés, signes et refus des valeurs invalides |
-| `tests/api-tests.py` | 9 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/forecast.test.js` | 14 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
+| `tests/api-tests.py` | 13 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -84,7 +85,7 @@ Les captures de ces vues dans `docs/` sont fictives. Safari réel reste à véri
 
 ## Transactions — historique et saisie simplifiés
 
-Un test API supplémentaire porte la suite `npm test` à **14 tests réussis** (5 CSV et 9 API). Il vérifie les totaux sur toutes les pages, les filtres, les descriptions récentes avec catégories et la recherche sans accents avec `%`, `_` et `\` traités littéralement.
+La couverture API de l’historique vérifie les totaux sur toutes les pages, les filtres, les descriptions récentes avec catégories et la recherche sans accents avec `%`, `_` et `\` traités littéralement.
 
 `python3 tests/transactions-ui.py` : **réussi dans Chromium**, sur une base temporaire.
 
@@ -99,3 +100,28 @@ Un test API supplémentaire porte la suite `npm test` à **14 tests réussis** (
 - Réponse HTTP 503 volontaire : totaux retirés, nouvelle tentative fonctionnelle. Cette erreur attendue est distinguée des erreurs inattendues.
 
 Les autres parcours navigateur restent réussis. Les captures publiées utilisent uniquement des données fictives. Safari réel reste à vérifier sur Mac.
+
+## Prévision complète et suivi réel (3.1)
+
+`npm test` : **32 tests réussis** (5 CSV, 14 moteur financier et 13 API).
+
+- Exemple déterministe : 2 000 $ en banque, enveloppe de 230 $ les jeudis 22 et 29 octobre et 5 novembre 2026 → 1 310 $ de solde projeté au 5 novembre, sans double déduction des réserves.
+- Transaction réelle de 215 $ remplaçant 230 $; écart de −15 $, conservation de la réserve réelle inutilisée, réouverture d’une période partielle et agrégation de plusieurs achats.
+- Combinaison de toutes les enveloppes, revenus, factures et virements; compte manquant signalé avec déduction du total; enveloppe non planifiée et mode réserve seulement.
+- Dépense liée prioritaire pour sa période; une règle ponctuelle ne supprime pas les futures périodes d’enveloppe.
+- Dépenses en retard encore déduites; revenus en retard non utilisés avant confirmation.
+- Rapprochement automatique unique, cas ambigus non rapprochés, association manuelle d’un montant différent et rétablissement après suppression du réel.
+- Réserves de remboursement des cartes; achat sans sortie bancaire immédiate, puis virement réduisant le solde sans double déduction du disponible.
+- Exceptions de budget, report des réserves, annulations et déplacements ciblés.
+- Migration additive, copie SQLite préalable, export/restauration des nouveaux suivis et compatibilité des exports JSON v3 antérieurs.
+
+`python3 tests/forecast-ui.py` : **réussi dans Chromium**, avec données fictives et base temporaire.
+
+- Dépenses d’enveloppes visibles au calendrier; solde projeté à la date choisie égal à l’API; choix de courbe Solde/Disponible.
+- Onglet Prévu / Réel, filtres et avertissements, champs de configuration d’enveloppe.
+- Brouillon de transaction sans enregistrement implicite; achat réel de 215 $ remplaçant 230 $, achats supplémentaires puis fin de période.
+- Association d’une facture réelle de 115 $ à une prévision de 120 $.
+- Prévision, suivi, calendrier et enveloppes à 375, 390, 768, 1024 et 1440 pixels, sans débordement.
+- Navigation sans mutation des tables financières et aucune erreur JavaScript ou console inattendue.
+
+Les quatre autres parcours navigateur restent réussis. Le suivi commence à l’activation; les prévisions historiques antérieures ne sont pas reconstituées. Les calculs utilisent les règles actuelles, sans journal immuable des anciennes versions de règles. Les rapprochements ambigus et opérations futures déjà saisies comme réelles exigent une vérification. Safari et les données réelles de l’utilisateur restent à vérifier sur Mac.

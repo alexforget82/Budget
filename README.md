@@ -1,4 +1,4 @@
-# Mon Budget 3
+# Mon Budget 3.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -18,7 +18,7 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
 5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
 
-Les fichiers `budget-features.js`, `features.js`, `planner.js` et `transactions.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+Les fichiers `budget-features.js`, `features.js`, `planner.js` et `transactions.js`, `forecast-engine.js` et `forecast-ui.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
 La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
 Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).
@@ -41,6 +41,30 @@ Ce lanceur nécessite Node.js et n’est pas une application `.app` signée et a
 Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun virement bancaire. Les soldes bancaires et les transactions sont saisis ou importés manuellement. Sans paie prévue sur 30 jours, aucun montant « jusqu’à la paie » n’est inventé.
 
 ![Tableau de bord avec données fictives](docs/tableau-de-bord.png)
+
+## Prévision complète et suivi réel (3.1)
+
+Dans **Planifier → Prévision**, choisissez une date (jusqu’à 90 jours) et consultez séparément le **solde bancaire prévu**, les **réserves d’enveloppes**, le montant **réservé aux cartes** et le **disponible prévu**. Le sélecteur de courbe permet de passer du disponible au solde bancaire. Le disponible réel d’aujourd’hui reste distinct de la simulation des mouvements attendus aujourd’hui.
+
+- Enveloppe en **Dépense prévue** : son budget est une sortie bancaire à chaque date programmée. Exemple : 230 $ les 22 et 29 octobre et le 5 novembre = 690 $ de dépenses projetées au 5 novembre.
+- Choisissez le compte de chaque enveloppe. Sans compte attribué, la dépense est tout de même déduite du total des comptes inclus, avec un avertissement; elle n’est pas attribuée arbitrairement à un compte.
+- Enveloppe **Réserve seulement** : adaptée à l’épargne, sans sortie bancaire automatique. Ses renouvellements continuent de réserver l’argent.
+- Revenus, dépenses, virements, budgets exceptionnels, annulations et dates déplacées sont intégrés. Une règle peut maintenant être **ponctuelle**. Une dépense récurrente peut être liée à une enveloppe : elle remplace la dépense automatique de cette enveloppe pour la période correspondante, sans masquer les autres périodes.
+- Les soldes dus sur les cartes sont **réservés pour leur remboursement** : ils réduisent désormais le disponible. Un achat augmente cette réserve; le remboursement réduit le compte bancaire et libère la réserve correspondante, sans compter deux fois la dépense. Le solde bancaire projeté ne baisse qu’au virement de remboursement.
+
+Dans **Planifier → Prévu / Réel**, les cartes présentent **Prévu / Réel / Écart**, avec des filtres de mois et de statut. Les transactions réelles sans prévision associée sont également visibles et sont déjà incluses dans les soldes.
+
+**Enveloppes :** associez vos achats réels à l’enveloppe. Les dépenses entre une date programmée et la veille de la suivante sont additionnées. Par défaut, dès qu’un achat est enregistré, ce total réel remplace le budget de la période. Pour prévoir d’autres achats, cliquez **Encore des achats** : seul le budget restant sera projeté. **Terminer la période**, **Annuler la dépense prévue** et **Calcul automatique** permettent de corriger ce suivi. Le reste réellement réservé demeure dans l’enveloppe jusqu’à son ajustement ou son renouvellement, selon son mode de report; il n’est pas libéré silencieusement.
+
+**Récurrences :** un rapprochement automatique exige compte, montant, description et date compatibles, sans ambiguïté. Si le montant réel diffère, utilisez **Associer un réel**. L’association ne modifie pas les soldes. Les achats sur carte se saisissent comme dépenses; les remboursements comme virements.
+
+Les dépenses et virements passés non confirmés restent déduits prudemment à partir d’aujourd’hui. Les revenus en retard ne financent pas le disponible avant leur rapprochement. Le calendrier conserve la date prévue d’origine et affiche les dépenses d’enveloppes et les opérations réelles, y compris au-delà des 50 dernières transactions.
+
+Le suivi commence à l’activation de cette version : les prévisions historiques antérieures ne sont pas inventées. Les prévisions sont recalculées à partir des règles actuelles; ce n’est pas un archivage figé des anciennes versions du budget. Une date, une fréquence ou un budget manquant est signalé. Les opérations futures déjà saisies comme réelles sont signalées : leurs montants sont déjà dans les soldes; utilisez plutôt une opération prévue pour les prochains paiements. Vérifiez les transactions ambiguës et les affectations d’enveloppes avant de vous fier aux chiffres.
+
+La migration ajoute des champs et une table de suivi, sans réécrire les opérations existantes. Une copie SQLite est conservée dans `data/backups/budget-before-planning-v4.sqlite`. Les sauvegardes JSON v3 antérieures restent restaurables.
+
+![Prévu et réel — données fictives](docs/prevu-reel.png)
 
 ## Transactions et catégories
 

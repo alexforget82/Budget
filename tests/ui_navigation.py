@@ -1,6 +1,6 @@
 """Navigate using the visible menu and contextual planning tabs."""
 def navigate(page,view):
- labels={'enveloppes':'Enveloppes','objectifs':'Objectifs','recurrences':'Récurrences','calendrier':'Calendrier'}
+ labels={'suivi':'Prévu / Réel','enveloppes':'Enveloppes','objectifs':'Objectifs','recurrences':'Récurrences','calendrier':'Calendrier'}
  target='prevision' if view in labels else view
  button=page.locator(f'.app-shell-nav [data-view="{target}"]')
  if not button.is_visible():

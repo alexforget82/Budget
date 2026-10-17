@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {buildForecast} from './forecast-engine.js';
 import {createFeatures} from './budget-features.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -79,6 +80,17 @@ if(!db.prepare("SELECT value FROM app_settings WHERE key='features_v3'").get()&&
  db.prepare('VACUUM INTO ?').run(migrationBackup);
 }
 const features=createFeatures({db,dir,cents,validDate,today:todayLocal,atomic,addTransaction});
+// Additive planning migration; save a coherent copy before changing the schema.
+const planningColumns={forecast_account_id:'INTEGER REFERENCES accounts(id)',forecast_spend:'INTEGER NOT NULL DEFAULT 1 CHECK(forecast_spend IN (0,1))',planning_since:'TEXT'};
+const existingPlanningColumns=new Set(q('PRAGMA table_info(envelopes)').map(c=>c.name));
+if(Object.keys(planningColumns).some(c=>!existingPlanningColumns.has(c))){
+ const backup=path.join(dir,'backups','budget-before-planning-v4.sqlite');
+ fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);
+ atomic(()=>{for(const [column,definition] of Object.entries(planningColumns))if(!existingPlanningColumns.has(column))db.exec(`ALTER TABLE envelopes ADD COLUMN ${column} ${definition}`);run('UPDATE envelopes SET planning_since=? WHERE planning_since IS NULL',todayLocal());});
+}
+if(!db.prepare('PRAGMA table_info(recurring)').all().some(c=>c.name==='one_time'))db.exec('ALTER TABLE recurring ADD COLUMN one_time INTEGER NOT NULL DEFAULT 0 CHECK(one_time IN (0,1))');
+db.exec("CREATE TABLE IF NOT EXISTS envelope_period_status(envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN ('open','complete','skipped')),PRIMARY KEY(envelope_id,occurrence_on))");
+run("INSERT OR IGNORE INTO app_settings(key,value) VALUES('forecast_tracking_since',?)",todayLocal());
 const featureRoutes=new Set(['/api/categories','/api/category-budget','/api/goals','/api/goals/delete','/api/balance/reconcile','/api/import/inspect','/api/import/preview','/api/import/commit','/api/backup/validate','/api/backup/restore']);
 
 // Fréquence « dernier jour ouvrable » : lundi à vendredi, sans jours fériés.
@@ -109,53 +121,6 @@ function nextOccurrence(start,frequency,i){const d=dateFrom(start);if(frequency=
 const dayDistance=(a,b)=>Math.abs((dateFrom(a)-dateFrom(b))/86400000);
 const words=s=>new Set(String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').split(' ').filter(w=>w.length>=3&&!['paiement','virement','facture','prelevement','automatique','vers','pour','compte'].includes(w)));
 function similarDescription(a,b){const x=words(a),y=words(b);if(!x.size||!y.size)return false;return [...x].some(w=>y.has(w));}
-function reconciledOccurrences(recurring,overrides,transactions,transfers,today,manual=[]){
- const overridesMap=new Map(overrides.map(o=>[`${o.recurring_id}|${o.occurrence_on}`,o.amount_cents]));
- const candidates=[];
- const manualKeys=new Set(manual.map(l=>`${l.recurring_id}|${l.occurrence_on}`));
- const usedActual=new Set(manual.map(l=>`${l.actual_type}:${l.actual_id}`));
- for(const r of recurring){if(!r.active||r.type==='reserve')continue;
-  for(let i=0;i<1500;i++){
-   const occurrence=occurrenceInfo(r.start_on,r.frequency,i,r.day_adjust||'none').date;
-   if(occurrence>iso(new Date(dateFrom(today).getTime()+32*86400000)))break;
-   if(dayDistance(occurrence,today)>3&&occurrence<today)continue;
-   const amount=overridesMap.get(`${r.id}|${occurrence}`)??r.amount_cents;
-   if(amount===0)continue;
-   candidates.push({rule:r,date:occurrence,amount,key:`${r.id}|${occurrence}`});
-  }
- }
- const actuals=[...transactions.map(t=>({...t,kind:'transaction'})),...transfers.map(t=>({...t,kind:'transfer'}))];
- const proposals=[];
- for(const a of actuals){
-  if(dayDistance(a.happened_on,today)>4&&a.happened_on<today)continue;
-  if(usedActual.has(`${a.kind}:${a.id}`))continue;
-  const choices=candidates.filter(c=>!manualKeys.has(c.key)&&dayDistance(c.date,a.happened_on)<=3&&c.amount===(a.kind==='transfer'?a.amount_cents:Math.abs(a.amount_cents))&&similarDescription(c.rule.description,a.description)&&(
-   a.kind==='transfer'?c.rule.type==='transfer'&&c.rule.account_id===a.from_account_id&&c.rule.to_account_id===a.to_account_id:
-   c.rule.account_id===a.account_id&&((c.rule.type==='income'&&a.amount_cents>0)||(c.rule.type==='expense'&&a.amount_cents<0))
-  ));
-  if(choices.length===1)proposals.push({actual:`${a.kind}:${a.id}`,candidate:choices[0]});
- }
- const counts=new Map();for(const p of proposals)counts.set(p.candidate.key,(counts.get(p.candidate.key)||0)+1);
- return new Set([...manualKeys,...proposals.filter(p=>counts.get(p.candidate.key)===1).map(p=>p.candidate.key)]);
-}
-function forecast(accounts,envelopes,recurring,overrides,reconciled=new Set(),horizon=30,moves=[]){const overrideMap=new Map(overrides.map(o=>[`${o.recurring_id}|${o.occurrence_on}`,o.amount_cents]));const balances=new Map(accounts.map(a=>[a.id,a.balance_cents]));const envelopeBalances=new Map(envelopes.map(e=>[e.id,e.reserved_cents]));let reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0);const now=new Date();const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;const moveMap=new Map(moves.map(m=>[`${m.recurring_id}|${m.occurrence_on}`,m.new_on]));const days=[];for(let j=0;j<horizon;j++){const day=dateFrom(today);day.setUTCDate(day.getUTCDate()+j);const key=iso(day),events=[];
-for(const e of envelopes){if(!e.active||e.frequency==='none'||!e.start_on||key<e.start_on)continue;
- let due=false;for(let i=0;i<1500;i++){const date=nextOccurrence(e.start_on,e.frequency,i);if(date>=key){due=date===key;break}}
- if(!due)continue;
- // Le renouvellement du jour est déjà intégré au solde réel : ne pas le rejouer.
- if(key===today&&db.prepare('SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?').get(e.id,key))continue;
- const before=envelopeBalances.get(e.id)||0;
- const budget=db.prepare('SELECT budget_cents FROM envelope_budget_overrides WHERE envelope_id=? AND occurrence_on=?').get(e.id,key)?.budget_cents??e.budget_cents;
- const after=e.rollover?before+budget:budget;
- envelopeBalances.set(e.id,after);reserved+=after-before;
- events.push({id:'env-'+e.id,description:'Renouvellement · '+e.name,type:'reserve',amount_cents:after-before,envelope_renewal:true,sts_impact_cents:before-after});
-}
-for(const r of recurring){if(!r.active)continue;if(r.type==='reserve'&&envelopes.some(e=>e.id===r.envelope_id&&e.active&&e.frequency!=='none'))continue;let due=false,estimated=false,originalDate=key;
- const moved=moves.find(m=>m.recurring_id===r.id&&m.new_on===key);
- if(moved){due=true;originalDate=moved.occurrence_on;}
- else for(let i=0;i<1500;i++){const info=occurrenceInfo(r.start_on,r.frequency,i,r.day_adjust||'none');if(info.date>=key){due=info.date===key&&!moveMap.has(`${r.id}|${key}`);estimated=info.estimated;break}}
- if(!due)continue;if(reconciled.has(`${r.id}|${originalDate}`))continue;const amount=overrideMap.get(`${r.id}|${originalDate}`)??r.amount_cents;const a=balances.get(r.account_id)||0;const isIncluded=id=>accounts.some(ac=>ac.id===id&&ac.kind!=='credit'&&ac.included);let stsImpact=0;if(r.type==='income'&&isIncluded(r.account_id))stsImpact=amount;if(r.type==='expense'&&isIncluded(r.account_id))stsImpact=-amount;if(r.type==='transfer')stsImpact=(isIncluded(r.to_account_id)?amount:0)-(isIncluded(r.account_id)?amount:0);if(r.type==='reserve')stsImpact=-amount;if(r.type==='income')balances.set(r.account_id,a+amount);if(r.type==='expense')balances.set(r.account_id,a+(accounts.find(x=>x.id===r.account_id)?.kind==='credit'?amount:-amount));if(r.type==='transfer'){const fromCredit=accounts.find(x=>x.id===r.account_id)?.kind==='credit';const toCredit=accounts.find(x=>x.id===r.to_account_id)?.kind==='credit';balances.set(r.account_id,a+(fromCredit?amount:-amount));balances.set(r.to_account_id,(balances.get(r.to_account_id)||0)+(toCredit?-amount:amount))}if(r.type==='reserve')reserved+=amount;events.push({id:r.id,description:r.description,type:r.type,account_id:r.account_id,to_account_id:r.to_account_id,sts_impact_cents:stsImpact,credit_charge:r.type==='expense'&&accounts.find(x=>x.id===r.account_id)?.kind==='credit',transfer_internal:r.type==='transfer'&&accounts.some(x=>x.id===r.account_id&&x.kind!=='credit'&&x.included)&&accounts.some(x=>x.id===r.to_account_id&&x.kind!=='credit'&&x.included),amount_cents:amount,modified:overrideMap.has(`${r.id}|${originalDate}`)||originalDate!==key,original_on:originalDate,estimated});}
-const cash=accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+(balances.get(a.id)||0),0);days.push({date:key,cash_cents:cash,reserved_cents:reserved,safe_cents:cash-reserved,events});}return days;}
 // Les indicateurs sont prudents : minimum projeté sur la période, pas la somme des mouvements.
 // La paie est le prochain revenu récurrent versé dans un compte bancaire inclus.
 function spendingWindows(accounts, recurring, days, currentSafe){
@@ -200,18 +165,20 @@ function applyEnvelopeRenewals(){
  db.exec('COMMIT');
  }catch(err){db.exec('ROLLBACK');throw err}
 }
-function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM accounts ORDER BY id DESC'),envelopes=q('SELECT * FROM envelopes ORDER BY id DESC'),recurring=q('SELECT * FROM recurring ORDER BY id DESC'),overrides=q('SELECT * FROM recurring_overrides ORDER BY occurrence_on,id');const cash=accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+a.balance_cents,0),reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0);const manual=q('SELECT * FROM reconciliation_links');const reconciled=reconciledOccurrences(recurring,overrides,q('SELECT * FROM transactions'),q('SELECT * FROM account_transfers'),todayLocal(),manual);
- const envelopeOverrides=q('SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on');const moves=q('SELECT * FROM recurring_moves');const projected=forecast(accounts,envelopes,recurring,overrides,reconciled,90,moves);
- const windows=spendingWindows(accounts,recurring,projected.slice(0,30),cash-reserved);
+function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM accounts ORDER BY id DESC'),envelopes=q('SELECT * FROM envelopes ORDER BY id DESC'),recurring=q('SELECT * FROM recurring ORDER BY id DESC'),overrides=q('SELECT * FROM recurring_overrides ORDER BY occurrence_on,id');const cash=accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+a.balance_cents,0),reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0),creditReserved=accounts.filter(a=>a.kind==='credit').reduce((s,a)=>s+Math.max(0,a.balance_cents),0);const manual=q('SELECT * FROM reconciliation_links');
+ const envelopeOverrides=q('SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on'),moves=q('SELECT * FROM recurring_moves');
+ const simulation=buildForecast({accounts,envelopes,recurring,overrides,moves,links:manual,transactions:q('SELECT * FROM transactions'),transfers:q('SELECT * FROM account_transfers'),periods:q('SELECT * FROM envelope_period_status'),renewals:q('SELECT * FROM envelope_renewal_log'),envelopeOverrides,today:todayLocal(),since:db.prepare("SELECT value FROM app_settings WHERE key='forecast_tracking_since'").get()?.value||todayLocal(),horizon:90,nextOccurrence,occurrenceInfo,similarDescription});
+ const projected=simulation.days;
+ const windows=spendingWindows(accounts,recurring,projected.slice(0,30),cash-reserved-creditReserved);
  const envelopeDetails=envelopes.map(e=>{
   const next=(()=>{if(!e.active||e.frequency==='none'||!e.start_on)return null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=todayLocal())return d;}return null})();
   const periodStart=(()=>{if(!e.start_on||e.frequency==='none')return null;let last=null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>todayLocal())break;last=d;}return last})();
   const spent=periodStart===null?0:q('SELECT amount_cents FROM transactions WHERE envelope_id=? AND happened_on>=? AND happened_on<=? AND amount_cents<0',e.id,periodStart,todayLocal()).reduce((n,t)=>n-t.amount_cents,0);
   return {id:e.id,spent_cents:spent,available_cents:e.reserved_cents,next_renewal:next,period_start:periodStart};
  });
- const sts_breakdown={accounts:accounts.filter(a=>a.kind!=='credit'&&a.included).map(a=>({name:a.name,balance_cents:a.balance_cents})),envelopes:envelopes.filter(e=>e.reserved_cents>0).map(e=>({name:e.name,reserved_cents:e.reserved_cents})),windows:{week_end:windows.week_end,payday_date:windows.payday_date},events:projected.slice(0,30).flatMap(d=>d.events.filter(ev=>ev.sts_impact_cents).map(ev=>({date:d.date,description:ev.description,impact_cents:ev.sts_impact_cents,type:ev.type}))) };return {...features.state(),accounts,envelopes,recurring,overrides,forecast:projected,envelope_details:envelopeDetails,envelope_budget_overrides:envelopeOverrides,sts_breakdown,reconciliation_links:manual,recurring_moves:moves,reconciliation:{matched_count:reconciled.size,method:"Montant, compte, description et date (±3 jours); correspondances ambiguës ignorées"},spending_windows:windows,transfers:q('SELECT t.*,a.name from_name,b.name to_name FROM account_transfers t JOIN accounts a ON a.id=t.from_account_id JOIN accounts b ON b.id=t.to_account_id ORDER BY t.id DESC LIMIT 30'),transactions:q('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id ORDER BY t.id DESC LIMIT 50'),cash_cents:cash,reserved_cents:reserved,safe_cents:cash-reserved}}
-const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js'],['/transactions.js','transactions.js']]);
-const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8','transactions.js':'text/javascript; charset=utf-8'};
+ const sts_breakdown={credit:accounts.filter(a=>a.kind==='credit'&&a.balance_cents>0).map(a=>({name:a.name,reserved_cents:a.balance_cents})),accounts:accounts.filter(a=>a.kind!=='credit'&&a.included).map(a=>({name:a.name,balance_cents:a.balance_cents})),envelopes:envelopes.filter(e=>e.reserved_cents>0).map(e=>({name:e.name,reserved_cents:e.reserved_cents})),windows:{week_end:windows.week_end,payday_date:windows.payday_date},events:projected.slice(0,30).flatMap(d=>d.events.filter(ev=>ev.sts_impact_cents).map(ev=>({date:d.date,description:ev.description,impact_cents:ev.sts_impact_cents,type:ev.type}))) };return {...features.state(),planning:{rows:simulation.rows,warnings:simulation.warnings,since:simulation.since},calendar_actuals:q('SELECT t.*,a.name account_name FROM transactions t JOIN accounts a ON a.id=t.account_id ORDER BY happened_on,id'),calendar_transfers:q('SELECT * FROM account_transfers ORDER BY happened_on,id'),accounts,envelopes,recurring,overrides,forecast:projected,envelope_details:envelopeDetails,envelope_budget_overrides:envelopeOverrides,sts_breakdown,reconciliation_links:manual,recurring_moves:moves,reconciliation:{matched_count:simulation.rows.filter(r=>r.source==='recurring'&&r.status==='actual').length,method:"Montant, compte, description et date (±3 jours); correspondances ambiguës ignorées"},spending_windows:windows,transfers:q('SELECT t.*,a.name from_name,b.name to_name FROM account_transfers t JOIN accounts a ON a.id=t.from_account_id JOIN accounts b ON b.id=t.to_account_id ORDER BY t.id DESC LIMIT 30'),transactions:q('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id ORDER BY t.id DESC LIMIT 50'),cash_cents:cash,reserved_cents:reserved,credit_reserved_cents:creditReserved,safe_cents:cash-reserved-creditReserved}}
+const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js'],['/transactions.js','transactions.js'],['/forecast-ui.js','forecast-ui.js']]);
+const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8','transactions.js':'text/javascript; charset=utf-8','forecast-ui.js':'text/javascript; charset=utf-8'};
 function accountEffect(accountId,amount){const kind=db.prepare('SELECT kind FROM accounts WHERE id=?').get(accountId)?.kind;if(!kind)throw Error('Compte introuvable');return kind==='credit'?-amount:amount}
 function restoreEnvelope(id,amount,effect=null){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=reserved_cents+? WHERE id=?',effect??-amount,id)}
 function applyEnvelope(id,amount){if(!id||amount>=0)return 0;const effect=Math.min(q('SELECT reserved_cents FROM envelopes WHERE id=?',id)[0].reserved_cents,-amount);run('UPDATE envelopes SET reserved_cents=reserved_cents-? WHERE id=?',effect,id);return effect;}
@@ -307,7 +274,7 @@ if(req.method==='GET'&&req.url==='/api/reconcile/options')return reply(res,200,{
   links:q('SELECT * FROM reconciliation_links ORDER BY occurrence_on DESC,id DESC')
  });
  if(req.method==='GET'&&req.url.startsWith('/api/transactions/list'))return reply(res,200,listTransactions(req.url));if(req.method==='GET'&&req.url==='/api/state')return reply(res,200,snapshot());
-if(req.method!=='POST'||(!featureRoutes.has(req.url)&&!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete'].includes(req.url)))return reply(res,404,{error:'Introuvable'});
+if(req.method!=='POST'||(!featureRoutes.has(req.url)&&!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete','/api/envelope/status'].includes(req.url)))return reply(res,404,{error:'Introuvable'});
 let chunks=[],size=0;for await(const c of req){size+=c.length;if(size>(featureRoutes.has(req.url)?10_000_000:20000))return reply(res,413,{error:'Requête trop grande'});chunks.push(c)}const x=JSON.parse(Buffer.concat(chunks).toString('utf8')),name=typeof x.name==='string'?x.name.trim():'',exists=(table,id)=>Number.isInteger(id)&&q(`SELECT id FROM ${table} WHERE id=?`,id).length>0;
 if(featureRoutes.has(req.url)){const result=features.post(req.url,x);return reply(res,200,result.changed?snapshot():{...result,...(result.imported||result.safety_backup?{state:snapshot()}:{})});}
 if(req.url==='/api/accounts/inclusion'){
@@ -334,10 +301,21 @@ else if(req.url.startsWith('/api/envelopes')){
  }else{
   const reserved=cents(x.reserved),budget=cents(x.budget),frequency=x.frequency||'none';
   if(!name||name.length>80||reserved===null||reserved<0||budget===null||budget<0||!['none','weekly','biweekly','monthly'].includes(frequency)||(frequency!=='none'&&(!validDate(x.start_on)||budget<=0))||(req.url.endsWith('/update')&&!exists('envelopes',id)))return reply(res,400,{error:'Enveloppe invalide'});
-  const values=[name,reserved,budget,frequency,frequency==='none'?null:x.start_on,x.rollover===true?1:0,x.active===false?0:1];
-  if(req.url.endsWith('/update')){run('UPDATE envelopes SET name=?,reserved_cents=?,budget_cents=?,frequency=?,start_on=?,rollover=?,active=? WHERE id=?',...values,id);}
-  else run('INSERT INTO envelopes(name,reserved_cents,budget_cents,frequency,start_on,rollover,active) VALUES(?,?,?,?,?,?,?)',...values);
+  const old=req.url.endsWith('/update')?q('SELECT * FROM envelopes WHERE id=?',id)[0]:null;
+  const account=x.forecast_account_id===undefined?old?.forecast_account_id??null:x.forecast_account_id?Number(x.forecast_account_id):null;
+  if(account!==null&&!exists('accounts',account))return reply(res,400,{error:'Compte de prévision invalide'});
+  const values=[name,reserved,budget,frequency,frequency==='none'?null:x.start_on,x.rollover===true?1:0,x.active===false?0:1,account,x.forecast_spend===undefined?old?.forecast_spend??1:x.forecast_spend===false||x.forecast_spend==='false'?0:1];
+  if(req.url.endsWith('/update')){run('UPDATE envelopes SET name=?,reserved_cents=?,budget_cents=?,frequency=?,start_on=?,rollover=?,active=?,forecast_account_id=?,forecast_spend=? WHERE id=?',...values,id);}
+  else run('INSERT INTO envelopes(name,reserved_cents,budget_cents,frequency,start_on,rollover,active,forecast_account_id,forecast_spend,planning_since) VALUES(?,?,?,?,?,?,?,?,?,?)',...values,todayLocal());
  }
+}
+else if(req.url==='/api/envelope/status'){
+ const id=Number(x.envelope_id),e=q('SELECT * FROM envelopes WHERE id=?',id)[0];
+ if(!e||!validDate(x.occurrence_on)||!['open','complete','skipped','auto'].includes(x.status)||e.frequency==='none')return reply(res,400,{error:'Période invalide'});
+ let valid=false;for(let i=0;i<20000;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d===x.occurrence_on){valid=true;break}if(d>x.occurrence_on)break}
+ if(!valid)return reply(res,400,{error:'Date non programmée'});
+ if(x.status==='auto')run('DELETE FROM envelope_period_status WHERE envelope_id=? AND occurrence_on=?',id,x.occurrence_on);
+ else run('INSERT INTO envelope_period_status(envelope_id,occurrence_on,status) VALUES(?,?,?) ON CONFLICT(envelope_id,occurrence_on) DO UPDATE SET status=excluded.status',id,x.occurrence_on,x.status);
 }
 else if(req.url==='/api/envelope/period'||req.url==='/api/envelope/period/delete'){
  const eid=Number(x.envelope_id),date=x.occurrence_on,e=db.prepare('SELECT * FROM envelopes WHERE id=?').get(eid);
@@ -351,7 +329,7 @@ else if(req.url==='/api/envelope/period'||req.url==='/api/envelope/period/delete
 else if(req.url==='/api/occurrence/move'||req.url==='/api/occurrence/unmove'){
  const rid=Number(x.recurring_id),date=x.occurrence_on,rule=db.prepare('SELECT * FROM recurring WHERE id=?').get(rid);
  if(!rule||!validDate(date)||!rule.active)return reply(res,400,{error:'Récurrence ou date invalide'});
- let scheduled=false;for(let i=0;i<1500;i++){const d=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(d===date){scheduled=true;break}if(d>date)break}
+ let scheduled=false;for(let i=0;i<(rule.one_time?1:20000);i++){const d=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(d===date){scheduled=true;break}if(d>date)break}
  if(!scheduled)return reply(res,400,{error:'Occurrence introuvable'});
  if(req.url.endsWith('unmove'))run('DELETE FROM recurring_moves WHERE recurring_id=? AND occurrence_on=?',rid,date);
  else{
@@ -364,7 +342,7 @@ else if(req.url==='/api/reconcile/link'){
  const rule=db.prepare('SELECT * FROM recurring WHERE id=?').get(rid);
  const actual=kind==='transaction'?db.prepare('SELECT * FROM transactions WHERE id=?').get(id):kind==='transfer'?db.prepare('SELECT * FROM account_transfers WHERE id=?').get(id):null;
  if(!rule||!actual||!validDate(date)||rule.type==='reserve'||!rule.active||!Number.isSafeInteger(id)||id<1)return reply(res,400,{error:'Rapprochement invalide'});
- let validOccurrence=false;for(let i=0;i<1500;i++){const d=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(d===date){validOccurrence=true;break}if(d>date)break}
+ let validOccurrence=false;for(let i=0;i<(rule.one_time?1:20000);i++){const d=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(d===date){validOccurrence=true;break}if(d>date)break}
  if(!validOccurrence||dayDistance(date,actual.happened_on)>31)return reply(res,400,{error:'Occurrence ou date incompatible'});
  if(kind==='transaction'&&(rule.type==='transfer'||rule.account_id!==actual.account_id||(rule.type==='expense'&&actual.amount_cents>=0)||(rule.type==='income'&&actual.amount_cents<=0)))return reply(res,400,{error:'Compte ou type incompatible'});
  if(kind==='transfer'&&(rule.type!=='transfer'||rule.account_id!==actual.from_account_id||rule.to_account_id!==actual.to_account_id))return reply(res,400,{error:'Comptes incompatibles'});
@@ -380,7 +358,7 @@ else if(req.url==='/api/transfers/update'||req.url==='/api/transfers/delete'){tr
 else if(req.url==='/api/transactions/review'){const id=Number(x.id);if(!exists('transactions',id)||typeof x.reviewed!=='boolean')return reply(res,400,{error:'Statut de transaction invalide'});run('UPDATE transactions SET reviewed=? WHERE id=?',x.reviewed?1:0,id)}
 else if(req.url==='/api/transfers'){const amount=cents(x.amount),from=Number(x.from_account_id),to=Number(x.to_account_id),description=typeof x.description==='string'?x.description.trim():'';if(!exists('accounts',from)||!exists('accounts',to)||from===to||amount===null||amount<=0||!description||description.length>150||!validDate(x.happened_on))return reply(res,400,{error:'Virement invalide'});const f=q('SELECT kind FROM accounts WHERE id=?',from)[0],t=q('SELECT kind FROM accounts WHERE id=?',to)[0];db.exec('BEGIN');try{run('INSERT INTO account_transfers(from_account_id,to_account_id,amount_cents,description,happened_on) VALUES(?,?,?,?,?)',from,to,amount,description,x.happened_on);run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',f.kind==='credit'?amount:-amount,from);run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',t.kind==='credit'?-amount:amount,to);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}}
 else if(req.url==='/api/transactions'){atomic(()=>addTransaction(x))}
-else if(req.url==='/api/overrides'||req.url==='/api/overrides/delete'){const id=Number(x.id);if(req.url.endsWith('/delete')){if(!exists('recurring_overrides',id))return reply(res,400,{error:'Exception introuvable'});run('DELETE FROM recurring_overrides WHERE id=?',id)}else{const rid=Number(x.recurring_id),amount=cents(x.amount),date=x.occurrence_on;if(!exists('recurring',rid)||!validDate(date)||amount===null||amount<0)return reply(res,400,{error:'Exception invalide'});const rule=q('SELECT * FROM recurring WHERE id=?',rid)[0];let scheduled=false;for(let i=0;i<1500;i++){const next=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(next===date){scheduled=true;break}if(next>date)break}if(!scheduled)return reply(res,400,{error:'Cette date ne correspond pas à une occurrence prévue de la règle'});run('INSERT INTO recurring_overrides(recurring_id,occurrence_on,amount_cents) VALUES(?,?,?) ON CONFLICT(recurring_id,occurrence_on) DO UPDATE SET amount_cents=excluded.amount_cents',rid,date,amount)}}
-else {const id=Number(x.id);if(req.url==='/api/recurring/delete'){if(!exists('recurring',id))return reply(res,400,{error:'Règle introuvable'});run('DELETE FROM recurring WHERE id=?',id)}else{const amount=cents(x.amount),account=Number(x.account_id),to=x.to_account_id?Number(x.to_account_id):null,envelope=x.envelope_id?Number(x.envelope_id):null,description=typeof x.description==='string'?x.description.trim():'';if(!description||description.length>150||!['income','expense','transfer','reserve'].includes(x.type)||!['weekly','biweekly','monthly','last_business_day','rrq'].includes(x.frequency)||!['none','before','after'].includes(x.day_adjust??'none')||!validDate(x.start_on)||amount===null||amount<=0||(x.type!=='reserve'&&!exists('accounts',account))||(x.type==='transfer'&&(!exists('accounts',to)||to===account))||(x.type==='reserve'&&!exists('envelopes',envelope))||(req.url.endsWith('update')&&!exists('recurring',id)))return reply(res,400,{error:'Règle récurrente invalide'});
-const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,x.type==='reserve'?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none'];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust) VALUES(?,?,?,?,?,?,?,?,?,?)',...fields)}}
-return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:featureRoutes.has(req.url)?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}}).listen(PORT,HOST,()=>console.log(`Mon Budget v3.0 : http://${HOST}:${PORT}`));
+else if(req.url==='/api/overrides'||req.url==='/api/overrides/delete'){const id=Number(x.id);if(req.url.endsWith('/delete')){if(!exists('recurring_overrides',id))return reply(res,400,{error:'Exception introuvable'});run('DELETE FROM recurring_overrides WHERE id=?',id)}else{const rid=Number(x.recurring_id),amount=cents(x.amount),date=x.occurrence_on;if(!exists('recurring',rid)||!validDate(date)||amount===null||amount<0)return reply(res,400,{error:'Exception invalide'});const rule=q('SELECT * FROM recurring WHERE id=?',rid)[0];let scheduled=false;for(let i=0;i<(rule.one_time?1:20000);i++){const next=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(next===date){scheduled=true;break}if(next>date)break}if(!scheduled)return reply(res,400,{error:'Cette date ne correspond pas à une occurrence prévue de la règle'});run('INSERT INTO recurring_overrides(recurring_id,occurrence_on,amount_cents) VALUES(?,?,?) ON CONFLICT(recurring_id,occurrence_on) DO UPDATE SET amount_cents=excluded.amount_cents',rid,date,amount)}}
+else {const id=Number(x.id);if(req.url==='/api/recurring/delete'){if(!exists('recurring',id))return reply(res,400,{error:'Règle introuvable'});run('DELETE FROM recurring WHERE id=?',id)}else{const amount=cents(x.amount),account=Number(x.account_id),to=x.to_account_id?Number(x.to_account_id):null,envelope=x.envelope_id?Number(x.envelope_id):null,description=typeof x.description==='string'?x.description.trim():'';if(!description||description.length>150||!['income','expense','transfer','reserve'].includes(x.type)||!['weekly','biweekly','monthly','last_business_day','rrq'].includes(x.frequency)||!['none','before','after'].includes(x.day_adjust??'none')||!validDate(x.start_on)||amount===null||amount<=0||(x.type!=='reserve'&&!exists('accounts',account))||(x.type==='transfer'&&(!exists('accounts',to)||to===account))||((x.type==='reserve'||(x.type==='expense'&&envelope!==null))&&!exists('envelopes',envelope))||(req.url.endsWith('update')&&!exists('recurring',id)))return reply(res,400,{error:'Règle récurrente invalide'});
+const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields)}}
+return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:featureRoutes.has(req.url)?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}}).listen(PORT,HOST,()=>console.log(`Mon Budget v3.1 : http://${HOST}:${PORT}`));

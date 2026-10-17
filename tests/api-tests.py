@@ -95,9 +95,10 @@ class BudgetAPI(unittest.TestCase):
   aid=self.account();self.transaction(aid,-20);self.post('/api/goals',{'name':'Épargne','target':1000,'saved':100});self.import_rows(self.csv_data(aid))
   backup=self.get('/api/backup/export');self.post('/api/backup/validate',{'backup':backup});self.transaction(aid,-5)
   current=self.get('/api/backup/export');files=list((self.dir/'data'/'backups').glob('*.json'))
-  for corrupt in ['missing','foreign','date','duplicate','value']:
+  for corrupt in ['missing','planning_table','foreign','date','duplicate','value']:
    bad=copy.deepcopy(backup)
    if corrupt=='missing':del bad['tables']['goals']
+   elif corrupt=='planning_table':del bad['tables']['envelope_period_status']
    if corrupt=='foreign':bad['tables']['transactions'][0]['category_id']=99999
    if corrupt=='date':bad['tables']['transactions'][0]['happened_on']='2026-02-30'
    if corrupt=='duplicate':bad['tables']['accounts'].append(copy.deepcopy(bad['tables']['accounts'][0]))
@@ -113,6 +114,42 @@ class BudgetAPI(unittest.TestCase):
   self.call('/api/goals',{},403,headers={'Content-Type':'application/json','Origin':'https://untrusted.example'})
   self.call('/api/goals',{},403,headers={'Content-Type':'text/plain'})
   self.call('/api/state',status=403,headers={'Host':'untrusted.example'})
+ def test_envelope_forecast_actual_partial_and_delete(self):
+  aid=self.account(balance=2000)
+  s=self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':DAY,'forecast_account_id':aid})
+  eid=s['envelopes'][0]['id'];row=next(r for r in s['planning']['rows'] if r['date']==DAY)
+  self.assertEqual(row['planned_cents'],23000);self.assertEqual(s['accounts'][0]['balance_cents'],200000);self.assertEqual(s['forecast'][0]['cash_cents'],177000);self.assertEqual(s['forecast'][0]['safe_cents'],177000)
+  s=self.transaction(aid,-215,envelope_id=eid);tid=s['transactions'][0]['id'];row=next(r for r in s['planning']['rows'] if r['date']==DAY)
+  self.assertEqual(row['status'],'actual');self.assertEqual(row['variance_cents'],-1500);self.assertEqual(s['forecast'][0]['cash_cents'],178500);self.assertEqual(s['reserved_cents'],1500)
+  s=self.post('/api/envelope/status',{'envelope_id':eid,'occurrence_on':DAY,'status':'open'});self.assertEqual(s['forecast'][0]['cash_cents'],177000);self.assertEqual(s['accounts'][0]['balance_cents'],178500)
+  before=self.get('/api/backup/export')['tables'];self.get('/api/state');self.get('/api/state');self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  s=self.post('/api/envelope/status',{'envelope_id':eid,'occurrence_on':DAY,'status':'complete'});self.assertEqual(s['forecast'][0]['cash_cents'],178500)
+  s=self.post('/api/transactions/delete',{'id':tid});self.assertEqual(s['accounts'][0]['balance_cents'],200000)
+  s=self.post('/api/envelope/status',{'envelope_id':eid,'occurrence_on':DAY,'status':'auto'});self.assertEqual(s['forecast'][0]['cash_cents'],177000)
+  self.post('/api/envelope/status',{'envelope_id':eid,'occurrence_on':'2026-02-30','status':'open'},400)
+ def test_linked_one_time_expense_and_actual_different_amount(self):
+  aid=self.account(balance=2000);s=self.post('/api/envelopes',{'name':'Courses','reserved':230,'budget':230,'frequency':'weekly','start_on':DAY,'forecast_account_id':aid});eid=s['envelopes'][0]['id']
+  s=self.post('/api/recurring',{'description':'Achat prévu','type':'expense','amount':230,'account_id':aid,'envelope_id':eid,'start_on':DAY,'frequency':'weekly','one_time':True});rid=s['recurring'][0]['id']
+  self.assertEqual(s['recurring'][0]['envelope_id'],eid);self.assertEqual(len([r for r in s['planning']['rows'] if r.get('recurring_id')==rid]),1);self.assertEqual(s['forecast'][0]['cash_cents'],177000)
+  s=self.transaction(aid,-215,envelope_id=eid,description='Marchand différent');tid=s['transactions'][0]['id']
+  s=self.post('/api/reconcile/link',{'recurring_id':rid,'occurrence_on':DAY,'actual_type':'transaction','actual_id':tid});self.assertEqual(s['forecast'][0]['cash_cents'],178500);self.assertEqual(s['planning']['rows'][0]['actual_cents'],21500)
+  next_week=(datetime.date.today()+datetime.timedelta(days=7)).isoformat();self.post('/api/overrides',{'recurring_id':rid,'occurrence_on':next_week,'amount':10},400)
+ def test_planning_backup_roundtrip_and_preplanning_backup_compatibility(self):
+  aid=self.account();s=self.post('/api/envelopes',{'name':'Courses','reserved':0,'budget':100,'frequency':'weekly','start_on':DAY,'forecast_account_id':aid});eid=s['envelopes'][0]['id']
+  self.post('/api/envelope/status',{'envelope_id':eid,'occurrence_on':DAY,'status':'skipped'})
+  backup=self.get('/api/backup/export');self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])
+  old=copy.deepcopy(backup);del old['tables']['envelope_period_status']
+  for e in old['tables']['envelopes']:
+   for key in ['forecast_account_id','forecast_spend','planning_since']:del e[key]
+  for r in old['tables']['recurring']:del r['one_time']
+  old['tables']['app_settings']=[r for r in old['tables']['app_settings'] if r['key']!='forecast_tracking_since']
+  self.post('/api/backup/validate',{'backup':old});self.post('/api/backup/restore',{'backup':old,'confirm':'REMPLACER'});s=self.get('/api/state');self.assertEqual(s['envelopes'][0]['name'],'Courses');self.assertIsNone(s['envelopes'][0]['forecast_account_id']);self.assertTrue(any(w['code']=='envelope_account' for w in s['planning']['warnings']))
+ def test_credit_debt_reserved_and_repayment_not_counted_twice(self):
+  aid=self.account(balance=2000);cid=self.account('credit',100)
+  s=self.get('/api/state');self.assertEqual(s['safe_cents'],190000);self.assertEqual(s['credit_reserved_cents'],10000)
+  s=self.transaction(cid,-25);self.assertEqual(s['safe_cents'],187500)
+  s=self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':125,'description':'Remboursement','happened_on':DAY});self.assertEqual(s['safe_cents'],187500);self.assertEqual(s['credit_reserved_cents'],0)
+
  def test_additive_legacy_migration_preserves_data(self):
   self.stop();dbpath=self.dir/'data'/'budget.sqlite';dbpath.unlink()
   for suffix in ['-wal','-shm']:

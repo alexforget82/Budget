@@ -1,4 +1,4 @@
-MON BUDGET 3 — INSTALLATION ET MISE À JOUR SUR MAC
+MON BUDGET 3.1 — INSTALLATION ET MISE À JOUR SUR MAC
 
 Node.js 22.13 ou plus est requis. Node.js 24 LTS est recommandé.
 Aucune commande npm install n’est nécessaire.
@@ -14,7 +14,7 @@ MISE À JOUR RECOMMANDÉE — NOUVEAU DOSSIER
    Le ZIP ne contient aucun dossier data; il n’y a rien à remplacer.
 5. Gardez tous les nouveaux fichiers applicatifs ensemble : server.js,
    budget-features.js, index.html, app.css, app.js, features.js, planner.js,
-   transactions.js et package.json.
+   transactions.js, forecast-engine.js, forecast-ui.js et package.json.
    IMPORTANT : contrairement à la mise à jour visuelle précédente, remplacer
    seulement trois fichiers ne suffit plus.
 6. Ouvrez Lancer Mon Budget.command dans ce NOUVEAU dossier, ou lancez
@@ -47,7 +47,27 @@ Gardez tous les fichiers du dossier Budget-main ensemble.
 Lancez npm start depuis ce dossier ou ouvrez le lanceur .command.
 Une base vide est créée dans data dans le dossier de lancement.
 
-LES NOUVELLES FONCTIONS
+PRÉVISION ET RÉEL (3.1)
+- Planifier > Prévision : choisir une date, puis lire le solde bancaire
+  projeté, les réserves et le disponible. La courbe est au choix.
+- Enveloppes : choisir Dépense prévue ou Réserve seulement, puis le compte,
+  le budget, la fréquence et la première date. Les dépenses prévues sont
+  déduites aux dates et apparaissent au calendrier.
+- Planifier > Prévu / Réel : les achats affectés à une enveloppe remplacent
+  le budget de leur période. Cliquez Encore des achats si vous prévoyez
+  d'autres achats, puis Terminer la période quand tout est passé.
+- Associer un réel permet de rapprocher une facture au montant différent.
+- Les sommes dues sur les cartes sont désormais réservées : le disponible
+  peut donc baisser après mise à jour. Le remboursement est un virement;
+  il ne déduit pas la dépense deux fois.
+- Vérifiez les avertissements (enveloppes à planifier, comptes à choisir,
+  remboursements de cartes et mouvements passés à confirmer).
+- Le suivi commence à la mise à jour. Les prévisions passées ne sont pas
+  reconstituées. Une copie avant migration est créée dans data/backups/
+  budget-before-planning-v4.sqlite. Les anciens exports JSON v3 restent
+  restaurables.
+
+LES AUTRES FONCTIONS
 - Transaction : choisir Dépense ou Revenu, puis un montant positif.
 - Bilan mensuel : catégories, revenus, dépenses et plafonds mensuels.
 - Import CSV : fichier UTF-8, aperçu, sélection et doublons possibles.

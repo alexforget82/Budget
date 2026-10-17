@@ -39,7 +39,7 @@ export function bankAmount(value){
   return Math.round(amount*100);
 }
 
-const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations'];
+const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status'];
 const categoryDefaults=['Épicerie','Logement','Transport','Restaurants','Santé','Loisirs','Abonnements','Achats','Revenus','Autres'];
 
 export function createFeatures({db,dir,cents,validDate,today,atomic,addTransaction}){
@@ -56,7 +56,19 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
   const categoryId=value=>{if(value===null||value===undefined||value==='')return null;const id=Number(value);if(!Number.isSafeInteger(id)||!q('SELECT id FROM categories WHERE id=?',id).length)throw Error('Catégorie introuvable.');return id;};
   const exportBackup=()=>({format:'mon-budget',version:1,created_at:new Date().toISOString(),tables:Object.fromEntries(tables.map(table=>[table,q(`SELECT * FROM ${table}`)]))});
   function saveBackup(){const backupDir=path.join(dir,'backups');fs.mkdirSync(backupDir,{recursive:true,mode:0o700});const name='budget-'+Date.now()+'-'+Math.random().toString(16).slice(2)+'.json';fs.writeFileSync(path.join(backupDir,name),JSON.stringify(exportBackup()),{mode:0o600,flag:'wx'});return name;}
+  function normalizeBackup(backup){
+    const result=structuredClone(backup);
+    if(result?.format!=='mon-budget'||result.version!==1||!result.tables)return result;
+    const legacy=!Object.hasOwn(result.tables,'envelope_period_status')&&Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='forecast_tracking_since')&&Array.isArray(result.tables.envelopes)&&result.tables.envelopes.every(e=>!Object.hasOwn(e,'forecast_account_id'))&&Array.isArray(result.tables.recurring)&&result.tables.recurring.every(r=>!Object.hasOwn(r,'one_time'));
+    if(!legacy)return result;
+    result.tables.envelope_period_status=[];
+    for(const row of result.tables.envelopes||[]){if(!Object.hasOwn(row,'forecast_account_id'))row.forecast_account_id=null;if(!Object.hasOwn(row,'forecast_spend'))row.forecast_spend=1;if(!Object.hasOwn(row,'planning_since'))row.planning_since=today();}
+    for(const row of result.tables.recurring||[])if(!Object.hasOwn(row,'one_time'))row.one_time=0;
+    if(Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='forecast_tracking_since'))result.tables.app_settings.push({key:'forecast_tracking_since',value:today()});
+    return result;
+  }
   function validateBackup(backup){
+    backup=normalizeBackup(backup);
     if(!backup||backup.format!=='mon-budget'||backup.version!==1||!backup.tables||typeof backup.tables!=='object'||Object.keys(backup.tables).sort().join()!==[...tables].sort().join())throw Error('Sauvegarde Mon Budget incompatible ou incomplète.');
     const stage=new DatabaseSync(':memory:');let count=0;
     try{
@@ -87,7 +99,7 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     }catch(e){if(/constraint|datatype mismatch/i.test(e.message))throw Error('Sauvegarde invalide : des valeurs ou des liens sont incompatibles.');throw e;}finally{stage.close();}
   }
   function restore(backup){
-    validateBackup(backup);const filename=saveBackup();
+    backup=normalizeBackup(backup);validateBackup(backup);const filename=saveBackup();
     atomic(()=>{db.exec('PRAGMA defer_foreign_keys=ON');for(const t of [...tables].reverse())run(`DELETE FROM ${t}`);for(const t of tables){const cols=q(`PRAGMA table_info(${t})`).map(c=>c.name),stmt=db.prepare(`INSERT INTO ${t}(${cols.join(',')}) VALUES(${cols.map(()=>'?').join(',')})`);for(const row of backup.tables[t])stmt.run(...cols.map(c=>row[c]));}if(q('PRAGMA foreign_key_check').length)throw Error('Sauvegarde incohérente.');});
     return {safety_backup:filename};
   }
@@ -146,5 +158,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.0.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.1.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }
