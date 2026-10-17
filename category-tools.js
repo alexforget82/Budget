@@ -41,7 +41,19 @@ export function createCategoryTools({db,atomic,exportBackup,today}){
    run('DELETE FROM subcategories WHERE category_id=?',p.source.id);run('DELETE FROM categories WHERE id=?',p.source.id);const assignments=catalog().assignments;delete assignments[p.source.id];saveGroups(assignments);
   });
  }
+ function bulkDeletionPreview(){
+  const categories=q('SELECT * FROM categories').filter(c=>!isUncategorizedName(c.name)),ids=new Set(categories.map(c=>c.id));let rules=[];try{rules=JSON.parse(q("SELECT value FROM app_settings WHERE key='v50_rules'")[0]?.value||'[]');}catch{}if(!Array.isArray(rules))rules=[];
+  return {categories,count:categories.length,transactions:q('SELECT category_id,COUNT(*) n FROM transactions GROUP BY category_id').filter(r=>ids.has(r.category_id)).reduce((n,r)=>n+r.n,0),children:q('SELECT category_id FROM subcategories').filter(r=>ids.has(r.category_id)).length,limits:q('SELECT category_id FROM category_budgets').filter(r=>ids.has(r.category_id)).length,rules_count:rules.filter(r=>r&&ids.has(Number(r.category_id))).length,token:createHash('sha256').update(JSON.stringify([exportBackup().tables,today(),'delete-all-categories'])).digest('hex')};
+ }
+ function bulkDelete(x){
+  const p=bulkDeletionPreview();if(x.token!==p.token||x.confirm!==true||!p.count)throw Error('Confirmez un aperçu actuel avec des catégories à supprimer.');
+  atomic(()=>{const ids=new Set(p.categories.map(c=>c.id));for(const id of ids){run('UPDATE transactions SET category_id=NULL,subcategory_id=NULL WHERE category_id=?',id);run('DELETE FROM category_budgets WHERE category_id=?',id);run('DELETE FROM subcategories WHERE category_id=?',id);run('DELETE FROM categories WHERE id=?',id);}
+   const raw=q("SELECT value FROM app_settings WHERE key='v50_rules'")[0];if(raw){let rules;try{rules=JSON.parse(raw.value);}catch{}if(Array.isArray(rules)&&rules.some(r=>r&&ids.has(Number(r.category_id)))){for(const r of rules)if(r&&ids.has(Number(r.category_id))){r.category_id=null;r.subcategory_id=null;r.active=false;}run("UPDATE app_settings SET value=? WHERE key='v50_rules'",JSON.stringify(rules));}}saveGroups({});
+  });
+ }
  function post(route,x){
+  if(route==='/api/categories/delete-all-preview')return bulkDeletionPreview();
+  if(route==='/api/categories/delete-all')return bulkDelete(x);
   if(route==='/api/categories/delete-preview')return deletionPreview(x);
   if(route==='/api/categories/delete')return deleteCategory(x);
   if(route==='/api/categories/catalog-preview')return catalogPreview();

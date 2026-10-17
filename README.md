@@ -1,4 +1,4 @@
-# Mon Budget 5.1.2
+# Mon Budget 5.1.3
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,18 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.1.3 : supprimer toutes les catégories
+
+Dans **Catégories → Supprimer toutes les catégories**, consultez le récapitulatif puis **Confirmer la suppression de toutes les catégories**. **Fermer** annule sans modification. La suppression inclut les catégories fournies au départ, les catégories ajoutées, les catégories archivées et leurs sous-catégories. Les regroupements sont également vidés.
+
+**Non-catégorisé reste toujours disponible.** Les transactions existantes y sont reclassées sans modifier leurs montants, comptes, dates ou enveloppes. Les règles de classement concernées sont désactivées et les plafonds mensuels de suivi retirés. Les comptes, soldes, réserves, enveloppes, virements et prévisions sont conservés. Le récapitulatif indique les nombres concernés avant la confirmation.
+
+L’opération est atomique et refuse un aperçu devenu périmé. **Annuler la dernière modification** permet de restaurer l’ensemble juste après la suppression. La liste reste vide après redémarrage; vous pouvez créer de nouvelles catégories ou reprendre volontairement votre liste Lunch Money. Le bouton est désactivé quand il ne reste aucune catégorie à supprimer.
+
+`npm test` vérifie 52 tests Node et 67 tests API. `python3 tests/categories-v513-ui.py` vérifie l’aperçu sans écriture, la fermeture sans suppression, la confirmation, l’état vide utilisable, une nouvelle dépense dans Non-catégorisé, la création d’une catégorie, une nouvelle suppression, l’annulation, le mode sombre et cinq largeurs de fenêtre.
+
+Aperçus fictifs : [bouton de suppression globale](docs/v513-suppression-toutes.png) · [confirmation](docs/v513-confirmation.png).
 
 ## Nouveautés 5.1.2 : supprimer des catégories et garder Non-catégorisé
 
@@ -78,7 +90,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.2**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.3**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 

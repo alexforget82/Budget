@@ -1,9 +1,9 @@
-VERSION 5.1.2 — SUPPRESSION ET NON-CATEGORISE
+VERSION 5.1.3 — SUPPRIMER TOUTES LES CATEGORIES
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v5.1.2.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v5.1.3.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
 et budget-v50.css.
 
@@ -323,3 +323,7 @@ Les groupes ne prennent pas le niveau des sous-catégories.
 Catégories > Supprimer > choisir la destination > Voir l’effet > Confirmer.
 Non-catégorisé est permanent et reçoit par défaut les opérations sans catégorie.
 Les transactions, soldes et réserves sont conservés.
+
+Pour tout vider : Catégories > Supprimer toutes les catégories > Confirmer.
+Non-catégorisé reste disponible. Les comptes, transactions et réserves sont conservés.
+Annuler la dernière modification restaure les catégories juste après la suppression.
