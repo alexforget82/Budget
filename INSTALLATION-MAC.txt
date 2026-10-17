@@ -1,4 +1,4 @@
-MON BUDGET 3.2 — INSTALLATION ET MISE À JOUR SUR MAC
+MON BUDGET 3.3 — INSTALLATION ET MISE À JOUR SUR MAC
 
 Node.js 22.13 ou plus est requis. Node.js 24 LTS est recommandé.
 Aucune commande npm install n’est nécessaire.
@@ -15,7 +15,7 @@ MISE À JOUR RECOMMANDÉE — NOUVEAU DOSSIER
 5. Gardez tous les nouveaux fichiers applicatifs ensemble : server.js,
    budget-features.js, index.html, app.css, app.js, features.js, planner.js,
    transactions.js, forecast-engine.js, forecast-ui.js, planning-actions.js,
-   planning-workflow.js et package.json.
+   planning-workflow.js, private-access.js et package.json.
    IMPORTANT : contrairement à la mise à jour visuelle précédente, remplacer
    seulement trois fichiers ne suffit plus.
 6. Ouvrez Lancer Mon Budget.command dans ce NOUVEAU dossier, ou lancez
@@ -47,6 +47,19 @@ NOUVELLE INSTALLATION
 Gardez tous les fichiers du dossier Budget-main ensemble.
 Lancez npm start depuis ce dossier ou ouvrez le lanceur .command.
 Une base vide est créée dans data dans le dossier de lancement.
+
+ACCÈS PRIVÉ IPHONE (3.3)
+Le guide ACCES-IPHONE.md donne la procédure complète.
+1. Installer et connecter Tailscale sur le Mac et l'iPhone, au même compte.
+2. Depuis le nouveau dossier avec votre copie de data, ouvrir
+   Acces prive iPhone.command. Garder la fenêtre du serveur ouverte.
+3. Sur l'iPhone connecté à Tailscale, ouvrir dans Safari l'adresse HTTPS
+   affichée sur le Mac. Ajouter à l'écran d'accueil depuis Partager.
+Le Mac doit rester allumé, connecté et son couvercle ouvert. Après un
+redémarrage, relancer le fichier. Aucun port de routeur n'est à ouvrir.
+La configuration privée est conservée dans data/private-access.json.
+L'accès local habituel reste possible. L'installation Tailscale et Safari
+sur vos appareils restent à vérifier sur place.
 
 NOUVEAUTÉS (3.2)
 - Planifier > Prévu / Réel > À confirmer : traiter les opérations en retard,

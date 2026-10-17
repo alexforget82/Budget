@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {loadPrivateAccess,authorizePrivateRequest} from './private-access.js';
 import {createHash} from 'node:crypto';
 import {createPlanningActions} from './planning-actions.js';
 import {buildForecast} from './forecast-engine.js';
@@ -8,6 +9,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 const HOST='127.0.0.1',PORT=Number(process.env.PORT||3030);
 const dir=path.join(process.cwd(),'data');fs.mkdirSync(dir,{recursive:true,mode:0o700});
+const privateAccess=loadPrivateAccess(dir,PORT);
 // Sauvegarde avant toute migration (et avant l'ouverture de la base).
 const databasePath=path.join(dir,'budget.sqlite');
 if(fs.existsSync(databasePath)&&!fs.existsSync(path.join(dir,'backups','.v2-backup-complete'))){
@@ -273,10 +275,16 @@ function listTransactions(url,all=false){
  return {rows,count,page,pages:Math.max(1,Math.ceil(count/limit)),summary:{...totals,net_cents:totals.income_cents-totals.expense_cents}};
 }
 
-http.createServer(async(req,res)=>{try{
-const expectedHost=`127.0.0.1:${PORT}`,localHost=`localhost:${PORT}`;
-if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
-if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
+const handleRequest=async(req,res)=>{try{
+res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');res.setHeader('Content-Security-Policy',"frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
+if(privateAccess&&req.socket.localPort===privateAccess.port){
+ const error=authorizePrivateRequest(req,privateAccess);if(error)return reply(res,403,{error});
+}else{
+ const expectedHost=`127.0.0.1:${PORT}`,localHost=`localhost:${PORT}`;
+ if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
+ if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
+}
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'3.3.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/monthly?')){const params=new URL(req.url,'http://localhost').searchParams;return reply(res,200,features.monthly(params.get('month'),params.get('account')));}
 if(req.method==='GET'&&req.url==='/api/backup/export'){const backup=features.exportBackup();res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="mon-budget-${todayLocal()}.json"`,'Cache-Control':'no-store'});return res.end(JSON.stringify(backup,null,2));}
 if(req.method==='GET'&&req.url.startsWith('/api/transactions/export')){
@@ -380,4 +388,6 @@ else if(req.url==='/api/transactions'){atomic(()=>addTransaction(x))}
 else if(req.url==='/api/overrides'||req.url==='/api/overrides/delete'){const id=Number(x.id);if(req.url.endsWith('/delete')){if(!exists('recurring_overrides',id))return reply(res,400,{error:'Exception introuvable'});run('DELETE FROM recurring_overrides WHERE id=?',id)}else{const rid=Number(x.recurring_id),amount=cents(x.amount),date=x.occurrence_on;if(!exists('recurring',rid)||!validDate(date)||amount===null||amount<0)return reply(res,400,{error:'Exception invalide'});const rule=q('SELECT * FROM recurring WHERE id=?',rid)[0];let scheduled=false;for(let i=0;i<(rule.one_time?1:20000);i++){const next=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(next===date){scheduled=true;break}if(next>date)break}if(!scheduled)return reply(res,400,{error:'Cette date ne correspond pas à une occurrence prévue de la règle'});run('INSERT INTO recurring_overrides(recurring_id,occurrence_on,amount_cents) VALUES(?,?,?) ON CONFLICT(recurring_id,occurrence_on) DO UPDATE SET amount_cents=excluded.amount_cents',rid,date,amount)}}
 else {const id=Number(x.id);if(req.url==='/api/recurring/delete'){if(!exists('recurring',id))return reply(res,400,{error:'Règle introuvable'});run('DELETE FROM recurring WHERE id=?',id)}else{const amount=cents(x.amount),account=Number(x.account_id),to=x.to_account_id?Number(x.to_account_id):null,envelope=x.envelope_id?Number(x.envelope_id):null,description=typeof x.description==='string'?x.description.trim():'';if(!description||description.length>150||!['income','expense','transfer','reserve'].includes(x.type)||!['weekly','biweekly','monthly','last_business_day','rrq'].includes(x.frequency)||!['none','before','after'].includes(x.day_adjust??'none')||!validDate(x.start_on)||amount===null||amount<=0||(x.type!=='reserve'&&!exists('accounts',account))||(x.type==='transfer'&&(!exists('accounts',to)||to===account))||((x.type==='reserve'||(x.type==='expense'&&envelope!==null))&&!exists('envelopes',envelope))||(req.url.endsWith('update')&&!exists('recurring',id)))return reply(res,400,{error:'Règle récurrente invalide'});
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields)}}
-return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action')?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}}).listen(PORT,HOST,()=>console.log(`Mon Budget v3.2.0 : http://${HOST}:${PORT}`));
+return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action')?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
+http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v3.3.0 : http://${HOST}:${PORT}`));
+if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));

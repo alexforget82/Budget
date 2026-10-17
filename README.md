@@ -1,4 +1,4 @@
-# Mon Budget 3.2
+# Mon Budget 3.3
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -41,6 +41,14 @@ Ce lanceur nécessite Node.js et n’est pas une application `.app` signée et a
 Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun virement bancaire. Les soldes bancaires et les transactions sont saisis ou importés manuellement. Sans paie prévue sur 30 jours, aucun montant « jusqu’à la paie » n’est inventé.
 
 ![Tableau de bord avec données fictives](docs/tableau-de-bord.png)
+
+## Accès privé depuis l’iPhone (3.3)
+
+Vous pouvez conserver les données sur votre Mac et consulter le même budget depuis l’iPhone, y compris hors de la maison, grâce à **Tailscale sur les deux appareils**. Le Mac doit rester allumé et connecté.
+
+Le nouveau lanceur **Acces prive iPhone.command** prépare une adresse HTTPS privée et réserve l’accès distant au compte propriétaire fourni par Tailscale Serve. L’accès local reste disponible; aucun port n’est ouvert sur le routeur et aucun Funnel n’est activé. Le fichier `private-access.js` doit rester avec le serveur. La configuration personnelle est enregistrée dans `data/private-access.json`, hors du dépôt.
+
+Consultez [le guide Mac + iPhone](ACCES-IPHONE.md) pour l’installation, la mise à jour, le lancement, l’ajout à l’écran d’accueil et les limites. L’installation effective de Tailscale sur vos appareils reste nécessaire; elle n’est pas réalisée depuis cet environnement. Aucun mode hors ligne ni hébergement permanent n’est ajouté.
 
 ## À confirmer et explication du solde (3.2)
 

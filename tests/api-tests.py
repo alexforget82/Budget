@@ -210,6 +210,26 @@ class BudgetAPI(unittest.TestCase):
   self.post('/api/backup/validate',{'backup':old});self.post('/api/backup/restore',{'backup':old,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/state')['cash_cents'],100000)
   bad=copy.deepcopy(backup);del bad['tables']['envelope_actual_links'];before=self.get('/api/backup/export')['tables'];self.post('/api/backup/restore',{'backup':bad,'confirm':'REMPLACER'},400);self.assertEqual(self.get('/api/backup/export')['tables'],before)
 
+ def test_private_listener_enforces_identity_origin_and_preserves_local_access(self):
+  self.stop()
+  with socket.socket() as sock:sock.bind(('127.0.0.1',0));private_port=sock.getsockname()[1]
+  origin='https://budget.exemple.ts.net';login='alex@example.test'
+  (self.dir/'data'/'private-access.json').write_text(json.dumps({'origin':origin,'login':login,'port':private_port}));self.start()
+  self.assertTrue(self.get('/api/private/status')['enabled']);self.assertEqual(self.get('/api/private/status')['origin'],origin)
+  def remote(path,headers=None,data=None,status=200):
+   old=self.base;self.base=f'http://127.0.0.1:{private_port}'
+   try:return self.call(path,data,status,headers={'Host':'budget.exemple.ts.net',**(headers or {})})
+   finally:self.base=old
+  owner={'Tailscale-User-Login':login};valid={**owner,'Origin':origin,'Content-Type':'application/json'}
+  for path in ['/','/api/state','/api/backup/export','/api/private/status']:remote(path,status=403)
+  remote('/api/state',{'Tailscale-User-Login':'other@example.test'},status=403);remote('/api/state',{'X-Forwarded-User':login},status=403)
+  self.assertEqual(remote('/api/private/status',owner)['data_key'],self.get('/api/private/status')['data_key']);self.assertEqual(remote('/api/state',owner)['accounts'],[]);self.assertEqual(remote('/api/state',{**owner,'Host':f'127.0.0.1:{private_port}'})['accounts'],[])
+  before=self.get('/api/backup/export')['tables'];account={'name':'Compte distant fictif','kind':'checking','balance':500}
+  for headers in [{**owner,'Content-Type':'application/json'},{**valid,'Origin':'https://evil.example.com'},{**valid,'Host':'evil.example.com'},{**valid,'Content-Type':'text/plain'}]:remote('/api/accounts',headers,data=account,status=403)
+  self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  s=remote('/api/accounts',valid,data=account);self.assertEqual(s['cash_cents'],50000);self.assertEqual(self.get('/api/state')['cash_cents'],50000)
+  self.call('/api/state',status=403,headers={'Host':'budget.exemple.ts.net'})
+
  def test_additive_legacy_migration_preserves_data(self):
   self.stop();dbpath=self.dir/'data'/'budget.sqlite';dbpath.unlink()
   for suffix in ['-wal','-shm']:

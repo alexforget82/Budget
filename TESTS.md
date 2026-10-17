@@ -4,13 +4,14 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **44 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **51 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
 | `tests/csv.test.js` | 5 | BOM, CSV multiligne, guillemets échappés, tabulations, CRLF, lignes vides, limites de taille, montants localisés, signes et refus des valeurs invalides |
 | `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
-| `tests/api-tests.py` | 19 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
+| `tests/api-tests.py` | 20 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -150,3 +151,17 @@ Les quatre autres parcours navigateur restent réussis. Le suivi commence à l�
 - Liste, prévision et fenêtre de confirmation à 375, 390, 768, 1024 et 1440 pixels sans débordement; exploration sans modification des tables financières.
 
 Les cinq autres parcours navigateur ont également réussi. Une erreur HTTP 400 du formulaire obsolète est attendue et distinguée des erreurs inattendues. Les captures publiées sont fictives. Safari et l’historique réel de l’utilisateur restent à vérifier sur son Mac.
+
+## Accès privé Mac/iPhone (3.3)
+
+`npm test` : **51 tests réussis** (5 CSV, 20 moteur, 6 accès privé et 20 API).
+
+- Accès privé désactivé sans configuration; configuration invalide refusée au démarrage.
+- Port privé distinct, adresse HTTPS Tailscale et propriétaire explicite.
+- Requêtes sans identité, autre utilisateur et en-tête d’identité de remplacement refusés, même si le proxy réécrit Host vers la boucle locale.
+- Écritures privées exigeant l’identité, l’origine HTTPS exacte et le type JSON; requêtes refusées sans mutation des tables.
+- Test HTTP sur les deux ports : données lues et modifiées avec l’identité simulée du propriétaire, accès local toujours fonctionnel et hôte distant refusé sur le port local.
+- Les en-têtes Tailscale sont simulés dans ces tests de backend : ce n’est pas une vérification du tunnel Tailscale réel ni de son authentification réseau.
+- Syntaxe Bash du nouveau lanceur vérifiée. Le lanceur refuse de remplacer d’autres services Serve ou un Funnel existant.
+
+Tailscale Serve, la commande macOS `open`, la gestion de veille, les permissions macOS et Safari/iPhone restent à vérifier sur les appareils de l’utilisateur. La consultation de la documentation Tailscale depuis l’environnement a été refusée (HTTP 403); aucune validation en direct de la version installée de Tailscale n’est revendiquée. Le guide fournit les étapes d’activation à effectuer sur les appareils.
