@@ -76,15 +76,25 @@
  const submit=form.querySelector('button:not([type]),button[type="submit"]');submit.type='submit';submit.textContent='Enregistrer';
  const submitMore=node('button','Enregistrer et continuer','secondary');submitMore.type='submit';submitMore.dataset.keepOpen='true';const footer=node('div',undefined,'entry-submit-actions');footer.append(submit,submitMore);
  form.replaceChildren(directionLabel,types,copyNotice,amountLabel,descriptionLabel,suggestions,timingLabel,accountLabel,destinationLabel,categoryLabel,dateLabel,frequencyLabel,categoryHint,more,accountHint,transferHint,footer);
+ const envelopeSuggestion=node('div',undefined,'v44-envelope-suggestion');envelopeSuggestion.id='v44-envelope-suggestion';envelopeSuggestion.hidden=true;more.before(envelopeSuggestion);
+ function suggestEnvelope(merchant){
+  envelopeSuggestion.replaceChildren();envelopeSuggestion.hidden=true;
+  const envelope=latest?.envelopes.find(e=>e.id===merchant?.envelope_id&&e.active);
+  if(select.value!=='expense'||$('envelope-options').value||!merchant||merchant.amount_cents>=0||!envelope)return;
+  envelopeSuggestion.append(node('span','Comme votre dernier achat : '+envelope.name),button('Utiliser cette enveloppe',()=>{if(normalize(description.value)!==normalize(merchant.description))return;$('envelope-options').value=String(envelope.id);more.open=true;envelopeSuggestion.hidden=true;},'text-action'));envelopeSuggestion.hidden=false;
+ }
+ $('envelope-options').addEventListener('change',()=>{envelopeSuggestion.hidden=true;});
  let latest=null,categoryTouched=false,lastSuggested=null,keepOpen=false;
  const normalize=value=>value.trim().toLocaleLowerCase('fr-CA');
  function syncType(){
+  if(select.value!=='expense')envelopeSuggestion.hidden=true;
   types.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.direction===select.value)));
   dialog.querySelector('.dialog-heading h2').textContent=select.value==='transfer'?'Nouveau virement':select.value==='income'?'Nouveau revenu':'Nouvelle dépense';
   more.hidden=select.value==='income';renderMerchants();accountNote();transferFields();
  }
  function accountNote(){const account=latest?.accounts.find(a=>String(a.id)===$('account-options').value);accountHint.hidden=select.value==='transfer'||account?.kind!=='credit';accountHint.textContent=select.value==='expense'?'Cette dépense augmente le montant dû sur la carte. Son remboursement se saisit comme un virement.':'Cette entrée réduit le montant dû sur la carte.';}
  function suggestCategory(merchant,explicit=false){
+  suggestEnvelope(merchant);
   if(!latest||categoryTouched&&!explicit)return;
   if(merchant&&merchant.category_id&&latest.categories.some(c=>c.id===merchant.category_id)&&(merchant.amount_cents<0)===(select.value==='expense')){
    category.value=String(merchant.category_id);lastSuggested=category.value;categoryHint.textContent='Catégorie proposée : '+category.selectedOptions[0].textContent+'. Vous pouvez la modifier.';categoryHint.hidden=false;
@@ -110,7 +120,7 @@
  };
  const openEditor=window.appOpenEditor;
  window.appOpenEditor=function(key){
-  if(key==='transaction'&&!amount.value&&!description.value){select.value='expense';select.dispatchEvent(new Event('change',{bubbles:true}));categoryTouched=false;category.value='';categoryHint.hidden=true;copyNotice.hidden=true;}
+  if(key==='transaction'&&!amount.value&&!description.value){select.value='expense';select.dispatchEvent(new Event('change',{bubbles:true}));categoryTouched=false;category.value='';categoryHint.hidden=true;copyNotice.hidden=true;envelopeSuggestion.hidden=true;}
   openEditor(key);if(key==='transaction'){syncType();requestAnimationFrame(()=>amount.focus());}
  };
  window.addEventListener('budget:repeat-transaction',event=>{
@@ -119,7 +129,7 @@
  const previousSend=send;send=async function(url,data){
   const ok=await previousSend(url,data);
   if(ok&&url==='/api/transactions'){
-   const again=keepOpen;keepOpen=false;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';
+   const again=keepOpen;keepOpen=false;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';envelopeSuggestion.hidden=true;
    if(again){openEditor('transaction');syncType();requestAnimationFrame(()=>amount.focus());}
   }
   return ok;

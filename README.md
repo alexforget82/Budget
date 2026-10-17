@@ -1,4 +1,4 @@
-# Mon Budget 4.3
+# Mon Budget 4.4
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,22 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 4.4 : vos enveloppes, expliquées et plus faciles à utiliser
+
+Le badge indique **v4.4**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
+
+- **Voir la fiche**, dans Enveloppes et Budgets libres : réserve restante, achats du mois, budget effectif de la période (y compris une exception), prochain renouvellement non encore effectué et opérations associées. Les dix dernières opérations sont affichées; **Afficher tout l’historique** donne accès aux autres par pages de 50, avec accès à leur éditeur existant. Les opérations importées sans effet sur les soldes sont identifiées.
+- **Configurer l’usage**, depuis la fiche : achats au fil de la période, paiement à date fixe ou budget libre. Pour plusieurs enveloppes, cochez **Sélectionner**, puis **Configurer la sélection**. L’aperçu indique les réserves conservées, le mode et le budget choisis, les éventuels paiements distincts conservés et le minimum prévu sur 90 jours. Rien ne change avant confirmation. Un changement intervenu ailleurs invalide l’aperçu; un minimum négatif exige une confirmation explicite. L’annulation protégée reste disponible après l’application.
+- La configuration groupée conserve les calendriers et budgets individuels. Une enveloppe non programmée doit d’abord être configurée séparément pour devenir un budget périodique. Une nouvelle programmation ou un changement de budget/fréquence/date commence à une **date future**, pour éviter les renouvellements rétroactifs. La réserve actuelle se modifie toujours via les outils existants.
+- Le passage en **Budget libre** retire le budget fixe et le renouvellement, sans libérer sa réserve ni supprimer son historique. Il est refusé tant qu’une récurrence de réserve ou de dépense régulière reste active. Un achat ponctuel déjà programmé reste visible dans l’aperçu et la prévision. Les budgets exceptionnels et liens historiques sont conservés.
+- **À surveiller**, sur le tableau de bord : réserve à 20 % ou moins du budget de la période, dépassement, premier disponible négatif prévu avant le prochain revenu admissible (30 jours si aucun revenu n’est trouvé dans l’horizon), et achats du mois sans enveloppe. L’association étant facultative, ces derniers sont des éléments à examiner, jamais des erreurs ni des associations automatiques. Les budgets en pause ne déclenchent pas d’alerte de consommation.
+- Les montants du **Safe-to-Spend sont cliquables**, aussi au clavier. Le détail commence par l’équation des soldes inclus moins toutes les réserves, puis indique le point le plus bas sur 90 jours et conserve le détail des mouvements existant.
+- Dans la saisie d’un achat, un commerce reconnu peut proposer sa dernière enveloppe active via **Utiliser cette enveloppe**. Vous devez accepter la suggestion; une enveloppe déjà choisie n’est jamais remplacée. Les suggestions de catégories et les choix manuels existants sont conservés.
+
+Aucun virement ou achat réel n’est créé par une configuration. Les réserves restent dans leur compte bancaire; les achats bancaires associés consomment la réserve sans deuxième déduction du montant couvert. **Aucune réserve automatique pour les dettes de cartes** n’est ajoutée. Le mode Budget réservé continue de protéger le disponible sans inventer une date de dépense pour les achats variables.
+
+Aperçus avec données fictives : [tableau de bord](docs/v44-tableau-de-bord.png) · [fiche sur iPhone](docs/v44-fiche-iphone.png) · [configuration guidée](docs/v44-configuration-iphone.png).
 
 ## Nouveautés 4.3 : catégories et budgets mensuels réservés
 
@@ -29,7 +45,7 @@ Aperçus avec données fictives : [budget réservé sur iPhone](docs/v43-budget-
 
 ## Nouveautés 4.2 : Budgets libres
 
-Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.3**.
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.4**.
 
 - **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
 - **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.

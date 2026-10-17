@@ -1,3 +1,20 @@
+VERSION 4.4 — FICHES D’ENVELOPPES ET CONFIGURATION GUIDEE
+Téléchargez et décompressez le ZIP. Depuis ~/Applications/Mon Budget,
+ouvrez votre raccourci permanent Mettre a jour Mon Budget.command,
+puis choisissez le nouveau dossier téléchargé. Votre base active est conservée
+et sauvegardée; ne recopiez pas un ancien dossier data.
+Rechargez Safari sur Mac et iPhone et vérifiez le badge v4.4.
+Gardez les fichiers ensemble, dont envelope-tools.js, envelope-v44.js et envelope-v44.css.
+
+Planifier > Enveloppes ou Budgets libres > Voir la fiche : budget, restant,
+achats et historique. Configurer l’usage montre un aperçu avant confirmation.
+Pour plusieurs enveloppes : cochez Sélectionner puis Configurer la sélection.
+Aucun mode ni montant réservé n’est modifié sans votre action.
+Une nouvelle programmation doit commencer à une date future.
+Tableau de bord : points à surveiller et montants du disponible cliquables.
+Dans un achat, Utiliser cette enveloppe accepte une suggestion pour le commerce.
+Aucune réserve automatique pour les remboursements de cartes.
+
 VERSION 4.3 — CATEGORIES ET BUDGETS MENSUELS RESERVES
 Décompressez le ZIP puis ouvrez le raccourci permanent
 Mettre a jour Mon Budget.command depuis ~/Applications/Mon Budget.

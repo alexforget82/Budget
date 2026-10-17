@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.3
+# Vérifications — Mon Budget 4.4
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **92 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **96 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,18 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 42 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 46 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+
+La 4.4 ajoute quatre tests API intégrés :
+
+- Configuration groupée : aperçu sans écritures, modes appliqués atomiquement, comptes/transactions/réserves inchangés et annulation exacte.
+- Validation : liste vide, doublons, identifiants et modes invalides, nouvelle date rétroactive, aperçu périmé après un autre achat, confirmation d’un minimum négatif.
+- Conversion libre : refus des récurrences régulières actives, signalement des paiements distincts, conservation de l’identifiant, de la réserve et des transactions, sauvegarde toujours compatible.
+- Fiches/alertes : dépenses du mois et de la période, historique ancien, achats sans enveloppe, budget exceptionnel actif, premier risque avant la paie, solde actuel négatif non masqué par un revenu encore prévu, lecture sans écritures, prochain renouvellement réellement futur après celui d’aujourd’hui.
+
+`python3 tests/budget-v44-ui.py` : fiches et historique complet, sélection de plusieurs enveloppes, invalidation d’un aperçu après modification du formulaire, confirmation protégée et rejet d’un changement concurrent, conversion vers Budgets libres avec conservation des montants, fiche accessible après recherche, suggestion de commerce à accepter explicitement et respect d’un choix manuel, détail du Safe-to-Spend au clavier, alertes, confirmation négative et cinq largeurs (375/390/768/1024/1440). Aucun débordement, aucune mutation en consultant les écrans, aucune erreur JavaScript. Données entièrement fictives.
+
+Régressions exécutées en 4.4 : `tests/free-budgets-ui.py`, `tests/budget-v43-ui.py`, `tests/budget-v41-ui.py`, `tests/transactions-ui.py`, `tests/planning-ui.py`, `tests/ui-smoke.py` et `tests/mac-service-simulation.py`. La simulation de service teste l’installation, la copie des nouveaux fichiers et la conservation des données avec un faux launchctl; elle ne remplace pas une vérification de Safari/iOS, macOS ou Tailscale réels.
 
 La 4.3 ajoute trois tests API : renommage d’une catégorie avec conservation des transactions/plafonds et annulation exacte; refus atomique des doublons, identifiants invalides et formulaires périmés; budget mensuel réservé, sans paiement automatique, achat réel consommant la réserve une seule fois, renouvellement sans report, dépassement et redémarrage idempotent.
 
