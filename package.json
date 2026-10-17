@@ -1,12 +1,13 @@
 {
   "name": "mon-budget-local",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/csv.test.js && python3 tests/api-tests.py"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   }
 }

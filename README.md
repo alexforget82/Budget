@@ -1,70 +1,133 @@
-# Mon Budget local — v2.1.0 (version d'essai)
+# Mon Budget 3
 
-Application locale pour Mac, Node.js 22 ou plus, SQLite. Aucun CDN, aucune compilation ni dépendance npm externe.
+Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
-## Mise à jour sans perte de données
+```sh
+npm start
+```
 
-1. Arrêter complètement le serveur (`Control + C`).
-2. Faire une **copie intégrale** du dossier de l'application, notamment du dossier `data/` (avec `budget.sqlite`, `-wal`, `-shm` s'ils existent). Ne jamais supprimer `data/`.
-3. Décompresser l'archive et remplacer uniquement les fichiers applicatifs : `server.js`, `index.html`, `app.css`, `app.js`, `package.json`, `README.md`.
-4. Conserver le dossier `data/` actuel au même endroit, à côté de `server.js`.
-5. Redémarrer avec `npm start` et ouvrir `http://127.0.0.1:3030` dans Safari. Recharger sans cache si nécessaire (`Cmd + Option + R`).
+Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
-Au premier lancement de la v2.1, une copie des fichiers SQLite est créée dans `data/backups/` **avant** les migrations additives. Une copie manuelle complète reste recommandée. La v2.1 ajoute seulement trois tables : `reconciliation_links`, `recurring_moves` et `envelope_budget_overrides`. Les anciennes transactions, comptes, enveloppes et récurrences sont conservés.
+## Mettre à jour sur Mac
 
-## Fonctionnalités v2.1
+**La v3 modifie aussi le serveur. La mise à jour des trois fichiers visuels ne suffit plus.**
 
-- Chargement corrigé : une seule requête initiale actualise tous les écrans (la v2.0 avait une requête qui capturait une ancienne fonction de rendu).
-- Détail du Safe-to-Spend : comptes inclus, réserves et impacts de chaque mouvement prévu sur 30 jours. Les indicateurs « cette semaine » et « jusqu'à la paie » conservent leurs règles de calcul d'origine (minimum projeté, jusqu'à 30 jours).
-- Rapprochement manuel : section **Récurrences**, association d'une transaction ou d'un virement réel avec une occurrence prévue, même si le montant diffère. Le lien ne modifie pas les soldes réels. Une opération réelle ne peut être associée qu'à une seule occurrence; possibilité de délier. Les rapprochements automatiques conservateurs continuent.
-- Prévision et calendrier sur **90 jours**; modification du montant d'une occurrence dans **Exceptions** (0 $ pour l'ignorer), déplacement d'une occurrence dans **Exceptions** (avec possibilité d'annuler).
-- Enveloppes : affichage du montant réservé, du montant dépensé pendant la période en cours et du prochain renouvellement. Budget exceptionnel d'une seule période future, sans changer la règle habituelle. Graphique 30 jours et barres de progression sur le tableau de bord.
-- Transactions et virements modifiables et supprimables, recherche et pagination héritées de v2.0.
+1. Arrêtez le serveur avec Control + C.
+2. Faites une copie **complète** du dossier actuel, avec `data/`, `budget.sqlite` et les éventuels fichiers `-wal` et `-shm`.
+3. Décompressez le nouveau ZIP dans un **nouveau dossier distinct**, par exemple `Mon-Budget-3`. Gardez tous ses fichiers ensemble.
+4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
+5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
 
-## Points à connaître
+Les nouveaux fichiers `budget-features.js` et `features.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
-- **Version d'essai** : vérifier les soldes et le Safe-to-Spend avec une copie de vos données avant d'utiliser le logiciel au quotidien. Les tests automatisés ne remplacent pas un essai réel sur Safari.
-- Les soldes bancaires sont saisis manuellement. Les règles récurrentes ne déclenchent pas de virements bancaires.
-- Le calendrier mensuel affiche les 50 dernières transactions réelles présentes dans `/api/state`; la recherche et la pagination des transactions permettent d'accéder à l'historique complet. Les prévisions commencent aujourd'hui et vont jusqu'à 90 jours; pas de prévisions rétrospectives.
-- L'export CSV couvre la page filtrée affichée, pas tous les résultats.
-- L'import CSV, les actions groupées et la synchronisation bancaire ne sont pas inclus.
-- Une dépense associée à une enveloppe peut avoir été plafonnée à 0 dans les anciennes versions. La suppression ou modification de cette dépense ne peut pas toujours reconstruire la réserve historique exacte : vérifier les enveloppes après correction.
-- Une occurrence déplacée doit être future et à 90 jours au maximum de sa date d'origine. Un budget exceptionnel d'enveloppe doit cibler une date de renouvellement future.
-- Les liens manuels sont supprimés automatiquement si une transaction liée est supprimée ou change de compte, de signe ou de date. Un changement de montant conserve le lien.
-- La sauvegarde automatique s'effectue au démarrage, quand le serveur précédent est arrêté. Il est important de ne pas lancer deux copies de l'application sur la même base.
+Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).
 
-## Vérifications réalisées
+## Un lancement plus simple sur Mac
 
-Tests sur des bases SQLite temporaires : prévision 90 jours, comptes et cartes de crédit, dépenses d'enveloppes, modification/suppression de transactions et virements, rapprochement manuel avec montants différents, refus des doublons et données invalides, déplacement et restauration d'occurrence, budget exceptionnel, migration depuis v1.8 et création d'une sauvegarde. Vérification de l'interface dans Chromium avec réponses API simulées (onglets, Safe-to-Spend, calendrier, 90 lignes de prévision, fenêtres et formulaires), sans erreur JavaScript observée. Safari n'a pas pu être testé ici.
+Le fichier exécutable **Lancer Mon Budget.command** lance le serveur et ouvre le navigateur. Il détecte une instance v3 déjà ouverte sur le port 3030. Gardez sa fenêtre Terminal ouverte; Control + C arrête le serveur qu’il a lancé. Vérifiez que vous utilisez le bon dossier de données si une autre instance est déjà ouverte.
 
+Ce lanceur nécessite Node.js et n’est pas une application `.app` signée et autonome. Le démarrage réel dans Finder/Safari reste à vérifier sur Mac; la syntaxe du script est vérifiée dans l’environnement de développement.
 
-## Interface améliorée
+## Tableau de bord et prévisions
 
-Le tableau de bord présente les enveloppes et les cinq prochains mouvements à côté de la prévision sur ordinateur. Sur mobile, les panneaux s’empilent et le graphique adapte ses dimensions à la largeur disponible.
+- Disponible actuel, enveloppes réservées et minimum prévu sur 90 jours.
+- Montant prudent aujourd’hui, cette semaine et jusqu’à la prochaine paie détectée.
+- Graphique interactif sur 30 jours avec graduations, dates, minimum et avertissement sous zéro.
+- Survol, toucher ou navigation clavier : Tab atteint le point sélectionné, les flèches changent de jour, Début/Fin atteignent les extrémités.
+- Tableau des montants et mouvements quotidiens accessible sous le graphique.
+- Enveloppes et cinq prochains mouvements à côté du graphique sur ordinateur; disposition adaptée au mobile.
 
-- Graphique gradué en dollars avec dates, seuil de zéro et remplissage sous la courbe.
-- Résumé du début de période, du minimum et de la fin, calculé sur les 30 journées fournies par le serveur.
-- Survol ou toucher pour consulter une journée; au clavier, Tab atteint le point sélectionné, les flèches changent de jour, Début/Fin atteignent les extrémités.
-- Tableau accessible avec les montants et mouvements de chaque journée; avertissement lorsque le minimum prévu est négatif.
-- États vides accompagnés d’actions, navigation avec icônes vectorielles, confirmation des enregistrements et erreurs dans les fenêtres de saisie.
-
-Les montants des enveloppes représentent les réserves actuelles, rapportées au budget par période; ils ne sont pas un taux de dépenses. Les règles financières et la base de données ne changent pas.
+Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun virement bancaire. Les soldes bancaires et les transactions sont saisis ou importés manuellement. Sans paie prévue sur 30 jours, aucun montant « jusqu’à la paie » n’est inventé.
 
 ![Tableau de bord avec données fictives](docs/tableau-de-bord.png)
 
-[Aperçu mobile avec données fictives](docs/mobile.png)
+## Transactions et catégories
 
-Pour mettre à jour sur Mac, consultez [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt). Remplacez uniquement `app.css`, `app.js` et `index.html` après sauvegarde. Conservez votre dossier `data`.
+Choisissez **Dépense** ou **Revenu**, puis entrez un montant positif. Les descriptions récentes sont suggérées. Chaque transaction peut avoir une catégorie et, pour une dépense, une enveloppe.
 
-### Vérification de l’interface (facultatif pour le développement)
+Les **catégories** servent à analyser les dépenses; les **enveloppes** réservent de l’argent dans le disponible. Les deux fonctions sont indépendantes.
 
-L’application n’a toujours aucune dépendance npm. Le test navigateur nécessite séparément Python 3, Playwright pour Python et Chromium :
+L’historique propose recherche, filtres de compte, de catégorie, de type, de révision et de dates. L’export CSV inclut **tous les résultats filtrés**, au-delà de la page affichée. Les descriptions susceptibles d’être interprétées comme des formules par un tableur sont neutralisées dans cet export.
+
+Une dépense sur crédit augmente la dette. Un paiement de carte doit être enregistré comme un **virement** depuis le compte bancaire vers la carte, pour éviter une deuxième dépense.
+
+## Bilan mensuel
+
+Le bilan utilise toutes les transactions du mois sélectionné, avec un filtre facultatif par compte : revenus, dépenses, différence et répartition des dépenses par catégorie. Les virements et corrections de solde sont exclus.
+
+Les transactions positives figurent dans les revenus et les négatives dans les dépenses; cela inclut les remboursements saisis comme montants positifs. Ce bilan décrit les opérations, sans calcul comptable du revenu imposable.
+
+Vous pouvez créer des catégories et définir un plafond mensuel pour chacune. Ce plafond récurrent s’applique à chaque mois consulté, sans historique de versions; il ne réserve pas d’argent. Le montant non classé reste visible.
+
+![Bilan avec données fictives](docs/bilan-mensuel.png)
+
+## Import bancaire CSV
+
+L’import comporte trois étapes : fichier/compte, association des colonnes et aperçu avec sélection des opérations.
+
+- CSV **UTF-8** avec ligne de titres; virgule, point-virgule ou tabulation.
+- Guillemets, séparateurs dans les descriptions et cellules multilignes pris en charge.
+- Dates ISO `AAAA-MM-JJ`, ou choix explicite jour/mois/année et mois/jour/année.
+- Montant signé ou colonnes débit/crédit séparées. Option d’inversion du signe pour certains relevés de carte.
+- Montants localisés tels que `1 234,56`, `1,234.56` et montants entre parenthèses.
+- Catégorie par défaut, ou colonne catégorie si son nom correspond à une catégorie existante; sinon la catégorie par défaut s’applique.
+- Maximum 2 Mo et 2 000 opérations par fichier. Les lignes invalides ne sont pas importables.
+
+Le mode par défaut **historique seulement** conserve les soldes et les réserves actuels. Ces opérations sont marquées dans l’historique; leur modification ou suppression ultérieure ne recalcule pas les soldes. Le mode **appliquer aux soldes** sert aux opérations qui ne sont pas déjà comprises dans les soldes saisis. Aucun mode d’import ne consomme d’enveloppe.
+
+Un doublon possible correspond au même compte, à la même date, au même montant et à la même description, sans distinction de casse et après suppression des espaces aux extrémités. Ils sont décochés par défaut. Vous pouvez autoriser leur sélection après vérification. Des achats légitimement identiques peuvent être signalés; les descriptions bancaires différentes peuvent ne pas être reconnues.
+
+Les virements et remboursements de carte ne sont pas automatiquement identifiés : décochez-les dans l’aperçu et saisissez-les comme virements. Le serveur revérifie les doublons au moment de confirmer et importe la sélection en une seule transaction SQLite.
+
+![Aperçu CSV avec données fictives](docs/import-csv.png)
+
+## Comparer les soldes
+
+Dans **Comptes**, entrez le solde bancaire actuel et une note. L’application affiche le solde enregistré et l’écart, puis demande confirmation de la correction. Elle conserve l’ancien et le nouveau solde dans un historique, sans créer de revenu ni de dépense.
+
+Il s’agit d’une comparaison et d’une correction du **solde actuel**, pas d’un rapprochement exhaustif des lignes d’un relevé à une date passée. Si le compte a changé depuis l’aperçu, la correction est refusée : comparez de nouveau.
+
+## Objectifs d’épargne
+
+Définissez un montant cible, le montant déjà épargné et une date facultative. La progression et un repère mensuel sont affichés. Il s’agit d’un **suivi manuel** : créer ou modifier un objectif ne déplace pas d’argent et ne crée aucune réserve dans le disponible. Le repère mensuel ne simule pas d’intérêts.
+
+## Sauvegardes et restauration
+
+Depuis **Sauvegardes**, téléchargez une copie JSON complète : comptes, transactions, catégories, enveloppes, règles, exceptions, rapprochements, plafonds, imports et objectifs. Le format de sauvegarde est identifié par `format: "mon-budget"` et `version: 1`.
+
+La restauration accepte un export JSON v3 complet, jusqu’à 8 Mo et 100 000 lignes au total. Elle vérifie d’abord les tables, types, contraintes, dates et liens dans une base temporaire. Vous devez ensuite taper `REMPLACER`. Juste avant le remplacement atomique, une copie JSON du budget actuel est conservée dans `data/backups/`.
+
+Les copies SQLite automatiques ne sont pas des fichiers JSON à téléverser dans cet écran. Conservez ces fichiers et une copie du dossier complet pour la récupération manuelle. Une sauvegarde contient des données financières personnelles : gardez-la dans un endroit privé.
+
+## Règles et limites conservées
+
+- Prévisions sur 90 jours et graphique sur 30 jours; pas de prévisions rétrospectives.
+- Le calendrier utilise les 50 dernières transactions réelles de `/api/state`; l’historique paginé reste complet.
+- Récurrences, rapprochement automatique conservateur et liens manuels, déplacements d’occurrences et budgets exceptionnels d’enveloppes restent disponibles.
+- Les règles mensuelles du dernier jour ouvrable excluent les week-ends; vérifiez les jours fériés et conventions de l’organisme payeur.
+- Pour les nouvelles dépenses v3, la réserve effectivement consommée est mémorisée pour les corrections/suppressions. L’effet exact d’anciennes dépenses plafonnées n’est pas reconstructible : vérifiez l’enveloppe après une modification de montant sur une ancienne opération.
+- Ne lancez pas deux serveurs sur la même base.
+- Pas de connexion automatique à votre banque ni d’application Mac autonome signée.
+- Vérifiez les soldes et les prévisions sur une copie de vos données avant utilisation quotidienne.
+
+## Développement et vérifications
+
+Aucune dépendance d’exécution externe. Les tests API nécessitent Python 3; les tests navigateur nécessitent en plus Playwright pour Python et Chromium.
+
+```sh
+node --test tests/csv.test.js
+python3 tests/api-tests.py
+```
+
+Les tests n’utilisent que des bases temporaires et des données fictives. Ils vérifient notamment les signes des opérations sur crédit, les enveloppes plafonnées, le classement des anciennes transactions, la migration, les bilans complets, les imports invalides et doublons, les corrections concurrentes, les restaurations refusées et les copies de sécurité.
 
 ```sh
 python3 -m venv /tmp/budget-ui-venv
 /tmp/budget-ui-venv/bin/python -m pip install playwright
 /tmp/budget-ui-venv/bin/python -m playwright install chromium
 /tmp/budget-ui-venv/bin/python tests/ui-smoke.py
+/tmp/budget-ui-venv/bin/python tests/workflows-ui.py
 ```
 
-Le test utilise un serveur sur un port libre et une base temporaire contenant uniquement des données fictives. Il ne lit ni ne modifie votre dossier `data`. `CHROMIUM_PATH` permet de choisir un exécutable Chromium existant. Les captures sont conservées dans un dossier temporaire dont le chemin est affiché. Safari réel reste à vérifier sur Mac.
+`CHROMIUM_PATH` permet de choisir un exécutable existant. Les captures sont enregistrées dans un dossier temporaire indiqué à la fin. Voir [TESTS.md](TESTS.md) pour les résultats et leurs limites. Safari et Finder réels restent à vérifier sur Mac.

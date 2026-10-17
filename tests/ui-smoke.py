@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    page.keyboard.press('Home');assert page.locator('.chart-dot').first.get_attribute('tabindex')=='0'
    page.locator('.chart-table summary').click();assert page.locator('.chart-table tbody tr').count()==30;page.locator('.chart-table summary').click()
    page.evaluate('scrollTo(0,0)');page.screenshot(path=str(artifacts/'desktop.png'),full_page=True)
-   for view in ['comptes','transactions','enveloppes','recurrences','prevision','calendrier','virements','exceptions','dashboard']:
+   for view in ['comptes','transactions','enveloppes','recurrences','prevision','calendrier','virements','exceptions','bilan','importer','objectifs','sauvegardes','dashboard']:
     page.locator(f'[data-view="{view}"]').click();assert page.locator('#workspace-title').inner_text()==page.locator(f'[data-view="{view}"]').inner_text()
     for width in [390,1440]:
      page.set_viewport_size({'width':width,'height':900});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),(view,width)
@@ -51,13 +51,14 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    # Exercise both an API validation error and a successful save from the real modal.
    page.locator('#open-transaction').click()
    page.locator('#transaction [name="account_id"]').select_option(str(aid))
+   page.locator('#transaction').evaluate('(form)=>form.noValidate=true')
    page.locator('#transaction [name="amount"]').fill('0')
    page.locator('#transaction [name="description"]').fill('Essai de validation')
    page.locator('#transaction button').click()
    page.wait_for_selector('#transaction-dialog .form-feedback');assert page.locator('#transaction-dialog').is_visible()
    errors[:]=[e for e in errors if '400 (Bad Request)' not in e]
    before=get('/api/state')['accounts'];balance=next(a['balance_cents'] for a in before if a['id']==aid)
-   page.locator('#transaction [name="amount"]').fill('-5')
+   page.locator('#transaction [name="amount"]').fill('5')
    page.locator('#transaction button').click();page.wait_for_selector('#transaction-dialog',state='hidden');page.wait_for_selector('.save-notification:not([hidden])')
    assert next(a['balance_cents'] for a in get('/api/state')['accounts'] if a['id']==aid)==balance-500
    # Empty and constant data, and no forecast rows, are independent presentation cases.
@@ -68,7 +69,7 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    page.locator('#dashboard-upcoming .empty-state button').click();assert page.locator('dialog[open]').is_visible();page.keyboard.press('Escape')
    assert not errors,errors
    print('PASS: modal API validation error stays visible; successful save closes modal, confirms status and changes balance by exactly 500 cents.')
-   print('PASS: actual API fixtures; 30 chart points/table rows; keyboard Home/End; negative warning; empty/constant data; 9 screens; dashboard shortcuts; 3 dialogs; no page overflow at 375/390/768/1024/1440; dark preference and reduced motion; no JS/console errors.')
+   print('PASS: actual API fixtures; 30 chart points/table rows; keyboard Home/End; negative warning; empty/constant data; 13 screens; dashboard shortcuts; 3 dialogs; no page overflow at 375/390/768/1024/1440; dark preference and reduced motion; no JS/console errors.')
    print('Captures avec données fictives :',artifacts)
    b.close()
  finally:proc.terminate();proc.wait();log.close()

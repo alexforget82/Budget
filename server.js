@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {createFeatures} from './budget-features.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -72,6 +73,14 @@ const cents=v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<100000000?Ma
 const reply=(r,status,o)=>{r.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});r.end(JSON.stringify(o))};
 const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'))&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s;
 const dateFrom=s=>new Date(s+'T12:00:00Z'),iso=d=>d.toISOString().slice(0,10);
+const migrationBackup=path.join(dir,'backups','budget-before-v3.sqlite');
+if(!db.prepare("SELECT value FROM app_settings WHERE key='features_v3'").get()&&!fs.existsSync(migrationBackup)){
+ fs.mkdirSync(path.dirname(migrationBackup),{recursive:true,mode:0o700});
+ db.prepare('VACUUM INTO ?').run(migrationBackup);
+}
+const features=createFeatures({db,dir,cents,validDate,today:todayLocal,atomic,addTransaction});
+const featureRoutes=new Set(['/api/categories','/api/category-budget','/api/goals','/api/goals/delete','/api/balance/reconcile','/api/import/inspect','/api/import/preview','/api/import/commit','/api/backup/validate','/api/backup/restore']);
+
 // Fréquence « dernier jour ouvrable » : lundi à vendredi, sans jours fériés.
 // L'ancienne fréquence « rrq » reste acceptée pour conserver les règles existantes.
 function lastWeekday(y,m){const d=new Date(Date.UTC(y,m,0,12));while([0,6].includes(d.getUTCDay()))d.setUTCDate(d.getUTCDate()-1);return iso(d)}
@@ -200,17 +209,23 @@ function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM acco
   const spent=periodStart===null?0:q('SELECT amount_cents FROM transactions WHERE envelope_id=? AND happened_on>=? AND happened_on<=? AND amount_cents<0',e.id,periodStart,todayLocal()).reduce((n,t)=>n-t.amount_cents,0);
   return {id:e.id,spent_cents:spent,available_cents:e.reserved_cents,next_renewal:next,period_start:periodStart};
  });
- const sts_breakdown={accounts:accounts.filter(a=>a.kind!=='credit'&&a.included).map(a=>({name:a.name,balance_cents:a.balance_cents})),envelopes:envelopes.filter(e=>e.reserved_cents>0).map(e=>({name:e.name,reserved_cents:e.reserved_cents})),windows:{week_end:windows.week_end,payday_date:windows.payday_date},events:projected.slice(0,30).flatMap(d=>d.events.filter(ev=>ev.sts_impact_cents).map(ev=>({date:d.date,description:ev.description,impact_cents:ev.sts_impact_cents,type:ev.type}))) };return {accounts,envelopes,recurring,overrides,forecast:projected,envelope_details:envelopeDetails,envelope_budget_overrides:envelopeOverrides,sts_breakdown,reconciliation_links:manual,recurring_moves:moves,reconciliation:{matched_count:reconciled.size,method:"Montant, compte, description et date (±3 jours); correspondances ambiguës ignorées"},spending_windows:windows,transfers:q('SELECT t.*,a.name from_name,b.name to_name FROM account_transfers t JOIN accounts a ON a.id=t.from_account_id JOIN accounts b ON b.id=t.to_account_id ORDER BY t.id DESC LIMIT 30'),transactions:q('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id ORDER BY t.id DESC LIMIT 50'),cash_cents:cash,reserved_cents:reserved,safe_cents:cash-reserved}}
-const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js']]);
-const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8'};
+ const sts_breakdown={accounts:accounts.filter(a=>a.kind!=='credit'&&a.included).map(a=>({name:a.name,balance_cents:a.balance_cents})),envelopes:envelopes.filter(e=>e.reserved_cents>0).map(e=>({name:e.name,reserved_cents:e.reserved_cents})),windows:{week_end:windows.week_end,payday_date:windows.payday_date},events:projected.slice(0,30).flatMap(d=>d.events.filter(ev=>ev.sts_impact_cents).map(ev=>({date:d.date,description:ev.description,impact_cents:ev.sts_impact_cents,type:ev.type}))) };return {...features.state(),accounts,envelopes,recurring,overrides,forecast:projected,envelope_details:envelopeDetails,envelope_budget_overrides:envelopeOverrides,sts_breakdown,reconciliation_links:manual,recurring_moves:moves,reconciliation:{matched_count:reconciled.size,method:"Montant, compte, description et date (±3 jours); correspondances ambiguës ignorées"},spending_windows:windows,transfers:q('SELECT t.*,a.name from_name,b.name to_name FROM account_transfers t JOIN accounts a ON a.id=t.from_account_id JOIN accounts b ON b.id=t.to_account_id ORDER BY t.id DESC LIMIT 30'),transactions:q('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id ORDER BY t.id DESC LIMIT 50'),cash_cents:cash,reserved_cents:reserved,safe_cents:cash-reserved}}
+const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js']]);
+const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8'};
 function accountEffect(accountId,amount){const kind=db.prepare('SELECT kind FROM accounts WHERE id=?').get(accountId)?.kind;if(!kind)throw Error('Compte introuvable');return kind==='credit'?-amount:amount}
-function restoreEnvelope(id,amount){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=reserved_cents+? WHERE id=?',-amount,id)}
-function applyEnvelope(id,amount){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=MAX(0,reserved_cents+?) WHERE id=?',amount,id)}
+function restoreEnvelope(id,amount,effect=null){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=reserved_cents+? WHERE id=?',effect??-amount,id)}
+function applyEnvelope(id,amount){if(!id||amount>=0)return 0;const effect=Math.min(q('SELECT reserved_cents FROM envelopes WHERE id=?',id)[0].reserved_cents,-amount);run('UPDATE envelopes SET reserved_cents=reserved_cents-? WHERE id=?',effect,id);return effect;}
 function validateTransaction(x){
  const account=Number(x.account_id),envelope=x.envelope_id?Number(x.envelope_id):null,amount=cents(x.amount);
  const description=typeof x.description==='string'?x.description.trim():'';
  if(!Number.isInteger(account)||!db.prepare('SELECT id FROM accounts WHERE id=?').get(account)||amount===null||!amount||!description||description.length>150||!validDate(x.happened_on)||(envelope!==null&&!db.prepare('SELECT id FROM envelopes WHERE id=?').get(envelope))||(envelope!==null&&amount>0))throw Error('Transaction invalide');
- return {account,envelope,amount,description,date:x.happened_on};
+ return {account,envelope,amount,description,date:x.happened_on,category:features.categoryId(x.category_id)};
+}
+function addTransaction(x,{affectsBalance=true,importBatch=null}={}){
+ const t=validateTransaction(x),effect=affectsBalance?applyEnvelope(t.envelope,t.amount):0;
+ const result=run('INSERT INTO transactions(account_id,envelope_id,amount_cents,description,happened_on,category_id,import_batch_id,affects_balance,envelope_effect_cents) VALUES(?,?,?,?,?,?,?,?,?)',t.account,t.envelope,t.amount,t.description,t.date,t.category,importBatch,affectsBalance?1:0,effect);
+ if(affectsBalance)run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(t.account,t.amount),t.account);
+ return Number(result.lastInsertRowid);
 }
 function validateTransfer(x){
  const from=Number(x.from_account_id),to=Number(x.to_account_id),amount=cents(x.amount),description=String(x.description||'').trim();
@@ -221,16 +236,21 @@ function atomic(fn){db.exec('BEGIN IMMEDIATE');try{const result=fn();db.exec('CO
 function transactionChange(x,remove=false){
  const id=Number(x.id),old=db.prepare('SELECT * FROM transactions WHERE id=?').get(id);
  if(!old)throw Error('Transaction introuvable');
- const updated=remove?null:validateTransaction(x);
+ const updated=remove?null:validateTransaction({...x,category_id:x.category_id===undefined?old.category_id:x.category_id});
  atomic(()=>{
-  run('UPDATE accounts SET balance_cents=balance_cents-? WHERE id=?',accountEffect(old.account_id,old.amount_cents),old.account_id);
-  restoreEnvelope(old.envelope_id,old.amount_cents);
+  if(updated&&old.account_id===updated.account&&old.envelope_id===updated.envelope&&old.amount_cents===updated.amount){
+   if(updated.date!==old.happened_on)run("DELETE FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?",id);
+   run('UPDATE transactions SET description=?,happened_on=?,category_id=? WHERE id=?',updated.description,updated.date,updated.category,id);return;
+  }
+  if(old.affects_balance)run('UPDATE accounts SET balance_cents=balance_cents-? WHERE id=?',accountEffect(old.account_id,old.amount_cents),old.account_id);
+  restoreEnvelope(old.envelope_id,old.amount_cents,old.envelope_effect_cents);
   if(remove){run("DELETE FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?",id);run('DELETE FROM transactions WHERE id=?',id);}
   else{
    if(updated.account!==old.account_id||updated.date!==old.happened_on||Math.sign(updated.amount)!==Math.sign(old.amount_cents))run("DELETE FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?",id);
    run('UPDATE transactions SET account_id=?,envelope_id=?,amount_cents=?,description=?,happened_on=? WHERE id=?',updated.account,updated.envelope,updated.amount,updated.description,updated.date,id);
-   run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(updated.account,updated.amount),updated.account);
-   applyEnvelope(updated.envelope,updated.amount);
+   if(old.affects_balance)run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(updated.account,updated.amount),updated.account);
+   const effect=old.affects_balance?applyEnvelope(updated.envelope,updated.amount):0;
+   run('UPDATE transactions SET category_id=?,envelope_effect_cents=? WHERE id=?',updated.category,effect,id);
   }
  });
 }
@@ -250,10 +270,11 @@ function transferChange(x,remove=false){
   }
  });
 }
-function listTransactions(url){
+function listTransactions(url,all=false){
  const u=new URL(url,'http://localhost'),params=u.searchParams,where=[],args=[];
  if(params.get('search')){where.push('LOWER(t.description) LIKE ?');args.push('%'+params.get('search').toLowerCase().slice(0,80)+'%')}
  if(params.get('account')){where.push('t.account_id=?');args.push(Number(params.get('account')))}
+ if(params.get('category')){where.push('t.category_id=?');args.push(Number(params.get('category')))}
  if(params.get('envelope')){where.push('t.envelope_id=?');args.push(Number(params.get('envelope')))}
  if(params.get('reviewed')==='0'||params.get('reviewed')==='1'){where.push('t.reviewed=?');args.push(Number(params.get('reviewed')))}
  if(params.get('from')&&validDate(params.get('from'))){where.push('t.happened_on>=?');args.push(params.get('from'))}
@@ -262,18 +283,31 @@ function listTransactions(url){
  const filter=where.length?' WHERE '+where.join(' AND '):'';
  const count=db.prepare('SELECT COUNT(*) n FROM transactions t'+filter).get(...args).n;
  const page=Math.max(1,Math.min(100000,Number(params.get('page'))||1)),limit=50;
- const rows=db.prepare('SELECT t.*,a.name account_name,e.name envelope_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id'+filter+' ORDER BY t.happened_on DESC,t.id DESC LIMIT ? OFFSET ?').all(...args,limit,(page-1)*limit);
+ const rows=db.prepare('SELECT t.*,a.name account_name,e.name envelope_name,c.name category_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id LEFT JOIN categories c ON c.id=t.category_id'+filter+' ORDER BY t.happened_on DESC,t.id DESC'+(all?'':' LIMIT ? OFFSET ?')).all(...args,...(all?[]:[limit,(page-1)*limit]));
  return {rows,count,page,pages:Math.max(1,Math.ceil(count/limit))};
 }
 
-http.createServer(async(req,res)=>{try{if(req.method==='GET'&&staticFiles.has(req.url)){const name=staticFiles.get(req.url);res.writeHead(200,{'Content-Type':mime[name],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});return res.end(fs.readFileSync(new URL('./'+name,import.meta.url)))}
+http.createServer(async(req,res)=>{try{
+const expectedHost=`127.0.0.1:${PORT}`,localHost=`localhost:${PORT}`;
+if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
+if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
+if(req.method==='GET'&&req.url.startsWith('/api/monthly?')){const params=new URL(req.url,'http://localhost').searchParams;return reply(res,200,features.monthly(params.get('month'),params.get('account')));}
+if(req.method==='GET'&&req.url==='/api/backup/export'){const backup=features.exportBackup();res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="mon-budget-${todayLocal()}.json"`,'Cache-Control':'no-store'});return res.end(JSON.stringify(backup,null,2));}
+if(req.method==='GET'&&req.url.startsWith('/api/transactions/export')){
+ const rows=listTransactions(req.url,true).rows;
+ const text=v=>'"'+String(v??'').replace(/^[=+\-@\t\r]/,"'$&").replaceAll('"','""')+'"';
+ const lines=[['Date','Description','Compte','Catégorie','Enveloppe','Montant'].map(text).join(';'),...rows.map(r=>[r.happened_on,r.description,r.account_name,r.category_name||'',r.envelope_name||''].map(text).join(';')+';'+(r.amount_cents/100).toFixed(2))];
+ res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="transactions.csv"','Cache-Control':'no-store'});return res.end('\uFEFF'+lines.join('\r\n'));
+}
+if(req.method==='GET'&&staticFiles.has(req.url)){const name=staticFiles.get(req.url);res.writeHead(200,{'Content-Type':mime[name],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});return res.end(fs.readFileSync(new URL('./'+name,import.meta.url)))}
 if(req.method==='GET'&&req.url==='/api/reconcile/options')return reply(res,200,{
   actuals:[...q("SELECT id,description,amount_cents,happened_on,account_id,envelope_id,'transaction' actual_type FROM transactions ORDER BY happened_on DESC,id DESC LIMIT 200"),...q("SELECT id,description,amount_cents,happened_on,from_account_id,to_account_id,'transfer' actual_type FROM account_transfers ORDER BY happened_on DESC,id DESC LIMIT 100")],
   links:q('SELECT * FROM reconciliation_links ORDER BY occurrence_on DESC,id DESC')
  });
  if(req.method==='GET'&&req.url.startsWith('/api/transactions/list'))return reply(res,200,listTransactions(req.url));if(req.method==='GET'&&req.url==='/api/state')return reply(res,200,snapshot());
-if(req.method!=='POST'||!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete'].includes(req.url))return reply(res,404,{error:'Introuvable'});
-let raw='';for await(const c of req){raw+=c;if(raw.length>20000)return reply(res,413,{error:'Requête trop grande'})}const x=JSON.parse(raw),name=typeof x.name==='string'?x.name.trim():'',exists=(table,id)=>Number.isInteger(id)&&q(`SELECT id FROM ${table} WHERE id=?`,id).length>0;
+if(req.method!=='POST'||(!featureRoutes.has(req.url)&&!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete'].includes(req.url)))return reply(res,404,{error:'Introuvable'});
+let chunks=[],size=0;for await(const c of req){size+=c.length;if(size>(featureRoutes.has(req.url)?10_000_000:20000))return reply(res,413,{error:'Requête trop grande'});chunks.push(c)}const x=JSON.parse(Buffer.concat(chunks).toString('utf8')),name=typeof x.name==='string'?x.name.trim():'',exists=(table,id)=>Number.isInteger(id)&&q(`SELECT id FROM ${table} WHERE id=?`,id).length>0;
+if(featureRoutes.has(req.url)){const result=features.post(req.url,x);return reply(res,200,result.changed?snapshot():{...result,...(result.imported||result.safety_backup?{state:snapshot()}:{})});}
 if(req.url==='/api/accounts/inclusion'){
  const id=Number(x.id);
  if(!exists('accounts',id)||typeof x.included!=='boolean')return reply(res,400,{error:'Sélection de compte invalide'});
@@ -343,8 +377,8 @@ else if(req.url==='/api/transactions/update'||req.url==='/api/transactions/delet
 else if(req.url==='/api/transfers/update'||req.url==='/api/transfers/delete'){transferChange(x,req.url.endsWith('/delete'))}
 else if(req.url==='/api/transactions/review'){const id=Number(x.id);if(!exists('transactions',id)||typeof x.reviewed!=='boolean')return reply(res,400,{error:'Statut de transaction invalide'});run('UPDATE transactions SET reviewed=? WHERE id=?',x.reviewed?1:0,id)}
 else if(req.url==='/api/transfers'){const amount=cents(x.amount),from=Number(x.from_account_id),to=Number(x.to_account_id),description=typeof x.description==='string'?x.description.trim():'';if(!exists('accounts',from)||!exists('accounts',to)||from===to||amount===null||amount<=0||!description||description.length>150||!validDate(x.happened_on))return reply(res,400,{error:'Virement invalide'});const f=q('SELECT kind FROM accounts WHERE id=?',from)[0],t=q('SELECT kind FROM accounts WHERE id=?',to)[0];db.exec('BEGIN');try{run('INSERT INTO account_transfers(from_account_id,to_account_id,amount_cents,description,happened_on) VALUES(?,?,?,?,?)',from,to,amount,description,x.happened_on);run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',f.kind==='credit'?amount:-amount,from);run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',t.kind==='credit'?-amount:amount,to);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}}
-else if(req.url==='/api/transactions'){const amount=cents(x.amount),account=Number(x.account_id),envelope=x.envelope_id?Number(x.envelope_id):null;if(!exists('accounts',account)||amount===null||amount===0||typeof x.description!=='string'||!x.description.trim()||x.description.length>150||!validDate(x.happened_on)||(envelope!==null&&!exists('envelopes',envelope))||(envelope!==null&&amount>0))return reply(res,400,{error:'Transaction invalide'});db.exec('BEGIN');try{run('INSERT INTO transactions(account_id,envelope_id,amount_cents,description,happened_on) VALUES(?,?,?,?,?)',account,envelope,amount,x.description.trim(),x.happened_on);const accountKind=q('SELECT kind FROM accounts WHERE id=?',account)[0].kind;run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountKind==='credit'?-amount:amount,account);if(envelope!==null&&amount<0)run('UPDATE envelopes SET reserved_cents=MAX(0,reserved_cents+?) WHERE id=?',amount,envelope);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}}
+else if(req.url==='/api/transactions'){atomic(()=>addTransaction(x))}
 else if(req.url==='/api/overrides'||req.url==='/api/overrides/delete'){const id=Number(x.id);if(req.url.endsWith('/delete')){if(!exists('recurring_overrides',id))return reply(res,400,{error:'Exception introuvable'});run('DELETE FROM recurring_overrides WHERE id=?',id)}else{const rid=Number(x.recurring_id),amount=cents(x.amount),date=x.occurrence_on;if(!exists('recurring',rid)||!validDate(date)||amount===null||amount<0)return reply(res,400,{error:'Exception invalide'});const rule=q('SELECT * FROM recurring WHERE id=?',rid)[0];let scheduled=false;for(let i=0;i<1500;i++){const next=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;if(next===date){scheduled=true;break}if(next>date)break}if(!scheduled)return reply(res,400,{error:'Cette date ne correspond pas à une occurrence prévue de la règle'});run('INSERT INTO recurring_overrides(recurring_id,occurrence_on,amount_cents) VALUES(?,?,?) ON CONFLICT(recurring_id,occurrence_on) DO UPDATE SET amount_cents=excluded.amount_cents',rid,date,amount)}}
 else {const id=Number(x.id);if(req.url==='/api/recurring/delete'){if(!exists('recurring',id))return reply(res,400,{error:'Règle introuvable'});run('DELETE FROM recurring WHERE id=?',id)}else{const amount=cents(x.amount),account=Number(x.account_id),to=x.to_account_id?Number(x.to_account_id):null,envelope=x.envelope_id?Number(x.envelope_id):null,description=typeof x.description==='string'?x.description.trim():'';if(!description||description.length>150||!['income','expense','transfer','reserve'].includes(x.type)||!['weekly','biweekly','monthly','last_business_day','rrq'].includes(x.frequency)||!['none','before','after'].includes(x.day_adjust??'none')||!validDate(x.start_on)||amount===null||amount<=0||(x.type!=='reserve'&&!exists('accounts',account))||(x.type==='transfer'&&(!exists('accounts',to)||to===account))||(x.type==='reserve'&&!exists('envelopes',envelope))||(req.url.endsWith('update')&&!exists('recurring',id)))return reply(res,400,{error:'Règle récurrente invalide'});
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,x.type==='reserve'?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none'];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust) VALUES(?,?,?,?,?,?,?,?,?,?)',...fields)}}
-return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:'Données invalides'})}}).listen(PORT,HOST,()=>console.log(`Mon Budget v2.1 : http://${HOST}:${PORT}`));
+return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:featureRoutes.has(req.url)?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}}).listen(PORT,HOST,()=>console.log(`Mon Budget v3.0 : http://${HOST}:${PORT}`));

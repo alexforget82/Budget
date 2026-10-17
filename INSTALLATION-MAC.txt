@@ -1,34 +1,70 @@
-MON BUDGET — NOUVEAU VISUEL
+MON BUDGET 3 — INSTALLATION ET MISE À JOUR SUR MAC
 
-Installation sur Mac (Node.js 22 ou plus requis; Node.js 24 recommandé)
+Node.js 22.13 ou plus est requis. Node.js 24 LTS est recommandé.
+Aucune commande npm install n’est nécessaire.
 
-MISE À JOUR DE VOTRE APPLICATION EXISTANTE
-1. Arrêtez le serveur actuel dans Terminal avec Control + C.
-2. Faites une copie complète de votre dossier actuel de Mon Budget,
-   incluant le dossier data. Gardez cette copie comme sauvegarde.
-3. Décompressez cette archive. Depuis le dossier extrait (Budget-main sur GitHub),
-   copiez uniquement ces trois fichiers dans votre dossier actuel :
-   app.css, app.js et index.html. Acceptez leur remplacement.
-4. Conservez votre dossier data et votre server.js actuels.
-   Cette mise à jour visuelle est prévue pour Mon Budget v2.1.0.
-5. Dans Terminal, ouvrez votre dossier actuel et lancez : npm start
-   Astuce : tapez cd suivi d'un espace, glissez le dossier depuis le
-   Finder dans Terminal, puis appuyez sur Entrée. Tapez ensuite npm start.
-6. Dans Safari, ouvrez http://127.0.0.1:3030
-   Rechargez avec Cmd + Option + R pour afficher le nouveau visuel.
+MISE À JOUR RECOMMANDÉE — NOUVEAU DOSSIER
+1. Arrêtez l’ancienne application dans Terminal avec Control + C.
+2. Faites une copie INTÉGRALE de votre dossier actuel, y compris data
+   (budget.sqlite et ses éventuels fichiers -wal et -shm).
+3. Décompressez le nouveau ZIP GitHub dans un NOUVEAU dossier distinct.
+   Vous pouvez renommer ce dossier Mon-Budget-3.
+4. COPIEZ le dossier data de votre ancienne application dans ce nouveau
+   dossier, au même niveau que server.js. Ne déplacez pas l’original.
+   Le ZIP ne contient aucun dossier data; il n’y a rien à remplacer.
+5. Gardez tous les nouveaux fichiers applicatifs ensemble : server.js,
+   budget-features.js, index.html, app.css, app.js, features.js et package.json.
+   IMPORTANT : contrairement à la mise à jour visuelle précédente, remplacer
+   seulement trois fichiers ne suffit plus.
+6. Ouvrez Lancer Mon Budget.command dans ce NOUVEAU dossier, ou lancez
+   npm start depuis Terminal dans ce dossier.
+   Astuce : tapez cd suivi d’un espace, glissez le nouveau dossier depuis
+   le Finder dans Terminal, puis appuyez sur Entrée. Tapez ensuite npm start.
+7. Dans Safari, ouvrez http://127.0.0.1:3030 et rechargez avec Cmd + Option + R.
+8. Vérifiez vos soldes avant de continuer. Gardez l’ancien dossier et sa
+   copie de sauvegarde intacts pour pouvoir revenir en arrière.
 
-NOUVELLE INSTALLATION SANS DONNÉES EXISTANTES
-Ouvrez Terminal dans le dossier Mon-Budget extrait, puis lancez npm start.
-Ouvrez http://127.0.0.1:3030 dans Safari.
-Aucune commande npm install n'est nécessaire.
-Une base vide est créée dans data à l'intérieur du dossier de lancement.
+La migration ajoute des colonnes et tables. Elle conserve les opérations,
+les comptes, les enveloppes et les règles existants. Une copie SQLite
+cohérente est créée avant les ajouts v3 dans data/backups/budget-before-v3.sqlite.
+Une copie manuelle complète avant mise à jour reste importante.
+Vérifiez vos soldes et vos enveloppes après la mise à jour.
 
-IMPORTANT
-Ne supprimez ni ne remplacez jamais votre dossier data existant.
+LANCEMENT PAR DOUBLE-CLIC
+Vous pouvez ensuite ouvrir Lancer Mon Budget.command depuis le Finder.
+Ce lanceur ouvre votre navigateur et garde une fenêtre Terminal ouverte.
+Fermer le serveur avec Control + C quand vous avez terminé.
+Il ne s’agit pas d’une application .app autonome : Node.js reste nécessaire.
+Si macOS refuse l’ouverture, essayez clic droit > Ouvrir.
+Si les permissions du fichier ne permettent pas de le lancer, depuis
+Terminal dans le dossier de l’application :
+  chmod +x "Lancer Mon Budget.command"
 Ne lancez pas deux serveurs sur la même base.
-L'archive ne contient aucune donnée financière ni base SQLite.
-Les calculs et le serveur ne sont pas modifiés par la refonte visuelle.
-La navigation et les dialogues ont été vérifiés dans Chromium.
-Safari et vos données réelles restent à vérifier sur votre Mac.
-Pour revenir à l'ancien visuel, arrêtez le serveur et restaurez les trois
-fichiers visuels depuis votre sauvegarde, en conservant les données actuelles.
+
+NOUVELLE INSTALLATION
+Gardez tous les fichiers du dossier Budget-main ensemble.
+Lancez npm start depuis ce dossier ou ouvrez le lanceur .command.
+Une base vide est créée dans data dans le dossier de lancement.
+
+LES NOUVELLES FONCTIONS
+- Transaction : choisir Dépense ou Revenu, puis un montant positif.
+- Bilan mensuel : catégories, revenus, dépenses et plafonds mensuels.
+- Import CSV : fichier UTF-8, aperçu, sélection et doublons possibles.
+  Le mode historique conserve les soldes actuels. Ne réappliquez pas
+  aux soldes des opérations qui y sont déjà incluses.
+  Les virements entre vos comptes et paiements de carte doivent être
+  saisis comme virements; décochez-les dans l’aperçu CSV.
+- Comptes : comparaison au solde bancaire et correction avec une note.
+- Objectifs : suivi manuel distinct des enveloppes, sans déplacer d’argent.
+- Sauvegardes : export JSON complet et restauration après vérification.
+  Une copie du budget précédent est conservée juste avant la restauration.
+
+REVENIR À L’ANCIENNE VERSION
+Arrêtez le serveur. Restaurez la COPIE COMPLÈTE faite avant la mise à jour
+(fichiers applicatifs ET data), depuis un dossier distinct.
+Les opérations saisies après cette copie n’y figurent pas : sauvegardez-les
+avant tout retour en arrière. Ne faites pas fonctionner l’ancien serveur
+sur la base v3, notamment après un import en mode historique.
+
+L’archive ne contient aucune donnée financière personnelle.
+Safari réel et vos données réelles restent à vérifier sur votre Mac.

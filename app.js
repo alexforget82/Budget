@@ -284,7 +284,8 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   options(by('v2-edit-envelope'),state.envelopes,true);
   by('v2-to-label').style.display=kind==='transfer'?'':'none';
   form.elements.description.value=row.description;
-  form.elements.amount.value=(row.amount_cents/100).toFixed(2);
+  form.elements.amount.value=(Math.abs(row.amount_cents)/100).toFixed(2);
+  by('v2-edit-direction').value=row.amount_cents<0?'expense':'income';by('v2-edit-category').value=String(row.category_id||'');by('v2-direction-label').hidden=kind==='transfer';by('v2-category-label').hidden=kind==='transfer';const historyOnly=kind!=='transfer'&&row.affects_balance===0,legacyReserve=kind!=='transfer'&&row.envelope_id&&row.envelope_effect_cents===null;by('v2-history-note').hidden=!historyOnly&&!legacyReserve;by('v2-history-note').textContent=historyOnly?'Opération importée en historique : sa modification ne change pas les soldes actuels ni les réserves.':'Ancienne opération : vérifiez la réserve de l’enveloppe après un changement de montant ou d’enveloppe.';
   form.elements.happened_on.value=row.happened_on;
   form.elements.account_id.value=String(kind==='transfer'?row.from_account_id:row.account_id);
   form.elements.to_account_id.value=String(row.to_account_id||'');
@@ -298,7 +299,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   const f=e.target;
   const payload={id:editId,description:f.elements.description.value,amount:Number(f.elements.amount.value),happened_on:f.elements.happened_on.value};
   if(editKind==='transfer'){payload.from_account_id=Number(f.elements.account_id.value);payload.to_account_id=Number(f.elements.to_account_id.value)}
-  else{payload.account_id=Number(f.elements.account_id.value);payload.envelope_id=f.elements.envelope_id.value||null}
+  else{payload.account_id=Number(f.elements.account_id.value);payload.envelope_id=f.elements.envelope_id.value||null;payload.category_id=f.elements.category_id.value||null;payload.amount=Math.abs(payload.amount)*(f.elements.direction.value==='expense'?-1:1)}
   const ok=await send('/api/'+(editKind==='transfer'?'transfers':'transactions')+'/update',payload);
   if(ok){dialog.close();await loadRecords();refreshCalendar()}
  };
@@ -306,8 +307,8 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   if(!confirm('Supprimer définitivement cette opération et corriger les soldes correspondants ?'))return;
   if(await send('/api/'+(kind==='transfer'?'transfers':'transactions')+'/delete',{id})){await loadRecords();refreshCalendar()}
  };
- const filterIds=['v2-search','v2-account','v2-review','v2-kind'];
- const query=()=>{const p=new URLSearchParams({page});if(by('v2-search').value)p.set('search',by('v2-search').value);if(by('v2-account').value)p.set('account',by('v2-account').value);if(by('v2-review').value)p.set('reviewed',by('v2-review').value);if(by('v2-kind').value)p.set('kind',by('v2-kind').value);return p};
+ const filterIds=['v2-search','v2-account','v2-review','v2-kind','v3-category-filter','v3-date-from','v3-date-to'];
+ const query=()=>{const p=new URLSearchParams({page});if(by('v2-search').value)p.set('search',by('v2-search').value);if(by('v2-account').value)p.set('account',by('v2-account').value);if(by('v2-review').value)p.set('reviewed',by('v2-review').value);if(by('v2-kind').value)p.set('kind',by('v2-kind').value);for(const [id,key] of [['v3-category-filter','category'],['v3-date-from','from'],['v3-date-to','to']])if(by(id).value)p.set(key,by(id).value);return p};
  async function loadRecords(){
   try{
    const r=await fetch('/api/transactions/list?'+query(),{cache:'no-store'});if(!r.ok)throw Error('Liste indisponible');
@@ -317,7 +318,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
    for(const t of records){
     if(last!==t.happened_on){last=t.happened_on;const heading=document.createElement('div');heading.className='v2-date';heading.textContent=dateLabel(last);host.append(heading)}
     const row=document.createElement('div');row.className='v2-row';
-    const left=document.createElement('div');left.innerHTML='<strong>'+esc(t.description)+'</strong><br><small>'+esc(t.account_name)+(t.envelope_name?' · '+esc(t.envelope_name):'')+' · '+(t.reviewed?'Révisée':'À vérifier')+'</small>';
+    const left=document.createElement('div');left.innerHTML='<strong>'+esc(t.description)+'</strong><br><small>'+esc(t.account_name)+(t.category_name?' · '+esc(t.category_name):' · Non classé')+(t.envelope_name?' · '+esc(t.envelope_name):'')+(t.affects_balance===0?' · Historique importé':'')+' · '+(t.reviewed?'Révisée':'À vérifier')+'</small>';
     const right=document.createElement('div');right.className='actions';
     const amount=document.createElement('strong');amount.textContent=centsFmt(t.amount_cents);
     const editButton=document.createElement('button');editButton.type='button';editButton.textContent='Modifier';editButton.onclick=()=>edit('transaction',t.id);
@@ -333,11 +334,8 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
  for(const id of filterIds)by(id).addEventListener(id==='v2-search'?'input':'change',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{page=1;loadRecords()},220)});
  by('v2-prev').onclick=()=>{page=Math.max(1,page-1);loadRecords()};
  by('v2-next').onclick=()=>{page++;loadRecords()};
- by('v2-export').onclick=()=>{
-  const lines=[['Date','Description','Compte','Enveloppe','Montant','Révisée'],...records.map(t=>[t.happened_on,t.description,t.account_name,t.envelope_name||'',(t.amount_cents/100).toFixed(2),t.reviewed?'Oui':'Non'])];
-  const csv='\ufeff'+lines.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
-  const a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download='transactions-page-'+page+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);
- };
+ by('v2-export').onclick=()=>{window.location.href='/api/transactions/export?'+query()};
+
  function refreshCalendar(){
   if(!state)return;
   const y=month.getFullYear(),m=month.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0);
@@ -502,7 +500,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
 
 // Workspace presentation; budget calculations remain in the existing renderers.
 (()=>{
- const icons={dashboard:'◫',comptes:'▤',transactions:'↗',enveloppes:'◈',recurrences:'↻',prevision:'⌁',calendrier:'▦',virements:'⇄',exceptions:'≡'};
+ const icons={bilan:'▥',importer:'↓',objectifs:'◎',sauvegardes:'▣',dashboard:'◫',comptes:'▤',transactions:'↗',enveloppes:'◈',recurrences:'↻',prevision:'⌁',calendrier:'▦',virements:'⇄',exceptions:'≡'};
  const title=document.getElementById('workspace-title');
  document.querySelectorAll('.app-shell-nav [data-view]').forEach(button=>{
   button.dataset.icon=icons[button.dataset.view]||'·';
@@ -585,8 +583,8 @@ function drawBudgetChart(s){
 }
 
 (()=>{
- const descriptions={dashboard:'Une vision claire pour décider en toute confiance.',comptes:'Vos soldes réels et les comptes inclus dans votre disponible.',transactions:'Retrouvez vos opérations et gardez votre budget à jour.',enveloppes:'Organisez votre argent selon vos priorités.',recurrences:'Anticipez vos revenus, factures et virements réguliers.',prevision:'Explorez votre disponible et vos mouvements jour par jour.',calendrier:'Visualisez vos opérations au fil du mois.',virements:'Déplacez de l’argent entre vos comptes.',exceptions:'Ajustez une occurrence sans changer votre règle habituelle.'};
- const paths={dashboard:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',comptes:'M3 7h18v13H3z M3 7l13-4v4 M16 12h5v4h-5z',transactions:'M4 7h16 M16 3l4 4-4 4 M20 17H4 M8 13l-4 4 4 4',enveloppes:'M3 5h18v14H3z M3 5l9 7 9-7',recurrences:'M20 8a8 8 0 0 0-14-2L3 9 M3 3v6h6 M4 16a8 8 0 0 0 14 2l3-3 M15 15h6v6',prevision:'M3 3v18h18 M6 15l5-5 4 3 6-8',calendrier:'M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6',virements:'M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4',exceptions:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6'};
+ const descriptions={bilan:'Comprenez vos revenus et vos dépenses, mois après mois.',importer:'Ajoutez votre historique bancaire avec un aperçu avant import.',objectifs:'Donnez une destination à votre épargne.',sauvegardes:'Conservez et restaurez une copie complète de votre budget.',dashboard:'Une vision claire pour décider en toute confiance.',comptes:'Vos soldes réels et les comptes inclus dans votre disponible.',transactions:'Retrouvez vos opérations et gardez votre budget à jour.',enveloppes:'Organisez votre argent selon vos priorités.',recurrences:'Anticipez vos revenus, factures et virements réguliers.',prevision:'Explorez votre disponible et vos mouvements jour par jour.',calendrier:'Visualisez vos opérations au fil du mois.',virements:'Déplacez de l’argent entre vos comptes.',exceptions:'Ajustez une occurrence sans changer votre règle habituelle.'};
+ const paths={bilan:'M4 21V11h4v10 M10 21V3h4v18 M16 21V7h4v14',importer:'M12 3v12 M7 10l5 5 5-5 M3 16v5h18v-5',objectifs:'M21 12a9 9 0 1 1-9-9 M12 7a5 5 0 1 0 5 5 M12 12l9-9',sauvegardes:'M3 3h15l3 3v15H3z M7 3v6h10V3 M7 21v-8h10v8',dashboard:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',comptes:'M3 7h18v13H3z M3 7l13-4v4 M16 12h5v4h-5z',transactions:'M4 7h16 M16 3l4 4-4 4 M20 17H4 M8 13l-4 4 4 4',enveloppes:'M3 5h18v14H3z M3 5l9 7 9-7',recurrences:'M20 8a8 8 0 0 0-14-2L3 9 M3 3v6h6 M4 16a8 8 0 0 0 14 2l3-3 M15 15h6v6',prevision:'M3 3v18h18 M6 15l5-5 4 3 6-8',calendrier:'M3 5h18v16H3z M3 10h18 M7 2v6 M17 2v6',virements:'M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4',exceptions:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6'};
  const subtitle=document.querySelector('.workspace-header .sub');
  document.querySelectorAll('.app-shell-nav [data-view]').forEach(button=>{
   const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');icon.classList.add('nav-icon');
