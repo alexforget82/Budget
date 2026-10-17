@@ -85,6 +85,12 @@
  }
  $('envelope-options').addEventListener('change',()=>{envelopeSuggestion.hidden=true;});
  let latest=null,categoryTouched=false,lastSuggested=null,keepOpen=false;
+ let ruleEnvelope=null,envelopeManual=false,ruleCategory=null;
+ window.budgetClearRuleSuggestion=()=>{if(ruleCategory&&!categoryTouched&&category.value===ruleCategory){category.value='';window.budgetSetSubcategory?.('transaction-category',null);categoryHint.hidden=true;}ruleCategory=null;if(ruleEnvelope&&!envelopeManual&&$('envelope-options').value===String(ruleEnvelope))$('envelope-options').value='';ruleEnvelope=null;};
+ $('envelope-options').addEventListener('change',()=>{envelopeManual=true;ruleEnvelope=null;});
+ description.addEventListener('input',()=>{window.budgetClearRuleSuggestion();if(ruleEnvelope&&!envelopeManual&&$('envelope-options').value===String(ruleEnvelope))$('envelope-options').value='';ruleEnvelope=null;},true);
+ window.budgetApplyRuleSuggestion=rule=>{if(categoryTouched||!dialog.open)return;category.value=String(rule.category_id);window.budgetSetSubcategory?.('transaction-category',rule.subcategory_id,rule.category_id);lastSuggested=category.value;ruleCategory=category.value;if(rule.envelope_id&&!envelopeManual&&select.value==='expense'&&!$('envelope-options').value){$('envelope-options').value=String(rule.envelope_id);ruleEnvelope=rule.envelope_id;more.open=true;}categoryHint.textContent='Règle proposée : '+rule.name+'. Votre choix reste modifiable.';categoryHint.hidden=false;};
+
  const normalize=value=>value.trim().toLocaleLowerCase('fr-CA');
  function syncType(){
   if(select.value!=='expense')envelopeSuggestion.hidden=true;
@@ -121,7 +127,7 @@
  };
  const openEditor=window.appOpenEditor;
  window.appOpenEditor=function(key){
-  if(key==='transaction'&&!amount.value&&!description.value){select.value='expense';select.dispatchEvent(new Event('change',{bubbles:true}));categoryTouched=false;category.value='';categoryHint.hidden=true;copyNotice.hidden=true;envelopeSuggestion.hidden=true;}
+  if(key==='transaction'&&!amount.value&&!description.value){envelopeManual=false;ruleEnvelope=null;select.value='expense';select.dispatchEvent(new Event('change',{bubbles:true}));categoryTouched=false;category.value='';categoryHint.hidden=true;copyNotice.hidden=true;envelopeSuggestion.hidden=true;}
   openEditor(key);if(key==='transaction'){syncType();requestAnimationFrame(()=>amount.focus());}
  };
  window.addEventListener('budget:repeat-transaction',event=>{
@@ -130,7 +136,7 @@
  const previousSend=send;send=async function(url,data){
   const ok=await previousSend(url,data);
   if(ok&&url==='/api/transactions'){
-   const again=keepOpen;keepOpen=false;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';window.budgetSetSubcategory?.('transaction-category',null);envelopeSuggestion.hidden=true;
+   const again=keepOpen;keepOpen=false;envelopeManual=false;ruleEnvelope=null;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';window.budgetSetSubcategory?.('transaction-category',null);envelopeSuggestion.hidden=true;
    if(again){openEditor('transaction');syncType();requestAnimationFrame(()=>amount.focus());}
   }
   return ok;

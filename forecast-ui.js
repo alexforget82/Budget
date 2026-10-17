@@ -53,7 +53,8 @@
    const heading=node('div',undefined,'review-card-heading'),title=node('div');title.append(node('h3',row.description),node('small',day(row.date)+' · '+(row.source==='envelope'?'Enveloppe':({income:'Revenu',expense:'Dépense',transfer:'Virement',reserve:'Réserve'})[row.type])));heading.append(title,node('span',row.card_payment_mode==='purchases'&&row.status==='skipped'&&!row.modified?'Aucun paiement prévu':statusNames[row.status],'soft-badge'));card.append(heading);
    const values=node('div',undefined,'review-values');for(const [label,value] of [['Prévu',row.planned_cents],['Réel',row.actual_cents],['Écart',row.variance_cents]]){const item=node('div');item.append(node('span',label),node('strong',value===null?'—':money(value)));values.append(item);}card.append(values);
    const actions=node('div',undefined,'review-actions');
-   if(row.source==='envelope'){
+   if(row.source==='paycheck'){actions.append(node('span','Répartition de paie : gérer dans Ma prochaine paie.','quiet-copy'));}
+   else if(row.source==='envelope'){
     if(row.status==='actual')actions.append(button('Encore des achats',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'open'})));
     else if(row.status!=='skipped'){actions.append(button(row.actual_cents===null?'Confirmer sans dépense':'Terminer la période',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'complete'})),button('Annuler la dépense prévue',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'skipped'})));}
     actions.append(button('Calcul automatique',()=>send('/api/envelope/status',{envelope_id:row.envelope_id,occurrence_on:row.original_on,status:'auto'})));

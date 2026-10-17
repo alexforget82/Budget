@@ -1,4 +1,4 @@
-# Mon Budget 4.7
+# Mon Budget 5.0
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,22 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.0 : préparer la paie et choisir son apparence
+
+- **Clair, Sombre ou Automatique** dans l’en-tête. Automatique suit le réglage du Mac ou de l’iPhone. La préférence est enregistrée dans le budget et les sauvegardes; elle est conservée lors d’une annulation financière.
+- **Ma prochaine paie** rassemble les revenus récurrents des comptes inclus, les engagements du cycle et les minima prévus. Le feu vert/orange/rouge indique la marge avant la paie : négatif, moins de 100 $, ou au moins 100 $. Ce seuil est un repère visuel, pas une réserve supplémentaire.
+- **Répartition d’une paie** vers les budgets libres : aperçu, minimum prévu et confirmation avant de planifier. Les enveloppes avec renouvellement automatique sont déjà prises en compte et ne sont pas proposées une seconde fois. Une répartition prévue diminue le disponible projeté à sa date, sans toucher aux soldes actuels. Après réception des revenus et confirmation dans Prévu / Réel, Appliquer réserve réellement les montants sans créer de dépense ni de transaction bancaire. Une application répétée est refusée. Annuler un plan n’annule pas les achats ni les montants déjà réservés.
+- **Règles de classement** : texte reconnu, catégorie, sous-catégorie, compte, priorité et période facultative. La première règle correspondante propose le classement à la saisie; un choix manuel reste prioritaire. Une enveloppe peut être proposée pour les nouvelles dépenses. Pour l’historique, l’aperçu puis l’application ne changent que les catégories, jamais les comptes, montants ou réserves. Les règles peuvent être modifiées, suspendues ou supprimées.
+- **Projets** : objectif indicatif, période et enveloppe existante ou nouveau budget libre. Les achats liés à l’enveloppe dans la période sont totalisés. L’objectif ne réserve aucun argent automatiquement. Retirer un projet garde son enveloppe et ses achats.
+- **Prévu et réel** : comparaison mensuelle des revenus et dépenses, écarts des opérations rapprochées et détail des enveloppes. Les périodes de prévision incomplètes sont signalées; les anciens plans ne sont pas inventés. Les enveloppes restent détaillées séparément pour éviter de les ajouter deux fois aux dépenses.
+- **Comprendre** : choisissez une date des 90 jours pour voir le solde bancaire, les réserves, le disponible et les mouvements utilisés dans le calcul.
+
+Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
+
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.0**.
+
+Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 
 ## Nouveautés 4.7 : tableau de bord personnalisable
 
@@ -52,7 +68,7 @@ Aperçus fictifs : [Catégories sur ordinateur](docs/v45-categories.png) · [sur
 
 ## Nouveautés 4.4 : vos enveloppes, expliquées et plus faciles à utiliser
 
-Le badge indique désormais **v4.7**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
+Le badge indique désormais **v5.0**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
 
 - **Voir la fiche**, dans Enveloppes et Budgets libres : réserve restante, achats du mois, budget effectif de la période (y compris une exception), prochain renouvellement non encore effectué et opérations associées. Les dix dernières opérations sont affichées; **Afficher tout l’historique** donne accès aux autres par pages de 50, avec accès à leur éditeur existant. Les opérations importées sans effet sur les soldes sont identifiées.
 - **Configurer l’usage**, depuis la fiche : achats au fil de la période, paiement à date fixe ou budget libre. Pour plusieurs enveloppes, cochez **Sélectionner**, puis **Configurer la sélection**. L’aperçu indique les réserves conservées, le mode et le budget choisis, les éventuels paiements distincts conservés et le minimum prévu sur 90 jours. Rien ne change avant confirmation. Un changement intervenu ailleurs invalide l’aperçu; un minimum négatif exige une confirmation explicite. L’annulation protégée reste disponible après l’application.
@@ -87,7 +103,7 @@ Aperçus avec données fictives : [budget réservé sur iPhone](docs/v43-budget-
 
 ## Nouveautés 4.2 : Budgets libres
 
-Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.7**.
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v5.0**.
 
 - **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
 - **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.
@@ -434,3 +450,8 @@ L’ajout commence par Dépense/Revenu, le montant et la description. Les commer
 [Aperçu mobile de l’historique](docs/mobile-transactions.png)
 
 Vérification supplémentaire : `python3 tests/transactions-ui.py` (Playwright/Chromium comme les autres parcours).
+
+## Vérifier la v5.0
+
+`npm test` vérifie 50 tests Node et 60 tests d’intégration API avec des bases temporaires.
+`python3 tests/budget-v50-ui.py` vérifie la répartition de paie, les projets, les règles et la priorité du choix manuel, le bilan, les chiffres expliqués, la persistance Clair/Sombre/Automatique et cinq largeurs de fenêtre. Les parcours `ui-smoke.py`, `dashboard-v47-ui.py` et `planning-v4-ui.py` couvrent aussi la navigation, les fenêtres de saisie, la personnalisation, le calendrier et les prévisions. Ces parcours utilisent Playwright et Chromium. Le service macOS est couvert par les tests de génération et de validation de l’installateur; l’installation réelle doit être exécutée sur votre Mac.

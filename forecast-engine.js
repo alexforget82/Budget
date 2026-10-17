@@ -15,7 +15,7 @@ function buildBaseForecast({accounts,envelopes,recurring,overrides=[],moves=[],l
  const included=a=>a&&a.included&&a.kind!=='credit',accountMap=new Map(accounts.map(a=>[a.id,a]));
  // Generate the nominal occurrences first. Original dates remain stable across moves.
  for(const rule of recurring.filter(r=>r.active)) {
-  if(rule.type==='reserve'&&envelopes.some(e=>e.id===rule.envelope_id&&e.active&&e.frequency!=='none'))continue;
+  if(rule.type==='reserve'&&!rule.paycheck_allocation&&envelopes.some(e=>e.id===rule.envelope_id&&e.active&&e.frequency!=='none'))continue;
   for(let i=0;i<20000;i++) {
    if(rule.one_time&&i>0)break;
    const original=occurrenceInfo(rule.start_on,rule.frequency,i,rule.day_adjust||'none').date;
@@ -23,7 +23,7 @@ function buildBaseForecast({accounts,envelopes,recurring,overrides=[],moves=[],l
    const date=moveMap.get(rule.id+'|'+original)||original;
    if(date<since||date>end)continue;
    const amount=overrideMap.get(rule.id+'|'+original)??rule.amount_cents;
-   rows.push({key:'rec-'+rule.id+'|'+original,source:'recurring',id:rule.id,recurring_id:rule.id,original_on:original,date,description:rule.description,type:rule.type,account_id:rule.account_id,to_account_id:rule.to_account_id,envelope_id:rule.envelope_id,planned_cents:amount,actual_cents:null,actual_ids:[],status:amount===0?'skipped':'planned',modified:date!==original||overrideMap.has(rule.id+'|'+original)});
+   rows.push({key:'rec-'+rule.id+'|'+original,source:rule.paycheck_allocation?'paycheck':'recurring',id:rule.id,recurring_id:rule.id,original_on:original,date,description:rule.description,type:rule.type,account_id:rule.account_id,to_account_id:rule.to_account_id,envelope_id:rule.envelope_id,planned_cents:amount,actual_cents:null,actual_ids:[],status:amount===0?'skipped':'planned',modified:date!==original||overrideMap.has(rule.id+'|'+original)});
   }
  }
  // Explicit links always win. Automatic matches require unique candidates in both directions.

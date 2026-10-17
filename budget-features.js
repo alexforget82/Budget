@@ -90,7 +90,7 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
           if(!row||typeof row!=='object'||Object.keys(row).sort().join()!==columns.map(c=>c.name).sort().join())throw Error('Colonnes de sauvegarde incompatibles.');
           for(const c of columns){const value=row[c.name];if(value===null){if(c.notnull||c.pk)throw Error('Valeur requise manquante.');continue;}
             if(c.type==='INTEGER'&&(!Number.isSafeInteger(value)||Math.abs(value)>1e12))throw Error('Nombre de sauvegarde invalide.');
-            if(c.type==='TEXT'&&(typeof value!=='string'||value.length>10000))throw Error('Texte de sauvegarde invalide.');
+            if(c.type==='TEXT'&&(typeof value!=='string'||value.length>(table==='app_settings'?100000:10000)))throw Error('Texte de sauvegarde invalide.');
             if((c.name.endsWith('_on')||['target_date','next_renewal'].includes(c.name))&&!validDate(value))throw Error('Date de sauvegarde invalide.');
             if(c.name==='id'&&value<1)throw Error('Identifiant invalide.');
           }
@@ -186,5 +186,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'4.7.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({version:'5.0.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

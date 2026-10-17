@@ -1,10 +1,19 @@
-VERSION 4.7 — TABLEAU DE BORD PERSONNALISABLE
+VERSION 5.0 — PAIE, PROJETS ET MODE SOMBRE
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge doit indiquer v4.7.
-Gardez les fichiers ensemble, dont dashboard-layout.js, dashboard-v47.js et dashboard-v47.css.
+Rechargez Safari sur Mac et iPhone : le badge doit indiquer v5.0.
+Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
+et budget-v50.css.
+
+Apparence : Clair, Sombre ou Automatique dans l’en-tête.
+Ma prochaine paie : cycle de paie, répartition vers les budgets libres,
+règles de classement, projets, comparaison prévu/réel et explication par date.
+Un plan de répartition est une prévision : après réception de la paie,
+confirmez le revenu dans Prévu / Réel puis appliquez la répartition.
+L’objectif d’un projet ne réserve pas automatiquement d’argent.
+Aucune réserve automatique pour les remboursements de cartes.
 
 Tableau de bord > Personnaliser :
 - Glissez la poignée d’un bloc sur ordinateur, ou utilisez Monter / Descendre.
@@ -15,7 +24,7 @@ Tableau de bord > Personnaliser :
 - Rétablir la disposition par défaut remet uniquement le format affiché à zéro.
 Terminer quitte la personnalisation. Les blocs masqués restent accessibles
 pendant la personnalisation. Les réglages sont inclus dans vos sauvegardes.
-Aucun changement des soldes, réserves ou prévisions.
+Personnaliser le tableau de bord ne change pas les calculs financiers.
 
 VERSION 4.6 — SOUS-CATEGORIES, ARCHIVAGE ET FUSION
 Décompressez le nouveau ZIP. Depuis ~/Applications/Mon Budget,
