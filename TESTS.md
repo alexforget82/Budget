@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.5
+# Vérifications — Mon Budget 4.6
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **96 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **101 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,11 +13,17 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 46 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 51 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+
+La 4.6 ajoute cinq tests API intégrés : sous-catégories homonymes dans des parents différents et doublons refusés; affectation, modification, rapport et filtre d’une transaction; archivage sans perte d’historique et refus des nouvelles affectations archivées; aperçu de fusion sans écritures, refus d’un jeton périmé, regroupement des enfants, addition des plafonds et annulation exacte; sauvegarde complète, contrôle de cohérence parent/enfant, import CSV avec valeur par défaut ou colonne et restauration d’un ancien JSON; migration réelle d’un schéma SQLite 4.5 avec copie cohérente préalable et préservation des identifiants et des soldes. Plusieurs de ces vérifications partagent un même test.
+
+`python3 tests/categories-v46-ui.py` vérifie la création d’un enfant dans l’interface, la saisie et modification d’un achat, la suggestion du commerce et la priorité d’un choix manuel, le détail du bilan, l’archivage et la réactivation, le classement dans l’aperçu CSV, l’aperçu de fusion et son invalidation par un changement de formulaire, la réaffectation après confirmation, l’édition d’une ancienne transaction sous une catégorie archivée, les filtres et leur remise à zéro. Cinq largeurs (375/390/768/1024/1440), aucun débordement, aucune mutation lors de la consultation, aucune erreur JavaScript. Données fictives uniquement.
+
+Régressions exécutées en 4.6 : `tests/categories-v45-ui.py`, `tests/transactions-ui.py`, `tests/workflows-ui.py`, `tests/budget-v41-ui.py`, `tests/transaction-transfers-ui.py`, `tests/budget-v44-ui.py` et `tests/mac-service-simulation.py`. La simulation macOS utilise un faux launchctl; aucun accès au Mac réel, à Safari iOS ou au compte Tailscale de l’utilisateur.
 
 La 4.5 conserve les mêmes API et les mêmes calculs financiers. `python3 tests/categories-v45-ui.py` vérifie le nouvel onglet du menu principal, la création persistante, la disponibilité immédiate dans les cinq sélecteurs concernés, le refus des doublons accentués, la recherche sans accents, la recherche vide de résultats, le renommage d’une catégorie déjà utilisée et la conservation de la transaction et du solde. Il vérifie aussi les liens depuis Transactions/Bilan et la navigation mobile aux largeurs 375/390/768/1024/1440 : aucun débordement, aucune mutation en consultant les écrans, aucune erreur JavaScript. Données fictives uniquement.
 
-Régressions exécutées pour cette version : `tests/workflows-ui.py`, `tests/planning-ui.py` et `tests/budget-v43-ui.py`. La suite générale compte toujours 50 tests Node et 46 tests API, sans modification du schéma ou des règles de réserve.
+Régressions exécutées pour cette version : `tests/workflows-ui.py`, `tests/planning-ui.py` et `tests/budget-v43-ui.py`. La suite de la 4.5 comptait 50 tests Node et 46 tests API, sans modification du schéma ou des règles de réserve.
 
 La 4.4 ajoute quatre tests API intégrés :
 

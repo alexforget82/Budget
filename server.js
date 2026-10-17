@@ -1,3 +1,4 @@
+import {createCategoryTools} from './category-tools.js';
 import {createEnvelopeTools} from './envelope-tools.js';
 import {createFreeBudgets} from './free-budgets.js';
 import {createSupport} from './budget-support.js';
@@ -125,6 +126,7 @@ run("INSERT OR IGNORE INTO app_settings(key,value) VALUES('card_payments_v1','1'
 const cardPayments=createCardPayments({db,cents,validDate,today:todayLocal,atomic});
 const freeBudgets=createFreeBudgets({db,atomic,cents,today:todayLocal,exportBackup:features.exportBackup,forecastInput,buildForecast});
 const envelopeTools=createEnvelopeTools({db,atomic,cents,validDate,today:todayLocal,exportBackup:features.exportBackup,forecastInput,buildForecast});
+const categoryTools=createCategoryTools({db,atomic,exportBackup:features.exportBackup,today:todayLocal});
 const support=createSupport({db,dir,features,today:todayLocal,cents,validDate});
 support.dailyBackup();setInterval(()=>support.dailyBackup(),60000).unref();
 const featureRoutes=new Set(['/api/categories','/api/categories/update','/api/category-budget','/api/goals','/api/goals/delete','/api/balance/reconcile','/api/import/inspect','/api/import/preview','/api/import/commit','/api/backup/validate','/api/backup/restore']);
@@ -231,20 +233,21 @@ function simulateBudget(x){
  }else throw Error('Simulation inconnue.');
  return {baseline:baseline.days,scenario:scenario.days,warnings:scenario.warnings};
 }
-const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js'],['/transactions.js','transactions.js'],['/forecast-ui.js','forecast-ui.js'],['/planning-workflow.js','planning-workflow.js'],['/card-payments-ui.js','card-payments-ui.js'],['/planning-v4.js','planning-v4.js'],['/planning-v4.css','planning-v4.css'],['/budget-v41.js','budget-v41.js'],['/budget-v41.css','budget-v41.css'],['/free-budgets-ui.js','free-budgets-ui.js'],['/free-budgets.css','free-budgets.css'],['/envelope-v44.js','envelope-v44.js'],['/envelope-v44.css','envelope-v44.css']]);
-const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8','transactions.js':'text/javascript; charset=utf-8','forecast-ui.js':'text/javascript; charset=utf-8','planning-workflow.js':'text/javascript; charset=utf-8','card-payments-ui.js':'text/javascript; charset=utf-8','planning-v4.js':'text/javascript; charset=utf-8','planning-v4.css':'text/css; charset=utf-8','budget-v41.js':'text/javascript; charset=utf-8','budget-v41.css':'text/css; charset=utf-8','free-budgets-ui.js':'text/javascript; charset=utf-8','free-budgets.css':'text/css; charset=utf-8','envelope-v44.js':'text/javascript; charset=utf-8','envelope-v44.css':'text/css; charset=utf-8'};
+const staticFiles=new Map([['/','index.html'],['/app.css','app.css'],['/app.js','app.js'],['/features.js','features.js'],['/planner.js','planner.js'],['/transactions.js','transactions.js'],['/forecast-ui.js','forecast-ui.js'],['/planning-workflow.js','planning-workflow.js'],['/card-payments-ui.js','card-payments-ui.js'],['/planning-v4.js','planning-v4.js'],['/planning-v4.css','planning-v4.css'],['/budget-v41.js','budget-v41.js'],['/budget-v41.css','budget-v41.css'],['/free-budgets-ui.js','free-budgets-ui.js'],['/free-budgets.css','free-budgets.css'],['/envelope-v44.js','envelope-v44.js'],['/envelope-v44.css','envelope-v44.css'],['/categories-v46.js','categories-v46.js'],['/categories-v46.css','categories-v46.css']]);
+const mime={'index.html':'text/html; charset=utf-8','app.css':'text/css; charset=utf-8','app.js':'text/javascript; charset=utf-8','features.js':'text/javascript; charset=utf-8','planner.js':'text/javascript; charset=utf-8','transactions.js':'text/javascript; charset=utf-8','forecast-ui.js':'text/javascript; charset=utf-8','planning-workflow.js':'text/javascript; charset=utf-8','card-payments-ui.js':'text/javascript; charset=utf-8','planning-v4.js':'text/javascript; charset=utf-8','planning-v4.css':'text/css; charset=utf-8','budget-v41.js':'text/javascript; charset=utf-8','budget-v41.css':'text/css; charset=utf-8','free-budgets-ui.js':'text/javascript; charset=utf-8','free-budgets.css':'text/css; charset=utf-8','envelope-v44.js':'text/javascript; charset=utf-8','envelope-v44.css':'text/css; charset=utf-8','categories-v46.js':'text/javascript; charset=utf-8','categories-v46.css':'text/css; charset=utf-8'};
 function accountEffect(accountId,amount){const kind=db.prepare('SELECT kind FROM accounts WHERE id=?').get(accountId)?.kind;if(!kind)throw Error('Compte introuvable');return kind==='credit'?-amount:amount}
 function restoreEnvelope(id,amount,effect=null){if(id&&amount<0)run('UPDATE envelopes SET reserved_cents=reserved_cents+? WHERE id=?',effect??-amount,id)}
 function applyEnvelope(id,amount){if(!id||amount>=0)return 0;const effect=Math.min(q('SELECT reserved_cents FROM envelopes WHERE id=?',id)[0].reserved_cents,-amount);run('UPDATE envelopes SET reserved_cents=reserved_cents-? WHERE id=?',effect,id);return effect;}
-function validateTransaction(x){
+function validateTransaction(x,old=null){
  const account=Number(x.account_id),envelope=x.envelope_id?Number(x.envelope_id):null,amount=cents(x.amount);
  const description=typeof x.description==='string'?x.description.trim():'';
  if(!Number.isInteger(account)||!db.prepare('SELECT id FROM accounts WHERE id=?').get(account)||amount===null||!amount||!description||description.length>150||!validDate(x.happened_on)||(envelope!==null&&!db.prepare('SELECT id FROM envelopes WHERE id=?').get(envelope))||(envelope!==null&&amount>0))throw Error('Transaction invalide');
- return {account,envelope,amount,description,date:x.happened_on,category:features.categoryId(x.category_id)};
+ const category=features.categoryId(x.category_id,old&&Number(x.category_id)===old.category_id),subcategory=categoryTools.subcategoryId(x.subcategory_id,category,old&&Number(x.subcategory_id)===old.subcategory_id&&category===old.category_id);
+ return {account,envelope,amount,description,date:x.happened_on,category,subcategory};
 }
 function addTransaction(x,{affectsBalance=true,importBatch=null}={}){
  const t=validateTransaction(x),effect=affectsBalance?applyEnvelope(t.envelope,t.amount):0;
- const result=run('INSERT INTO transactions(account_id,envelope_id,amount_cents,description,happened_on,category_id,import_batch_id,affects_balance,envelope_effect_cents) VALUES(?,?,?,?,?,?,?,?,?)',t.account,t.envelope,t.amount,t.description,t.date,t.category,importBatch,affectsBalance?1:0,effect);
+ const result=run('INSERT INTO transactions(account_id,envelope_id,amount_cents,description,happened_on,category_id,subcategory_id,import_batch_id,affects_balance,envelope_effect_cents) VALUES(?,?,?,?,?,?,?,?,?,?)',t.account,t.envelope,t.amount,t.description,t.date,t.category,t.subcategory,importBatch,affectsBalance?1:0,effect);
  if(affectsBalance)run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(t.account,t.amount),t.account);
  return Number(result.lastInsertRowid);
 }
@@ -262,11 +265,11 @@ function detachEnvelopeActual(id){
 function transactionChange(x,remove=false){
  const id=Number(x.id),old=db.prepare('SELECT * FROM transactions WHERE id=?').get(id);
  if(!old)throw Error('Transaction introuvable');
- const updated=remove?null:validateTransaction({...x,category_id:x.category_id===undefined?old.category_id:x.category_id});
+ const updated=remove?null:validateTransaction({...x,category_id:x.category_id===undefined?old.category_id:x.category_id,subcategory_id:x.subcategory_id===undefined?(x.category_id===undefined||Number(x.category_id)===old.category_id?old.subcategory_id:null):x.subcategory_id},old);
  atomic(()=>{
   if(updated&&old.account_id===updated.account&&old.envelope_id===updated.envelope&&old.amount_cents===updated.amount){
    if(updated.date!==old.happened_on)run("DELETE FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?",id);
-   run('UPDATE transactions SET description=?,happened_on=?,category_id=? WHERE id=?',updated.description,updated.date,updated.category,id);return;
+   run('UPDATE transactions SET description=?,happened_on=?,category_id=?,subcategory_id=? WHERE id=?',updated.description,updated.date,updated.category,updated.subcategory,id);return;
   }
   if(old.affects_balance)run('UPDATE accounts SET balance_cents=balance_cents-? WHERE id=?',accountEffect(old.account_id,old.amount_cents),old.account_id);
   restoreEnvelope(old.envelope_id,old.amount_cents,old.envelope_effect_cents);
@@ -277,7 +280,7 @@ function transactionChange(x,remove=false){
    run('UPDATE transactions SET account_id=?,envelope_id=?,amount_cents=?,description=?,happened_on=? WHERE id=?',updated.account,updated.envelope,updated.amount,updated.description,updated.date,id);
    if(old.affects_balance)run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(updated.account,updated.amount),updated.account);
    const effect=old.affects_balance?applyEnvelope(updated.envelope,updated.amount):0;
-   run('UPDATE transactions SET category_id=?,envelope_effect_cents=? WHERE id=?',updated.category,effect,id);
+   run('UPDATE transactions SET category_id=?,subcategory_id=?,envelope_effect_cents=? WHERE id=?',updated.category,updated.subcategory,effect,id);
   }
  });
 }
@@ -304,6 +307,7 @@ function listTransactions(url,all=false){
  if(params.get('search')){where.push("budget_search(t.description) LIKE ? ESCAPE '\\'");args.push('%'+normalizeSearch(params.get('search').slice(0,80)).replace(/[\\%_]/g,c=>'\\'+c)+'%')}
  if(params.get('account')){where.push('t.account_id=?');args.push(Number(params.get('account')))}
  if(params.get('category')){where.push('t.category_id=?');args.push(Number(params.get('category')))}
+ if(params.get('subcategory')){where.push('t.subcategory_id=?');args.push(Number(params.get('subcategory')))}
  if(params.get('envelope')){where.push('t.envelope_id=?');args.push(Number(params.get('envelope')))}
  if(params.get('reviewed')==='0'||params.get('reviewed')==='1'){where.push('t.reviewed=?');args.push(Number(params.get('reviewed')))}
  if(params.get('from')&&validDate(params.get('from'))){where.push('t.happened_on>=?');args.push(params.get('from'))}
@@ -312,7 +316,7 @@ function listTransactions(url,all=false){
  const filter=where.length?' WHERE '+where.join(' AND '):'';
  const totals=db.prepare('SELECT COUNT(*) count,COALESCE(SUM(CASE WHEN amount_cents>0 THEN amount_cents ELSE 0 END),0) income_cents,COALESCE(SUM(CASE WHEN amount_cents<0 THEN -amount_cents ELSE 0 END),0) expense_cents,COALESCE(SUM(CASE WHEN reviewed=0 THEN 1 ELSE 0 END),0) pending_count FROM transactions t'+filter).get(...args);const count=totals.count;
  const page=Math.max(1,Math.min(100000,Number(params.get('page'))||1)),limit=50;
- const rows=db.prepare('SELECT t.*,a.name account_name,e.name envelope_name,c.name category_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id LEFT JOIN categories c ON c.id=t.category_id'+filter+' ORDER BY t.happened_on DESC,t.id DESC'+(all?'':' LIMIT ? OFFSET ?')).all(...args,...(all?[]:[limit,(page-1)*limit]));
+ const rows=db.prepare('SELECT t.*,a.name account_name,e.name envelope_name,c.name category_name,s.name subcategory_name FROM transactions t JOIN accounts a ON a.id=t.account_id LEFT JOIN envelopes e ON e.id=t.envelope_id LEFT JOIN categories c ON c.id=t.category_id LEFT JOIN subcategories s ON s.id=t.subcategory_id'+filter+' ORDER BY t.happened_on DESC,t.id DESC'+(all?'':' LIMIT ? OFFSET ?')).all(...args,...(all?[]:[limit,(page-1)*limit]));
  return {rows,count,page,pages:Math.max(1,Math.ceil(count/limit)),summary:{...totals,net_cents:totals.income_cents-totals.expense_cents}};
 }
 
@@ -325,7 +329,7 @@ if(privateAccess&&req.socket.localPort===privateAccess.port){
  if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
  if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
 }
-if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'4.5.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'4.6.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/support/backup?')){const date=new URL(req.url,'http://localhost').searchParams.get('date'),body=support.dailyFile(date);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="budget-${date}.json"`,'Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/search?'))return reply(res,200,support.search(new URL(req.url,'http://localhost').searchParams.get('q')));
 if(req.method==='GET'&&req.url.startsWith('/api/monthly?')){const params=new URL(req.url,'http://localhost').searchParams;return reply(res,200,features.monthly(params.get('month'),params.get('account')));}
@@ -333,7 +337,7 @@ if(req.method==='GET'&&req.url==='/api/backup/export'){const backup=features.exp
 if(req.method==='GET'&&req.url.startsWith('/api/transactions/export')){
  const rows=listTransactions(req.url,true).rows;
  const text=v=>'"'+String(v??'').replace(/^[=+\-@\t\r]/,"'$&").replaceAll('"','""')+'"';
- const lines=[['Date','Description','Compte','Catégorie','Enveloppe','Montant'].map(text).join(';'),...rows.map(r=>[r.happened_on,r.description,r.account_name,r.category_name||'',r.envelope_name||''].map(text).join(';')+';'+(r.amount_cents/100).toFixed(2))];
+ const lines=[['Date','Description','Compte','Catégorie','Sous-catégorie','Enveloppe','Montant'].map(text).join(';'),...rows.map(r=>[r.happened_on,r.description,r.account_name,r.category_name||'',r.subcategory_name||'',r.envelope_name||''].map(text).join(';')+';'+(r.amount_cents/100).toFixed(2))];
  res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="transactions.csv"','Cache-Control':'no-store'});return res.end('\uFEFF'+lines.join('\r\n'));
 }
 if(req.method==='GET'&&staticFiles.has(req.url)){const name=staticFiles.get(req.url);res.writeHead(200,{'Content-Type':mime[name],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});return res.end(fs.readFileSync(new URL('./'+name,import.meta.url)))}
@@ -342,9 +346,10 @@ if(req.method==='GET'&&req.url==='/api/reconcile/options')return reply(res,200,{
   links:q('SELECT * FROM reconciliation_links ORDER BY occurrence_on DESC,id DESC')
  });
  if(req.method==='GET'&&req.url.startsWith('/api/transactions/list'))return reply(res,200,listTransactions(req.url));if(req.method==='GET'&&req.url==='/api/state')return reply(res,200,snapshot());
-if(req.method!=='POST'||(!featureRoutes.has(req.url)&&!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete','/api/envelope/status','/api/planning/action','/api/card-payments','/api/card-payments/delete','/api/simulate','/api/support/reconcile','/api/support/undo','/api/support/backup','/api/support/profiles','/api/support/profiles/delete','/api/support/scenarios','/api/support/scenarios/delete','/api/envelope-tools/preview','/api/envelope-tools/apply','/api/free-budgets/create','/api/free-budgets/starter','/api/free-budgets/adopt','/api/free-budgets/preview','/api/free-budgets/fund','/api/free-budgets/update','/api/free-budgets/delete'].includes(req.url)))return reply(res,404,{error:'Introuvable'});
+if(req.method!=='POST'||(!featureRoutes.has(req.url)&&!['/api/accounts','/api/accounts/update','/api/accounts/inclusion','/api/envelopes','/api/envelopes/update','/api/envelopes/delete','/api/transactions','/api/transactions/review','/api/transactions/update','/api/transactions/delete','/api/transfers','/api/transfers/update','/api/transfers/delete','/api/recurring','/api/recurring/update','/api/recurring/delete','/api/overrides','/api/overrides/delete','/api/reconcile/link','/api/reconcile/unlink','/api/occurrence/move','/api/occurrence/unmove','/api/envelope/period','/api/envelope/period/delete','/api/envelope/status','/api/planning/action','/api/card-payments','/api/card-payments/delete','/api/simulate','/api/support/reconcile','/api/support/undo','/api/support/backup','/api/support/profiles','/api/support/profiles/delete','/api/support/scenarios','/api/support/scenarios/delete','/api/categories/merge-preview','/api/categories/merge','/api/categories/archive','/api/subcategories','/api/subcategories/update','/api/subcategories/archive','/api/envelope-tools/preview','/api/envelope-tools/apply','/api/free-budgets/create','/api/free-budgets/starter','/api/free-budgets/adopt','/api/free-budgets/preview','/api/free-budgets/fund','/api/free-budgets/update','/api/free-budgets/delete'].includes(req.url)))return reply(res,404,{error:'Introuvable'});
 let chunks=[],size=0;for await(const c of req){size+=c.length;if(size>(featureRoutes.has(req.url)?10_000_000:20000))return reply(res,413,{error:'Requête trop grande'});chunks.push(c)}const x=JSON.parse(Buffer.concat(chunks).toString('utf8')),name=typeof x.name==='string'?x.name.trim():'',exists=(table,id)=>Number.isInteger(id)&&q(`SELECT id FROM ${table} WHERE id=?`,id).length>0;
-if(!['/api/envelope-tools/preview','/api/free-budgets/preview','/api/simulate','/api/import/inspect','/api/import/preview','/api/backup/validate','/api/support/reconcile','/api/support/undo','/api/support/backup','/api/support/profiles','/api/support/profiles/delete','/api/support/scenarios','/api/support/scenarios/delete'].includes(req.url)){applyEnvelopeRenewals();res.budgetBefore=features.exportBackup();res.budgetRoute=req.url;}
+if(!['/api/categories/merge-preview','/api/envelope-tools/preview','/api/free-budgets/preview','/api/simulate','/api/import/inspect','/api/import/preview','/api/backup/validate','/api/support/reconcile','/api/support/undo','/api/support/backup','/api/support/profiles','/api/support/profiles/delete','/api/support/scenarios','/api/support/scenarios/delete'].includes(req.url)){applyEnvelopeRenewals();res.budgetBefore=features.exportBackup();res.budgetRoute=req.url;}
+if(['/api/categories/merge-preview','/api/categories/merge','/api/categories/archive','/api/subcategories','/api/subcategories/update','/api/subcategories/archive'].includes(req.url)){const result=categoryTools.post(req.url,x);return reply(res,200,req.url.endsWith('/merge-preview')?result:snapshot());}
 if(req.url.startsWith('/api/envelope-tools/')){const result=envelopeTools.post(req.url,x);return reply(res,200,req.url.endsWith('/preview')?result:snapshot());}
 if(req.url.startsWith('/api/free-budgets/')){const result=freeBudgets.post(req.url,x);return reply(res,200,req.url==='/api/free-budgets/preview'?result:snapshot());}
 if(req.url.startsWith('/api/support/')){const result=support.post(req.url,x);return reply(res,200,req.url==='/api/support/reconcile'?result:snapshot());}
@@ -441,6 +446,6 @@ else {const id=Number(x.id);if(req.url==='/api/recurring/delete'){if(!exists('re
 if(x.type==='transfer'&&x.active!==false&&q('SELECT 1 FROM card_payment_plans WHERE card_account_id=? AND recurring_id!=?',to,id||0).length)return reply(res,400,{error:'Un plan de remboursement existe déjà pour cette carte. Modifiez ce plan pour éviter deux paiements prévus.'});
 const paymentPlan=q('SELECT * FROM card_payment_plans WHERE recurring_id=?',id)[0];if(paymentPlan&&(x.type!=='transfer'||to!==paymentPlan.card_account_id||q('SELECT kind FROM accounts WHERE id=?',account)[0]?.kind==='credit'||!['weekly','biweekly','monthly'].includes(x.frequency)||(x.day_adjust||'none')!=='none'||x.one_time===true||x.one_time===1||x.one_time==='true'))return reply(res,400,{error:'Modifiez ce remboursement depuis le réglage de la carte.'});
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields)}}
-return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/envelope-tools/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
-http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v4.5.0 : http://${HOST}:${PORT}`));
+return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/subcategories')||req.url.startsWith('/api/categories/')||req.url.startsWith('/api/envelope-tools/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
+http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v4.6.0 : http://${HOST}:${PORT}`));
 if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));

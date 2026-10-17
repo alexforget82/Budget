@@ -1,3 +1,21 @@
+VERSION 4.6 — SOUS-CATEGORIES, ARCHIVAGE ET FUSION
+Décompressez le nouveau ZIP. Depuis ~/Applications/Mon Budget,
+ouvrez le raccourci permanent Mettre a jour Mon Budget.command,
+puis choisissez le dossier téléchargé. Votre base active est conservée et sauvegardée.
+Ne recopiez pas un ancien dossier data. Rechargez Safari sur Mac et iPhone : v4.6.
+Gardez les fichiers ensemble, dont category-tools.js, categories-v46.js et categories-v46.css.
+
+Catégories > + Sous-catégorie : ajoutez autant de postes que nécessaire sous
+une catégorie principale. Il n’y a qu’un seul niveau de sous-catégories.
+Dans chaque achat : catégorie puis sous-catégorie facultative.
+Bilan > Voir le détail : répartition par sous-catégorie.
+Archiver masque un poste dans les nouveaux achats, sans effacer son historique.
+Afficher les catégories archivées permet de les réactiver.
+Fusionner deux catégories montre les achats, sous-catégories et plafonds concernés
+avant confirmation. La catégorie source sera archivée; les plafonds sont additionnés.
+La dernière action peut être annulée avec l’outil d’annulation protégé.
+Les catégories n’affectent pas les soldes, réserves ou calculs du Safe-to-Spend.
+
 VERSION 4.5 — ONGLET CATEGORIES
 Téléchargez et décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,

@@ -293,7 +293,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   by('v2-to-label').style.display=kind==='transfer'?'':'none';
   form.elements.description.value=row.description;
   form.elements.amount.value=(Math.abs(row.amount_cents)/100).toFixed(2);
-  by('v2-edit-direction').value=row.amount_cents<0?'expense':'income';by('v2-edit-category').value=String(row.category_id||'');by('v2-direction-label').hidden=kind==='transfer';by('v2-category-label').hidden=kind==='transfer';const historyOnly=kind!=='transfer'&&row.affects_balance===0,legacyReserve=kind!=='transfer'&&row.envelope_id&&row.envelope_effect_cents===null;by('v2-history-note').hidden=!historyOnly&&!legacyReserve;by('v2-history-note').textContent=historyOnly?'Opération importée en historique : sa modification ne change pas les soldes actuels ni les réserves.':'Ancienne opération : vérifiez la réserve de l’enveloppe après un changement de montant ou d’enveloppe.';
+  by('v2-edit-direction').value=row.amount_cents<0?'expense':'income';by('v2-edit-category').value=String(row.category_id||'');by('v2-direction-label').hidden=kind==='transfer';by('v2-category-label').hidden=kind==='transfer';window.budgetSetSubcategory?.('v2-edit-category',row.subcategory_id,row.category_id);const historyOnly=kind!=='transfer'&&row.affects_balance===0,legacyReserve=kind!=='transfer'&&row.envelope_id&&row.envelope_effect_cents===null;by('v2-history-note').hidden=!historyOnly&&!legacyReserve;by('v2-history-note').textContent=historyOnly?'Opération importée en historique : sa modification ne change pas les soldes actuels ni les réserves.':'Ancienne opération : vérifiez la réserve de l’enveloppe après un changement de montant ou d’enveloppe.';
   form.elements.happened_on.value=row.happened_on;
   form.elements.account_id.value=String(kind==='transfer'?row.from_account_id:row.account_id);
   form.elements.to_account_id.value=String(row.to_account_id||'');
@@ -308,7 +308,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   const f=e.target;
   const payload={id:editId,description:f.elements.description.value,amount:Number(f.elements.amount.value),happened_on:f.elements.happened_on.value};
   if(editKind==='transfer'){payload.from_account_id=Number(f.elements.account_id.value);payload.to_account_id=Number(f.elements.to_account_id.value)}
-  else{payload.account_id=Number(f.elements.account_id.value);payload.envelope_id=f.elements.envelope_id.value||null;payload.category_id=f.elements.category_id.value||null;payload.amount=Math.abs(payload.amount)*(f.elements.direction.value==='expense'?-1:1)}
+  else{payload.account_id=Number(f.elements.account_id.value);payload.envelope_id=f.elements.envelope_id.value||null;payload.category_id=f.elements.category_id.value||null;payload.subcategory_id=f.elements.subcategory_id?.value||null;payload.amount=Math.abs(payload.amount)*(f.elements.direction.value==='expense'?-1:1)}
   const ok=await send('/api/'+(editKind==='transfer'?'transfers':'transactions')+'/update',payload);
   if(ok){dialog.close();await loadRecords();refreshCalendar()}
  };
@@ -317,7 +317,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   if(await send('/api/'+(kind==='transfer'?'transfers':'transactions')+'/delete',{id})){await loadRecords();refreshCalendar()}
  };
  const filterIds=['v2-search','v2-account','v2-review','v2-kind','v3-category-filter','v3-date-from','v3-date-to'];
- const query=()=>{const p=new URLSearchParams({page});if(by('v2-search').value)p.set('search',by('v2-search').value);if(by('v2-account').value)p.set('account',by('v2-account').value);if(by('v2-review').value)p.set('reviewed',by('v2-review').value);if(by('v2-kind').value)p.set('kind',by('v2-kind').value);for(const [id,key] of [['v3-category-filter','category'],['v3-date-from','from'],['v3-date-to','to']])if(by(id).value)p.set(key,by(id).value);return p};
+ const query=()=>{const p=new URLSearchParams({page});if(by('v2-search').value)p.set('search',by('v2-search').value);if(by('v46-subcategory-filter')?.value)p.set('subcategory',by('v46-subcategory-filter').value);if(by('v2-account').value)p.set('account',by('v2-account').value);if(by('v2-review').value)p.set('reviewed',by('v2-review').value);if(by('v2-kind').value)p.set('kind',by('v2-kind').value);for(const [id,key] of [['v3-category-filter','category'],['v3-date-from','from'],['v3-date-to','to']])if(by(id).value)p.set(key,by(id).value);return p};
  let recordsTicket=0,recordsController;
  async function loadRecords(){
   const ticket=++recordsTicket;recordsController?.abort();recordsController=new AbortController();
@@ -336,7 +336,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
     const avatar=node('span',t.description.trim().split(/\s+/).slice(0,2).map(w=>Array.from(w)[0]).join('').toLocaleUpperCase('fr-CA'),'merchant-mark');avatar.setAttribute('aria-hidden','true');
     const info=node('div',undefined,'ledger-description'),name=node('button',t.description,'ledger-name');name.type='button';name.setAttribute('aria-label','Modifier '+t.description);name.onclick=()=>edit('transaction',t.id);
     const meta=node('div',undefined,'ledger-meta');meta.append(node('span',t.account_name));if(t.affects_balance===0)meta.append(node('span','Historique importé','history-badge'));info.append(name,meta);
-    const category=node('div',undefined,'ledger-category');category.append(node('span',t.category_name||'Non classé','category-tag'+(t.category_id?'':' unclassified')));if(t.envelope_name)category.append(node('small',t.envelope_name));
+    const category=node('div',undefined,'ledger-category');category.append(node('span',(t.category_name||'Non classé')+(t.subcategory_name?' › '+t.subcategory_name:''),'category-tag'+(t.category_id?'':' unclassified')));if(t.envelope_name)category.append(node('small',t.envelope_name));
     const amount=node('strong',(t.amount_cents>0?'+':'')+centsFmt(t.amount_cents),'ledger-amount');
     const review=node('button',t.reviewed?'Révisée':'À vérifier','review-pill'+(t.reviewed?' reviewed':''));review.type='button';review.setAttribute('aria-pressed',String(!!t.reviewed));review.setAttribute('aria-label',(t.reviewed?'Marquer à vérifier : ':'Marquer comme révisée : ')+t.description);review.onclick=async()=>{review.disabled=true;const ok=await send('/api/transactions/review',{id:t.id,reviewed:!t.reviewed});if(!ok)review.disabled=false;};
     const actions=node('div',undefined,'ledger-actions'),editButton=node('button','Modifier','ledger-edit');editButton.type='button';editButton.onclick=()=>edit('transaction',t.id);

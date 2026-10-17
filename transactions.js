@@ -22,7 +22,7 @@
  for(const id of ['v3-category-filter','v2-review','v3-date-from','v3-date-to'])advancedFields.append($(id).parentElement);
  const hiddenKind=$('v2-kind').parentElement;hiddenKind.hidden=true;advancedFields.append(hiddenKind);tools.append(advanced);
  const filterFooter=node('div',undefined,'register-filter-footer'),resultLabel=node('span','Chargement de vos opérations…');resultLabel.id='register-result-label';resultLabel.setAttribute('role','status');
- const reset=button('Réinitialiser les filtres',()=>{for(const id of ['v2-search','v2-account','v2-kind','v2-review','v3-category-filter','v3-date-from','v3-date-to'])$(id).value='';period.value='all';filterChange();},'text-action');reset.hidden=true;
+ const reset=button('Réinitialiser les filtres',()=>{for(const id of ['v2-search','v2-account','v2-kind','v2-review','v3-category-filter','v3-date-from','v3-date-to'])$(id).value='';window.budgetSetSubcategory?.('v3-category-filter',null);period.value='all';filterChange();},'text-action');reset.hidden=true;
  const exportButton=$('v2-export');exportButton.textContent='Exporter les résultats';exportButton.className='text-action';filterFooter.append(resultLabel,reset,exportButton);tools.append(filterFooter);
  $('v2-filters').remove();
  const pager=$('v2-prev').parentElement;pager.classList.add('register-pagination');
@@ -96,17 +96,18 @@
  function suggestCategory(merchant,explicit=false){
   suggestEnvelope(merchant);
   if(!latest||categoryTouched&&!explicit)return;
-  if(merchant&&merchant.category_id&&latest.categories.some(c=>c.id===merchant.category_id)&&(merchant.amount_cents<0)===(select.value==='expense')){
-   category.value=String(merchant.category_id);lastSuggested=category.value;categoryHint.textContent='Catégorie proposée : '+category.selectedOptions[0].textContent+'. Vous pouvez la modifier.';categoryHint.hidden=false;
-  }else{if(category.value===lastSuggested)category.value='';lastSuggested=null;categoryHint.hidden=true;}
+  if(merchant&&merchant.category_id&&latest.categories.some(c=>c.id===merchant.category_id&&!c.archived)&&(merchant.amount_cents<0)===(select.value==='expense')){
+   category.value=String(merchant.category_id);lastSuggested=category.value;categoryHint.textContent='Catégorie proposée : '+category.selectedOptions[0].textContent+'. Vous pouvez la modifier.';categoryHint.hidden=false;window.budgetSetSubcategory?.('transaction-category',merchant.subcategory_id,merchant.category_id);
+  }else{if(category.value===lastSuggested)category.value='';window.budgetSetSubcategory?.('transaction-category',null);lastSuggested=null;categoryHint.hidden=true;window.budgetSetSubcategory?.('transaction-category',null);}
  }
  function renderMerchants(){
   chips.replaceChildren();const merchants=(latest?.recent_descriptions||[]).filter(m=>(m.amount_cents<0)===(select.value==='expense')).slice(0,6);suggestions.hidden=select.value==='transfer'||!merchants.length;
   for(const merchant of merchants)chips.append(button(merchant.description,()=>{description.value=merchant.description;categoryTouched=false;suggestCategory(merchant,true);amount.focus();},'merchant-chip'));
  }
+ document.addEventListener('budget:subcategory-manual',()=>{categoryTouched=true;categoryHint.hidden=true;});
  category.addEventListener('change',()=>{categoryTouched=true;categoryHint.hidden=true;lastSuggested=null;});
  description.addEventListener('input',()=>{copyNotice.hidden=true;const merchant=latest?.recent_descriptions?.find(m=>normalize(m.description)===normalize(description.value));suggestCategory(merchant);});
- select.addEventListener('change',()=>{categoryHint.hidden=true;categoryTouched=false;category.value='';lastSuggested=null;suggestCategory(latest?.recent_descriptions?.find(m=>normalize(m.description)===normalize(description.value)));syncType();});
+ select.addEventListener('change',()=>{categoryHint.hidden=true;categoryTouched=false;category.value='';window.budgetSetSubcategory?.('transaction-category',null);lastSuggested=null;suggestCategory(latest?.recent_descriptions?.find(m=>normalize(m.description)===normalize(description.value)));syncType();});
  $('account-options').addEventListener('change',()=>{accountNote();transferFields();});
  form.addEventListener('submit',event=>{keepOpen=event.submitter?.dataset.keepOpen==='true';});
  const transactionSubmit=form.onsubmit;
@@ -124,12 +125,12 @@
   openEditor(key);if(key==='transaction'){syncType();requestAnimationFrame(()=>amount.focus());}
  };
  window.addEventListener('budget:repeat-transaction',event=>{
-  const row=event.detail;description.value=row.description;amount.value=(Math.abs(row.amount_cents)/100).toFixed(2);select.value=row.amount_cents<0?'expense':'income';select.dispatchEvent(new Event('change',{bubbles:true}));$('account-options').value=String(row.account_id);category.value=String(row.category_id||'');$('envelope-options').value=select.value==='expense'?String(row.envelope_id||''):'';form.elements.happened_on.value=today();categoryTouched=true;categoryHint.hidden=true;more.open=!!row.envelope_id;copyNotice.textContent='Copie à vérifier : nouvelle opération, datée d’aujourd’hui. Rien n’est encore enregistré.';copyNotice.hidden=false;window.appOpenEditor('transaction');
+  const row=event.detail;description.value=row.description;amount.value=(Math.abs(row.amount_cents)/100).toFixed(2);select.value=row.amount_cents<0?'expense':'income';select.dispatchEvent(new Event('change',{bubbles:true}));$('account-options').value=String(row.account_id);category.value=String(row.category_id||'');window.budgetSetSubcategory?.('transaction-category',row.subcategory_id,row.category_id);$('envelope-options').value=select.value==='expense'?String(row.envelope_id||''):'';form.elements.happened_on.value=today();categoryTouched=true;categoryHint.hidden=true;more.open=!!row.envelope_id;copyNotice.textContent='Copie à vérifier : nouvelle opération, datée d’aujourd’hui. Rien n’est encore enregistré.';copyNotice.hidden=false;window.appOpenEditor('transaction');
  });
  const previousSend=send;send=async function(url,data){
   const ok=await previousSend(url,data);
   if(ok&&url==='/api/transactions'){
-   const again=keepOpen;keepOpen=false;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';envelopeSuggestion.hidden=true;
+   const again=keepOpen;keepOpen=false;categoryTouched=false;lastSuggested=null;categoryHint.hidden=true;copyNotice.hidden=true;category.value='';window.budgetSetSubcategory?.('transaction-category',null);envelopeSuggestion.hidden=true;
    if(again){openEditor('transaction');syncType();requestAnimationFrame(()=>amount.focus());}
   }
   return ok;

@@ -4,7 +4,7 @@
   const money=value=>(value/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
   const node=(tag,text,className)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;};
   const button=(text,action,cls='secondary')=>{const b=node('button',text,cls);b.type='button';b.onclick=action;return b;};
-  const options=(select,items,empty)=>{const old=select.value;select.replaceChildren();if(empty!==undefined)select.add(new Option(empty,''));for(const item of items)select.add(new Option(item.name,item.id));if([...select.options].some(o=>o.value===old))select.value=old;};
+  const options=(select,items,empty,includeArchived=false)=>{const old=select.value;select.replaceChildren();if(empty!==undefined)select.add(new Option(empty,''));for(const item of items)if(includeArchived||!item.archived)select.add(new Option(item.name+(item.archived?' (archivée)':''),item.id));if([...select.options].some(o=>o.value===old))select.value=old;};
   let current,reportRequest=0,csv='',preview=null,restoreBackup=null,balancePreview=null;
   async function request(url,data){
     const response=await fetch(url,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
@@ -17,7 +17,7 @@
   function transactionType(){const income=direction.value==='income';by('envelope-options').disabled=income;if(income)by('envelope-options').value='';}
   direction.onchange=transactionType;
   by('transaction').onsubmit=async e=>{
-    e.preventDefault();const f=e.target,data=Object.fromEntries(new FormData(f));data.amount=Number(data.amount)*(data.direction==='expense'?-1:1);data.category_id=data.category_id||null;
+    e.preventDefault();const f=e.target,data=Object.fromEntries(new FormData(f));data.amount=Number(data.amount)*(data.direction==='expense'?-1:1);data.category_id=data.category_id||null;data.subcategory_id=f.elements.subcategory_id?.value||null;
     if(await mutate('/api/transactions',data)){f.elements.amount.value='';f.elements.description.value='';selectDefaultTransactionAccount(current.accounts);}
   };
   by('v2-edit-direction').addEventListener('change',()=>{if(by('v2-edit-direction').value==='income')by('v2-edit-envelope').value='';});
@@ -29,7 +29,7 @@
       const summary=by('monthly-summary');summary.replaceChildren();
       for(const [label,value] of [['Revenus',result.income_cents],['Dépenses',result.expense_cents],['Différence',result.net_cents]]){const box=node('div',undefined,'feature-metric');box.append(node('span',label),node('strong',money(value),value<0?'negative':''));summary.append(box);}
       const report=by('category-report');report.replaceChildren();
-      for(const group of result.groups){const row=node('div',undefined,'category-summary');const head=node('div',undefined,'v2-progress-head');head.append(node('strong',group.name),node('strong',money(group.expense_cents)));const track=node('div',undefined,'v2-progress-track');const fill=node('div',undefined,'v2-progress-fill');fill.style.width=(result.expense_cents?group.expense_cents/result.expense_cents*100:0)+'%';track.append(fill);row.append(head,track,node('small',(result.expense_cents?Math.round(group.expense_cents/result.expense_cents*100):0)+' % des dépenses'));report.append(row);}
+      for(const group of result.groups){const row=node('div',undefined,'category-summary');const head=node('div',undefined,'v2-progress-head');head.append(node('strong',group.name),node('strong',money(group.expense_cents)));const track=node('div',undefined,'v2-progress-track');const fill=node('div',undefined,'v2-progress-fill');fill.style.width=(result.expense_cents?group.expense_cents/result.expense_cents*100:0)+'%';track.append(fill);row.append(head,track,node('small',(result.expense_cents?Math.round(group.expense_cents/result.expense_cents*100):0)+' % des dépenses'));const detail=node('details',undefined,'subcategory-report');detail.append(node('summary','Voir le détail'));for(const sub of result.subgroups||[]){if(sub.category_id!==group.category_id)continue;const line=node('div',undefined,'v44-line');line.append(node('span',sub.name),node('strong',money(sub.expense_cents)));detail.append(line);}row.append(detail);report.append(row);}
       if(!result.groups.length)budgetEmpty(report,'Aucune dépense ce mois-ci','Changez de mois ou ajoutez votre première dépense.');
       const budgets=by('budget-comparison');budgets.replaceChildren();
       for(const budget of result.budgets.filter(b=>b.limit_cents!==null)){const spent=result.groups.find(g=>g.category_id===budget.id)?.expense_cents||0;const row=node('div',undefined,'budget-row');row.append(node('strong',budget.name),node('span',money(spent)+' / '+money(budget.limit_cents)),node('small',spent>budget.limit_cents?'Plafond dépassé de '+money(spent-budget.limit_cents):'Reste '+money(budget.limit_cents-spent),spent>budget.limit_cents?'negative':''));budgets.append(row);}
@@ -45,9 +45,10 @@
   let categoryEditing=null;
   function selectCategory(){categoryEditing=current?.categories.find(c=>c.id===Number(by('category-edit-choice').value));by('category-edit-form').elements.name.value=categoryEditing?.name||'';by('category-edit-status').textContent='';}
   function renderCategories(){
-    const host=by('category-list'),normalize=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA'),term=normalize(by('category-search').value.trim()),all=current?.categories||[],matches=all.filter(c=>normalize(c.name).includes(term));
+    const host=by('category-list'),normalize=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA'),term=normalize(by('category-search').value.trim()),all=current?.categories||[],matches=all.filter(c=>(!c.archived||by('category-show-archived')?.checked)&&(normalize(c.name).includes(term)||(current?.subcategories||[]).some(sub=>sub.category_id===c.id&&(!sub.archived||by('category-show-archived')?.checked)&&normalize(sub.name).includes(term))));
     by('category-count').textContent=matches.length+' / '+all.length;host.replaceChildren();
     for(const c of matches){const row=node('div',undefined,'category-list-row');row.dataset.categoryId=c.id;row.append(node('strong',c.name),button('Modifier',()=>{by('category-edit-choice').value=String(c.id);selectCategory();by('category-manager').open=true;by('category-edit-form').scrollIntoView({block:'center',behavior:'smooth'});by('category-edit-form').elements.name.focus({preventScroll:true});},'text-action'));host.append(row);}
+    document.dispatchEvent(new CustomEvent('budget:categories-rendered'));
     if(!matches.length)host.append(node('p',term?'Aucune catégorie ne correspond à cette recherche.':'Créez votre première catégorie pour commencer.','sub'));
   }
   by('category-search').oninput=renderCategories;
@@ -78,16 +79,17 @@
    for(const select of by('csv-columns').querySelectorAll('select'))select.value=config.mapping[select.dataset.column]??'';
    invalidateCSV();return true;
   };
-  function csvInput(){return {csv,delimiter:by('csv-file-info').dataset.delimiter,account_id:by('csv-account').value,category_id:by('csv-category').value||null,date_format:by('csv-date-format').value,invert_sign:by('csv-invert').checked,affects_balance:by('csv-balance-mode').value==='balance',mapping:Object.fromEntries([...by('csv-columns').querySelectorAll('select')].map(select=>[select.dataset.column,select.value]))};}
+  function csvInput(){return {csv,delimiter:by('csv-file-info').dataset.delimiter,account_id:by('csv-account').value,category_id:by('csv-category').value||null,subcategory_id:by('csv-subcategory')?.value||null,date_format:by('csv-date-format').value,invert_sign:by('csv-invert').checked,affects_balance:by('csv-balance-mode').value==='balance',mapping:Object.fromEntries([...by('csv-columns').querySelectorAll('select')].map(select=>[select.dataset.column,select.value]))};}
   function invalidateCSV(){preview=null;by('csv-preview').hidden=true;by('csv-status').textContent='';}
+  document.addEventListener('budget:csv-category-changed',invalidateCSV);
   for(const id of ['csv-account','csv-category','csv-date-format','csv-invert','csv-balance-mode'])by(id).addEventListener('change',invalidateCSV);
   by('csv-file').onchange=async()=>{
     invalidateCSV();csv='';by('csv-mapping').hidden=true;const file=by('csv-file').files[0];if(!file)return;
     try{
       if(file.size>2_000_000)throw Error('Fichier trop volumineux (2 Mo maximum).');csv=await file.text();const info=await request('/api/import/inspect',{csv});by('csv-file-info').textContent=file.name+' · '+info.count+' opérations · '+info.headers.length+' colonnes';by('csv-file-info').dataset.delimiter=info.delimiter;
       const columns=by('csv-columns');columns.replaceChildren();
-      const guesses={date:/^date|transaction.*date/i,description:/description|libell|merchant|commerce|memo/i,amount:/^montant$|^amount$/i,debit:/d[ée]bit|withdrawal|retrait/i,credit:/cr[ée]dit|deposit|d[ée]p[oô]t/i,category:/cat[ée]gor/i};
-      for(const [key,label] of [['date','Date'],['description','Description'],['amount','Montant signé'],['debit','Débit (si séparé)'],['credit','Crédit (si séparé)'],['category','Catégorie (facultatif)']]){
+      const guesses={date:/^date|transaction.*date/i,description:/description|libell|merchant|commerce|memo/i,amount:/^montant$|^amount$/i,debit:/d[ée]bit|withdrawal|retrait/i,credit:/cr[ée]dit|deposit|d[ée]p[oô]t/i,category:/^cat[ée]gor/i,subcategory:/sous.?cat|sub.?cat/i};
+      for(const [key,label] of [['date','Date'],['description','Description'],['amount','Montant signé'],['debit','Débit (si séparé)'],['credit','Crédit (si séparé)'],['category','Catégorie (facultatif)'],['subcategory','Sous-catégorie (facultatif)']]){
         const field=node('label',label),select=node('select');select.dataset.column=key;select.add(new Option('Non utilisé',''));info.headers.forEach((header,index)=>select.add(new Option(header||'Colonne '+(index+1),index)));const guessed=info.headers.findIndex(header=>guesses[key].test(header));if(guessed>=0)select.value=String(guessed);select.onchange=invalidateCSV;field.append(select);columns.append(field);
       }
       csvHeaders=info.headers;by('csv-mapping').hidden=false;document.dispatchEvent(new CustomEvent('budget:csv-ready',{detail:{headers:info.headers,delimiter:info.delimiter}}));
@@ -101,7 +103,7 @@
     const b=by('csv-preview-button');b.disabled=true;invalidateCSV();
     try{
       preview=await request('/api/import/preview',csvInput());const host=by('csv-preview-rows');host.replaceChildren();
-      for(const r of preview.rows){const tr=node('tr'),choice=node('td'),input=node('input');input.type='checkbox';input.value=r.row;input.setAttribute('aria-label','Importer la ligne '+r.row);input.checked=!r.error&&!r.duplicate;input.disabled=!!r.error||r.duplicate;input.dataset.duplicate=r.duplicate?'true':'false';input.dataset.invalid=r.error?'true':'false';input.onchange=selectionSummary;choice.append(input);tr.append(choice,node('td',r.date||'—'),node('td',r.description||'Ligne '+(r.row+1)),node('td',r.amount_cents===undefined?'—':money(r.amount_cents)),node('td',r.error||(r.duplicate?'Doublon possible':'Prête'),r.error?'negative':r.duplicate?'duplicate-label':''));host.append(tr);}
+      for(const r of preview.rows){const tr=node('tr'),choice=node('td'),input=node('input');input.type='checkbox';input.value=r.row;input.setAttribute('aria-label','Importer la ligne '+r.row);input.checked=!r.error&&!r.duplicate;input.disabled=!!r.error||r.duplicate;input.dataset.duplicate=r.duplicate?'true':'false';input.dataset.invalid=r.error?'true':'false';input.onchange=selectionSummary;choice.append(input);tr.append(choice,node('td',r.date||'—'),node('td',r.description||'Ligne '+(r.row+1)),node('td',r.amount_cents===undefined?'—':money(r.amount_cents)),node('td',(current.categories.find(c=>c.id===r.category_id)?.name||'Non classé')+(r.subcategory_id?' › '+(current.subcategories.find(s=>s.id===r.subcategory_id)?.name||''):'')),node('td',r.error||(r.duplicate?'Doublon possible':'Prête'),r.error?'negative':r.duplicate?'duplicate-label':''));host.append(tr);}
       by('csv-allow-duplicates').checked=false;const summary=by('csv-summary');summary.replaceChildren();for(const [label,value] of [['Opérations',preview.rows.length],['Doublons possibles',preview.rows.filter(r=>r.duplicate).length],['Lignes invalides',preview.rows.filter(r=>r.error).length]]){const item=node('div',undefined,'feature-metric');item.append(node('span',label),node('strong',value));summary.append(item);}by('csv-preview').hidden=false;selectionSummary();
     }catch(e){by('csv-status').textContent=e.message;}finally{b.disabled=false;}
   };
@@ -134,10 +136,10 @@
   const oldRender=render;
   render=function(s){
     oldRender(s);current=s;
-    for(const [id,empty] of [['transaction-category','Non classé'],['v2-edit-category','Non classé'],['v3-category-filter','Toutes'],['csv-category','Non classé'],['budget-category',undefined]])options(by(id),s.categories||[],empty);
+    for(const [id,empty] of [['transaction-category','Non classé'],['v2-edit-category','Non classé'],['v3-category-filter','Toutes'],['csv-category','Non classé'],['budget-category',undefined]])options(by(id),s.categories||[],empty,['v2-edit-category','v3-category-filter'].includes(id));
     for(const [id,empty] of [['report-account','Tous les comptes'],['csv-account',undefined],['balance-account',undefined]])options(by(id),s.accounts||[],empty);
     const merchants=by('recent-merchants');merchants.replaceChildren();for(const item of s.recent_descriptions||[])merchants.append(new Option(item.description,item.description));
-    renderCategories();options(by('category-edit-choice'),s.categories||[]);if(!categoryEditing||categoryEditing.id!==Number(by('category-edit-choice').value))selectCategory();
+    renderCategories();options(by('category-edit-choice'),s.categories||[],undefined,true);if(!categoryEditing||categoryEditing.id!==Number(by('category-edit-choice').value))selectCategory();
     renderGoals();const history=by('balance-history');history.replaceChildren();for(const row of s.balance_reconciliations||[]){const line=node('div',undefined,'audit-row');line.append(node('strong',row.account_name),node('span',money(row.old_balance_cents)+' → '+money(row.new_balance_cents)),node('small',row.happened_on+' · '+row.note));history.append(line);}
     if(document.querySelector('[data-view="bilan"].active'))loadReport();
   };
