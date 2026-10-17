@@ -1,5 +1,6 @@
 import {createHash} from 'node:crypto';
 export const normalizeCategory=value=>String(value).normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA').replace(/\s+/g,' ').trim();
+export const isUncategorizedName=name=>normalizeCategory(name).replace(/[-‐‑–—]/g,' ').replace(/\s+/g,' ')==='non categorise';
 export const lunchMoneyGroups=[
  {name:'Revenus',categories:['Salaire Alex','Salaire Jenny','Allocation canadienne pour enfants','Allocation famille','Rente RRQ','Rente FRV',"Remboursement d'assurance", "Remboursement d'impôt",'Autres revenus']},
  {name:'Dépenses fixes',categories:['Frais bancaires','Hydro-Québec','Ligne de crédit','Marge de crédit','REEE','MNP','Pension alimentaire','Cellulaires','TELUS','IPTV','Abonnements numériques','Assurances Vie','Assurances Auto','Assurance Habitation','Paiement auto','Permis et Plaque','Garderie','Taxes (municipales et scolaires)']},
@@ -26,7 +27,23 @@ export function createCategoryTools({db,atomic,exportBackup,today}){
   const rows=lunchMoneyGroups.flatMap(group=>group.categories.map(name=>{const existing=categories.find(c=>catalogName(c.name)===catalogName(name))||categories.find(c=>(aliases[name]||[]).some(a=>catalogName(c.name)===catalogName(a)));return {name,group:group.name,existing_id:existing?.id||null,existing_name:existing?.name||null,action:existing?(existing.archived?'reactivate':'reuse'):'create',children:name==='Frais bancaires'?names.map(child=>{const old=children.find(c=>c.category_id===existing?.id&&normalizeCategory(c.name)===normalizeCategory(child));return {name:child,existing_id:old?.id||null,action:old?(old.archived?'reactivate':'reuse'):'create'};}):[]};}));
   return {rows,create_count:rows.filter(r=>r.action==='create').length,reuse_count:rows.filter(r=>r.action==='reuse').length,reactivate_count:rows.filter(r=>r.action==='reactivate').length,token:createHash('sha256').update(JSON.stringify([exportBackup().tables,today(),rows])).digest('hex')};
  }
+ function deletionPreview(x){
+  const source=parent(x.id),target=x.target_id?parent(x.target_id):null;if(!source||isUncategorizedName(source.name)||x.target_id&&(!target||target.archived||target.id===source.id))throw Error('Choisissez une catégorie à supprimer et une destination active différente. Non-catégorisé reste disponible.');
+  const merge=target?mergePreview({source_id:source.id,target_id:target.id}):null;let rules=[];try{rules=JSON.parse(q("SELECT value FROM app_settings WHERE key='v50_rules'")[0]?.value||'[]');}catch{}if(!Array.isArray(rules))rules=[];
+  return {source,target,mapping:merge?.mapping||[],count:q('SELECT COUNT(*) n FROM transactions WHERE category_id=?',source.id)[0].n,children:q('SELECT COUNT(*) n FROM subcategories WHERE category_id=?',source.id)[0].n,rules_count:rules.filter(r=>r&&Number(r.category_id)===source.id).length,source_limit_cents:q('SELECT limit_cents FROM category_budgets WHERE category_id=?',source.id)[0]?.limit_cents??null,combined_limit_cents:merge?.combined_limit_cents??null,token:createHash('sha256').update(JSON.stringify([exportBackup().tables,today(),'delete',source.id,target?.id||null])).digest('hex')};
+ }
+ function deleteCategory(x){
+  const p=deletionPreview(x);if(x.token!==p.token||x.confirm!==true)throw Error('Le budget a changé ou la confirmation manque. Recommencez l’aperçu.');
+  atomic(()=>{
+   const children=new Map();if(p.target){for(const sub of p.mapping){const id=sub.target_id||Number(run('INSERT INTO subcategories(category_id,name,archived) VALUES(?,?,?)',p.target.id,sub.name,sub.archived).lastInsertRowid);children.set(sub.id,id);run('UPDATE transactions SET subcategory_id=? WHERE category_id=? AND subcategory_id=?',id,p.source.id,sub.id);}run('UPDATE transactions SET category_id=? WHERE category_id=?',p.target.id,p.source.id);}else run('UPDATE transactions SET category_id=NULL,subcategory_id=NULL WHERE category_id=?',p.source.id);
+   const raw=q("SELECT value FROM app_settings WHERE key='v50_rules'")[0];if(raw){let rules;try{rules=JSON.parse(raw.value);}catch{}if(Array.isArray(rules)&&rules.some(r=>r&&Number(r.category_id)===p.source.id)){for(const r of rules)if(r&&Number(r.category_id)===p.source.id){r.category_id=p.target?.id||null;r.subcategory_id=p.target?(children.get(r.subcategory_id)||null):null;if(!p.target)r.active=false;}run("UPDATE app_settings SET value=? WHERE key='v50_rules'",JSON.stringify(rules));}}
+   run('DELETE FROM category_budgets WHERE category_id=?',p.source.id);if(p.target&&p.combined_limit_cents!==null)run('INSERT INTO category_budgets(category_id,limit_cents) VALUES(?,?) ON CONFLICT(category_id) DO UPDATE SET limit_cents=excluded.limit_cents',p.target.id,p.combined_limit_cents);
+   run('DELETE FROM subcategories WHERE category_id=?',p.source.id);run('DELETE FROM categories WHERE id=?',p.source.id);const assignments=catalog().assignments;delete assignments[p.source.id];saveGroups(assignments);
+  });
+ }
  function post(route,x){
+  if(route==='/api/categories/delete-preview')return deletionPreview(x);
+  if(route==='/api/categories/delete')return deleteCategory(x);
   if(route==='/api/categories/catalog-preview')return catalogPreview();
   if(route==='/api/categories/catalog-apply'){
    const preview=catalogPreview();if(x.token!==preview.token)throw Error('Le budget a changé depuis l’aperçu. Recommencez.');

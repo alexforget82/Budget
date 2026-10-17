@@ -1,3 +1,4 @@
+import {isUncategorizedName} from './category-tools.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -124,7 +125,7 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     const conditions=['substr(t.happened_on,1,7)=?'],values=[month];if(account){conditions.push('t.account_id=?');values.push(Number(account));}
     const filter=conditions.join(' AND ');
     const totals=q(`SELECT COALESCE(SUM(CASE WHEN amount_cents>0 THEN amount_cents ELSE 0 END),0) income_cents,COALESCE(SUM(CASE WHEN amount_cents<0 THEN -amount_cents ELSE 0 END),0) expense_cents,COUNT(*) count FROM transactions t WHERE ${filter}`,...values)[0];
-    const groups=q(`SELECT t.category_id,COALESCE(c.name,'Non classé') name,SUM(-t.amount_cents) expense_cents FROM transactions t LEFT JOIN categories c ON c.id=t.category_id WHERE ${filter} AND t.amount_cents<0 GROUP BY t.category_id ORDER BY expense_cents DESC`,...values);
+    const groups=q(`SELECT t.category_id,COALESCE(c.name,'Non-catégorisé') name,SUM(-t.amount_cents) expense_cents FROM transactions t LEFT JOIN categories c ON c.id=t.category_id WHERE ${filter} AND t.amount_cents<0 GROUP BY t.category_id ORDER BY expense_cents DESC`,...values);
     const budgets=q('SELECT c.id,c.name,b.limit_cents FROM categories c LEFT JOIN category_budgets b ON b.category_id=c.id ORDER BY c.name');
     const subgroups=q(`SELECT t.category_id,t.subcategory_id,COALESCE(s.name,'Sans sous-catégorie') name,SUM(-t.amount_cents) expense_cents FROM transactions t LEFT JOIN subcategories s ON s.id=t.subcategory_id WHERE ${filter} AND t.amount_cents<0 GROUP BY t.category_id,t.subcategory_id ORDER BY expense_cents DESC`,...values);
     return {month,...totals,net_cents:totals.income_cents-totals.expense_cents,groups,subgroups,budgets};
@@ -150,7 +151,7 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
         else{const debit=cols.debit===null?0:bankAmount(row[cols.debit])||0,credit=cols.credit===null?0:bankAmount(row[cols.credit])||0;if(debit<0||credit<0||(debit&&credit))throw Error('Débit et crédit doivent être positifs et distincts.');amount=credit-debit;}
         if(x.invert_sign===true)amount=-amount;if(!amount)throw Error('Montant nul ou manquant.');
         const key=JSON.stringify([date,description.toLowerCase(),amount]),duplicate=seen.has(key);seen.add(key);
-        const resolved=cols.category===null?category:categories.get(row[cols.category].trim().toLowerCase())??category;let child=resolved===category?sub:null;if(cols.subcategory!==null&&row[cols.subcategory].trim()){const name=row[cols.subcategory].trim().normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA');child=q('SELECT * FROM subcategories WHERE category_id=? AND archived=0',resolved).find(s=>s.name.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA')===name)?.id;if(!child)throw Error('Sous-catégorie inconnue pour cette catégorie.');}return {row:index+1,date,description,amount_cents:amount,category_id:resolved,subcategory_id:child,duplicate};
+        const resolved=cols.category===null?category:isUncategorizedName(row[cols.category])?null:categories.get(row[cols.category].trim().toLowerCase())??category;let child=resolved===category?sub:null;if(cols.subcategory!==null&&row[cols.subcategory].trim()){const name=row[cols.subcategory].trim().normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA');child=q('SELECT * FROM subcategories WHERE category_id=? AND archived=0',resolved).find(s=>s.name.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA')===name)?.id;if(!child)throw Error('Sous-catégorie inconnue pour cette catégorie.');}return {row:index+1,date,description,amount_cents:amount,category_id:resolved,subcategory_id:child,duplicate};
       }catch(e){return {row:index+1,error:e.message};}
     });
     return {...parsed,rows,fingerprint:createHash('sha256').update(JSON.stringify([x.csv,x.delimiter,x.mapping,x.account_id,x.date_format,x.category_id,x.subcategory_id,x.invert_sign,x.affects_balance])).digest('hex')};
@@ -166,7 +167,7 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
   function post(route,x){
     if(route==='/api/categories'||route==='/api/categories/update'){
       const name=typeof x.name==='string'?x.name.trim():'';
-      if(!name||name.length>60)throw Error('Nom de catégorie requis (60 caractères maximum).');
+      if(!name||name.length>60)throw Error('Nom de catégorie requis (60 caractères maximum).');if(isUncategorizedName(name))throw Error('Non-catégorisé est déjà disponible et reste protégé.');
       const id=route.endsWith('/update')?categoryId(x.id,true):null;
       if(route.endsWith('/update')&&!id)throw Error('Catégorie introuvable.');
       if(id&&x.expected_name!==q('SELECT name FROM categories WHERE id=?',id)[0].name)throw Error('Cette catégorie a changé. Actualisez avant de la renommer.');
@@ -186,5 +187,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'5.1.1',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'5.1.2',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

@@ -1,4 +1,4 @@
-# Mon Budget 5.1.1
+# Mon Budget 5.1.2
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,23 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.1.2 : supprimer des catégories et garder Non-catégorisé
+
+Dans **Catégories**, chaque catégorie possède un bouton **Supprimer**, y compris les catégories fournies à l’installation et les catégories archivées. Choisissez la destination des transactions, consultez **Voir l’effet de la suppression**, puis **Confirmer la suppression**.
+
+**Non-catégorisé** est le choix par défaut, permanent et protégé. Les transactions déjà sans catégorie y apparaissent automatiquement; les nouveaux achats sans classement l’utilisent également. Le bouton **Voir ces transactions** ouvre l’historique avec le filtre correspondant. Le même libellé apparaît dans les sélecteurs, rapports et exports.
+
+- Vers **Non-catégorisé** : les transactions conservent leurs montants, comptes, dates et enveloppes. Leurs catégories et sous-catégories sont retirées. Les règles de classement de la catégorie deviennent inactives, à modifier dans Ma prochaine paie → Règles. Le plafond mensuel de suivi est retiré; aucune réserve d’enveloppe n’est libérée.
+- Vers une **autre catégorie active** : les transactions et règles sont réaffectées, les sous-catégories reprises sans doublon et les plafonds mensuels de suivi additionnés. La catégorie source est ensuite supprimée, contrairement à Fusionner qui conserve une source archivée.
+- L’aperçu indique les transactions, sous-catégories, règles et plafonds concernés. Une confirmation manquante ou un aperçu devenu périmé est refusé. L’opération est atomique et peut être annulée par Annuler la dernière modification.
+- Une catégorie supprimée ne réapparaît pas au redémarrage ou à la mise à jour. **Reprendre ma liste Lunch Money** est une action explicite qui peut recréer les catégories manquantes de cette liste.
+
+Les soldes, réserves, virements et prévisions restent identiques lors d’une suppression de catégorie. Le classement Non-catégorisé utilise les opérations déjà sans catégorie; aucune migration des montants ni des identifiants de transactions n’est nécessaire.
+
+`npm test` vérifie 52 tests Node et 65 tests API. `python3 tests/categories-v512-ui.py` vérifie la suppression réelle, la conservation des opérations et des calculs, le classement par défaut et son filtre après une nouvelle transaction, le mode sombre, le mobile et la persistance. Les tests API vérifient aussi la destination alternative, les sous-catégories, les règles, les plafonds, l’annulation et le redémarrage.
+
+Aperçus fictifs : [catégories et classement par défaut](docs/v512-non-categorise.png) · [sur iPhone](docs/v512-non-categorise-iphone.png).
 
 ## Nouveautés 5.1.1 : votre liste Lunch Money
 
@@ -61,7 +78,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.1**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.2**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 

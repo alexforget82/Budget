@@ -4,7 +4,7 @@
   const money=value=>(value/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
   const node=(tag,text,className)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;};
   const button=(text,action,cls='secondary')=>{const b=node('button',text,cls);b.type='button';b.onclick=action;return b;};
-  const options=(select,items,empty,includeArchived=false)=>{const old=select.value;select.replaceChildren();if(empty!==undefined)select.add(new Option(empty,''));for(const item of items)if(includeArchived||!item.archived)select.add(new Option(item.name+(item.archived?' (archivée)':''),item.id));if([...select.options].some(o=>o.value===old))select.value=old;};
+  const options=(select,items,empty,includeArchived=false)=>{const old=select.value;select.replaceChildren();if(empty!==undefined)select.add(new Option(empty,''));if(select.id==='v3-category-filter')select.add(new Option('Non-catégorisé','uncategorized'));for(const item of items)if(includeArchived||!item.archived)select.add(new Option(item.name+(item.archived?' (archivée)':''),item.id));if([...select.options].some(o=>o.value===old))select.value=old;};
   let current,reportRequest=0,csv='',preview=null,restoreBackup=null,balancePreview=null;
   async function request(url,data){
     const response=await fetch(url,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
@@ -103,7 +103,7 @@
     const b=by('csv-preview-button');b.disabled=true;invalidateCSV();
     try{
       preview=await request('/api/import/preview',csvInput());const host=by('csv-preview-rows');host.replaceChildren();
-      for(const r of preview.rows){const tr=node('tr'),choice=node('td'),input=node('input');input.type='checkbox';input.value=r.row;input.setAttribute('aria-label','Importer la ligne '+r.row);input.checked=!r.error&&!r.duplicate;input.disabled=!!r.error||r.duplicate;input.dataset.duplicate=r.duplicate?'true':'false';input.dataset.invalid=r.error?'true':'false';input.onchange=selectionSummary;choice.append(input);tr.append(choice,node('td',r.date||'—'),node('td',r.description||'Ligne '+(r.row+1)),node('td',r.amount_cents===undefined?'—':money(r.amount_cents)),node('td',(current.categories.find(c=>c.id===r.category_id)?.name||'Non classé')+(r.subcategory_id?' › '+(current.subcategories.find(s=>s.id===r.subcategory_id)?.name||''):'')),node('td',r.error||(r.duplicate?'Doublon possible':'Prête'),r.error?'negative':r.duplicate?'duplicate-label':''));host.append(tr);}
+      for(const r of preview.rows){const tr=node('tr'),choice=node('td'),input=node('input');input.type='checkbox';input.value=r.row;input.setAttribute('aria-label','Importer la ligne '+r.row);input.checked=!r.error&&!r.duplicate;input.disabled=!!r.error||r.duplicate;input.dataset.duplicate=r.duplicate?'true':'false';input.dataset.invalid=r.error?'true':'false';input.onchange=selectionSummary;choice.append(input);tr.append(choice,node('td',r.date||'—'),node('td',r.description||'Ligne '+(r.row+1)),node('td',r.amount_cents===undefined?'—':money(r.amount_cents)),node('td',(current.categories.find(c=>c.id===r.category_id)?.name||'Non-catégorisé')+(r.subcategory_id?' › '+(current.subcategories.find(s=>s.id===r.subcategory_id)?.name||''):'')),node('td',r.error||(r.duplicate?'Doublon possible':'Prête'),r.error?'negative':r.duplicate?'duplicate-label':''));host.append(tr);}
       by('csv-allow-duplicates').checked=false;const summary=by('csv-summary');summary.replaceChildren();for(const [label,value] of [['Opérations',preview.rows.length],['Doublons possibles',preview.rows.filter(r=>r.duplicate).length],['Lignes invalides',preview.rows.filter(r=>r.error).length]]){const item=node('div',undefined,'feature-metric');item.append(node('span',label),node('strong',value));summary.append(item);}by('csv-preview').hidden=false;selectionSummary();
     }catch(e){by('csv-status').textContent=e.message;}finally{b.disabled=false;}
   };
@@ -136,7 +136,7 @@
   const oldRender=render;
   render=function(s){
     oldRender(s);current=s;
-    for(const [id,empty] of [['transaction-category','Non classé'],['v2-edit-category','Non classé'],['v3-category-filter','Toutes'],['csv-category','Non classé'],['budget-category',undefined]])options(by(id),s.categories||[],empty,['v2-edit-category','v3-category-filter'].includes(id));
+    for(const [id,empty] of [['transaction-category','Non-catégorisé'],['v2-edit-category','Non-catégorisé'],['v3-category-filter','Toutes'],['csv-category','Non-catégorisé'],['budget-category',undefined]])options(by(id),s.categories||[],empty,['v2-edit-category','v3-category-filter'].includes(id));
     for(const [id,empty] of [['report-account','Tous les comptes'],['csv-account',undefined],['balance-account',undefined]])options(by(id),s.accounts||[],empty);
     const merchants=by('recent-merchants');merchants.replaceChildren();for(const item of s.recent_descriptions||[])merchants.append(new Option(item.description,item.description));
     renderCategories();options(by('category-edit-choice'),s.categories||[],undefined,true);if(!categoryEditing||categoryEditing.id!==Number(by('category-edit-choice').value))selectCategory();
