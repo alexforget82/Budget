@@ -20,6 +20,7 @@ export function createPlanningActions({db,snapshot,atomic,addTransaction,validat
     else run('INSERT INTO envelope_budget_overrides(envelope_id,occurrence_on,budget_cents) VALUES(?,?,?) ON CONFLICT(envelope_id,occurrence_on) DO UPDATE SET budget_cents=excluded.budget_cents',row.envelope_id,original,amount);
    });return;
   }
+  if(x.action==='confirm'&&!x.actual_id&&row.unmatched_payment_ids?.length&&x.allow_new_payment!==true)throw Error('Un virement réel existe près de cette échéance. Associez-le ou confirmez explicitement qu’il s’agit d’un nouveau paiement distinct.');
   let amount=cents(x.amount),date=x.happened_on,actual=null;
   const kind=row.type==='transfer'?'transfer':'transaction';
   if(x.actual_id){

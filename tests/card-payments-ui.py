@@ -1,0 +1,35 @@
+"""Card-to-bank payment plans, simulated financial data only."""
+import importlib.util,os,shutil,sys,tempfile,datetime
+from pathlib import Path
+sys.dont_write_bytecode=True
+from ui_navigation import navigate
+from playwright.sync_api import sync_playwright,expect
+spec=importlib.util.spec_from_file_location('budget_api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
+f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-cards-ui-'))
+try:
+ today=datetime.date.today();day=lambda n:(today+datetime.timedelta(days=n)).isoformat();aid=f.account(balance=2000);cid=f.account('credit',5000)
+ for ident,name,kind,balance,included in [(aid,'Conjoint','checking',2000,True),(cid,'CIBC','credit',5000,False)]:f.post('/api/accounts/update',{'id':ident,'name':name,'kind':kind,'balance':balance,'included':included})
+ s=f.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':day(0),'forecast_account_id':cid});eid=s['envelopes'][0]['id']
+ s=f.post('/api/recurring',{'description':'Ancien paiement CIBC','type':'transfer','amount':230,'account_id':aid,'to_account_id':cid,'start_on':day(1),'frequency':'weekly'});rid=s['recurring'][0]['id']
+ with sync_playwright() as p:
+  browser=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1100});page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
+  page.goto(f.base);page.wait_for_selector('.bank-card',state='attached');navigate(page,'comptes');card=page.locator(f'.bank-card[data-account-id="{cid}"]');card.get_by_role('button',name='Planifier les remboursements').click();dialog=page.locator('#card-payment-dialog');form=page.locator('#card-payment-form');expect(dialog).to_be_visible();expect(form.locator('[name="from_account_id"]')).to_have_value(str(aid));expect(form.locator('[name="replace_recurring_id"]')).to_be_visible();form.locator('[name="replace_recurring_id"]').select_option(str(rid));expect(form.locator('[name="start_on"]')).to_have_value(day(1));form.get_by_role('button',name='Enregistrer le plan').click();expect(dialog).not_to_be_visible()
+  s=f.get('/api/state');assert len(s['card_payment_plans'])==1 and len(s['recurring'])==1;assert s['cash_cents']==200000 and s['safe_cents']==177000 and s['credit_reserved_cents']==0
+  expect(page.locator('.card-payment-next-amount')).to_have_text('230,00 $');page.locator('.card-payment-summary>.bridge-detail>summary').click();expect(page.locator('.card-payment-occurrence').first).to_contain_text('230,00');page.evaluate('scrollTo(0,0)');page.screenshot(path=str(images/'remboursement-carte.png'),full_page=True)
+  navigate(page,'recurrences');tile=page.locator(f'.recurrence-tile[data-recurring-id="{rid}"]');expect(tile.locator('.rule-amount')).to_have_text('230,00 $');tile.get_by_role('button',name='Modifier',exact=True).click();expect(dialog).to_be_visible();expect(page.locator('#recurring')).to_be_hidden();dialog.get_by_role('button',name='Fermer',exact=True).click()
+  navigate(page,'calendrier');page.locator(f'.cal-cell[data-date="{day(0)}"]').click();expect(page.locator('#cal-detail')).to_contain_text('sur CIBC');page.locator(f'.cal-cell[data-date="{day(1)}"]').click();expect(page.locator('#cal-detail')).to_contain_text('Paiement CIBC depuis Conjoint');expect(page.locator('#cal-detail')).to_contain_text('230,00')
+  # Record a 215 actual purchase instead of the 230 envelope estimate.
+  erow=next(r for r in f.get('/api/state')['planning']['rows'] if r['source']=='envelope' and r['date']==day(0));f.planning_action(erow,amount=215,happened_on=day(0),account_id=cid)
+  s=f.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':215,'description':'Opération bancaire','happened_on':day(0)});tid=s['calendar_transfers'][0]['id'];page.reload();navigate(page,'suivi');page.locator('[data-inbox-filter="week"]').click();key=f'rec-{rid}|{day(1)}';queue=page.locator(f'.inbox-card[data-key="{key}"]');expect(queue).to_contain_text('215,00');queue.get_by_role('button',name='Confirmer le réel').click();action=page.locator('#planning-action-dialog');action.locator('[name="entry_mode"]').select_option('existing');action.locator('[name="actual_id"]').select_option(str(tid));action.get_by_role('button',name='Valider le réel').click();expect(action).not_to_be_visible();expect(queue).to_have_count(0);s=f.get('/api/state');assert s['cash_cents']==178500 and len(s['calendar_transfers'])==1;assert next(r for r in s['planning']['rows'] if r['key']==key)['actual_cents']==21500
+  navigate(page,'comptes');page.locator('.card-payment-summary').get_by_role('button',name='Modifier le plan').click();form.locator('[name="mode"]').select_option('fixed');expect(form.locator('[name="amount"]')).to_be_visible();form.locator('[name="amount"]').fill('100');form.get_by_role('button',name='Enregistrer le plan').click();expect(dialog).not_to_be_visible();expect(page.locator('.card-payment-next-amount')).to_have_text('100,00 $');assert f.get('/api/state')['cash_cents']==178500
+  page.locator('.card-payment-summary').get_by_role('button',name='Modifier le plan').click();form.locator('[name="active"]').uncheck();form.get_by_role('button',name='Enregistrer le plan').click();expect(page.locator('.card-payment-summary')).to_contain_text('Plan en pause');page.locator('.card-payment-summary').get_by_role('button',name='Modifier le plan').click();form.locator('[name="active"]').check();form.locator('[name="mode"]').select_option('purchases');form.get_by_role('button',name='Enregistrer le plan').click();expect(page.locator('.card-payment-next-amount')).to_have_text('230,00 $')
+  before=f.get('/api/backup/export')['tables']
+  for width in [375,390,768,1024,1440]:
+   page.set_viewport_size({'width':width,'height':1000})
+   for view in ['comptes','recurrences','prevision','suivi','calendrier']:
+    navigate(page,view);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,view)
+   navigate(page,'comptes');page.locator('.card-payment-summary').get_by_role('button',name='Modifier le plan').click();assert dialog.evaluate('(d)=>d.scrollWidth<=d.clientWidth+1'),width;dialog.get_by_role('button',name='Fermer',exact=True).click()
+  page.set_viewport_size({'width':390,'height':844});page.locator('#card-payments-panel').scroll_into_view_if_needed();page.locator('#card-payments-panel').screenshot(path=str(images/'mobile-remboursement.png'));assert f.get('/api/backup/export')['tables']==before;assert not errors,errors;browser.close()
+ print('PASS: reuse one existing payment rule, computed 230 proposal, no card reserve, credit-purchase calendar and bank repayment, plan editor from recurring card, actual 215 purchase/payment associated without another debit, fixed amount, pause/resume, five views and editor at five widths, no financial writes from browsing.')
+ print('Captures fictives :',images)
+finally:f.tearDown()

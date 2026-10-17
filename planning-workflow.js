@@ -45,17 +45,19 @@
   const newDate=n('input');newDate.type='date';newDate.name='new_on';newDate.min=current.forecast[0].date;newDate.max=current.forecast.at(-1).date;newDate.value=row.date<newDate.min?newDate.min:row.date;newDate.required=true;
   const account=n('select');account.name='account_id';account.required=true;for(const a of current.accounts){const o=n('option',a.name);o.value=a.id;account.append(o);}const blank=n('option','Choisir un compte');blank.value='';account.prepend(blank);account.value=row.account_id||'';account.disabled=row.source==='recurring';
   const entry=n('select');entry.name='entry_mode';for(const [value,label] of [['new','À enregistrer maintenant'],['existing','Déjà saisie — associer l’opération']]){const o=n('option',label);o.value=value;entry.append(o);}
+  if(row.unmatched_payment_ids?.length)entry.value='existing';
+  const distinct=n('input');distinct.type='checkbox';distinct.name='allow_new_payment';const distinctLabel=field('Ce paiement est distinct des virements déjà saisis',distinct);distinctLabel.className='inline-choice';
   const actual=n('select');actual.name='actual_id';const actualLabel=field('Opération réelle à associer',actual),amountLabel=field(action==='adjust'?'Montant total prévu ($)':'Montant réellement passé ($)',amount),dateLabel=field('Date réelle',realDate),accountLabel=field('Compte',account);
   const complete=n('input');complete.type='checkbox';complete.name='complete_period';complete.checked=true;const completeLabel=field('Aucun autre achat prévu pour cette période',complete);completeLabel.className='inline-choice';completeLabel.hidden=row.source!=='envelope';
   const preview=n('p',undefined,'action-preview');
   function sync(){
    const selected=actual.value;actual.replaceChildren();const empty=n('option','Choisir l’opération déjà enregistrée');empty.value='';actual.append(empty);
    const options=candidates(row,account.value);for(const t of options){const option=n('option',date(t.happened_on)+' · '+t.description+' · '+cash(Math.abs(t.amount_cents)));option.value=t.id;actual.append(option);}actual.value=options.some(t=>String(t.id)===selected)?selected:'';
-   const existing=entry.value==='existing';actualLabel.hidden=!existing;actual.required=existing;amountLabel.hidden=existing;amount.required=!existing;dateLabel.hidden=existing;realDate.required=!existing;account.required=row.source==='envelope';
+   const existing=entry.value==='existing';distinctLabel.hidden=existing||!row.unmatched_payment_ids?.length;distinct.required=!distinctLabel.hidden;actualLabel.hidden=!existing;actual.required=existing;amountLabel.hidden=existing;amount.required=!existing;dateLabel.hidden=existing;realDate.required=!existing;account.required=row.source==='envelope';
    explanation.textContent=existing?'Le solde bancaire ne changera pas : cette opération y est déjà incluse.':row.type==='transfer'?'Un seul virement sera enregistré entre les deux comptes.':'Une transaction sera enregistrée et remplacera cette prévision. Si elle est déjà saisie, choisissez l’association ci-dessus.';
    preview.textContent=existing&&!options.length?'Aucune opération compatible sur ce compte. Vérifiez le compte ou enregistrez une nouvelle opération.':row.type==='transfer'?'Destination : '+(current.accounts.find(a=>a.id===row.to_account_id)?.name||'Compte'):'';
   }
-  if(action==='confirm'){form.append(field('Cette opération est-elle déjà dans l’historique ?',entry),accountLabel,actualLabel,amountLabel,dateLabel,completeLabel,preview,explanation);entry.onchange=sync;account.onchange=sync;sync();}
+  if(action==='confirm'){form.append(field('Cette opération est-elle déjà dans l’historique ?',entry),accountLabel,actualLabel,amountLabel,dateLabel,completeLabel,distinctLabel,preview,explanation);entry.onchange=sync;account.onchange=sync;sync();}
   if(action==='adjust'){form.append(amountLabel,n('p','Seule cette occurrence changera. Les soldes réels et les autres dates restent inchangés.','quiet-copy'));}
   if(action==='move'){form.append(field('Nouvelle date prévue',newDate),n('p',row.source==='envelope'?'La dépense change de date. Le renouvellement de la réserve conserve sa date habituelle.':'Seule cette occurrence change de date.','quiet-copy'));}
   if(action==='skip'){form.append(n('p','Cette occurrence sera retirée de la prévision. Aucun mouvement bancaire ne sera créé. Vous pourrez la rétablir dans l’historique.'));}
@@ -64,7 +66,7 @@
   form.onsubmit=async event=>{
    event.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';
    const payload={key:row.key,signature:row.signature,action};if(action==='move')payload.new_on=newDate.value;if(action==='adjust')payload.amount=Number(amount.value);
-   if(action==='confirm'){payload.account_id=Number(account.value);payload.complete_period=complete.checked;if(entry.value==='existing')payload.actual_id=Number(actual.value);else{payload.amount=Number(amount.value);payload.happened_on=realDate.value;}}
+   if(action==='confirm'){payload.account_id=Number(account.value);payload.complete_period=complete.checked;payload.allow_new_payment=distinct.checked;if(entry.value==='existing')payload.actual_id=Number(actual.value);else{payload.amount=Number(amount.value);payload.happened_on=realDate.value;}}
    try{const response=await fetch('/api/planning/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),out=await response.json();if(!response.ok)throw Error(out.error||'Enregistrement impossible.');render(out);message.textContent=({confirm:'Opération réelle confirmée. La prévision a été mise à jour.',move:'Échéance reportée. Les soldes réels restent inchangés.',adjust:'Montant prévu mis à jour.',skip:'Occurrence annulée. Elle reste accessible dans l’historique.'})[action];dialog.close();}
    catch(err){error.textContent=err.message;refresh.hidden=false;}finally{busy=false;save.disabled=false;}
   };

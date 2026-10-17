@@ -123,3 +123,15 @@ sur la base v3, notamment après un import en mode historique.
 
 L’archive ne contient aucune donnée financière personnelle.
 Safari réel et vos données réelles restent à vérifier sur votre Mac.
+
+VERSION 3.4 — REMBOURSEMENTS DE CARTES
+Arrêtez l’ancienne instance avant de démarrer le nouveau dossier. Copiez votre
+ancien dossier data complet dans le nouveau dossier, en conservant l’original.
+Gardez tous les fichiers du ZIP ensemble, notamment les trois card-payments*.js.
+Pour votre accès privé iPhone, relancez Acces prive iPhone.command depuis le
+nouveau dossier, puis rechargez Safari sur l’iPhone avec Tailscale connecté.
+Dans Comptes > CIBC > Planifier les remboursements, choisissez Conjoint,
+la date et la fréquence. Réutilisez le virement récurrent existant s’il y en a un.
+Aucune réserve automatique du solde de carte n’est créée. Les paiements déjà
+saisis doivent être associés dans À confirmer, pour éviter de les déduire deux fois.
+L’application ne transmet aucun paiement à votre banque.

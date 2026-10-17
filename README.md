@@ -1,4 +1,4 @@
-# Mon Budget 3.3
+# Mon Budget 3.4
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -8,6 +8,18 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Nouveau : remboursements de cartes prévus
+
+Dans **Comptes → CIBC → Planifier les remboursements**, choisissez **Conjoint**, la première date et la fréquence. Deux modes sont disponibles : **selon les achats** de la période ou **montant fixe**. Si un virement récurrent existe déjà, sélectionnez-le pour le réutiliser.
+
+Un achat d’épicerie de 230 $ sur CIBC le jeudi augmente le solde de la carte; son remboursement prévu le vendredi diminue Conjoint à cette date. Le calendrier distingue les deux. Le détail du plan explique les achats, remboursements marchands et reports qui composent chaque proposition. Le mode calculé ne rembourse pas automatiquement l’ancien solde total de la carte et ne crée **aucune réserve automatique pour les cartes**.
+
+Le calcul inclut les achats réels et prévus de chaque période, les remboursements marchands et les achats non remboursés après un paiement partiel. Une carte déjà créditrice limite le montant proposé. Vous pouvez ajuster une échéance dans le suivi. L’application ne fait aucun virement bancaire : confirmez uniquement les paiements réellement effectués. Si un virement est déjà saisi, associez-le dans **À confirmer**; un paiement distinct demande une confirmation explicite pour éviter un double débit.
+
+La configuration du plan ne modifie pas vos soldes réels. Une copie SQLite est créée avant la migration dans `data/backups/budget-before-card-payments.sqlite`. Les anciennes sauvegardes JSON restent importables. Les prévisions historiques utilisent les règles actuelles; elles ne constituent pas un historique immuable des anciennes règles.
+
+[Aperçu du plan de remboursement](docs/remboursement-carte.png) · [Aperçu mobile](docs/mobile-remboursement.png) — données fictives.
+
 ## Mettre à jour sur Mac
 
 **La v3 modifie aussi le serveur. La mise à jour des trois fichiers visuels ne suffit plus.**
@@ -16,9 +28,9 @@ Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface 
 2. Faites une copie **complète** du dossier actuel, avec `data/`, `budget.sqlite` et les éventuels fichiers `-wal` et `-shm`.
 3. Décompressez le nouveau ZIP dans un **nouveau dossier distinct**, par exemple `Mon-Budget-3`. Gardez tous ses fichiers ensemble.
 4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
-5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou lancez `npm start`, puis rechargez Safari avec Cmd + Option + R.
+5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou, pour conserver l’accès iPhone, `Acces prive iPhone.command`. Vous pouvez aussi lancer `npm start`. Puis rechargez Safari avec Cmd + Option + R.
 
-Les fichiers `budget-features.js`, `features.js`, `planner.js`, `transactions.js`, `forecast-engine.js`, `forecast-ui.js`, `planning-actions.js` et `planning-workflow.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+Les fichiers `budget-features.js`, `features.js`, `planner.js`, `transactions.js`, `forecast-engine.js`, `forecast-ui.js`, `planning-actions.js` et `planning-workflow.js`, `card-payments.js`, `card-payments-engine.js` et `card-payments-ui.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
 La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
 
 Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](INSTALLATION-MAC.txt).

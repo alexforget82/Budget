@@ -9,7 +9,7 @@
  const host=$('planning-review'),filters=node('div',undefined,'review-filters');
  const month=node('input');month.type='month';month.id='review-month';month.value=new Date().toLocaleDateString('en-CA').slice(0,7); // set below without locale assumptions
  const now=new Date();month.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
- const status=node('select');status.id='review-status';for(const [value,label] of [['all','Tous les statuts'],['pending','À confirmer'],['actual','Réel enregistré'],['planned','À venir'],['skipped','Annulés']]){const o=node('option',label);o.value=value;status.append(o);}
+ const status=node('select');status.id='review-status';for(const [value,label] of [['all','Tous les statuts'],['pending','À confirmer'],['actual','Réel enregistré'],['planned','À venir'],['skipped','Annulés / sans paiement']]){const o=node('option',label);o.value=value;status.append(o);}
  const monthLabel=node('label','Période');monthLabel.append(month);const statusLabel=node('label','Afficher');statusLabel.append(status);filters.append(monthLabel,statusLabel,button('Toutes les dates',()=>{month.value='';draw();}));host.append(filters);
  const info=node('p',undefined,'quiet-copy'),totals=node('div',undefined,'trajectory-metrics'),list=node('div',undefined,'review-list'),unmatched=node('details',undefined,'advanced-tool');host.append(info,totals,list,unmatched);
  const matchDialog=node('dialog',undefined,'editor-dialog planning-dialog'),inner=node('div',undefined,'dialog-inner');matchDialog.append(inner);document.body.append(matchDialog);
@@ -50,7 +50,7 @@
   list.replaceChildren();if(!rows.length)list.append(node('p','Aucune opération prévue pour ces filtres.','empty-state'));
   for(const row of rows){
    const card=node('article',undefined,'review-card '+row.status);card.dataset.key=row.key;
-   const heading=node('div',undefined,'review-card-heading'),title=node('div');title.append(node('h3',row.description),node('small',day(row.date)+' · '+(row.source==='envelope'?'Enveloppe':({income:'Revenu',expense:'Dépense',transfer:'Virement',reserve:'Réserve'})[row.type])));heading.append(title,node('span',statusNames[row.status],'soft-badge'));card.append(heading);
+   const heading=node('div',undefined,'review-card-heading'),title=node('div');title.append(node('h3',row.description),node('small',day(row.date)+' · '+(row.source==='envelope'?'Enveloppe':({income:'Revenu',expense:'Dépense',transfer:'Virement',reserve:'Réserve'})[row.type])));heading.append(title,node('span',row.card_payment_mode==='purchases'&&row.status==='skipped'&&!row.modified?'Aucun paiement prévu':statusNames[row.status],'soft-badge'));card.append(heading);
    const values=node('div',undefined,'review-values');for(const [label,value] of [['Prévu',row.planned_cents],['Réel',row.actual_cents],['Écart',row.variance_cents]]){const item=node('div');item.append(node('span',label),node('strong',value===null?'—':money(value)));values.append(item);}card.append(values);
    const actions=node('div',undefined,'review-actions');
    if(row.source==='envelope'){

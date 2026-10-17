@@ -230,6 +230,45 @@ class BudgetAPI(unittest.TestCase):
   s=remote('/api/accounts',valid,data=account);self.assertEqual(s['cash_cents'],50000);self.assertEqual(self.get('/api/state')['cash_cents'],50000)
   self.call('/api/state',status=403,headers={'Host':'budget.exemple.ts.net'})
 
+ def test_card_payment_plan_projects_purchases_and_confirms_actual_once(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000);day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
+  self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':day(1),'forecast_account_id':cid})
+  s=self.post('/api/card-payments',{'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':day(2)});plan=s['card_payment_plans'][0];rid=plan['recurring_id'];row=next(r for r in s['planning']['rows'] if r.get('recurring_id')==rid)
+  self.assertEqual(row['planned_cents'],23000);self.assertEqual(s['cash_cents'],200000);self.assertEqual(s['credit_reserved_cents'],0);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(1))['cash_cents'],200000);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(2))['cash_cents'],177000)
+  s=self.planning_action(row,amount=200,happened_on=DAY);self.assertEqual(s['cash_cents'],180000);self.assertEqual(len(s['calendar_transfers']),1);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(2))['cash_cents'],180000)
+  nextrow=next(r for r in s['planning']['rows'] if r.get('recurring_id')==rid and r['original_on']==day(9));self.assertEqual(nextrow['planned_cents'],26000)
+  before=self.get('/api/backup/export')['tables'];self.planning_action(row,status=400,amount=200,happened_on=DAY);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  tid=s['calendar_transfers'][0]['id'];s=self.post('/api/transfers/update',{'id':tid,'from_account_id':aid,'to_account_id':cid,'amount':215,'description':'Paiement corrigé','happened_on':DAY});self.assertEqual(s['cash_cents'],178500);self.assertEqual(next(r for r in s['planning']['rows'] if r.get('recurring_id')==rid and r['original_on']==day(9))['planned_cents'],24500)
+  s=self.post('/api/transfers/delete',{'id':tid});self.assertEqual(s['cash_cents'],200000);self.assertEqual(next(d for d in s['forecast'] if d['date']==day(2))['cash_cents'],177000)
+ def test_existing_card_payment_requires_association_or_explicit_new_payment(self):
+  aid=self.account(balance=2000);cid=self.account('credit',0)
+  self.transaction(cid,-215,description='Marché')
+  s=self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':215,'description':'Opération bancaire','happened_on':DAY});tid=s['calendar_transfers'][0]['id']
+  s=self.post('/api/card-payments',{'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':DAY});rid=s['card_payment_plans'][0]['recurring_id'];row=next(r for r in s['planning']['rows'] if r.get('recurring_id')==rid)
+  self.assertEqual(row['planned_cents'],21500);self.assertEqual(row['unmatched_payment_ids'],[tid]);before=self.get('/api/backup/export')['tables']
+  self.planning_action(row,status=400,amount=215,happened_on=DAY);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  s=self.planning_action(row,actual_id=tid);self.assertEqual(s['cash_cents'],178500);self.assertEqual(len(s['calendar_transfers']),1);self.assertEqual(next(r for r in s['planning']['rows'] if r.get('recurring_id')==rid)['status'],'actual')
+ def test_card_plan_reuses_existing_rule_fixed_mode_pause_and_duplicate_protection(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000);start=(datetime.date.today()+datetime.timedelta(days=2)).isoformat()
+  rule={'description':'Ancien paiement CIBC','type':'transfer','amount':100,'account_id':aid,'to_account_id':cid,'start_on':start,'frequency':'weekly'};rid=self.post('/api/recurring',rule)['recurring'][0]['id']
+  payload={'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':start};self.post('/api/card-payments',payload,400)
+  s=self.post('/api/card-payments',{**payload,'replace_recurring_id':rid});self.assertEqual(len(s['recurring']),1);self.assertEqual(s['card_payment_plans'][0]['recurring_id'],rid)
+  s=self.post('/api/card-payments',{**payload,'mode':'fixed','amount':150});self.assertEqual(next(d for d in s['forecast'] if d['date']==start)['cash_cents'],185000)
+  s=self.post('/api/card-payments',{**payload,'mode':'fixed','amount':150,'active':False});self.assertTrue(all(d['cash_cents']==200000 for d in s['forecast']))
+  self.post('/api/recurring',rule,400);self.post('/api/accounts/update',{'id':cid,'name':'Carte','kind':'checking','balance':5000,'included':True},400);self.post('/api/accounts/update',{'id':aid,'name':'Source','kind':'credit','balance':2000,'included':False},400)
+  self.post('/api/transfers',{'from_account_id':aid,'to_account_id':cid,'amount':25,'description':'Paiement réel','happened_on':DAY});s=self.post('/api/card-payments/delete',{'card_account_id':cid});self.assertEqual(s['card_payment_plans'],[]);self.assertEqual(s['recurring'],[]);self.assertEqual(s['cash_cents'],197500);self.assertEqual(len(s['calendar_transfers']),1)
+ def test_card_plan_invalid_configuration_and_backup_roundtrip(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000);before=self.get('/api/backup/export');start=(datetime.date.today()+datetime.timedelta(days=2)).isoformat();payload={'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':start}
+  for changes in [{'card_account_id':aid},{'from_account_id':cid},{'mode':'unknown'},{'frequency':'daily'},{'mode':'fixed','amount':-1},{'start_on':'2026-02-30'}]:self.post('/api/card-payments',{**payload,**changes},400)
+  self.assertEqual(self.get('/api/backup/export')['tables'],before['tables']);self.post('/api/card-payments',payload);backup=self.get('/api/backup/export');self.post('/api/backup/validate',{'backup':backup});self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])
+  bad=copy.deepcopy(backup);del bad['tables']['card_payment_plans'];self.post('/api/backup/restore',{'backup':bad,'confirm':'REMPLACER'},400);self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])
+  old=copy.deepcopy(before);del old['tables']['card_payment_plans'];old['tables']['app_settings']=[s for s in old['tables']['app_settings'] if s['key']!='card_payments_v1'];self.post('/api/backup/restore',{'backup':old,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/state')['card_payment_plans'],[]);self.assertEqual(self.get('/api/state')['cash_cents'],200000)
+ def test_card_payment_projection_browsing_does_not_change_financial_data(self):
+  aid=self.account(balance=2000);cid=self.account('credit',5000);self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':DAY,'forecast_account_id':cid});s=self.post('/api/card-payments',{'card_account_id':cid,'from_account_id':aid,'mode':'purchases','frequency':'weekly','start_on':DAY});self.assertEqual(s['forecast'][0]['cash_cents'],177000)
+  before=self.get('/api/backup/export')['tables'];self.get('/api/state');self.get('/api/state');self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  for d in s['forecast']:
+   c=d['bridge'];self.assertEqual(c['opening_cash_cents']+c['income_cents']+c['expense_cents']+c['envelope_cents']+c['transfer_cents'],d['cash_cents']);self.assertEqual(d['credit_reserved_cents'],0)
+
  def test_additive_legacy_migration_preserves_data(self):
   self.stop();dbpath=self.dir/'data'/'budget.sqlite';dbpath.unlink()
   for suffix in ['-wal','-shm']:

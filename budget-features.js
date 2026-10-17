@@ -39,7 +39,7 @@ export function bankAmount(value){
   return Math.round(amount*100);
 }
 
-const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status','envelope_occurrence_moves','envelope_actual_links'];
+const tables=['accounts','envelopes','categories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status','envelope_occurrence_moves','envelope_actual_links','card_payment_plans'];
 const categoryDefaults=['Épicerie','Logement','Transport','Restaurants','Santé','Loisirs','Abonnements','Achats','Revenus','Autres'];
 
 export function createFeatures({db,dir,cents,validDate,today,atomic,addTransaction}){
@@ -68,6 +68,8 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     }
     const oldActions=Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='planning_actions_v1')&&!Object.hasOwn(result.tables,'envelope_occurrence_moves')&&!Object.hasOwn(result.tables,'envelope_actual_links');
     if(oldActions){result.tables.envelope_occurrence_moves=[];result.tables.envelope_actual_links=[];result.tables.app_settings.push({key:'planning_actions_v1',value:'1'});}
+    const oldCards=Array.isArray(result.tables.app_settings)&&!result.tables.app_settings.some(s=>s.key==='card_payments_v1')&&!Object.hasOwn(result.tables,'card_payment_plans');
+    if(oldCards){result.tables.card_payment_plans=[];result.tables.app_settings.push({key:'card_payments_v1',value:'1'});}
     return result;
   }
   function validateBackup(backup){
@@ -101,6 +103,8 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
        const t=stage.prepare('SELECT * FROM transactions WHERE id=?').get(link.transaction_id);
        if(!t||t.amount_cents>=0||t.envelope_id!==link.envelope_id||stage.prepare("SELECT 1 FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?").get(link.transaction_id))throw Error('Association d’enveloppe invalide.');
       }
+      for(const p of stage.prepare('SELECT p.*,r.type,r.to_account_id,r.frequency,r.one_time,r.day_adjust,a.kind card_kind,b.kind source_kind FROM card_payment_plans p JOIN recurring r ON r.id=p.recurring_id JOIN accounts a ON a.id=p.card_account_id LEFT JOIN accounts b ON b.id=r.account_id').all())if(p.type!=='transfer'||p.to_account_id!==p.card_account_id||p.card_kind!=='credit'||p.source_kind==='credit'||!['weekly','biweekly','monthly'].includes(p.frequency)||p.one_time||p.day_adjust!=='none')throw Error('Plan de remboursement invalide.');
+      if(stage.prepare("SELECT p.card_account_id FROM card_payment_plans p JOIN recurring r ON r.to_account_id=p.card_account_id WHERE r.type='transfer' AND r.active=1 AND r.id!=p.recurring_id").all().length)throw Error('Plusieurs remboursements actifs pour la même carte.');
       const activation=stage.prepare("SELECT value FROM app_settings WHERE key='renewal_activation'").get();if(!activation||!validDate(activation.value)||stage.prepare("SELECT value FROM app_settings WHERE key='features_v3'").get()?.value!=='1')throw Error('Paramètres de sauvegarde invalides.');
       stage.exec('COMMIT');return Object.fromEntries(tables.map(t=>[t,backup.tables[t].length]));
     }catch(e){if(/constraint|datatype mismatch/i.test(e.message))throw Error('Sauvegarde invalide : des valeurs ou des liens sont incompatibles.');throw e;}finally{stage.close();}
@@ -165,5 +169,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.3.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({version:'3.4.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

@@ -1,5 +1,7 @@
+import {deriveCardPayments} from './card-payments-engine.js';
+
 // Pure simulation: never writes actual account or envelope balances.
-export function buildForecast({accounts,envelopes,recurring,overrides=[],moves=[],links=[],transactions=[],transfers=[],periods=[],renewals=[],envelopeOverrides=[],envelopeMoves=[],envelopeLinks=[],today,since=today,horizon=90,nextOccurrence,occurrenceInfo,similarDescription}) {
+function buildBaseForecast({accounts,envelopes,recurring,overrides=[],moves=[],links=[],transactions=[],transfers=[],periods=[],renewals=[],envelopeOverrides=[],envelopeMoves=[],envelopeLinks=[],today,since=today,horizon=90,nextOccurrence,occurrenceInfo,similarDescription}) {
  const addDays=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
  const end=addDays(today,horizon-1),distance=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))/86400000;
  const warnings=[],rows=[],used=new Set(),actualMap=new Map([...transactions.map(t=>['transaction:'+t.id,{...t,actual_type:'transaction'}]),...transfers.map(t=>['transfer:'+t.id,{...t,actual_type:'transfer'}])]);
@@ -98,4 +100,29 @@ export function buildForecast({accounts,envelopes,recurring,overrides=[],moves=[
   days.push({date,bridge:{opening_cash_cents:openingCash,...cumulative,closing_cash_cents:cash(),reserved_cents:reserved,closing_safe_cents:cash()-reserved},cash_cents:cash(),reserved_cents:reserved,credit_reserved_cents:0,safe_cents:cash()-reserved,account_balances:accounts.map(a=>({id:a.id,balance_cents:balances.get(a.id)})),events});
  }
  return {days,rows:rows.sort((a,b)=>a.date.localeCompare(b.date)||a.description.localeCompare(b.description,'fr')),warnings,since};
+}
+
+// Resolve suggested transfers against actual payments before exposing the final
+// projection. Re-running the pure simulation never writes to the bank ledger.
+export function buildForecast(args){
+ const plans=args.cardPaymentPlans||[],automatic=new Set(plans.filter(p=>p.mode==='purchases').map(p=>p.recurring_id));
+ if(!automatic.size){const result=buildBaseForecast(args);annotate(result,args);return result;}
+ const base=buildBaseForecast({...args,recurring:args.recurring.map(r=>automatic.has(r.id)?{...r,active:0}:r)}),skeleton=buildBaseForecast(args);
+ let result=null,calculation,last=null,stable=false;
+ const count=skeleton.rows.filter(r=>automatic.has(r.recurring_id)).length;
+ for(let i=0;i<count+3;i++){
+  calculation=deriveCardPayments(args,base,skeleton,result);
+  const signature=JSON.stringify(calculation.overrides);
+  result=buildBaseForecast({...args,overrides:[...calculation.overrides,...(args.overrides||[])]});
+  if(signature===last){stable=true;break;}last=signature;
+ }
+ for(const row of result.rows){const info=calculation.metadata.get(row.key);if(info){Object.assign(row,info);row.modified=skeleton.rows.find(r=>r.key===row.key)?.modified||false;}}
+ if(!stable)result.warnings.push({code:'card_payment_review',message:'Certains remboursements de carte restent ambigus. Associez les virements réels avant de vous fier aux propositions.'});
+ annotate(result,args);return result;
+}
+function annotate(result,args){
+ const plans=args.cardPaymentPlans||[],used=new Set([...result.rows.flatMap(r=>r.actual_ids),...(args.links||[]).map(l=>l.actual_type+':'+l.actual_id)]);
+ for(const row of result.rows){const plan=plans.find(p=>p.recurring_id===row.recurring_id);if(plan){row.card_payment_mode=plan.mode;row.card_account_id=plan.card_account_id;if(['planned','pending'].includes(row.status)){row.unmatched_payment_ids=(args.transfers||[]).filter(t=>!used.has('transfer:'+t.id)&&t.from_account_id===row.account_id&&t.to_account_id===row.to_account_id&&Math.abs(Date.parse(t.happened_on)-Date.parse(row.date))<=3*86400000).map(t=>t.id);if(row.unmatched_payment_ids.length)result.warnings.push({code:'card_payment_match',card_account_id:plan.card_account_id,message:row.description+' : un virement réel est à vérifier. Associez-le dans À confirmer pour éviter un deuxième paiement prévu.'});}}}
+ // Events carry the same explanation as their occurrence in the review list.
+ const byKey=new Map(result.rows.map(r=>[r.key,r]));for(const day of result.days)for(const event of day.events){const row=byKey.get(event.key);if(row?.card_payment_mode){event.modified=row.modified;event.card_payment_mode=row.card_payment_mode;event.card_account_id=row.card_account_id;}}
 }

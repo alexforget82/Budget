@@ -4,14 +4,15 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **51 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **69 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
 | `tests/csv.test.js` | 5 | BOM, CSV multiligne, guillemets échappés, tabulations, CRLF, lignes vides, limites de taille, montants localisés, signes et refus des valeurs invalides |
 | `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
-| `tests/api-tests.py` | 20 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
+| `tests/api-tests.py` | 25 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -154,7 +155,7 @@ Les cinq autres parcours navigateur ont également réussi. Une erreur HTTP 400 
 
 ## Accès privé Mac/iPhone (3.3)
 
-`npm test` : **51 tests réussis** (5 CSV, 20 moteur, 6 accès privé et 20 API).
+`npm test` : **69 tests réussis** (5 CSV, 20 moteur, 6 accès privé et 20 API).
 
 - Accès privé désactivé sans configuration; configuration invalide refusée au démarrage.
 - Port privé distinct, adresse HTTPS Tailscale et propriétaire explicite.
@@ -165,3 +166,9 @@ Les cinq autres parcours navigateur ont également réussi. Une erreur HTTP 400 
 - Syntaxe Bash du nouveau lanceur vérifiée. Le lanceur refuse de remplacer d’autres services Serve ou un Funnel existant.
 
 Tailscale Serve, la commande macOS `open`, la gestion de veille, les permissions macOS et Safari/iPhone restent à vérifier sur les appareils de l’utilisateur. La consultation de la documentation Tailscale depuis l’environnement a été refusée (HTTP 403); aucune validation en direct de la version installée de Tailscale n’est revendiquée. Le guide fournit les étapes d’activation à effectuer sur les appareils.
+
+## Remboursements de cartes — v3.4
+
+`python3 tests/card-payments-ui.py` : parcours sur données fictives, réutilisation d’une règle existante, achat CIBC et paiement Conjoint distincts au calendrier, rapprochement d’un paiement réel de 215 $ sans nouveau débit, montant fixe, pause/reprise et cinq largeurs d’écran. Les six autres parcours navigateur ont aussi été exécutés avec succès.
+
+Les tests API refusent un nouveau paiement implicite lorsqu’un virement réel proche reste à associer et vérifient que le refus ne modifie aucune table. Les tests couvrent aussi la sauvegarde/restauration du plan et la consultation sans écriture financière. L’intégration réelle Finder/Safari/Tailscale sur Mac et iPhone reste à vérifier sur les appareils de l’utilisateur.
