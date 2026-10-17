@@ -1,4 +1,4 @@
-# Mon Budget 4.2
+# Mon Budget 4.3
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -8,9 +8,28 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Nouveautés 4.3 : catégories et budgets mensuels réservés
+
+**Transactions → Gérer les catégories**, ou **Bilan → Modifier les catégories** : renommez une catégorie existante. Son identifiant, les anciennes transactions et son plafond mensuel sont conservés. Les doublons de noms (y compris accents/casse/espaces) et les formulaires devenus périmés sont refusés. L’annulation protégée permet de revenir au nom précédent.
+
+**Planifier → Enveloppes → + Budget mensuel réservé** prépare une enveloppe mensuelle en mode **Budget réservé (achats variables)**, avec le premier du mois prochain proposé comme début. Modifiez la date si nécessaire. Ce mode existait sous le libellé « Réserve seulement (épargne) »; la 4.3 le rend explicite pour Restaurant, Pharmacie, Médicaments ou Couches et lait. Aucun changement de mode n’est imposé aux enveloppes existantes.
+
+Exemple Restaurant, 125 $ le 1er novembre :
+
+- La prévision réserve 125 $ à cette date, sans sortie bancaire prévue ni transaction réelle créée. Ce gel est une affectation comptable, pas un virement.
+- Pour protéger un montant **dès aujourd’hui**, renseignez aussi **Réservé actuellement**. Avec 1 000 $ en banque et 125 $ réservés, le Safe-to-Spend est 875 $.
+- Un achat de 30 $ sur le compte bancaire inclus, associé à Restaurant, fait passer la banque à 970 $ et la réserve à 95 $. Le Safe-to-Spend reste à 875 $ : la réserve n’est pas déduite deux fois. Au-delà de la réserve, les achats diminuent de nouveau le disponible libre.
+- Sans report, le renouvellement ramène la réserve à 125 $ (un éventuel excédent redevient disponible); avec report, il ajoute 125 $ au restant. Une réserve non consommée n’est pas supposée dépensée.
+
+Le **solde bancaire prévu** n’invente pas de dates pour ces achats variables : seuls les achats saisis ou explicitement programmés diminuent ce solde. Les factures et virements programmés séparément restent actifs. Pour une dépense à date connue, gardez le mode **Paiement prévu à une date précise**. Les achats sur carte conservent leur fonctionnement existant : dette suivie séparément, aucune réserve automatique pour rembourser la carte, remboursement bancaire via un virement daté.
+
+Pour modifier une enveloppe existante, utilisez **Ajuster l’enveloppe**, choisissez le mode Budget réservé puis enregistrez. Sa réserve actuelle et ses transactions sont conservées.
+
+Aperçus avec données fictives : [budget réservé sur iPhone](docs/v43-budget-reserve-iphone.png) · [modification des catégories](docs/v43-categories-iphone.png).
+
 ## Nouveautés 4.2 : Budgets libres
 
-Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique **v4.2**.
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v4.3**.
 
 - **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
 - **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.

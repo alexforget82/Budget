@@ -1,3 +1,19 @@
+VERSION 4.3 — CATEGORIES ET BUDGETS MENSUELS RESERVES
+Décompressez le ZIP puis ouvrez le raccourci permanent
+Mettre a jour Mon Budget.command depuis ~/Applications/Mon Budget.
+Choisissez le nouveau dossier téléchargé. Ne recopiez pas votre dossier data :
+la base active est conservée et une copie de sécurité est créée.
+Rechargez Safari sur Mac et iPhone; le badge doit indiquer v4.3.
+
+Transactions > Gérer les catégories : renommer sans perdre les achats associés.
+Planifier > Enveloppes > + Budget mensuel réservé : budget à dépenser au fil
+du mois sans simuler un paiement le 1er. Le premier du mois prochain est proposé.
+Pour une enveloppe existante : Ajuster l’enveloppe > Budget réservé.
+Réservé actuellement protège un montant dès aujourd’hui; le budget périodique
+prépare les renouvellements. Associez chaque achat réel à son enveloppe.
+Sans report : ramener la réserve au budget. Avec report : ajouter le budget au restant.
+Aucune réserve automatique pour les remboursements de cartes.
+
 VERSION 4.2 — BUDGETS LIBRES
 Décompressez le ZIP et ouvrez Mettre a jour Mon Budget.command depuis
 ~/Applications/Mon Budget. Choisissez le nouveau dossier téléchargé.

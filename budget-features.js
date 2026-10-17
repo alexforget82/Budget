@@ -156,7 +156,16 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     return {imported:rows.length,batch_id:Number(batch)};
   }
   function post(route,x){
-    if(route==='/api/categories'){const name=String(x.name||'').trim();if(!name||name.length>60)throw Error('Nom de catégorie requis (60 caractères maximum).');run('INSERT INTO categories(name) VALUES(?)',name);}
+    if(route==='/api/categories'||route==='/api/categories/update'){
+      const name=typeof x.name==='string'?x.name.trim():'';
+      if(!name||name.length>60)throw Error('Nom de catégorie requis (60 caractères maximum).');
+      const id=route.endsWith('/update')?categoryId(x.id):null;
+      if(route.endsWith('/update')&&!id)throw Error('Catégorie introuvable.');
+      if(id&&x.expected_name!==q('SELECT name FROM categories WHERE id=?',id)[0].name)throw Error('Cette catégorie a changé. Actualisez avant de la renommer.');
+      const normalized=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA').replace(/\s+/g,' ').trim();
+      if(q('SELECT * FROM categories').some(c=>c.id!==id&&normalized(c.name)===normalized(name)))throw Error('Une catégorie porte déjà ce nom.');
+      if(id)run('UPDATE categories SET name=? WHERE id=?',name,id);else run('INSERT INTO categories(name) VALUES(?)',name);
+    }
     else if(route==='/api/category-budget'){const id=categoryId(x.category_id),amount=cents(x.amount);if(!id||amount===null||amount<0)throw Error('Budget mensuel invalide.');run('INSERT INTO category_budgets(category_id,limit_cents) VALUES(?,?) ON CONFLICT(category_id) DO UPDATE SET limit_cents=excluded.limit_cents',id,amount);}
     else if(route==='/api/goals/delete'){if(!q('SELECT id FROM goals WHERE id=?',Number(x.id)).length)throw Error('Objectif introuvable.');run('DELETE FROM goals WHERE id=?',Number(x.id));}
     else if(route==='/api/goals'){const name=String(x.name||'').trim(),target=cents(x.target),saved=cents(x.saved),date=x.target_date||null;if(!name||name.length>80||target===null||target<=0||saved===null||saved<0||(date&&!validDate(date)))throw Error('Objectif invalide.');if(x.id){if(!q('SELECT id FROM goals WHERE id=?',Number(x.id)).length)throw Error('Objectif introuvable.');run('UPDATE goals SET name=?,target_cents=?,saved_cents=?,target_date=? WHERE id=?',name,target,saved,date,Number(x.id));}else run('INSERT INTO goals(name,target_cents,saved_cents,target_date) VALUES(?,?,?,?)',name,target,saved,date);}
@@ -169,5 +178,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({version:'4.2.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({version:'4.3.0',categories:q('SELECT * FROM categories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

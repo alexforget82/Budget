@@ -34,6 +34,23 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_category_rename_preserves_history_budgets_and_exact_undo(self):
+  aid=self.account();cat=self.get('/api/state')['categories'][0];self.transaction(aid,-30,category_id=cat['id']);self.post('/api/category-budget',{'category_id':cat['id'],'amount':125});before=self.get('/api/backup/export')['tables']
+  s=self.post('/api/categories/update',{'id':cat['id'],'expected_name':cat['name'],'name':'Maison et quotidien'});self.assertEqual(next(c['name'] for c in s['categories'] if c['id']==cat['id']),'Maison et quotidien');self.assertEqual(s['transactions'][0]['category_id'],cat['id']);self.assertEqual(s['cash_cents'],97000)
+  listed=self.get('/api/transactions/list');self.assertEqual(listed['rows'][0]['category_name'],'Maison et quotidien')
+  report=self.get('/api/monthly?month='+MONTH);self.assertEqual(next(b['limit_cents'] for b in report['budgets'] if b['id']==cat['id']),12500)
+  self.post('/api/support/undo',{'token':s['support41']['undo']['token']});self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_category_rename_rejects_stale_duplicate_and_invalid_without_changes(self):
+  cats=self.get('/api/state')['categories'];cat=cats[0];payload={'id':cat['id'],'expected_name':cat['name'],'name':'Maison'};self.post('/api/categories/update',payload);before=self.get('/api/backup/export')['tables']
+  for data in [{**payload,'name':'Autre nom'},{**payload,'expected_name':'Maison','name':' '},{**payload,'id':None},{**payload,'id':999999},{**payload,'expected_name':'Maison','name':cats[1]['name'].upper()},{**payload,'expected_name':'Maison','name':'a'*61}]:self.post('/api/categories/update',data,400)
+  self.post('/api/categories',{'name':'  MÁISON  '},400);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_monthly_reserved_budget_freezes_cash_without_payment_and_consumes_once(self):
+  aid=self.account();s=self.post('/api/envelopes',{'name':'Restaurant','reserved':0,'budget':125,'frequency':'monthly','start_on':DAY,'forecast_spend':False,'rollover':False});eid=s['envelopes'][0]['id'];self.assertEqual(s['safe_cents'],87500);self.assertEqual(s['cash_cents'],100000);self.assertEqual(s['envelopes'][0]['reserved_cents'],12500);self.assertFalse(s['transactions']);self.assertFalse(s['transfers']);self.assertFalse(s['planning']['rows'])
+  self.assertTrue(all(d['cash_cents']==100000 for d in s['forecast']));self.assertTrue(all(not any(e['type']=='expense' for e in d['events']) for d in s['forecast']))
+  s=self.transaction(aid,-30,envelope_id=eid);self.assertEqual(s['cash_cents'],97000);self.assertEqual(s['reserved_cents'],9500);self.assertEqual(s['safe_cents'],87500);self.assertEqual(s['envelope_details'][0]['spent_cents'],3000)
+  future=next(d for d in s['forecast'] if d['date']>DAY and any(e.get('envelope_renewal') for e in d['events']));self.assertEqual(future['cash_cents'],97000);self.assertEqual(future['reserved_cents'],12500);self.assertEqual(future['safe_cents'],84500);self.assertTrue(all(e['type']=='reserve' and e['cash_impact_cents']==0 for e in future['events']))
+  before=self.get('/api/backup/export')['tables'];self.stop();self.start();self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  s=self.transaction(aid,-100,envelope_id=eid);self.assertEqual(s['reserved_cents'],0);self.assertEqual(s['safe_cents'],87000)
  def test_transaction_categories_credit_and_capped_envelope(self):
   aid=self.account();cat=self.get('/api/state')['categories'][0]['id']
   e=self.post('/api/envelopes',{'name':'Courses','reserved':10,'budget':40,'frequency':'none'})['envelopes'][0]['id']

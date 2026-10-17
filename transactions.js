@@ -6,7 +6,7 @@
  const money=n=>(n/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
  const section=$('section-transactions');section.classList.add('designed-page','transaction-workspace');section.classList.remove('is-collapsed');section.querySelector('.section-toggle').hidden=true;
  const heading=section.querySelector('.section-head');heading.querySelector('h2').textContent='Vos opérations, simplement';
- const actions=node('div',undefined,'page-actions');actions.append(button('+ Nouvelle transaction',()=>window.appOpenEditor('transaction'),'primary'));heading.append(actions);
+ const actions=node('div',undefined,'page-actions');actions.append($('manage-categories'),button('+ Nouvelle transaction',()=>window.appOpenEditor('transaction'),'primary'));heading.append(actions);
  const intro=node('p','Retrouvez une opération, vérifiez vos dépenses et gardez votre budget à jour.','page-intro');heading.after(intro);
  const help=node('details',undefined,'context-help');help.append(node('summary','Comprendre les transactions et les cartes de crédit'));
  for(const child of [...section.children])if(child.matches('p.sub,small'))help.append(child);section.append(help);

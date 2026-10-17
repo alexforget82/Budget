@@ -1,10 +1,10 @@
-# Vérifications — Mon Budget 4.2
+# Vérifications — Mon Budget 4.3
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 
 ## Tests automatisés
 
-`npm test` : **89 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **92 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -13,7 +13,13 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
 | `tests/mac-service.test.js` | 6 | Lecture réelle du plist par plistlib, chemins avec espaces/caractères XML, paramètres de relance, refus hors macOS |
-| `tests/api-tests.py` | 39 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 42 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+
+La 4.3 ajoute trois tests API : renommage d’une catégorie avec conservation des transactions/plafonds et annulation exacte; refus atomique des doublons, identifiants invalides et formulaires périmés; budget mensuel réservé, sans paiement automatique, achat réel consommant la réserve une seule fois, renouvellement sans report, dépassement et redémarrage idempotent.
+
+`python3 tests/budget-v43-ui.py` vérifie le badge v4.3, l’accès aux catégories depuis Transactions, le nom dans l’historique, le raccourci mensuel proposé au premier du mois suivant, les réserves actuelles et futures, les deux modes de prévision, et l’achat partiel à Safe-to-Spend constant. Largeurs 375/390/768/1024/1440, aucun débordement, aucune mutation en consultant les écrans et aucune erreur JavaScript. Captures avec données fictives.
+
+Parcours de régression exécutés pour la 4.3 : `tests/free-budgets-ui.py`, `tests/budget-v41-ui.py`, `tests/transactions-ui.py` et `tests/planning-ui.py`. Les scénarios macOS/Tailscale restent soumis aux limites d’environnement décrites plus bas; aucun accès au Mac de l’utilisateur.
 
 Les tests API vérifient notamment :
 

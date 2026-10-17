@@ -38,6 +38,12 @@
   by('report-month').onchange=loadReport;by('report-account').onchange=loadReport;
   document.querySelector('[data-view="bilan"]').addEventListener('click',loadReport);
   by('category-create-form').onsubmit=async e=>{e.preventDefault();if(await mutate('/api/categories',{name:e.target.elements.name.value}))e.target.reset();};
+  const manageCategories=button('Gérer les catégories',()=>{document.querySelector('[data-view="bilan"]').click();by('category-manager').open=true;by('category-manager').scrollIntoView({block:'center',behavior:'smooth'});by('category-edit-choice').focus({preventScroll:true});});
+  manageCategories.id='manage-categories';by('section-transactions').querySelector('.section-head').append(manageCategories);
+  let categoryEditing=null;
+  function selectCategory(){categoryEditing=current?.categories.find(c=>c.id===Number(by('category-edit-choice').value));by('category-edit-form').elements.name.value=categoryEditing?.name||'';by('category-edit-status').textContent='';}
+  by('category-edit-choice').onchange=selectCategory;
+  by('category-edit-form').onsubmit=async e=>{e.preventDefault();if(!categoryEditing)return;const data={id:categoryEditing.id,expected_name:categoryEditing.name,name:e.target.elements.name.value};if(await mutate('/api/categories/update',data)){selectCategory();by('category-edit-status').textContent='Nom enregistré. L’historique est conservé.';}};
   by('category-budget-form').onsubmit=async e=>{e.preventDefault();await mutate('/api/category-budget',{category_id:by('budget-category').value,amount:Number(e.target.elements.amount.value)});};
 
   function renderGoals(){
@@ -122,6 +128,7 @@
     for(const [id,empty] of [['transaction-category','Non classé'],['v2-edit-category','Non classé'],['v3-category-filter','Toutes'],['csv-category','Non classé'],['budget-category',undefined]])options(by(id),s.categories||[],empty);
     for(const [id,empty] of [['report-account','Tous les comptes'],['csv-account',undefined],['balance-account',undefined]])options(by(id),s.accounts||[],empty);
     const merchants=by('recent-merchants');merchants.replaceChildren();for(const item of s.recent_descriptions||[])merchants.append(new Option(item.description,item.description));
+    options(by('category-edit-choice'),s.categories||[]);if(!categoryEditing||categoryEditing.id!==Number(by('category-edit-choice').value))selectCategory();
     renderGoals();const history=by('balance-history');history.replaceChildren();for(const row of s.balance_reconciliations||[]){const line=node('div',undefined,'audit-row');line.append(node('strong',row.account_name),node('span',money(row.old_balance_cents)+' → '+money(row.new_balance_cents)),node('small',row.happened_on+' · '+row.note));history.append(line);}
     if(document.querySelector('[data-view="bilan"].active'))loadReport();
   };

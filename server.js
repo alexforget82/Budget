@@ -125,7 +125,7 @@ const cardPayments=createCardPayments({db,cents,validDate,today:todayLocal,atomi
 const freeBudgets=createFreeBudgets({db,atomic,cents,today:todayLocal,exportBackup:features.exportBackup,forecastInput,buildForecast});
 const support=createSupport({db,dir,features,today:todayLocal,cents,validDate});
 support.dailyBackup();setInterval(()=>support.dailyBackup(),60000).unref();
-const featureRoutes=new Set(['/api/categories','/api/category-budget','/api/goals','/api/goals/delete','/api/balance/reconcile','/api/import/inspect','/api/import/preview','/api/import/commit','/api/backup/validate','/api/backup/restore']);
+const featureRoutes=new Set(['/api/categories','/api/categories/update','/api/category-budget','/api/goals','/api/goals/delete','/api/balance/reconcile','/api/import/inspect','/api/import/preview','/api/import/commit','/api/backup/validate','/api/backup/restore']);
 
 // Fréquence « dernier jour ouvrable » : lundi à vendredi, sans jours fériés.
 // L'ancienne fréquence « rrq » reste acceptée pour conserver les règles existantes.
@@ -323,7 +323,7 @@ if(privateAccess&&req.socket.localPort===privateAccess.port){
  if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
  if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
 }
-if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'4.2.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'4.3.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/support/backup?')){const date=new URL(req.url,'http://localhost').searchParams.get('date'),body=support.dailyFile(date);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="budget-${date}.json"`,'Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/search?'))return reply(res,200,support.search(new URL(req.url,'http://localhost').searchParams.get('q')));
 if(req.method==='GET'&&req.url.startsWith('/api/monthly?')){const params=new URL(req.url,'http://localhost').searchParams;return reply(res,200,features.monthly(params.get('month'),params.get('account')));}
@@ -439,5 +439,5 @@ if(x.type==='transfer'&&x.active!==false&&q('SELECT 1 FROM card_payment_plans WH
 const paymentPlan=q('SELECT * FROM card_payment_plans WHERE recurring_id=?',id)[0];if(paymentPlan&&(x.type!=='transfer'||to!==paymentPlan.card_account_id||q('SELECT kind FROM accounts WHERE id=?',account)[0]?.kind==='credit'||!['weekly','biweekly','monthly'].includes(x.frequency)||(x.day_adjust||'none')!=='none'||x.one_time===true||x.one_time===1||x.one_time==='true'))return reply(res,400,{error:'Modifiez ce remboursement depuis le réglage de la carte.'});
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields)}}
 return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
-http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v4.2.0 : http://${HOST}:${PORT}`));
+http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v4.3.0 : http://${HOST}:${PORT}`));
 if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));
