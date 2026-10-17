@@ -1,4 +1,4 @@
-# Mon Budget 3.4
+# Mon Budget 3.5
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,12 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Fréquences de factures — v3.5
+
+Dans **Planifier → Récurrences**, une facture peut revenir chaque semaine, aux 2 semaines, chaque mois, aux 3 mois, aux 6 mois ou chaque année. Les mêmes choix sont disponibles lors de sa modification. Les prévisions, le calendrier et les exceptions utilisent ces dates. Une échéance au 31 est ramenée au dernier jour des mois plus courts, puis retrouve son jour d’origine; le 29 février annuel revient au 28 février hors année bissextile. Les ajustements de jours ouvrables continuent de s’appliquer.
+
+La migration conserve les identifiants des règles et leurs associations et crée préalablement `data/backups/budget-before-extended-recurrences.sqlite`. Ces nouvelles fréquences concernent les récurrences de factures; les fréquences des enveloppes et des plans de remboursement de cartes restent les mêmes.
 
 ## Nouveau : remboursements de cartes prévus
 

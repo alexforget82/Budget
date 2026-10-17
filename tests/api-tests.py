@@ -230,6 +230,31 @@ class BudgetAPI(unittest.TestCase):
   s=remote('/api/accounts',valid,data=account);self.assertEqual(s['cash_cents'],50000);self.assertEqual(self.get('/api/state')['cash_cents'],50000)
   self.call('/api/state',status=403,headers={'Host':'budget.exemple.ts.net'})
 
+ def test_extended_bill_frequencies_dates_backup_and_migration(self):
+  aid=self.account(balance=2000)
+  cases=[('weekly','2028-01-31','2028-02-07'),('biweekly','2028-01-31','2028-02-14'),('monthly','2028-01-31','2028-02-29'),('quarterly','2028-01-31','2028-04-30'),('semiannual','2028-08-31','2029-02-28'),('yearly','2028-02-29','2029-02-28')]
+  for frequency,start,expected in cases:
+   s=self.post('/api/recurring',{'description':'Facture '+frequency,'type':'expense','amount':35,'account_id':aid,'frequency':frequency,'start_on':start});rid=max(r['id'] for r in s['recurring'])
+   self.post('/api/overrides',{'recurring_id':rid,'occurrence_on':expected,'amount':40})
+   wrong=(datetime.date.fromisoformat(expected)+datetime.timedelta(days=1)).isoformat();self.post('/api/overrides',{'recurring_id':rid,'occurrence_on':wrong,'amount':40},400)
+  for frequency,months in [('quarterly',3),('semiannual',6),('yearly',12)]:
+   now=datetime.date.today();index=now.year*12+now.month-1-months;start=datetime.date(index//12,index%12+1,min(now.day,28)).isoformat()
+   s=self.post('/api/recurring',{'description':'Prévision '+frequency,'type':'expense','amount':10,'account_id':aid,'frequency':frequency,'start_on':start});rid=max(r['id'] for r in s['recurring']);expected=now.replace(day=min(now.day,28)).isoformat()
+   self.assertTrue(any(r.get('recurring_id')==rid and r['original_on']==expected for r in s['planning']['rows']))
+  backup=self.get('/api/backup/export');self.post('/api/backup/validate',{'backup':backup});self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])
+  self.stop()
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:
+   # Simulate the previous constraint with linked monthly rules and overrides.
+   db.execute("UPDATE recurring SET frequency='monthly'")
+   schema=db.execute("SELECT sql FROM sqlite_master WHERE name='recurring'").fetchone()[0]
+   old=schema.replace('"recurring"','recurring_old',1).replace("'quarterly','semiannual','yearly',",'')
+   db.execute(old);db.execute('INSERT INTO recurring_old SELECT * FROM recurring');db.execute('DROP TABLE recurring');db.execute('ALTER TABLE recurring_old RENAME TO recurring');db.commit()
+   before=db.execute('SELECT * FROM recurring').fetchall();links=db.execute('SELECT * FROM recurring_overrides').fetchall()
+  self.start()
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:
+   self.assertEqual(db.execute('SELECT * FROM recurring').fetchall(),before);self.assertEqual(db.execute('SELECT * FROM recurring_overrides').fetchall(),links);self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])
+  self.assertTrue((self.dir/'data'/'backups'/'budget-before-extended-recurrences.sqlite').exists())
+
  def test_card_payment_plan_projects_purchases_and_confirms_actual_once(self):
   aid=self.account(balance=2000);cid=self.account('credit',5000);day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
   self.post('/api/envelopes',{'name':'Épicerie','reserved':230,'budget':230,'frequency':'weekly','start_on':day(1),'forecast_account_id':cid})

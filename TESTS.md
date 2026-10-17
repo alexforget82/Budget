@@ -4,7 +4,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 
 ## Tests automatisés
 
-`npm test` : **69 tests réussis**, aucun échec, aucun test ignoré.
+`npm test` : **70 tests réussis**, aucun échec, aucun test ignoré.
 
 | Suite | Nombre | Vérifications |
 |---|---:|---|
@@ -12,7 +12,7 @@ Les vérifications ci-dessous utilisent uniquement des données fictives et des 
 | `tests/forecast.test.js` | 20 | Dates d’enveloppes, solde au 5 novembre, réserves, rapprochements, dépenses partielles, retards, cartes, exceptions et virements |
 | `tests/private-access.test.js` | 6 | Configuration privée, identité propriétaire, port distinct, hôte et origine HTTPS |
 | `tests/card-payments.test.js` | 13 | Achats datés, paiements fixes ou calculés, reports, remboursements marchands, rapprochement sans double débit, cartes multiples et réserve de crédit nulle |
-| `tests/api-tests.py` | 25 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
+| `tests/api-tests.py` | 26 | Comptes/crédit, catégories, réserves plafonnées, bilan au-delà de 50 opérations, filtres/export complet, imports, corrections de soldes, objectifs, sauvegardes et migration |
 
 Les tests API vérifient notamment :
 
@@ -155,7 +155,7 @@ Les cinq autres parcours navigateur ont également réussi. Une erreur HTTP 400 
 
 ## Accès privé Mac/iPhone (3.3)
 
-`npm test` : **69 tests réussis** (5 CSV, 20 moteur, 6 accès privé et 20 API).
+`npm test` : **70 tests réussis** (5 CSV, 20 moteur, 6 accès privé et 20 API).
 
 - Accès privé désactivé sans configuration; configuration invalide refusée au démarrage.
 - Port privé distinct, adresse HTTPS Tailscale et propriétaire explicite.
@@ -172,3 +172,7 @@ Tailscale Serve, la commande macOS `open`, la gestion de veille, les permissions
 `python3 tests/card-payments-ui.py` : parcours sur données fictives, réutilisation d’une règle existante, achat CIBC et paiement Conjoint distincts au calendrier, rapprochement d’un paiement réel de 215 $ sans nouveau débit, montant fixe, pause/reprise et cinq largeurs d’écran. Les six autres parcours navigateur ont aussi été exécutés avec succès.
 
 Les tests API refusent un nouveau paiement implicite lorsqu’un virement réel proche reste à associer et vérifient que le refus ne modifie aucune table. Les tests couvrent aussi la sauvegarde/restauration du plan et la consultation sans écriture financière. L’intégration réelle Finder/Safari/Tailscale sur Mac et iPhone reste à vérifier sur les appareils de l’utilisateur.
+
+## Fréquences étendues — v3.5
+
+Le test API des factures vérifie les six fréquences, les fins de mois et années bissextiles, le refus d’exceptions hors échéance, les occurrences trimestrielles/semestrielles/annuelles dans la prévision, la sauvegarde/restauration et la migration de l’ancienne contrainte SQLite en conservant les règles et leurs liens. Le parcours `tests/planning-ui.py` vérifie l’interface des récurrences et les vues de prévision.

@@ -3,7 +3,7 @@ window.addEventListener('unhandledrejection',e=>{const el=document.getElementByI
 
 const $=id=>document.getElementById(id),money=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});let state;
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};$('real-transfer').elements.happened_on.value=today();$('transaction').elements.happened_on.value=today();$('recurring').elements.start_on.value=today();
-const adjustments={none:'Date inchangée',before:'Avant week-end/férié',after:'Après week-end/férié'};const types={transfer:'Virement',income:'Revenu',expense:'Dépense',reserve:'Réserve'},freq={weekly:'Hebdomadaire',biweekly:'Aux 2 semaines',monthly:'Mensuelle',last_business_day:'Dernier jour ouvrable du mois',rrq:'Dernier jour ouvrable du mois'};
+const adjustments={none:'Date inchangée',before:'Avant week-end/férié',after:'Après week-end/férié'};const types={transfer:'Virement',income:'Revenu',expense:'Dépense',reserve:'Réserve'},freq={weekly:'Hebdomadaire',biweekly:'Aux 2 semaines',monthly:'Mensuelle',quarterly:'Aux 3 mois',semiannual:'Aux 6 mois',yearly:'Annuelle',last_business_day:'Dernier jour ouvrable du mois',rrq:'Dernier jour ouvrable du mois'};
 function fill(id,items,empty=false){const el=$(id),old=el.value;el.replaceChildren();if(empty)el.add(new Option('Aucune',''));for(const a of items)el.add(new Option(a.name,a.id));if([...el.options].some(o=>o.value===old))el.value=old}
 let transactionAccountInitialized=false;
 function selectDefaultTransactionAccount(accounts){
