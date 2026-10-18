@@ -1,6 +1,14 @@
-# Vérifications — Mon Budget 8.1
+# Vérifications — Sillage 2
 
-`npm test` : **223 tests réussis** (63 Node, 160 API), sans échec ni test ignoré.
+`npm test` : **226 tests réussis** (63 Node, 163 API), sans échec ni test ignoré.
+
+Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
+
+`tests/sillage-ui.py` : identité, centre de vérification, tri, panneau latéral, classement avec soldes/prévisions identiques, brouillon de remboursement, comparaison sur six mois et déplacement d’une échéance vers une simulation sans écriture; six écrans, quatre largeurs de 320 à 1500 px, clair/sombre. `tests/budget-v80-ui.py` : division d’achats, profils CSV, classement groupé, filtres mémorisés et sept écrans sur six largeurs. `tests/budget-v81-ui.py` : calcul actuel/futur et protections des enveloppes. `tests/budget-v73-ui.py` : partage privé limité et révocation.
+
+Les essais utilisent Chromium sous Linux. Safari natif, Gatekeeper, launchd et Tailscale sur un Mac réel ne sont pas exécutés dans cet environnement. Les helpers d’installation, la compatibilité des versions, les fichiers requis et l’absence d’ouverture de Safari lors d’une mise à jour sont couverts par les tests Node. Les SVG/PNG et le manifeste sont servis localement; aucun service worker ni cache de données bancaires hors ligne n’est ajouté.
+
+Historique des vérifications :
 
 Les neuf nouveaux tests API vérifient le classement groupé sans effet financier, les validations atomiques et aperçus périmés, la division exacte au cent, la conservation des soldes et dates, les protections d’enveloppes sur carte (y compris une alimentation tardive), la répartition entre enveloppes, l’annulation, le redémarrage et la restauration. L’identité CSV de l’achat initial est reconnue après des divisions successives. Les opérations associées explicitement à une échéance sont protégées contre une division ambiguë. Le rapprochement et ses indices de doublons restent en lecture seule.
 

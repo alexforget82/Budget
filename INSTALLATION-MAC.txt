@@ -1,3 +1,26 @@
+SILLAGE 2 — VOTRE ARGENT, VOTRE CAP
+Nouvelle generation de Mon Budget, avec vos donnees existantes.
+
+MISE A JOUR D'UNE INSTALLATION EXISTANTE
+1. Decompressez le ZIP.
+2. Ouvrez votre raccourci permanent Mettre a jour Mon Budget.command.
+3. Choisissez ce nouveau dossier complet.
+4. Actualisez Safari : le badge doit indiquer Sillage 2.
+Les nouveaux raccourcis seront dans ~/Applications/Sillage.
+Les anciens raccourcis et dossiers internes restent conserves.
+Ne remplacez pas votre base active par un ancien dossier data.
+La version technique 9.0.0 assure la compatibilite de la mise a jour.
+
+PREMIERE INSTALLATION
+Ouvrez Installer Sillage.command et suivez les instructions existantes.
+Node.js 22.13 ou plus requis. L'acces prive iPhone utilise Tailscale.
+Le Mac doit rester allume et connecte pour l'acces a distance.
+Les mecanismes de confidentialite macOS ne sont pas desactives.
+
+GARDEZ TOUS LES FICHIERS DU ZIP ENSEMBLE
+Dont pro-workspace.js, sillage.js, sillage.css, sillage-logo.svg,
+sillage-icon.png, sillage.webmanifest et les modules historiques.
+
 NOUVEAU 8.1 : tableau de bord simplifie et explications du disponible.
 Pourquoi ce montant ? = calcul actuel. Comprendre le minimum prevu =
 calcul a la date du point bas, avec detail jour par jour sur 90 jours.

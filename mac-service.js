@@ -80,17 +80,19 @@ async function main(){
  const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;let ready;
  for(let i=0;i<60;i++){const s=await status();if(s?.data_key===targetKey&&s.version===version&&s.enabled){ready=s;break;}await delay(200);}
  if(!ready)throw Error('Le service est installé mais ne répond pas. Consultez '+path.join(logs,'budget-error.log')+'.');
- console.log('\nMon Budget '+version+' fonctionne en arrière-plan. Vous pouvez fermer Terminal.');
+ console.log('\nSillage 2 · '+version+' fonctionne en arrière-plan. Vous pouvez fermer Terminal.');
  console.log('Démarrage automatique à chaque ouverture de session Mac.');console.log('Données utilisées : '+data);console.log('Accès iPhone : '+ready.origin);
  const shortcuts=path.join(home,'Applications','Mon Budget');fs.mkdirSync(shortcuts,{recursive:true,mode:0o700});
  // Write content locally; do not copy downloaded Finder metadata or strip quarantine.
  for(const [name,script,action] of [['Ouvrir Mon Budget.command','mac-service.js','open'],['Mettre a jour Mon Budget.command','mac-update.js',''],['Desactiver Mon Budget.command','mac-service.js','stop']]){
   const file=path.join(shortcuts,name);fs.writeFileSync(file,shortcutScript(process.execPath,path.join(root,script),action),{mode:0o700});fs.chmodSync(file,0o700);
  }
+ const branded=path.join(home,'Applications','Sillage');fs.mkdirSync(branded,{recursive:true,mode:0o700});for(const [name,script,action] of [['Ouvrir Sillage.command','mac-service.js','open'],['Mettre a jour Sillage.command','mac-update.js',''],['Desactiver Sillage.command','mac-service.js','stop']]){const file=path.join(branded,name);fs.writeFileSync(file,shortcutScript(process.execPath,path.join(root,script),action),{mode:0o700});fs.chmodSync(file,0o700);}
+ console.log('Raccourcis Sillage : '+branded);
  console.log('Raccourcis permanents : '+shortcuts);
- console.log('Pour les prochaines versions, utilisez Mettre a jour Mon Budget.command et choisissez le nouveau dossier téléchargé.');
+ console.log('Pour les prochaines versions, utilisez Mettre a jour Sillage.command dans Applications/Sillage et choisissez le nouveau dossier téléchargé.');
  console.log('Gardez Tailscale connecté, le Mac allumé et le couvercle ouvert.');
- openAfterInstall({firstInstall,quiet:process.argv.includes('--no-open'),shortcuts,origin:ready.origin},target=>command('/usr/bin/open',[target],true));
+ openAfterInstall({firstInstall,quiet:process.argv.includes('--no-open'),shortcuts:branded,origin:ready.origin},target=>command('/usr/bin/open',[target],true));
  if(!firstInstall||process.argv.includes('--no-open'))console.log('Mise à jour terminée. Actualisez votre onglet Safari déjà ouvert.');
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{console.error('\n'+e.message);process.exitCode=1;});

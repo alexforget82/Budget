@@ -1,4 +1,4 @@
-# Mon Budget 8.1
+# Sillage — Votre argent, votre cap
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,31 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Deuxième génération : Sillage 2
+
+Sillage reprend votre budget existant dans une nouvelle identité : boussole originale, palette ardoise et menthe, icône iPhone et présentation harmonisée. Il reste local et privé. Aucun abonnement, aucune connexion bancaire ni compte externe supplémentaire n’est ajouté.
+
+- **Centre de vérification** : opérations à réviser, transactions sans catégorie, doublons possibles, échéances à confirmer, rapprochements et état des sauvegardes. Les compteurs portent sur tout le registre; les deux premières listes affichent les 20 plus récentes avec accès aux filtres complets. Les doublons sont limités aux 50 groupes les plus récents et ne sont jamais supprimés automatiquement.
+- **Registre** : tri sur tout l’historique par date, montant, description, compte ou catégorie; en-tête fixe sur grand écran, filtres combinés et vues mémorisées incluant le tri. Cliquez une description pour consulter le panneau latéral; le bouton Modifier conserve l’édition complète.
+- **Classement rapide** : catégorie, sous-catégorie et révision dans le panneau, avec aperçu et confirmation protégée contre les changements concurrents. Aucun montant, compte ou lien d’enveloppe n’est modifié par ce classement.
+- **Remboursement** : « Préparer un remboursement » crée un brouillon d’entrée sur le compte de l’achat. Vérifiez le compte, le montant et la date réels avant enregistrement. Il n’y a pas d’association automatique achat/remboursement ni de remise automatique dans une enveloppe. Le traitement des crédits sur carte reste celui du moteur existant.
+- **Bilan** : six mois d’entrées, sorties et écart, avec les catégories dont les achats changent le plus depuis le mois précédent. Les crédits incluent les remboursements et les sorties représentent les achats bruts; les virements sont exclus. Le mois en cours est signalé comme incomplet. La comparaison respecte le compte choisi; le centre de vérification reste global.
+- **Calendrier** : glissez un indicateur d’échéance prévue vers un jour futur de l’horizon pour ouvrir une simulation. Comparez les résultats puis confirmez le report dans le formulaire existant. Aucune écriture au dépôt. Le bouton Déplacer reste utilisable au clavier et sur iPhone; les opérations réelles ne se déplacent pas ainsi.
+- **Finition** : focus visible, raccourci `/` pour rechercher les transactions, messages de confirmation avec accès à l’annulation, mouvements réduits selon le système, lien vers l’état des données et icônes pour l’écran d’accueil. Le manifeste n’ajoute pas de fonctionnement hors ligne.
+
+Le Safe-to-Spend, les protections d’enveloppes, les achats sur carte et la vue iPhone simplifiée sont conservés. Le nouveau nom ne constitue pas une certification de sécurité ou une garantie de disponibilité bancaire.
+
+### Passer à Sillage
+
+1. Téléchargez et décompressez le ZIP du dépôt.
+2. Utilisez votre raccourci permanent **Mettre a jour Mon Budget.command** et choisissez le nouveau dossier.
+3. Actualisez Safari. Le bas du menu indique **Sillage 2**.
+4. Les nouveaux raccourcis se trouvent dans **~/Applications/Sillage**. Vos anciens raccourcis restent utilisables.
+
+Ne déplacez pas la base active. Les noms techniques des dossiers de données, du service et du paquet sont conservés pour assurer cette continuité. La version technique **9.0.0** permet la mise à jour depuis 8.1 sans être refusée comme une ancienne version; la nouvelle identité à l’écran est **Sillage 2**. Les fichiers JSON existants restent restaurables. Pour une nouvelle installation, utilisez **Installer Sillage.command**; pour une installation existante, utilisez la mise à jour ci-dessus. Une icône iPhone déjà ajoutée peut nécessiter d’être recréée depuis Safari pour reprendre le nouveau logo et le nom.
+
+Aperçus avec données fictives : [tableau de bord](docs/sillage-dashboard-sombre.png), [centre de vérification](docs/sillage-verification.png), [détail d’une opération](docs/sillage-detail-operation.png), [comparaison mensuelle](docs/sillage-comparaison.png), [iPhone](docs/sillage-verification-iphone.png).
 
 ## Nouveautés 8.1 : comprendre votre disponible
 
