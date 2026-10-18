@@ -1,4 +1,4 @@
-# Mon Budget 7.1
+# Mon Budget 7.1.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,26 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Correctif 7.1.1 : enveloppes vers un compte personnel
+
+Une enveloppe programmée à destination d’un **compte personnel bancaire exclu du disponible** représente désormais un **virement depuis le seul compte bancaire inclus**, normalement Conjoint. Le renouvellement ne libère plus artificiellement le montant dans le Safe-to-Spend lors du paiement simulé depuis le compte personnel. La prévision inclut la sortie à sa date même si la réserve actuelle vaut zéro. Les soldes réels ne changent qu’à confirmation.
+
+**Exemple vérifié** : 3 075,56 $ avant le 31 octobre, 445 $ de réserves de taxes et un virement Anaïs de 283 $ donnent un **disponible prévu de 2 347,56 $**. Le solde bancaire prévu de Conjoint est 2 792,56 $, avec 445 $ encore réservés aux taxes.
+
+Pour une allocation comme Anaïs, dans Enveloppes choisissez **Paiement ou virement prévu à date précise**, le budget de **283 $**, la fréquence mensuelle, la date du **31 octobre** et le **compte personnel destinataire**. Conjoint doit être le seul compte inclus dans le disponible. L’explication du formulaire indique les deux comptes. Ce fonctionnement s’applique à toutes les enveloppes programmées de cette façon, avec les six fréquences.
+
+Dans **Prévu / Réel**, confirmez le virement à son passage, ou choisissez **Déjà saisie — associer l’opération** s’il est déjà enregistré. Dans une nouvelle transaction de type Virement, **Utiliser une enveloppe** permet aussi de lier directement la sortie à Anaïs. La fiche de l’enveloppe affiche ses virements associés et propose de saisir le virement. Les achats effectués ensuite depuis le compte personnel ne débitent pas Conjoint une deuxième fois et ne libèrent pas sa prochaine allocation.
+
+Si vous avez déjà une **récurrence de virement** pour la même allocation, modifiez-la pour sélectionner son enveloppe : cette récurrence remplace le paiement automatique de l’enveloppe pour sa période. Ne créez pas une deuxième programmation indépendante du même virement. Les virements partiels, anticipés, modifiés et supprimés sont pris en compte; un paiement anticipé ne réserve pas à nouveau sa portion au renouvellement.
+
+Les enveloppes **Budget réservé (achats variables)** continuent de geler le montant au renouvellement sans inventer de paiement. Les paiements directs depuis Conjoint gardent leur fonctionnement. Les achats sur carte et les remboursements programmés conservent leur logique; aucune dette de carte existante n’est réservée automatiquement.
+
+Les anciens virements restent intacts à la migration. Le lien à une enveloppe est facultatif et les anciennes sauvegardes restent restaurables. La configuration des comptes de dépenses conserve désormais les destinations personnelles des enveloppes, plutôt que de les remplacer par Conjoint. Actualisez Safari après la mise à jour habituelle et vérifiez **v7.1.1**.
+
+**Validation : 169 tests Node/API** (52 Node, 117 API). Le cas exact d’Anaïs, les six fréquences, la confirmation, l’association d’un virement existant, les paiements partiels/anticipés, le renouvellement réel, les corrections, l’annulation et la compatibilité des sauvegardes sont vérifiés avec des bases temporaires.
+
+Aperçus fictifs : [calcul d’Anaïs au 31 octobre](docs/v711-anais-prevision.png) · [sur iPhone](docs/v711-enveloppe-virement-iphone.png).
 
 ## Nouveautés 7.1 : Conjoint, trois cartes et virements personnels
 

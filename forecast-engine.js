@@ -38,7 +38,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
  for(const e of enabled){
   if(e.frequency==='none'||!e.start_on||!e.budget_cents){warnings.push({code:'envelope_unscheduled',envelope_id:e.id,message:e.name+' : date, fréquence et budget à définir. Seule la réserve actuelle est déduite.'});continue;}
   // A linked expense rule owns its dates and amounts; no second automatic envelope expense.
-  const account=accountMap.get(e.forecast_account_id);
+  const account=accountMap.get(e.forecast_account_id),sources=accounts.filter(included),funding=account&&account.kind!=='credit'&&!included(account)&&sources.length===1?{from:sources[0].id,to:account.id}:null;
   if(!account)warnings.push({code:'envelope_account',envelope_id:e.id,message:e.name+' : compte à choisir. Les dépenses sont provisoirement déduites du solde total inclus.'});
   const start=e.planning_since||since;
   const schedule=[];
@@ -50,12 +50,12 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
   for(const occurrence of schedule){
    const {original,date,nextNominal}=occurrence;if(date>end)continue;
    const next=schedule.find(s=>s.date>date)?.date||addDays(end,91),budget=envOverrides.get(e.id+'|'+original)??e.budget_cents;
-   if(rows.some(r=>r.source==='recurring'&&r.type==='expense'&&r.envelope_id===e.id&&r.original_on>=original&&r.original_on<nextNominal))continue;
+   if(rows.some(r=>r.source==='recurring'&&(r.type==='expense'&&!funding||r.type==='transfer'&&funding&&r.account_id===funding.from&&r.to_account_id===funding.to)&&r.envelope_id===e.id&&r.original_on>=original&&r.original_on<nextNominal))continue;
    const uniqueDate=schedule.filter(s=>s.date===date).length===1;
-   const actuals=transactions.filter(t=>{const link=envelopeLinkMap.get(t.id);return t.envelope_id===e.id&&t.amount_cents<0&&!used.has('transaction:'+t.id)&&(link?link.envelope_id===e.id&&link.occurrence_on===original:uniqueDate&&t.happened_on>=date&&t.happened_on<next);});
-   const actual=actuals.reduce((n,t)=>n-t.amount_cents,0),choice=periodMap.get(e.id+'|'+original);
-   const status=choice==='skipped'?'skipped':choice==='complete'||(actuals.length&&choice!=='open')?'actual':'planned';
-   rows.push({key:'env-'+e.id+'|'+original,source:'envelope',id:'env-spend-'+e.id,envelope_id:e.id,date,original_on:original,period_end:addDays(next,-1),description:e.name,type:'expense',account_id:account?.id??null,planned_cents:budget,actual_cents:actuals.length||choice==='complete'?actual:null,actual_ids:actuals.map(t=>'transaction:'+t.id),status:budget===0&&!actuals.length?'skipped':status,partial:choice==='open',modified:envOverrides.has(e.id+'|'+original)||date!==original});
+   const actuals=funding?transfers.filter(t=>t.envelope_id===e.id&&t.from_account_id===funding.from&&t.to_account_id===funding.to&&(t.envelope_on?t.envelope_on===original:t.happened_on>=date&&t.happened_on<next)):transactions.filter(t=>{const link=envelopeLinkMap.get(t.id);return t.envelope_id===e.id&&t.amount_cents<0&&!used.has('transaction:'+t.id)&&(link?link.envelope_id===e.id&&link.occurrence_on===original:uniqueDate&&t.happened_on>=date&&t.happened_on<next);});
+   const actual=actuals.reduce((n,t)=>n+(funding?t.amount_cents:-t.amount_cents),0),choice=periodMap.get(e.id+'|'+original);
+   const status=choice==='skipped'?'skipped':choice==='complete'||(actuals.length&&choice!=='open'&&(!funding||actual>=budget))?'actual':'planned';
+   rows.push({key:'env-'+e.id+'|'+original,source:'envelope',id:'env-spend-'+e.id,envelope_id:e.id,date,original_on:original,period_end:addDays(next,-1),description:e.name,type:funding?'transfer':'expense',envelope_funding:!!funding,account_id:funding?.from??account?.id??null,to_account_id:funding?.to??null,planned_cents:budget,actual_cents:actuals.length||choice==='complete'?actual:null,actual_ids:actuals.map(t=>(funding?'transfer:':'transaction:')+t.id),status:budget===0&&!actuals.length?'skipped':status,partial:choice==='open',modified:envOverrides.has(e.id+'|'+original)||date!==original});
   }
  }
  for(const row of rows){
@@ -83,7 +83,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
   for(const e of envelopes){if(!e.active||e.frequency==='none'||!e.start_on)continue;
    const scheduled=e.budget_schedules?envelopeBudgetDates(e,date,date,nextOccurrence)[0]:null;let due=!!scheduled;if(!e.budget_schedules)for(let i=0;i<20000;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=date){due=d===date;break;}}
    if(!due||renewals.some(r=>r.envelope_id===e.id&&r.occurrence_on===date))continue;
-   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,after=e.rollover?before+budget:budget;
+   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,early=transfers.filter(t=>t.envelope_id===e.id&&t.envelope_on===date&&t.happened_on<date).reduce((n,t)=>n+t.amount_cents,0),remaining=Math.max(0,budget-early),after=e.rollover?before+remaining:remaining;
    reserves.set(e.id,after);reserved+=after-before;events.push({id:'env-'+e.id,description:'Renouvellement · '+e.name,type:'reserve',amount_cents:after-before,envelope_id:e.id,envelope_renewal:true,cash_impact_cents:0,sts_impact_cents:before-after});
   }
   for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0).sort((a,b)=>Number(fundingByTransfer.has(b.key))-Number(fundingByTransfer.has(a.key)))){
@@ -94,12 +94,13 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
    if(row.type==='income')balances.set(row.account_id,(balances.get(row.account_id)||0)+(account?.kind==='credit'?-amount:amount));
    if(row.type==='expense'){
     if(account)balances.set(account.id,(balances.get(account.id)||0)+(account.kind==='credit'?amount:-amount));else unassigned+=amount;
-    if(row.envelope_id)consume(row.envelope_id,Math.max(0,amount-(row.funded_cents||0)));
+    const allowance=envelopes.find(e=>e.id===row.envelope_id&&e.forecast_spend!==0&&e.forecast_account_id===row.account_id);if(row.envelope_id&&!(allowance&&account?.kind!=='credit'&&!included(account)&&accounts.filter(included).length===1))consume(row.envelope_id,Math.max(0,amount-(row.funded_cents||0)));
    }
    if(row.type==='transfer'){
     const target=accountMap.get(row.to_account_id);
     balances.set(row.account_id,(balances.get(row.account_id)||0)+(account?.kind==='credit'?amount:-amount));
     balances.set(row.to_account_id,(balances.get(row.to_account_id)||0)+(target?.kind==='credit'?-amount:amount));
+    if(row.envelope_id&&included(account)&&!included(target)&&target?.kind!=='credit'&&!fundingByTransfer.has(row.key))consume(row.envelope_id,amount);
     const funding=fundingByTransfer.get(row.key);if(funding&&funding.expense.simulation_on>=date){const covered=Math.min(amount,funding.link.coverage_cents||0,Math.max(0,funding.expense.remaining_cents-funding.expense.funded_cents));if(funding.expense.envelope_id)consume(funding.expense.envelope_id,covered);funding.expense.funded_cents+=covered;row.funding_cents=covered;}
    }
    if(row.type==='reserve'){reserved+=amount;if(row.envelope_id)reserves.set(row.envelope_id,(reserves.get(row.envelope_id)||0)+amount);}

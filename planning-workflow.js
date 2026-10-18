@@ -35,7 +35,7 @@
  }
  window.budgetConfirmPlanned=key=>{const row=current?.planning.rows.find(r=>r.key===key);if(row&&['planned','pending'].includes(row.status))openAction(row,'confirm');};
  function candidates(row,account){
-  const type=row.type==='transfer'?'transfer':'transaction',actuals=type==='transfer'?current.calendar_transfers:current.calendar_actuals,claimed=new Set([...current.planning.rows.filter(r=>r.source==='recurring').flatMap(r=>r.actual_ids),...(current.planning.envelope_actual_links||[]).map(l=>'transaction:'+l.transaction_id)]);
+  const type=row.type==='transfer'?'transfer':'transaction',actuals=type==='transfer'?current.calendar_transfers:current.calendar_actuals,claimed=new Set([...current.planning.rows.flatMap(r=>r.actual_ids),...(current.planning.envelope_actual_links||[]).map(l=>'transaction:'+l.transaction_id)]);
   return (actuals||[]).filter(a=>a.happened_on<=current.forecast[0].date&&!claimed.has(type+':'+a.id)&&(type==='transfer'?a.from_account_id===row.account_id&&a.to_account_id===row.to_account_id:a.account_id===Number(account)&&(row.type==='income'?a.amount_cents>0:a.amount_cents<0)&&(!a.envelope_id||a.envelope_id===row.envelope_id))).sort((a,b)=>Math.abs(Date.parse(a.happened_on)-Date.parse(row.date))-Math.abs(Date.parse(b.happened_on)-Date.parse(row.date))).slice(0,100);
  }
  function openAction(row,action){
@@ -44,12 +44,12 @@
   const amount=n('input');amount.type='number';amount.min=action==='adjust'?'0':'0.01';amount.step='0.01';amount.name='amount';amount.required=true;amount.value=((action==='adjust'?row.planned_cents:row.remaining_cents)/100).toFixed(2);
   const realDate=n('input');realDate.type='date';realDate.name='happened_on';realDate.max=current.forecast[0].date;realDate.value=current.forecast[0].date;realDate.required=true;
   const newDate=n('input');newDate.type='date';newDate.name='new_on';newDate.min=current.forecast[0].date;newDate.max=current.forecast.at(-1).date;newDate.value=row.date<newDate.min?newDate.min:row.date;newDate.required=true;
-  const account=n('select');account.name='account_id';account.required=true;for(const a of current.accounts){const o=n('option',a.name);o.value=a.id;account.append(o);}const blank=n('option','Choisir un compte');blank.value='';account.prepend(blank);account.value=row.account_id||'';account.disabled=row.source==='recurring';
+  const account=n('select');account.name='account_id';account.required=true;for(const a of current.accounts){const o=n('option',a.name);o.value=a.id;account.append(o);}const blank=n('option','Choisir un compte');blank.value='';account.prepend(blank);account.value=row.account_id||'';account.disabled=row.source==='recurring'||row.type==='transfer';
   const entry=n('select');entry.name='entry_mode';for(const [value,label] of [['new','À enregistrer maintenant'],['existing','Déjà saisie — associer l’opération']]){const o=n('option',label);o.value=value;entry.append(o);}
   if(row.unmatched_payment_ids?.length)entry.value='existing';
   const distinct=n('input');distinct.type='checkbox';distinct.name='allow_new_payment';const distinctLabel=field('Ce paiement est distinct des virements déjà saisis',distinct);distinctLabel.className='inline-choice';
   const actual=n('select');actual.name='actual_id';const actualLabel=field('Opération réelle à associer',actual),amountLabel=field(action==='adjust'?'Montant total prévu ($)':'Montant réellement passé ($)',amount),dateLabel=field('Date réelle',realDate),accountLabel=field('Compte',account);
-  const complete=n('input');complete.type='checkbox';complete.name='complete_period';complete.checked=true;const completeLabel=field('Aucun autre achat prévu pour cette période',complete);completeLabel.className='inline-choice';completeLabel.hidden=row.source!=='envelope';
+  const complete=n('input');complete.type='checkbox';complete.name='complete_period';complete.checked=true;const completeLabel=field(row.type==='transfer'?'Aucun autre virement prévu pour cette période':'Aucun autre achat prévu pour cette période',complete);completeLabel.className='inline-choice';completeLabel.hidden=row.source!=='envelope';
   const preview=n('p',undefined,'action-preview');
   function sync(){
    const selected=actual.value;actual.replaceChildren();const empty=n('option','Choisir l’opération déjà enregistrée');empty.value='';actual.append(empty);

@@ -51,12 +51,12 @@ function editAccount(id){const a=state.accounts.find(a=>a.id===id);if(!a)return;
 function resetAccount(){const f=$('account');f.reset();f.elements.id.value='';$('account-included').checked=true;$('account-save').textContent='Ajouter le compte';$('account-cancel').classList.add('hidden');accountKind()}
 $('account-cancel').onclick=resetAccount;
 function envelopeModeHelp(){
- const f=$('envelope'),reserved=f.elements.forecast_spend.value==='false';
- $('envelope-mode-help').textContent=reserved?'L’argent réservé est exclu du Safe-to-Spend. Les achats réels consomment cette réserve au fil de la période. Ce mode ne crée aucun paiement ni virement bancaire.':'Le budget est simulé comme une sortie bancaire à chaque date programmée. Utilisez ce mode quand la date du paiement est connue.';
+ const f=$('envelope'),reserved=f.elements.forecast_spend.value==='false',target=state?.accounts?.find(a=>String(a.id)===f.elements.forecast_account_id.value),source=state?.accounts?.filter(a=>a.included&&a.kind!=='credit')||[],funding=!reserved&&target&&target.kind!=='credit'&&!target.included&&source.length===1;
+ $('envelope-mode-help').textContent=funding?'Un virement de '+source[0].name+' vers '+target.name+' sera prévu à chaque date, même avec une réserve actuelle de 0 $. Confirmez-le dans Prévu / Réel ou associez un virement existant. Les achats personnels ne sont pas un deuxième débit du compte commun.':reserved?'L’argent réservé est exclu du Safe-to-Spend. Les achats réels consomment cette réserve au fil de la période. Ce mode ne crée aucun paiement ni virement bancaire.':'Le budget est simulé comme une sortie bancaire à chaque date programmée. Utilisez ce mode quand la date du paiement est connue.';
  $('envelope-reserve-help').hidden=!reserved;
  f.elements.forecast_account_id.disabled=reserved;f.elements.forecast_account_id.closest('label').hidden=reserved;
 }
-$('envelope').elements.forecast_spend.addEventListener('change',envelopeModeHelp);
+$('envelope').elements.forecast_spend.addEventListener('change',envelopeModeHelp);$('envelope-forecast-account').addEventListener('change',envelopeModeHelp);
 envelopeModeHelp();
 function resetEnvelope(){const f=$('envelope');f.reset();f.elements.id.value='';f.elements.reserved.value='0';f.elements.budget.value='0';f.elements.start_on.value=today();$('envelope-save').textContent='Créer';$('envelope-cancel').classList.add('hidden');envelopeModeHelp()}
 $('envelope-cancel').onclick=resetEnvelope;
@@ -153,7 +153,7 @@ function setForecastDayOpen(row,open){
 }
 $('forecast-expand').onclick=()=>{for(const d of document.querySelectorAll('.forecast-day'))setForecastDayOpen(d,true)};
 $('forecast-collapse').onclick=()=>{for(const d of document.querySelectorAll('.forecast-day'))setForecastDayOpen(d,false)};
-function toggleType(){const type=$('rec-type').value;$('source-label').classList.toggle('hidden',type==='reserve');$('destination-label').classList.toggle('hidden',type!=='transfer');$('reserve-label').classList.toggle('hidden',!['reserve','expense'].includes(type));$('rec-envelope').required=type==='reserve'}$('rec-type').onchange=toggleType;
+function toggleType(){const type=$('rec-type').value;$('source-label').classList.toggle('hidden',type==='reserve');$('destination-label').classList.toggle('hidden',type!=='transfer');$('reserve-label').classList.toggle('hidden',!['reserve','expense','transfer'].includes(type));$('rec-envelope').required=type==='reserve'}$('rec-type').onchange=toggleType;
 function editRule(id){const r=state.recurring.find(x=>x.id===id),f=$('recurring');for(const [k,v] of Object.entries({...r,amount:r.amount_cents/100,active:String(!!r.active),one_time:String(!!r.one_time)}))if(f.elements[k])f.elements[k].value=v??'';$('save-rec').textContent='Enregistrer les modifications';$('cancel-rec').classList.remove('hidden');toggleType();window.appOpenEditor?.('recurring')}
 function resetRec(){const f=$('recurring');f.reset();f.elements.id.value='';f.elements.start_on.value=today();$('save-rec').textContent='Ajouter la règle';$('cancel-rec').classList.add('hidden');toggleType()}$('cancel-rec').onclick=resetRec;
 async function send(url,data){$('error').textContent='';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),out=await r.json();if(!r.ok)throw Error(out.error||'Erreur');render(out);return true}catch(e){$('error').textContent=e.message;window.scrollTo({top:0,behavior:'smooth'});return false}}
@@ -307,7 +307,7 @@ fetch('/api/state').then(r=>r.json()).then(s=>render(s)).catch(()=>{$('error').t
   e.preventDefault();
   const f=e.target;
   const payload={id:editId,description:f.elements.description.value,amount:Number(f.elements.amount.value),happened_on:f.elements.happened_on.value};
-  if(editKind==='transfer'){payload.from_account_id=Number(f.elements.account_id.value);payload.to_account_id=Number(f.elements.to_account_id.value)}
+  if(editKind==='transfer'){payload.from_account_id=Number(f.elements.account_id.value);payload.to_account_id=Number(f.elements.to_account_id.value);payload.envelope_id=f.elements.envelope_id.value||null}
   else{payload.account_id=Number(f.elements.account_id.value);payload.envelope_id=f.elements.envelope_id.value||null;payload.category_id=f.elements.category_id.value||null;payload.subcategory_id=f.elements.subcategory_id?.value||null;payload.amount=Math.abs(payload.amount)*(f.elements.direction.value==='expense'?-1:1)}
   const ok=await send('/api/'+(editKind==='transfer'?'transfers':'transactions')+'/update',payload);
   if(ok){dialog.close();await loadRecords();refreshCalendar()}

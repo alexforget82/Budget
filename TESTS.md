@@ -1,3 +1,15 @@
+# Vérifications — Mon Budget 7.1.1
+
+`npm test` : **169 tests réussis** (52 Node, 117 API), sans échec ni test ignoré, avec des données temporaires exclusivement.
+
+Les dix tests API supplémentaires couvrent le cas exact 3 075,56 − 445 − 283 = 2 347,56 avec une enveloppe non alimentée, les six fréquences et l’équation du solde, la confirmation unique, l’association d’un virement existant, les paiements partiels et anticipés, le renouvellement réel après une avance, la modification/suppression/annulation et la restauration des anciennes sauvegardes. Les achats personnels ne libèrent pas l’allocation encore protégée dans Conjoint. La configuration bancaire conserve le compte personnel destinataire d’une enveloppe.
+
+Parcours Chromium : `tests/envelope-transfers-ui.py` vérifie le calcul exact, l’explication des comptes, la confirmation du virement, le lien manuel à l’enveloppe, sa fiche et son historique, le mode sombre et cinq largeurs. Les parcours de régression des virements, du suivi Prévu / Réel et de la configuration v7.1 sont également exécutés. Le test historique de fiche v4.4 utilise désormais le dialogue de calcul v5.3 qui a remplacé l’ancien dialogue.
+
+La migration crée une copie SQLite avant l’ajout des colonnes facultatives des virements. Les tests de migration et restauration passent. L’installation native macOS et Safari sur le Mac de l’utilisateur restent à vérifier sur son appareil.
+
+---
+
 # Vérifications — Mon Budget 7.1
 
 `npm test` : **159 tests réussis** (52 Node, 107 API), sans échec ni test ignoré, sur des bases temporaires.
