@@ -13,7 +13,7 @@ export function createEnvelopeTools({db,atomic,cents,validDate,today,exportBacku
     Object.assign(next,{budget_cents:0,frequency:'none',start_on:null,forecast_spend:0});
    }else{
     const budget=c.budget===undefined?old.budget_cents:cents(c.budget),frequency=c.frequency??old.frequency,start=c.start_on??old.start_on;
-    if(budget===null||budget<=0||!['weekly','biweekly','monthly'].includes(frequency)||!validDate(start))throw Error(old.name+' : indiquez un budget positif, une fréquence et une date de début. Configurez séparément les enveloppes sans programmation.');
+    if(budget===null||budget<=0||!['weekly','biweekly','monthly','quarterly','semiannual','yearly'].includes(frequency)||!validDate(start))throw Error(old.name+' : indiquez un budget positif, une fréquence et une date de début. Configurez séparément les enveloppes sans programmation.');
     if((budget!==old.budget_cents||frequency!==old.frequency||start!==old.start_on)&&start<=today())throw Error(old.name+' : une nouvelle programmation doit commencer à une date future. La réserve actuelle reste disponible dans « Ajuster l’enveloppe ».');
     const account=c.account_id===undefined?old.forecast_account_id:c.account_id===null?null:c.account_id;
     if(account!==null&&!args.accounts.some(a=>a.id===account))throw Error('Compte introuvable.');

@@ -1,4 +1,4 @@
-# Mon Budget 6.0
+# Mon Budget 6.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,25 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 6.1 : budgets périodiques et reconduction automatique
+
+Dans **Budget**, ouvrez une catégorie et indiquez le **montant par période**, la **fréquence** et la **date de départ** : à la semaine, aux 2 semaines, au mois, aux 3 mois, aux 6 mois ou à l’année. Les totaux de la vue mensuelle utilisent les dates réelles, sans moyenne : 230 $ chaque jeudi à partir du 1er octobre 2026 donne 1 150 $ en octobre (5 dates), puis 920 $ en novembre (4 dates). Un budget trimestriel ou annuel apparaît au complet dans le mois de son échéance; il n’est pas divisé artificiellement entre les mois.
+
+La question **« Le montant est-il identique les mois suivants ? »** exige une réponse :
+
+- **Oui** : le montant par période est reconduit automatiquement selon le même calendrier, sans devoir reprendre manuellement chaque mois. Une semaine conserve son jour et une échéance annuelle conserve sa date anniversaire. Le total d’un mois peut varier avec son nombre de dates.
+- **Non** : ce budget est limité au mois choisi. Il peut aussi arrêter une reconduction précédente à partir de ce mois. Les objectifs explicitement enregistrés pour un autre mois restent prioritaires et l’historique n’est pas réécrit.
+
+La reconduction est conservée comme un calendrier durable et apparaît automatiquement dans les mois futurs; elle ne crée pas une infinité de copies dans la base. Une modification prend effet au mois choisi. Les dates de fin de mois et les années bissextiles utilisent le moteur partagé.
+
+**Réserves** : avec **Créer/Ajuster la réserve selon ce budget**, le montant gelé correspond au restant de la période active et les renouvellements suivent les dates choisies. Par exemple, une réserve hebdomadaire de 230 $, après un achat de 100 $, conserve 130 $ jusqu’au prochain renouvellement à 230 $. Aucune dépense bancaire n’est inventée. Avec Non, aucun renouvellement de cette programmation n’est ajouté après le mois choisi; le restant déjà réservé est conservé. Les aperçus et le Safe-to-Spend utilisent le même calendrier que les renouvellements réels, y compris annuels après plusieurs années d’utilisation.
+
+**Objectif seul** et **Lier une réserve existante** conservent les montants et la programmation des enveloppes existantes. Pour changer aussi une réserve gérée par Budget, choisissez explicitement son ajustement dans Budget. Une réserve avec ce nouveau calendrier doit être programmée depuis Budget; son montant actuel peut toujours être ajusté dans Enveloppes. Les anciens budgets et enveloppes v6.0 restent inchangés tant que vous ne les modifiez pas. Les catégories avec un calendrier reconduit restent séparées lors d’une fusion pour préserver leurs programmations.
+
+**Validation : 141 tests Node/API** (52 Node, 89 API). `python3 tests/budget-v61-ui.py` vérifie les six choix, la réponse obligatoire Oui/Non, les totaux hebdomadaires exacts, la reconduction après rechargement, les montants par période dans l’éditeur, le mode sombre et cinq largeurs. Le parcours v6.0 et le suivi Prévu / Réel restent vérifiés.
+
+Aperçus fictifs : [fréquence et reconduction](docs/v61-frequence-reconduction.png) · [mois suivant](docs/v61-budget-reconduit.png) · [sur iPhone](docs/v61-frequence-iphone.png).
 
 ## Nouveautés 6.0 : Budget et Récurrences, deux espaces reliés
 
@@ -140,7 +159,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v6.0**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v6.1**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 

@@ -1,3 +1,4 @@
+import {envelopeBudgetDates} from './budget-schedule.js';
 import {createMonthlyBudget} from './monthly-budget.js';
 import {createBudgetLife} from './budget-life.js';
 import {createDashboardLayout} from './dashboard-layout.js';
@@ -185,22 +186,20 @@ function spendingWindows(accounts, recurring, days, currentSafe){
 }
 function applyEnvelopeRenewals(){
  const today=todayLocal();const activation=db.prepare("SELECT value FROM app_settings WHERE key='renewal_activation'").get().value;
- const envelopes=q("SELECT * FROM envelopes WHERE active=1 AND frequency!='none' AND start_on IS NOT NULL AND budget_cents>0");
+ const envelopes=q("SELECT * FROM envelopes WHERE active=1 AND frequency!='none' AND start_on IS NOT NULL").map(monthlyBudget.enrichEnvelope);
  db.exec('BEGIN');try{
  for(const e of envelopes){
-  const start=e.start_on>activation?e.start_on:activation;
+  const initial=e.start_on>activation?e.start_on:activation,lookback=new Date(Date.parse(today+'T12:00:00Z')-400*86400000).toISOString().slice(0,10),start=e.budget_schedules&&initial<lookback?lookback:initial;
   if(start>today)continue;
   // Only evaluate dates from activation onward. Max 400 days protects startup time.
   const since=new Date(start+'T12:00:00Z'),end=new Date(today+'T12:00:00Z');
   if((end-since)/86400000>400)continue;
-  for(let i=0;i<1500;i++){
-   const date=nextOccurrence(e.start_on,e.frequency,i);
-   if(date>today)break;
-   if(date<start)continue;
+  for(const occurrence of envelopeBudgetDates(e,start,today,nextOccurrence)){
+   const date=occurrence.date;
    const existing=db.prepare('SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?').get(e.id,date);
    if(existing)continue;
    const current=db.prepare('SELECT reserved_cents FROM envelopes WHERE id=?').get(e.id).reserved_cents;
-   const budget=db.prepare('SELECT budget_cents FROM envelope_budget_overrides WHERE envelope_id=? AND occurrence_on=?').get(e.id,date)?.budget_cents??e.budget_cents;
+   const budget=db.prepare('SELECT budget_cents FROM envelope_budget_overrides WHERE envelope_id=? AND occurrence_on=?').get(e.id,date)?.budget_cents??occurrence.amount_cents;
    const updated=e.rollover?current+budget:budget;
    run('UPDATE envelopes SET reserved_cents=? WHERE id=?',updated,e.id);
    run('INSERT INTO envelope_renewal_log(envelope_id,occurrence_on,applied_cents) VALUES(?,?,?)',e.id,date,updated-current);
@@ -209,7 +208,7 @@ function applyEnvelopeRenewals(){
  db.exec('COMMIT');
  }catch(err){db.exec('ROLLBACK');throw err}
 }
-function forecastInput(){const accounts=q('SELECT * FROM accounts ORDER BY id DESC'),envelopes=q('SELECT * FROM envelopes ORDER BY id DESC'),recurring=[...q('SELECT * FROM recurring ORDER BY id DESC').map(monthlyBudget.enrich),...budgetLife.virtualRules()],overrides=q('SELECT * FROM recurring_overrides ORDER BY occurrence_on,id'),manual=q('SELECT * FROM reconciliation_links'),moves=q('SELECT * FROM recurring_moves'),envelopeOverrides=q('SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on');return {accounts,envelopes,recurring,cardPaymentPlans:q('SELECT * FROM card_payment_plans'),overrides,moves,links:manual,transactions:q('SELECT * FROM transactions'),transfers:q('SELECT * FROM account_transfers'),periods:q('SELECT * FROM envelope_period_status'),envelopeMoves:q('SELECT * FROM envelope_occurrence_moves'),envelopeLinks:q('SELECT * FROM envelope_actual_links'),renewals:q('SELECT * FROM envelope_renewal_log'),envelopeOverrides,today:todayLocal(),since:db.prepare("SELECT value FROM app_settings WHERE key='forecast_tracking_since'").get()?.value||todayLocal(),horizon:90,nextOccurrence,occurrenceInfo,similarDescription};}
+function forecastInput(){const accounts=q('SELECT * FROM accounts ORDER BY id DESC'),envelopes=q('SELECT * FROM envelopes ORDER BY id DESC').map(monthlyBudget.enrichEnvelope),recurring=[...q('SELECT * FROM recurring ORDER BY id DESC').map(monthlyBudget.enrich),...budgetLife.virtualRules()],overrides=q('SELECT * FROM recurring_overrides ORDER BY occurrence_on,id'),manual=q('SELECT * FROM reconciliation_links'),moves=q('SELECT * FROM recurring_moves'),envelopeOverrides=q('SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on');return {accounts,envelopes,recurring,cardPaymentPlans:q('SELECT * FROM card_payment_plans'),overrides,moves,links:manual,transactions:q('SELECT * FROM transactions'),transfers:q('SELECT * FROM account_transfers'),periods:q('SELECT * FROM envelope_period_status'),envelopeMoves:q('SELECT * FROM envelope_occurrence_moves'),envelopeLinks:q('SELECT * FROM envelope_actual_links'),renewals:q('SELECT * FROM envelope_renewal_log'),envelopeOverrides,today:todayLocal(),since:db.prepare("SELECT value FROM app_settings WHERE key='forecast_tracking_since'").get()?.value||todayLocal(),horizon:90,nextOccurrence,occurrenceInfo,similarDescription};}
 function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM accounts ORDER BY id DESC'),envelopes=q('SELECT * FROM envelopes ORDER BY id DESC'),recurring=q('SELECT * FROM recurring ORDER BY id DESC'),overrides=q('SELECT * FROM recurring_overrides ORDER BY occurrence_on,id');const cash=accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+a.balance_cents,0),reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0);const manual=q('SELECT * FROM reconciliation_links');
  const envelopeOverrides=q('SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on'),moves=q('SELECT * FROM recurring_moves');
  const simulation=buildForecast(forecastInput());
@@ -217,9 +216,9 @@ function snapshot(){applyEnvelopeRenewals();const accounts=q('SELECT * FROM acco
  for(const row of simulation.rows)row.signature=createHash('sha256').update(JSON.stringify(row)).digest('hex');
  const projected=simulation.days;
  const windows=spendingWindows(accounts,recurring,projected.slice(0,30),cash-reserved);
- const envelopeDetails=envelopes.map(e=>{
-  const next=(()=>{if(!e.active||e.frequency==='none'||!e.start_on)return null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=todayLocal()&&!q('SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?',e.id,d).length)return d;}return null})();
-  const periodStart=(()=>{if(!e.start_on||e.frequency==='none')return null;let last=null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>todayLocal())break;last=d;}return last})();
+ const envelopeDetails=envelopes.map(raw=>{const e=monthlyBudget.enrichEnvelope(raw);
+  const next=(()=>{if(!e.active||e.frequency==='none'||!e.start_on)return null;if(e.budget_schedules)return envelopeBudgetDates(e,todayLocal(),new Date(Date.parse(todayLocal()+'T12:00:00Z')+400*86400000).toISOString().slice(0,10),nextOccurrence).find(d=>!q('SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?',e.id,d.date).length)?.date||null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=todayLocal()&&!q('SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?',e.id,d).length)return d;}return null})();
+  const periodStart=(()=>{if(!e.start_on||e.frequency==='none')return null;if(e.budget_schedules)return envelopeBudgetDates(e,e.start_on,todayLocal(),nextOccurrence).at(-1)?.date||null;let last=null;for(let i=0;i<1500;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>todayLocal())break;last=d;}return last})();
   const spent=periodStart===null?0:q('SELECT t.amount_cents FROM transactions t LEFT JOIN envelope_actual_links l ON l.transaction_id=t.id WHERE t.envelope_id=? AND t.happened_on<=? AND t.amount_cents<0 AND ((l.transaction_id IS NOT NULL AND l.occurrence_on=?) OR (l.transaction_id IS NULL AND t.happened_on>=?))',e.id,todayLocal(),periodStart,periodStart).reduce((n,t)=>n-t.amount_cents,0);
   return {id:e.id,spent_cents:spent,available_cents:e.reserved_cents,next_renewal:next,period_start:periodStart};
  });
@@ -339,7 +338,7 @@ if(privateAccess&&req.socket.localPort===privateAccess.port){
  if(![expectedHost,localHost].includes(req.headers.host))return reply(res,403,{error:'Hôte non autorisé.'});
  if(req.method==='POST'&&((req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)||!String(req.headers['content-type']||'').startsWith('application/json')))return reply(res,403,{error:'Requête locale JSON requise.'});
 }
-if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'6.0.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'6.1.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/support/backup?')){const date=new URL(req.url,'http://localhost').searchParams.get('date'),body=support.dailyFile(date);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="budget-${date}.json"`,'Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/search?'))return reply(res,200,support.search(new URL(req.url,'http://localhost').searchParams.get('q')));
 if(req.method==='GET'&&req.url.startsWith('/api/monthly?')){const params=new URL(req.url,'http://localhost').searchParams,result=features.monthly(params.get('month'),params.get('account')),targets=monthlyBudget.monthState(params.get('month')).rows;result.budgets=result.budgets.filter(b=>targets.find(r=>r.id===b.id)?.direction!=='income').map(b=>({...b,limit_cents:targets.find(r=>r.id===b.id)?.budget_cents??b.limit_cents}));return reply(res,200,result);}
@@ -367,7 +366,7 @@ if(req.url==='/api/budget/recurring-link'){monthlyBudget.linkRule(x);return repl
 if(req.url.startsWith('/api/life/')){const result=budgetLife.post(req.url,x);return reply(res,200,result===null?snapshot():result);}
 if(req.url==='/api/dashboard-layout'){try{return reply(res,200,{dashboard_layout:dashboardLayout.save(x)});}catch(e){return reply(res,e.code==='LAYOUT_CONFLICT'?409:400,{error:e.message,code:e.code,dashboard_layout:dashboardLayout.state()});}}
 if(['/api/categories/delete-all-preview','/api/categories/delete-all','/api/categories/delete-preview','/api/categories/delete','/api/categories/catalog-preview','/api/categories/catalog-apply','/api/categories/group','/api/categories/merge-preview','/api/categories/merge','/api/categories/archive','/api/subcategories','/api/subcategories/update','/api/subcategories/archive'].includes(req.url)){const mergeConfig=['/api/categories/merge-preview','/api/categories/merge'].includes(req.url)?monthlyBudget.mergeConfig(x.source_id,x.target_id):null;const result=categoryTools.post(req.url,x);if(req.url==='/api/categories/merge'&&mergeConfig&&q("SELECT 1 FROM app_settings WHERE key='monthly_budget_v60'").length)monthlyBudget.save(mergeConfig);if(['/api/categories/delete-all','/api/categories/delete','/api/categories/merge'].includes(req.url))monthlyBudget.prune();return reply(res,200,req.url.endsWith('/merge-preview')||req.url.endsWith('/catalog-preview')||req.url.endsWith('/delete-preview')||req.url.endsWith('/delete-all-preview')?result:snapshot());}
-if(req.url.startsWith('/api/envelope-tools/')){const result=envelopeTools.post(req.url,x);return reply(res,200,req.url.endsWith('/preview')?result:snapshot());}
+if(req.url.startsWith('/api/envelope-tools/')){if(x.changes?.some(c=>monthlyBudget.config().reserve_schedules[c.id]?.length))throw Error('Cette réserve suit son budget périodique. Modifiez sa programmation dans Budget.');const result=envelopeTools.post(req.url,x);return reply(res,200,req.url.endsWith('/preview')?result:snapshot());}
 if(req.url.startsWith('/api/free-budgets/')){const result=freeBudgets.post(req.url,x);if(req.url==='/api/free-budgets/delete')monthlyBudget.prune();return reply(res,200,req.url==='/api/free-budgets/preview'?result:snapshot());}
 if(req.url.startsWith('/api/support/')){const result=support.post(req.url,x);return reply(res,200,req.url==='/api/support/reconcile'?result:snapshot());}
 if(featureRoutes.has(req.url)){const result=features.post(req.url,x);return reply(res,200,result.changed?snapshot():{...result,...(result.imported||result.safety_backup?{state:snapshot()}:{})});}
@@ -399,8 +398,9 @@ else if(req.url.startsWith('/api/envelopes')){
   run('DELETE FROM envelopes WHERE id=?',id);monthlyBudget.prune();
  }else{
   const reserved=cents(x.reserved),budget=cents(x.budget),frequency=x.frequency||'none';
-  if(!name||name.length>80||reserved===null||reserved<0||budget===null||budget<0||!['none','weekly','biweekly','monthly'].includes(frequency)||(frequency!=='none'&&(!validDate(x.start_on)||budget<=0))||(req.url.endsWith('/update')&&!exists('envelopes',id)))return reply(res,400,{error:'Enveloppe invalide'});
+  if(!name||name.length>80||reserved===null||reserved<0||budget===null||budget<0||!['none','weekly','biweekly','monthly','quarterly','semiannual','yearly'].includes(frequency)||(frequency!=='none'&&(!validDate(x.start_on)||budget<=0))||(req.url.endsWith('/update')&&!exists('envelopes',id)))return reply(res,400,{error:'Enveloppe invalide'});
   const old=req.url.endsWith('/update')?q('SELECT * FROM envelopes WHERE id=?',id)[0]:null;
+  if(old&&monthlyBudget.config().reserve_schedules[id]?.length&&(frequency!==old.frequency||budget!==old.budget_cents||x.start_on!==old.start_on||x.forecast_spend===true||x.forecast_spend==='true'))return reply(res,400,{error:'Cette réserve suit le calendrier défini dans Budget. Modifiez sa fréquence ou sa programmation depuis Budget.'});
   const account=x.forecast_account_id===undefined?old?.forecast_account_id??null:x.forecast_account_id?Number(x.forecast_account_id):null;
   if(account!==null&&!exists('accounts',account))return reply(res,400,{error:'Compte de prévision invalide'});
   const values=[name,reserved,budget,frequency,frequency==='none'?null:x.start_on,x.rollover===true?1:0,x.active===false?0:1,account,x.forecast_spend===undefined?old?.forecast_spend??1:x.forecast_spend===false||x.forecast_spend==='false'?0:1];
@@ -465,5 +465,5 @@ const paymentPlan=q('SELECT * FROM card_payment_plans WHERE recurring_id=?',id)[
 const linkedEnvelope=monthlyBudget.config().envelopes[monthlyBudget.config().recurring[id]];if(x.type==='expense'&&envelope&&linkedEnvelope&&envelope!==linkedEnvelope)return reply(res,400,{error:'Cette catégorie utilise une autre réserve. Conservez son enveloppe liée pour éviter deux réservations.'});
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];if(req.url.endsWith('update'))run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);else run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields)}}
 return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/budget/')||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/life/')||req.url.startsWith('/api/subcategories')||req.url.startsWith('/api/categories/')||req.url.startsWith('/api/envelope-tools/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
-http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v6.0.0 : http://${HOST}:${PORT}`));
+http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Mon Budget v6.1.0 : http://${HOST}:${PORT}`));
 if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));

@@ -1,3 +1,4 @@
+import {envelopeBudgetDates} from './budget-schedule.js';
 import {deriveCardPayments} from './card-payments-engine.js';
 
 // Pure simulation: never writes actual account or envelope balances.
@@ -74,9 +75,9 @@ function buildBaseForecast({accounts,envelopes,recurring,overrides=[],moves=[],l
  for(let n=0;n<horizon;n++){
   const date=addDays(today,n),events=[];
   for(const e of envelopes){if(!e.active||e.frequency==='none'||!e.start_on)continue;
-   let due=false;for(let i=0;i<20000;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=date){due=d===date;break;}}
+   const scheduled=e.budget_schedules?envelopeBudgetDates(e,date,date,nextOccurrence)[0]:null;let due=!!scheduled;if(!e.budget_schedules)for(let i=0;i<20000;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=date){due=d===date;break;}}
    if(!due||renewals.some(r=>r.envelope_id===e.id&&r.occurrence_on===date))continue;
-   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??e.budget_cents,after=e.rollover?before+budget:budget;
+   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,after=e.rollover?before+budget:budget;
    reserves.set(e.id,after);reserved+=after-before;events.push({id:'env-'+e.id,description:'Renouvellement · '+e.name,type:'reserve',amount_cents:after-before,envelope_id:e.id,envelope_renewal:true,cash_impact_cents:0,sts_impact_cents:before-after});
   }
   for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0)){

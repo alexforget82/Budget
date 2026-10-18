@@ -1,10 +1,14 @@
-# Vérifications — Mon Budget 6.0
+# Vérifications — Mon Budget 6.1
 
-`npm test` : **131 tests réussis** (52 Node, 79 API), sans échec ni test ignoré. Node.js 24.19.0; données et serveurs temporaires exclusivement.
+`npm test` : **141 tests réussis** (52 Node, 89 API), sans échec ni test ignoré. Node.js 24.19.0; données et serveurs temporaires exclusivement.
 
 Les tests API ajoutés couvrent : objectifs mensuels et annulation, réserves restantes après dépenses, redémarrage et restauration, enveloppe existante liée à une récurrence sans double débit, refus des aperçus périmés et confirmation du négatif, six fréquences, nettoyage des liens, copie d’un mois sans effet financier, réservation future au premier jour, fusion des objectifs, réutilisation d’un identifiant supprimé et refus d’une réserve portant déjà le nom de la catégorie.
 
+Les tests v6.1 couvrent les six fréquences, les vrais totaux 4/5 semaines et 2/3 quinzaines, le choix Non, les exceptions déjà saisies, la conservation de l’historique et des types de revenus, les dates anniversaires et bissextiles, le calendrier lors d’une modification future, les réserves hebdomadaires sans double déduction, la persistance et les renouvellements annuels après 400 jours. Les changements du choix Oui/Non invalident les aperçus signés précédents.
+
 Parcours Chromium exécutés :
+
+- `python3 tests/budget-v61-ui.py` : six choix de fréquence, réponse Oui/Non obligatoire, reconduction exacte après rechargement, montant par période dans l’éditeur, objectifs sans écriture financière, mode sombre et cinq largeurs.
 
 - `python3 tests/budget-v60-ui.py` : nouveau Budget, réserves, réel, agenda distinct, classement et confirmation, reprise du mois, recherche, groupes, clair/sombre et cinq largeurs (375 à 1600 px).
 - `python3 tests/planning-workflow-ui.py` : association du réel déjà saisi, achats partiels, corrections de revenus et virements, montants, reports, annulation, formulaire périmé, pont du solde et cinq largeurs.

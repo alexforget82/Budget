@@ -1,11 +1,21 @@
-VERSION 6.0 — BUDGET ET RECURRENCES
+VERSION 6.1 — FREQUENCES ET RECONDUCTION DES BUDGETS
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v6.0.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v6.1.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, monthly-budget.js, budget-v60.js et budget-v60.css.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css.
+
+Dans Budget, ouvrez une categorie et choisissez le montant par periode,
+la frequence (semaine, 2 semaines, mois, 3 mois, 6 mois ou annee) et la date.
+Repondez a : Le montant est-il identique les mois suivants ?
+Oui : meme montant par periode reconduit automatiquement selon ses dates.
+Non : ce budget est limite au mois choisi.
+Le total mensuel utilise les dates reelles (4 ou 5 semaines, par exemple).
+Un objectif seul conserve les reserves; pour changer leurs renouvellements,
+choisissez explicitement Creer/Ajuster la reserve selon ce budget.
+Le restant deja reserve est conserve a la fin d'une programmation non reconduite.
 
 Budget : choisissez le mois, puis une categorie pour definir son objectif.
 Pour vos enveloppes actuelles, choisissez Lier une reserve existante.
