@@ -1,0 +1,42 @@
+import {createHash} from 'node:crypto';
+import {cardEnvelopeTotal} from './card-envelope-funds.js';
+
+// Receipt identities let CSV imports recognize a charge after its allocation is split.
+export function splitImportKeys(db,account){
+ const data=JSON.parse(db.prepare("SELECT value FROM app_settings WHERE key='split_receipts_v80'").get()?.value||'[]'),keys=[];
+ for(const r of data){if(r.account_id!==account)continue;const members=r.ids.map(id=>db.prepare('SELECT * FROM transactions WHERE id=?').get(id));if(members.every(t=>t&&t.account_id===account&&t.happened_on===r.date&&t.description.startsWith(r.description.slice(0,138)+' ·'))&&members.reduce((n,t)=>n+t.amount_cents,0)===r.amount_cents)keys.push(JSON.stringify([r.date,r.description.trim().toLowerCase(),r.amount_cents]));}return keys;
+}
+export function createBudgetTools80({db,atomic,cents,features,categoryTools,forecastInput,buildForecast,restoreEnvelope,applyEnvelope,allowanceCoverage,journey,support}){
+ const q=(sql,...a)=>db.prepare(sql).all(...a),run=(sql,...a)=>db.prepare(sql).run(...a),fingerprint=p=>createHash('sha256').update(JSON.stringify([features.exportBackup().tables,forecastInput().today,p])).digest('hex');
+ function financial(){const args=forecastInput(),cash=args.accounts.filter(a=>a.included&&a.kind!=='credit').reduce((n,a)=>n+a.balance_cents,0),reserved=args.envelopes.reduce((n,e)=>n+e.reserved_cents,0)+cardEnvelopeTotal(args),days=buildForecast(args).days;return {safe_cents:cash-reserved,cash_cents:cash,reserved_cents:reserved,minimum_cents:Math.min(cash-reserved,...days.map(d=>d.safe_cents))};}
+ function bulkPlan(x){
+  if(!Array.isArray(x.ids)||!x.ids.length||x.ids.length>100||x.ids.some(id=>!Number.isSafeInteger(id)||id<1)||new Set(x.ids).size!==x.ids.length)throw Error('Choisissez de 1 à 100 opérations distinctes.');
+  const changes=x.changes;if(!changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length||Object.keys(changes).some(k=>!['category_id','subcategory_id','reviewed'].includes(k)))throw Error('Modifiez uniquement le classement ou le statut de révision.');
+  if(Object.hasOwn(changes,'reviewed')&&typeof changes.reviewed!=='boolean')throw Error('Statut de révision invalide.');
+  const items=x.ids.slice().sort((a,b)=>a-b).map(id=>{const old=q('SELECT * FROM transactions WHERE id=?',id)[0];if(!old)throw Error('Une opération n’existe plus. Actualisez la liste.');const category=Object.hasOwn(changes,'category_id')?features.categoryId(changes.category_id):old.category_id,sub=Object.hasOwn(changes,'subcategory_id')?categoryTools.subcategoryId(changes.subcategory_id,category):Object.hasOwn(changes,'category_id')?null:old.subcategory_id;return {id,category_id:category,subcategory_id:sub,reviewed:Object.hasOwn(changes,'reviewed')?Number(changes.reviewed):old.reviewed};});
+  return {items,token:fingerprint({ids:x.ids.slice().sort((a,b)=>a-b),changes})};
+ }
+ function bulkApply(x){const p=bulkPlan(x);if(x.token!==p.token)throw Error('La sélection a changé. Vérifiez de nouveau les opérations.');atomic(()=>{for(const item of p.items)run('UPDATE transactions SET category_id=?,subcategory_id=?,reviewed=? WHERE id=?',item.category_id,item.subcategory_id,item.reviewed,item.id);});}
+ function splitPlan(x){
+  const old=q('SELECT * FROM transactions WHERE id=?',Number(x.id))[0];if(!old||old.amount_cents>=0)throw Error('Choisissez une dépense enregistrée.');
+  const t={account:old.account_id,envelope:old.envelope_id,amount:old.amount_cents,date:old.happened_on};
+  if(q("SELECT 1 FROM reconciliation_links WHERE actual_type='transaction' AND actual_id=?",old.id).length||q('SELECT 1 FROM envelope_actual_links WHERE transaction_id=?',old.id).length||journey.coveredForTransaction(t)>0||buildForecast(forecastInput()).rows.some(r=>r.source==='recurring'&&r.actual_ids.includes('transaction:'+old.id)))throw Error('Cette dépense est associée à une échéance. Retirez son association dans Prévu / Réel avant de la diviser.');
+  if(!Array.isArray(x.parts)||x.parts.length<2||x.parts.length>20)throw Error('Ajoutez de 2 à 20 parts.');
+  const parts=x.parts.map(p=>{const amount=cents(p.amount),category=features.categoryId(p.category_id),subcategory=categoryTools.subcategoryId(p.subcategory_id,category),envelope=p.envelope_id==null?null:Number(p.envelope_id);if(amount===null||amount<=0||envelope!==null&&!q('SELECT 1 FROM envelopes WHERE id=? AND active=1',envelope).length)throw Error('Chaque part demande un montant positif et une enveloppe valide, si choisie.');return {amount_cents:-amount,category_id:category,subcategory_id:subcategory,envelope_id:envelope};});
+  if(parts.reduce((n,p)=>n+p.amount_cents,0)!==old.amount_cents)throw Error('La somme des parts doit correspondre exactement au montant de la dépense.');return {old,parts};
+ }
+ function doSplit(p){
+  const {old,parts}=p;restoreEnvelope(old.envelope_id,old.amount_cents,old.envelope_effect_cents);let remainingEffect=old.envelope_effect_cents||0;const ids=[];
+  for(const [i,part]of parts.entries()){
+   let effect=0;if(old.affects_balance){if(part.envelope_id===old.envelope_id){const share=Math.min(-part.amount_cents,remainingEffect);effect=applyEnvelope(part.envelope_id,-share);remainingEffect-=effect;}else{const covered=allowanceCoverage({account:old.account_id,envelope:part.envelope_id,amount:part.amount_cents,date:old.happened_on});effect=applyEnvelope(part.envelope_id,part.amount_cents+covered);}}
+   const desc=old.description.slice(0,138)+' · '+(i+1)+'/'+parts.length;
+   if(i===0){run('UPDATE transactions SET amount_cents=?,description=?,category_id=?,subcategory_id=?,envelope_id=?,envelope_effect_cents=? WHERE id=?',part.amount_cents,desc,part.category_id,part.subcategory_id,part.envelope_id,effect,old.id);ids.push(old.id);}
+   else{ids.push(Number(run('INSERT INTO transactions(account_id,envelope_id,amount_cents,description,happened_on,category_id,subcategory_id,import_batch_id,affects_balance,envelope_effect_cents,reviewed) VALUES(?,?,?,?,?,?,?,?,?,?,?)',old.account_id,part.envelope_id,part.amount_cents,desc,old.happened_on,part.category_id,part.subcategory_id,old.import_batch_id,old.affects_balance,effect,old.reviewed).lastInsertRowid));}
+  }
+  const receipts=JSON.parse(q("SELECT value FROM app_settings WHERE key='split_receipts_v80'")[0]?.value||'[]');for(const receipt of receipts)if(receipt.ids.includes(old.id))receipt.ids=receipt.ids.flatMap(id=>id===old.id?ids:[id]);receipts.push({account_id:old.account_id,date:old.happened_on,description:old.description,amount_cents:old.amount_cents,ids});const value=JSON.stringify(receipts);if(value.length>95000)throw Error('Historique des répartitions trop volumineux.');run("INSERT INTO app_settings(key,value) VALUES('split_receipts_v80',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",value);return ids;
+ }
+ function splitPreview(x){const p=splitPlan(x),token=fingerprint({id:p.old.id,parts:p.parts}),before=financial();let after;db.exec('SAVEPOINT split_preview80');try{doSplit(p);after=financial();}finally{db.exec('ROLLBACK TO split_preview80');db.exec('RELEASE split_preview80');}return {id:p.old.id,description:p.old.description,amount_cents:p.old.amount_cents,parts:p.parts,before,after,token};}
+ function splitApply(x){const preview=splitPreview(x);if(x.token!==preview.token)throw Error('La dépense a changé. Vérifiez de nouveau la répartition.');const p=splitPlan(x);return atomic(()=>doSplit(p));}
+ function reconcile(x){const out=support.post('/api/support/reconcile',x),groups=new Map();for(const t of out.transactions.filter(t=>t.affects_balance!==0)){const key=JSON.stringify([t.happened_on,t.amount_cents,t.description.trim().toLocaleLowerCase('fr-CA')]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);}return {...out,duplicates:[...groups.values()].filter(g=>g.length>1),unreviewed_count:out.transactions.filter(t=>!t.reviewed).length};}
+ return {bulkPlan,bulkApply,splitPreview,splitApply,reconcile};
+}

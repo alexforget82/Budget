@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-export const dashboardBlocks=['summary','spending','alerts','forecast','envelopes','upcoming'];
+export const dashboardBlocks=['spending','summary','alerts','forecast','envelopes','upcoming'];
 export const dashboardSetting=key=>/^dashboard_v47_(desktop|mobile)$/.test(key)||key==='appearance_theme_v50';
 export const defaultDashboardLayout=device=>dashboardBlocks.map(id=>({id,visible:true,width:device==='desktop'&&['summary','spending','alerts','forecast'].includes(id)?'full':'normal'}));
 export function validateDashboardLayout(layout){

@@ -2,6 +2,7 @@
 (()=>{
  const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;},button=(label,fn)=>{const e=node('button',label,'secondary');e.type='button';e.onclick=fn;return e;};
  const definitions=[['summary','Soldes et disponible',[document.querySelector('.cards')]],['spending','Disponible par période',[document.querySelector('.sts-heading'),document.querySelector('.sts-windows')]],['alerts','Points à surveiller',[$('v44-alerts')]],['forecast','Prévision sur 30 jours',[document.querySelector('.budget-forecast-panel')]],['envelopes','Vos enveloppes',[document.querySelector('.budget-envelope-panel')]],['upcoming','Prochains mouvements',[document.querySelector('#app-dashboard>.upcoming')]]];
+ definitions.sort((a,b)=>['spending','summary','alerts','forecast','envelopes','upcoming'].indexOf(a[0])-['spending','summary','alerts','forecast','envelopes','upcoming'].indexOf(b[0]));
  const root=$('app-dashboard');root.classList.add('v47-dashboard');
  const mq=matchMedia('(max-width:760px)'),states={},widgets=new Map();let editing=false,dragId=null,loaded=false;
  const device=()=>mq.matches?'mobile':'desktop';

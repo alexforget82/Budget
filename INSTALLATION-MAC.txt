@@ -1,13 +1,17 @@
-VERSION 7.4 — BUDGET GLOBAL SANS DATE
+VERSION 8.0 — NOUVEL ESPACE BUDGET
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.4.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v8.0.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js, shared-view.html et global-budget.js.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js, shared-view.html, global-budget.js, budget-tools-v80.js, budget-v80.js et budget-v80.css.
 
-NOUVEAU 7.4 : Budget est une vue globale revenus / depenses.
+NOUVEAU 8.0 : tableau de bord 30/60/90, previsions a deux courbes,
+calendrier epure, classement groupe et division des achats.
+Vos donnees et les regles de protection sont conservees.
+
+DEPUIS 7.4 : Budget est une vue globale revenus / depenses.
 Ouvrez Budget, cliquez une categorie, indiquez un montant, sa frequence
 et si vous voulez le reconduire. Aucune date de paiement n'est demandee.
 Les montants sont compares en equivalent mensuel : 230 $ par semaine = 996,67 $ / mois.

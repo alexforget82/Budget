@@ -1,4 +1,4 @@
-# Mon Budget 7.4
+# Mon Budget 8.0
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,24 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 8.0 : un espace de budget plus lisible
+
+Une présentation ardoise en mode sombre, des cartes plus cohérentes et une interface adaptée aux petits écrans. Vos dispositions personnalisées du tableau de bord sont conservées; une nouvelle disposition place le Safe-to-Spend en premier.
+
+- **Tableau de bord** : choisissez 30, 60 ou 90 jours, consultez le minimum prudent, sa date et la prochaine rentrée. La répartition des achats et les barres de progression complètent la vue mensuelle.
+- **Prévisions** : affichez ensemble le solde bancaire prévu et le disponible après protections, ou choisissez une seule courbe. Cliquez un jour pour consulter ses mouvements.
+- **Calendrier** : des indicateurs colorés allègent les cases. « Afficher les libellés » rétablit les descriptions; le détail du jour reste accessible.
+- **Transactions** : cochez plusieurs lignes pour modifier leur catégorie ou leur statut de vérification après aperçu. Les soldes et associations aux enveloppes restent identiques. Mémorisez vos recherches et filtres dans ce navigateur.
+- **Diviser un achat** : ouvrez le menu d’une dépense, choisissez « Diviser cette dépense », répartissez le montant entre catégories, sous-catégories et enveloppes, puis examinez l’effet sur le disponible avant confirmation. Le total, la date et le solde du compte sont conservés. Une dépense explicitement rapprochée avec une échéance demande d’abord de retirer cette association. Les revenus ne sont pas divisibles.
+- **Rapprochement bancaire** : comparez votre solde, examinez les opérations et les éventuels doublons, puis validez. Aucun doublon n’est supprimé automatiquement.
+- **CSV** : les raccourcis CIBC, Capital One et Desjardins préparent un profil à vérifier avec votre fichier. Ils ne devinent pas ses colonnes et ne connectent pas votre banque. Vos profils existants et la détection des doublons sont conservés, y compris l’identité d’origine d’un achat divisé dont les lignes restent intactes.
+
+Le diagramme représente les **achats bruts** du mois, hors virements; les remboursements sont pris en compte dans le réel net du Budget. Les repères de rythme sont informatifs. Le moteur financier existant reste la source des soldes, réserves, protections des achats sur carte et prévisions : aucun remboursement global de carte n’est réservé automatiquement. Les objectifs Budget restent sans date et ne réservent pas d’argent.
+
+**Mise à jour sur Mac** : décompressez le ZIP, ouvrez votre raccourci permanent **Mettre a jour Mon Budget.command**, sélectionnez le nouveau dossier, puis actualisez votre onglet Safari existant. Le badge en bas du menu affiche **v8.0**. Ne remplacez pas votre dossier de données par un ancien dossier `data`.
+
+Aperçus avec des données de démonstration : [clair](docs/v80-dashboard-clair.png), [sombre](docs/v80-dashboard-sombre.png), [iPhone](docs/v80-dashboard-iphone.png), [prévisions](docs/v80-previsions-deux-courbes.png) et [division d’un achat](docs/v80-division-achat.png).
 
 ## Nouveautés 7.4 : Budget devient votre vue globale
 

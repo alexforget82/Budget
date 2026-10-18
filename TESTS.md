@@ -1,4 +1,24 @@
-# Vérifications — Mon Budget 7.4
+# Vérifications — Mon Budget 8.0
+
+`npm test` : **223 tests réussis** (63 Node, 160 API), sans échec ni test ignoré.
+
+Les neuf nouveaux tests API vérifient le classement groupé sans effet financier, les validations atomiques et aperçus périmés, la division exacte au cent, la conservation des soldes et dates, les protections d’enveloppes sur carte (y compris une alimentation tardive), la répartition entre enveloppes, l’annulation, le redémarrage et la restauration. L’identité CSV de l’achat initial est reconnue après des divisions successives. Les opérations associées explicitement à une échéance sont protégées contre une division ambiguë. Le rapprochement et ses indices de doublons restent en lecture seule.
+
+Les règles financières existantes sont conservées : pas de nouvelle formule de Safe-to-Spend, pas de réservation des objectifs Budget, pas de réserve automatique pour la dette générale des cartes.
+
+Les essais visuels utilisent Chromium sous Linux et des fenêtres représentant les tailles d’iPhone; ils ne constituent pas un essai natif de Safari, macOS, Gatekeeper ou Tailscale.
+
+Parcours Chromium exécutés pour cette version :
+
+- `tests/budget-v80-ui.py` : indicateurs 30/60/90 comparés aux données du serveur, diagramme et rythme, deux courbes et choix du jour, calendrier compact, classement groupé, division et conservation des soldes, filtres mémorisés, indices de doublons, profils CSV; sept écrans de 320 à 1500 px, clair et sombre.
+- `tests/dashboard-v47-ui.py` : déplacement par événements de glisser-déposer, disposition mobile indépendante, visibilité, largeur, persistance, annulation des choix, erreurs réseau et conflits entre modifications.
+- `tests/planning-v4-ui.py` : simulation sans écriture, clavier, calendrier mensuel et hebdomadaire, report puis confirmation, montants exacts et cinq largeurs. Le test sélectionne explicitement le mois avant un report pour rester valide lorsque demain change de semaine.
+- `tests/card-envelope-protection-ui.py` : protection avant et après achat sur carte et libération au remboursement, dette antérieure inchangée.
+- `tests/budget-v74-ui.py` : objectifs globaux et sous-catégories, total parent sans double comptage, registre et prévisions inchangés.
+- `tests/budget-v73-ui.py` : alimentation anticipée, partage limité et révocable, chiffres 30/60/90 de la vue iPhone.
+- `tests/budget-v41-ui.py` : rapprochement puis correction explicite, annulation, profils CSV mémorisés, sauvegardes et scénarios.
+
+## Vérifications historiques 7.4
 
 `npm test` : **214 tests réussis** (63 Node, 151 API), sans échec ni test ignoré. Les nouvelles vérifications portent sur les moyennes mensuelles des six fréquences, la précision au cent, l’absence de dates ou d’option de réservation, la reconduction, les exceptions mensuelles, le retrait et le zéro, les quatre abonnements à échéances distinctes, les achats sur carte et retours, les transactions non catégorisées et les virements exclus des dépenses. Les objectifs archivés et le Bilan mensuel restent cohérents; les anciens objectifs ponctuels ne sont pas reconduits par erreur.
 
