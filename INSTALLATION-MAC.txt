@@ -1,11 +1,21 @@
-VERSION 6.1 — FREQUENCES ET RECONDUCTION DES BUDGETS
+VERSION 7.0 — CONFIGURATION GUIDEE ET DISPONIBLE DU CONJOINT
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v6.1.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.0.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js et budget-v70.css.
+
+NOUVEAU : ouvrez Bien demarrer pour suivre les sept etapes.
+Choisissez explicitement Conjoint comme compte du Safe-to-Spend.
+La mise a jour conserve votre budget actuel et ne l'efface jamais automatiquement.
+Le mode Demonstration utilise une base fictive separee pour vos essais.
+Pour repartir a zero : Bien demarrer ou Sauvegardes > Remettre a zero.
+Relisez l'apercu, choisissez la sauvegarde de recuperation, cochez la confirmation
+et saisissez EFFACER. Les anciens fichiers de sauvegarde et l'acces prive restent.
+Pour un virement financant une facture ailleurs, repondez Oui et choisissez
+l'echeance du compte destination. Le lien porte sur cette echeance seulement.
 
 Dans Budget, ouvrez une categorie et choisissez le montant par periode,
 la frequence (semaine, 2 semaines, mois, 3 mois, 6 mois ou annee) et la date.

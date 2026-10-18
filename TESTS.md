@@ -1,3 +1,15 @@
+# Vérifications — Mon Budget 7.0
+
+`npm test` : **152 tests réussis** (52 Node, 100 API), sans échec ni test ignoré. Données et serveurs temporaires exclusivement.
+
+Les nouveaux tests vérifient le compte Conjoint unique et sa persistance, les virements liés sans double déduction, les réserves libérées une seule fois, l’association du réel, les suppressions et retraits de liens, les entrées en retard, la remise à zéro avec aperçu périmé, sauvegarde, restauration et redémarrage, ainsi que l’isolation de la démonstration. Les routes de démonstration restent derrière l’authentification privée existante.
+
+Parcours Chromium v7 : `tests/budget-v70-ui.py`, `tests/transaction-transfers-ui.py`, `tests/planning-workflow-ui.py` et `tests/budget-v61-ui.py`. Les vérifications utilisent des données fictives et couvrent aussi le mode sombre et les largeurs mobiles.
+
+L’installation native macOS et Safari sur le Mac de l’utilisateur ne sont pas exécutés depuis cet environnement Linux.
+
+---
+
 # Vérifications — Mon Budget 6.1
 
 `npm test` : **141 tests réussis** (52 Node, 89 API), sans échec ni test ignoré. Node.js 24.19.0; données et serveurs temporaires exclusivement.

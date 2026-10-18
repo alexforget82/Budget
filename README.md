@@ -1,4 +1,4 @@
-# Mon Budget 6.1
+# Mon Budget 7.0
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,24 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 7.0 : configuration guidée et disponible du Conjoint
+
+**Bien démarrer** propose sept étapes : comptes, choix du compte disponible, catégories, récurrences, budgets/réserves et virements. Votre budget existant est conservé à la mise à jour. Choisissez explicitement **Conjoint** dans le guide pour que le Safe-to-Spend utilise uniquement ce compte. Les nouveaux comptes restent ensuite exclus de ce calcul.
+
+Un virement demande s’il finance une autre dépense. Si oui, associez l’échéance dans le compte destination : le départ de Conjoint réduit son disponible, et le paiement de la facture depuis l’autre compte ne le réduit pas une seconde fois. Une réserve liée est libérée pour la portion financée au départ du virement, sans double utilisation lors du paiement. Exemple : Conjoint 1 000 $, virement de 100 $ vers Jenny, puis facture de 100 $ payée par Jenny : Conjoint reste à 900 $. Même avec la réponse Non, une sortie du Conjoint réduit son solde.
+
+L’association concerne **une échéance précise**, pas toutes les occurrences futures. Le guide permet aussi d’associer un virement déjà enregistré ou programmé, ou de retirer un lien sans refaire les écritures bancaires. Les factures doivent indiquer leur véritable compte payeur. Un virement entrant en retard ne finance plus le disponible tant qu’il n’est pas confirmé. Aucun remboursement de carte n’est réservé automatiquement.
+
+**Démonstration** ouvre des comptes et opérations fictifs dans une base séparée, avec un bandeau visible et un lien de retour au budget personnel. Les modifications et remises à zéro de la démonstration ne modifient pas les données personnelles. L’accès privé Tailscale protège également la démonstration.
+
+**Remettre à zéro**, dans le guide ou Sauvegardes, affiche d’abord les éléments concernés. Il faut cocher la confirmation et saisir **EFFACER**. Une sauvegarde de récupération est proposée avant l’effacement. Le budget actif reste vide après redémarrage; les anciens fichiers de sauvegarde et la configuration d’accès privé sont conservés. Aucune remise à zéro n’est exécutée lors de la mise à jour.
+
+**Installation sur Mac** : décompressez le ZIP, ouvrez votre raccourci permanent `~/Applications/Mon Budget/Mettre a jour Mon Budget.command`, sélectionnez le nouveau dossier et actualisez votre onglet Safari. Le badge doit afficher **v7.0**. Ouvrez ensuite **Bien démarrer** et choisissez Conjoint. Ne recopiez pas un ancien dossier `data`.
+
+**Validation : 152 tests Node/API** (52 Node, 100 API), avec bases temporaires uniquement. Les parcours Chromium couvrent le guide, le financement lié, la démonstration isolée, la remise à zéro, le mode sombre et cinq largeurs. L’installation native macOS reste à vérifier sur votre Mac.
+
+Aperçus fictifs : [guide sur iPhone](docs/v70-guide-iphone.png) · [virement lié](docs/v70-virement-lie.png) · [confirmation d’effacement](docs/v70-remise-a-zero.png).
 
 ## Nouveautés 6.1 : budgets périodiques et reconduction automatique
 

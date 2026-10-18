@@ -50,5 +50,5 @@ export function createSupport({db,dir,features,today,cents,validDate}){
   const existing=items.find(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase());item.id=existing?.id||randomUUID();const next=items.filter(p=>p.id!==item.id);next.push(item);if(next.length>20||Buffer.byteLength(JSON.stringify(next))>9000)throw Error('Limite de profils/scénarios atteinte. Supprimez un élément avant de continuer.');put(kind,next);return {changed:true};
  }
  function dailyFile(date){if(!validDate(date))throw Error('Date de sauvegarde invalide.');const file=path.join(folder,'daily-'+date+'.json');if(!fs.existsSync(file))throw Error('Sauvegarde introuvable.');return fs.readFileSync(file);}
- return {state,recordUndo,undo,dailyBackup,dailyFile,search,post};
+ return {state,recordUndo,undo,dailyBackup,dailyFile,search,post,clearUndo:()=>fs.rmSync(undoFile,{force:true})};
 }
