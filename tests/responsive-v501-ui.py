@@ -8,7 +8,7 @@ f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v501-ui-
 try:
  aid=f.account(balance=2200);f.post('/api/envelopes',{'name':'Maison','reserved':50,'budget':0,'frequency':'none','forecast_spend':False});f.post('/api/recurring',{'description':'Salaire','type':'income','amount':1500,'account_id':aid,'start_on':api.DAY,'frequency':'biweekly','active':True});before=f.get('/api/backup/export')['tables']
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1920,'height':1080});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v5.3')
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1920,'height':1080});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v6.0')
   widths=sorted(set([320,375,390,760,761,1024,1920,2560,3440]+[math.floor(1440/z) for z in [.5,.67,.75,.85,1,1.25,1.5,2]]))
   for theme in ['light','dark']:
    page.get_by_label('Apparence',exact=True).select_option(theme)

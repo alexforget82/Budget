@@ -1,11 +1,20 @@
-VERSION 5.3 — VERIFIER, CONFIRMER ET COMPRENDRE
+VERSION 6.0 — BUDGET ET RECURRENCES
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v5.3.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v6.0.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css.
+et budget-v50.css, monthly-budget.js, budget-v60.js et budget-v60.css.
+
+Budget : choisissez le mois, puis une categorie pour definir son objectif.
+Pour vos enveloppes actuelles, choisissez Lier une reserve existante.
+Aucune reserve n'est creee automatiquement lors de la mise a jour.
+Creer une reserve mensuelle gele l'argent apres apercu, sans depense bancaire.
+Reprendre le mois precedent copie les objectifs sans modifier les reserves.
+Recurrences : les echeances sont regroupees par frequence.
+Classer associe une regle a une categorie; Confirmer enregistre ou associe le reel.
+Les nouvelles depenses d'une categorie liee utilisent sa reserve par defaut.
 
 Comptes > Verifier ce compte : comparez, examinez et validez le rapprochement.
 Une modification du compte ou de ses operations demande une nouvelle verification.

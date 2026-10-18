@@ -1,4 +1,21 @@
-# Vérifications — Mon Budget 4.7
+# Vérifications — Mon Budget 6.0
+
+`npm test` : **131 tests réussis** (52 Node, 79 API), sans échec ni test ignoré. Node.js 24.19.0; données et serveurs temporaires exclusivement.
+
+Les tests API ajoutés couvrent : objectifs mensuels et annulation, réserves restantes après dépenses, redémarrage et restauration, enveloppe existante liée à une récurrence sans double débit, refus des aperçus périmés et confirmation du négatif, six fréquences, nettoyage des liens, copie d’un mois sans effet financier, réservation future au premier jour, fusion des objectifs, réutilisation d’un identifiant supprimé et refus d’une réserve portant déjà le nom de la catégorie.
+
+Parcours Chromium exécutés :
+
+- `python3 tests/budget-v60-ui.py` : nouveau Budget, réserves, réel, agenda distinct, classement et confirmation, reprise du mois, recherche, groupes, clair/sombre et cinq largeurs (375 à 1600 px).
+- `python3 tests/planning-workflow-ui.py` : association du réel déjà saisi, achats partiels, corrections de revenus et virements, montants, reports, annulation, formulaire périmé, pont du solde et cinq largeurs.
+- `python3 tests/categories-v52-ui.py` : répertoire compact, groupes, recherche, gestion, navigation sans écriture financière et cinq largeurs.
+- `python3 tests/budget-v53-ui.py` : calcul exact sur cinq périodes, rapprochement bancaire, vérification et invalidation, confirmation unique et mode sombre/mobile.
+
+Les raccourcis/macOS sont vérifiés par les tests Node existants, dont le contrôle des nouveaux fichiers requis dans un dossier de mise à jour. L’installation sur le Mac de l’utilisateur et l’exécution native dans Safari ne sont pas effectuées depuis cet environnement Linux.
+
+---
+
+# Historique des vérifications — Mon Budget 4.7
 
 Les vérifications ci-dessous utilisent uniquement des données fictives et des bases temporaires, jamais les données de l’utilisateur. Environnement vérifié : Node.js 24.19.0, Python 3 et Chromium.
 

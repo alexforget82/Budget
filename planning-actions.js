@@ -46,7 +46,7 @@ export function createPlanningActions({db,snapshot,atomic,addTransaction,validat
     const t=validateTransfer({from_account_id:account,to_account_id:row.to_account_id,amount:amount/100,description:row.description,happened_on:date});
     id=Number(run('INSERT INTO account_transfers(from_account_id,to_account_id,amount_cents,description,happened_on) VALUES(?,?,?,?,?)',t.from,t.to,t.amount,t.description,t.date).lastInsertRowid);
     run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(t.from,-t.amount),t.from);run('UPDATE accounts SET balance_cents=balance_cents+? WHERE id=?',accountEffect(t.to,t.amount),t.to);
-   }else if(!actual)id=addTransaction({account_id:account,envelope_id:row.envelope_id,amount:(row.type==='income'?amount:-amount)/100,description:row.description,happened_on:date});
+   }else if(!actual)id=addTransaction({category_id:row.category_id||null,account_id:account,envelope_id:row.envelope_id,amount:(row.type==='income'?amount:-amount)/100,description:row.description,happened_on:date});
    if(row.envelope_id&&actual&&!actual.envelope_id){
      const reserve=q('SELECT reserved_cents FROM envelopes WHERE id=?',row.envelope_id)[0].reserved_cents,effect=actual.affects_balance?Math.min(reserve,amount):0;
      run('UPDATE envelopes SET reserved_cents=reserved_cents-? WHERE id=?',effect,row.envelope_id);run('UPDATE transactions SET envelope_id=?,envelope_effect_cents=? WHERE id=?',row.envelope_id,effect,id);

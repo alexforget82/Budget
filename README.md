@@ -1,4 +1,4 @@
-# Mon Budget 5.3
+# Mon Budget 6.0
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,30 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 6.0 : Budget et Récurrences, deux espaces reliés
+
+**Budget** possède son entrée dans le menu. Choisissez le mois et retrouvez les catégories regroupées, avec **Budgété · Réel · Restant**, les sous-catégories en détail, la recherche et les groupes repliables. Les revenus et dépenses sont distincts; les catégories du groupe Transfert et les virements du registre ne sont pas additionnés aux dépenses. Les opérations non catégorisées apparaissent dans un avertissement chiffré. Le restant est un objectif moins l’activité nette de la catégorie, pas un solde bancaire ni une réserve.
+
+Cliquez sur le nom ou le montant d’une catégorie pour définir son budget du mois :
+
+- **Objectif du mois** : enregistre le montant pour ce mois sans changer les soldes ni les réserves. Les plafonds antérieurs restent utilisés lorsqu’aucun objectif mensuel n’est saisi. La comparaison des budgets dans Bilan mensuel reprend également ces objectifs.
+- **Lier une réserve existante** : associe la catégorie à une enveloppe sans toucher à son argent ni à sa programmation. Les enveloppes actuelles ne sont pas migrées automatiquement. Un rappel indique les réserves qui ne sont pas encore liées. Une réserve ne peut pas être liée à deux catégories.
+- **Créer une réserve mensuelle** : après aperçu, gèle le restant du budget du mois actuel, ou programme le gel au premier jour d’un mois futur. Une réserve n’est pas une dépense bancaire. Les renouvellements suivants utilisent le montant initial; les ajustements d’une période utilisent une exception sans modifier les autres mois. L’aperçu montre le disponible actuel et le minimum prévu sur 90 jours; une dégradation en négatif demande une confirmation explicite. Une enveloppe portant déjà le nom de la catégorie doit être réutilisée, plutôt que dupliquée.
+
+Une **nouvelle dépense** classée dans une catégorie liée utilise sa réserve si aucune autre enveloppe n’a été choisie. Les transactions existantes restent intactes. Le montant actuel d’une réserve existante est conservé lors du lien; il peut être ajusté dans Enveloppes. Les imports historiques gardent leur fonctionnement sans effet sur les soldes et les réserves.
+
+**Reprendre le mois précédent** affiche un aperçu des objectifs à copier. Les montants déjà saisis pour le mois destination sont conservés. Cette reprise ne déplace ni ne gèle d’argent et ne modifie pas les récurrences. Ajustez les réserves séparément si nécessaire.
+
+**Récurrences** possède également une entrée visible dans le menu. L’agenda du mois regroupe les occurrences par fréquence : semaine, deux semaines, mois, trois mois, six mois et année, avec les opérations uniques et les derniers jours ouvrables. Chaque ligne affiche date, compte, catégorie, montant et statut. **Classer** lie une règle à une catégorie; les nouvelles confirmations reprennent ce classement. **Confirmer** conserve le parcours existant permettant de saisir le réel ou d’associer une opération déjà enregistrée. **Modifier la règle** et **+ Récurrence** réutilisent les formulaires existants. Les dates et montants suivent le moteur partagé, y compris les reports et exceptions. Les anciennes dates hors suivi sont signalées; les règles actuelles ne reconstituent pas un ancien historique de prévisions.
+
+Les **Prévisions** réunissent toujours les mêmes comptes, revenus, réserves et paiements. Une dépense récurrente liée à une réserve utilise cette réserve; elle n’est pas ajoutée une deuxième fois comme dépense automatique d’enveloppe. Aucun remboursement de carte n’est réservé automatiquement.
+
+**Première utilisation après mise à jour** : ouvrez Budget, liez vos enveloppes existantes aux catégories concernées, puis classez les règles dans Récurrences. Vos données restent disponibles pendant ce réglage. Pour les factures déjà récurrentes, utilisez un objectif ou une réserve existante plutôt que de créer une seconde réserve.
+
+**Validation : 131 tests Node/API** (52 Node, 79 API), ainsi que `tests/budget-v60-ui.py`, `tests/planning-workflow-ui.py`, `tests/categories-v52-ui.py` et `tests/budget-v53-ui.py`. Vérifications sur données fictives : budgets par mois, réserves actuelles/futures, calcul sans double déduction, confirmation classée, reprise d’un mois, conservation après redémarrage/restauration, fusion/suppression des liens, mode sombre et cinq largeurs dont iPhone.
+
+Aperçus fictifs : [budget clair](docs/v60-budget-clair.png) · [budget sombre](docs/v60-budget-sombre.png) · [récurrences](docs/v60-recurrences.png) · [budget sur iPhone](docs/v60-budget-iphone.png).
 
 ## Nouveautés 5.3 : vérifier, confirmer et comprendre
 
@@ -116,7 +140,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.3**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v6.0**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 
