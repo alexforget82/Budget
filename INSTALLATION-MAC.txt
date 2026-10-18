@@ -1,11 +1,24 @@
-VERSION 7.2 — CONJOINT, CARTES ET VIREMENTS PERSONNELS
+VERSION 7.3 — AVANCES D’ENVELOPPES ET VUE IPHONE SIMPLIFIEE
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.2.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.3.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js et shared-view.html.
+
+NOUVEAU 7.3 : alimentation anticipee et vue iPhone simplifiee.
+Enveloppes > Voir la fiche > Reserver maintenant : cette somme est protegee
+immediatement et compte comme une avance sur la prochaine echeance.
+100 $ reserves avant un budget de 230 $ = seulement 130 $ ajoutes a l'echeance.
+Les reserves deja presentes avant la mise a jour sont conservees sans reinterpretation.
+Sauvegardes > Vue iPhone simplifiee > Creer un nouveau lien > Copier.
+Sur l'iPhone de votre conjointe, utilisez son propre compte Tailscale et partagez-lui
+le Mac depuis Tailscale. Ouvrez le lien dans Safari, puis Partager > Sur l'ecran d'accueil.
+Son ecran affiche uniquement le Safe-to-Spend prudent (30, 60 ou 90 jours au choix),
+et les soldes bancaires maximum et minimum des 30 prochains jours.
+Le Mac doit rester allume et connecte. Aucun nouveau lien n'est cree automatiquement.
+Gardez ce lien prive. Revoquer le lien coupe l'acces, sans changer le budget.
 
 NOUVEAU 7.2 : enveloppes protegees avant l'achat et jusqu'au remboursement.
 Exemple : 1 000 $ dans Conjoint et 230 $ d'epicerie = 770 $ disponibles.

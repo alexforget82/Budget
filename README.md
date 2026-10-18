@@ -1,4 +1,4 @@
-# Mon Budget 7.2
+# Mon Budget 7.3
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,25 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 7.3 : avances d’enveloppes et vue iPhone simplifiée
+
+**Une alimentation est une avance sur la prochaine échéance.** Pour Épicerie, 230 $ prévus jeudi : sans action, les 230 $ sont protégés jeudi; si vous réservez 230 $ mercredi, ils sont protégés mercredi sans autre déduction jeudi. Une avance de 100 $ protège 100 $ immédiatement et seulement les 130 $ restants à l’échéance. Aucun mouvement bancaire n’est créé par l’alimentation.
+
+Dans **Enveloppes → Voir la fiche**, utilisez **Réserver maintenant**. L’augmentation manuelle du montant réservé dans le formulaire suit la même règle. Elle fonctionne sur les enveloppes existantes et nouvelles, pour les six fréquences et avec ou sans report. Les achats associés, les remboursements sur carte, les libérations de réserve et les changements de date ne doivent pas compter l’avance deux fois. Après l’échéance, le renouvellement suivant redevient complet. Les anciennes réserves sont conservées : faute d’historique d’alimentation, les montants présents avant la mise à jour ne sont pas réinterprétés comme des avances. Les nouvelles alimentations sont suivies dès la v7.3.
+
+**Une vue dédiée à l’iPhone de votre conjointe** affiche uniquement :
+
+- Le Safe-to-Spend prudent sur **30, 60 ou 90 jours**, au choix : le minimum entre le disponible actuel et les disponibles prévus sur la période.
+- Le **solde bancaire le plus haut** et le **plus bas** sur les 30 prochains jours, avec les dates. Ces deux indicateurs portent sur les comptes bancaires inclus, normalement Conjoint, avant les réserves d’enveloppes.
+
+Ouvrez **Sauvegardes → Vue iPhone simplifiée → Créer un nouveau lien**. Copiez ce lien sur son iPhone. Pour un accès distant privé, utilisez **son propre compte Tailscale**, partagez le Mac avec elle depuis l’administration Tailscale et assurez-vous que les règles réseau lui permettent de joindre le service HTTPS du Mac. Le lien ne publie pas le budget sur Internet. Le Mac doit rester allumé, connecté, avec Mon Budget et Tailscale actifs. Dans Safari, **Partager → Sur l’écran d’accueil** permet de retrouver cette vue comme une application. Les chiffres s’actualisent à l’ouverture, au retour dans la page et chaque minute tant qu’elle est visible; le bouton Actualiser est aussi disponible. La présentation suit le mode clair ou sombre de l’iPhone.
+
+Le lien est une autorisation limitée, à garder privée : toute personne qui le possède **et peut joindre le Mac** peut consulter ces seuls indicateurs. Il ne permet pas de consulter les comptes détaillés, transactions, sauvegardes ou réglages, ni d’effectuer des modifications. Les accès propriétaires restent soumis à l’identité Tailscale habituelle. Si vous utilisez le même compte Tailscale propriétaire sur les deux téléphones, cette identité conserve naturellement ses droits propriétaires; préférez donc deux comptes distincts pour limiter réellement l’accès.
+
+**Révoquer le lien** coupe immédiatement son accès. Créer un nouveau lien invalide le précédent. Le jeton est conservé dans `data/shared-view.json`, avec permissions restreintes, séparément des exports de budget; une ancienne sauvegarde financière ne réactive pas un lien révoqué. Aucun lien n’est créé automatiquement à la mise à jour.
+
+Mettez à jour normalement puis actualisez votre onglet Safari : badge **v7.3**. Aucune remise à zéro. Tous les fichiers de la version doivent rester ensemble, y compris `budget-v73.js` et `shared-view.html`.
 
 ## Nouveautés 7.2 : un disponible protégé avant et après les achats
 

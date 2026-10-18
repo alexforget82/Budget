@@ -1,4 +1,17 @@
-# Vérifications — Mon Budget 7.2
+# Vérifications — Mon Budget 7.3
+
+Validation v7.3 : `npm test` — **196 tests** (60 Node, 136 API). Les bases de test sont temporaires. Les nouveaux scénarios couvrent les avances complètes et partielles, les six fréquences avec ou sans report, les achats anticipés sur compte et carte, le renouvellement réel identique à la simulation et idempotent, la prochaine allocation hebdomadaire complète, la libération partielle, le changement de date, la suppression d’enveloppe, l’annulation, la sauvegarde/restauration et le redémarrage. Une ancienne attente v7.2 a été adaptée : le montant réservé à la création d’une période future devient maintenant une avance sur cette première allocation.
+
+Les vérifications de partage comparent les trois horizons et les extrema aux prévisions propriétaires et contrôlent le contenu exact de la réponse. Un visiteur muni du lien ne peut ni lire l’API propriétaire ni écrire. L’identité de la conjointe est refusée sur les routes propriétaires du serveur privé. Mauvais jeton, mauvais hôte, rotation, révocation, export sans jeton et isolation des requêtes de démonstration sont vérifiés. Les avances corrompues dans un import de sauvegarde sont rejetées.
+
+`tests/budget-v73-ui.py` : alimentation réelle depuis la fiche, avance partielle visible dans la réserve et la prévision, création et révocation du lien depuis Sauvegardes, vue séparée dans un autre contexte navigateur, choix 30/60/90, exactitude des trois indicateurs, absence d’appels à l’API propriétaire, révocation visible, clair/sombre et six largeurs (320 à 1440 px). Captures : `docs/v73-iphone-clair.png`, `docs/v73-iphone-sombre.png`, `docs/v73-enveloppe-avance.png`.
+
+`tests/card-envelope-protection-ui.py` : parcours de régression achat CIBC et remboursement, mode sombre et cinq largeurs. Les essais Chromium n’établissent pas une installation native macOS ou Safari : ces dernières restent à vérifier sur les appareils réels.
+
+Le suivi des avances utilise les réglages SQLite existants, inclus dans les sauvegardes financières. Aucune table n’est ajoutée. Le jeton de consultation reste dans un fichier privé distinct, hors exports et annulations financières.
+
+## Historique des vérifications v7.2
+
 
 `npm test` : **187 tests réussis** (60 Node, 127 API), sans échec ni test ignoré, avec des données temporaires exclusivement.
 
