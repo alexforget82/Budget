@@ -1,11 +1,25 @@
-VERSION 7.3 — AVANCES D’ENVELOPPES ET VUE IPHONE SIMPLIFIEE
+VERSION 7.4 — BUDGET GLOBAL SANS DATE
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.3.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.4.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js et shared-view.html.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js, shared-view.html et global-budget.js.
+
+NOUVEAU 7.4 : Budget est une vue globale revenus / depenses.
+Ouvrez Budget, cliquez une categorie, indiquez un montant, sa frequence
+et si vous voulez le reconduire. Aucune date de paiement n'est demandee.
+Les montants sont compares en equivalent mensuel : 230 $ par semaine = 996,67 $ / mois.
+Les dates precises restent dans Recurrences et les protections dans Enveloppes.
+Aucun objectif saisi ici ne reserve d'argent ou ne change votre Safe-to-Spend.
+Les anciennes enveloppes et leur programmation sont conservees.
+Colonnes Prevu, Reel et Ecart, filtres et alertes de depassement des echeances.
+Les sous-categories ont aussi leur budget : depliez Paiement auto, puis
+Definir a cote d’Alex ou Jenny. Le parent affiche la somme des sous-budgets,
+sans ajouter un second objectif global. Exemple : 200 $ + 300 $ = 500 $.
+Les transactions non categorisees sont incluses dans les totaux reels.
+Aucune remise a zero. Actualisez Safari apres la mise a jour.
 
 NOUVEAU 7.3 : alimentation anticipee et vue iPhone simplifiee.
 Enveloppes > Voir la fiche > Reserver maintenant : cette somme est protegee

@@ -1,4 +1,4 @@
-# Mon Budget 7.3
+# Mon Budget 7.4
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,30 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 7.4 : Budget devient votre vue globale
+
+**Budget compare vos revenus et vos dépenses; il ne réserve pas d’argent.** Pour une catégorie comme Abonnements numériques, saisissez le total des quatre abonnements, choisissez **Au mois** et indiquez si le montant doit être reconduit. Aucune date de paiement n’est demandée. Les quatre abonnements restent dans **Récurrences**, avec leurs montants et dates réels; les sommes protégées restent dans **Enveloppes**.
+
+La page présente les revenus prévus, les dépenses prévues et la différence, avec leurs équivalents réels. Les catégories sont regroupées et repliables, avec les colonnes **Prévu / mois**, **Réel** et **Écart favorable**. Un écart positif représente des revenus au-dessus du prévu ou des dépenses en dessous. Le mois en cours est encore incomplet. Le détail des sous-catégories reste disponible.
+
+**Budgets par sous-catégorie** : dépliez les sous-catégories et cliquez sur **Définir** à côté d’Alex ou de Jenny. Chacune possède son montant, sa fréquence et sa reconduction. Pour Paiement auto, Alex 200 $ et Jenny 300 $ donnent automatiquement **500 $ au parent**; un ancien objectif global n’est pas ajouté une seconde fois. Le réel et l’écart apparaissent à chaque niveau. Une activité sans sous-catégorie reste comprise dans le réel du parent et est signalée.
+
+Dès qu’un objectif détaillé est défini, le total affiché du parent est la somme des sous-objectifs actifs; les autres sous-catégories restent à définir. Les dépassements d’une sous-catégorie restent repérables même si le parent est globalement sous son budget. La recherche trouve aussi les noms des sous-catégories. Les objectifs détaillés sont copiés avec leur fréquence et sont conservés dans les sauvegardes et annulations. Pour revenir à un objectif global, ouvrez le parent : la confirmation indique explicitement que les objectifs détaillés sont remplacés à partir du mois choisi, sans effacer leurs transactions. Les objectifs futurs saisis séparément restent prioritaires. Une fusion de catégories ayant encore des objectifs détaillés actifs demande d’abord ce passage au global pour préserver les montants.
+
+Toutes les fréquences sont conservées, mais comparées sans calendrier obligatoire : semaine × 52 ÷ 12, deux semaines × 26 ÷ 12, mois × 1, trois mois ÷ 3, six mois ÷ 6, année ÷ 12. Par exemple, **230 $ par semaine = 996,67 $ par mois** en moyenne. Ces objectifs globaux ne prétendent pas représenter les quatre ou cinq paiements d’un mois réel : les échéances exactes restent dans Récurrences et dans les prévisions.
+
+Trois filtres aident à repérer les dépenses supérieures au budget, l’activité sans objectif et les échéances programmées supérieures au budget. Quatre abonnements de 10 $, 20 $, 30 $ et 20 $ face à un objectif de 60 $ produisent un avertissement de **20 $**. Ce rapprochement utilise les récurrences liées à la catégorie; les récurrences non classées ne peuvent pas être attribuées automatiquement.
+
+Les transactions non catégorisées sont incluses dans les totaux réels, avec un rappel pour les classer. Les achats sur carte et les remboursements de marchandises sont comptés dans leur catégorie; les virements internes et remboursements de carte saisis comme virements ne sont pas des dépenses supplémentaires. Le Bilan mensuel reprend aussi les objectifs globaux.
+
+**Reconduire Oui** reprend le même montant et la même fréquence dans les mois suivants. Les objectifs futurs déjà saisis séparément restent prioritaires. **Non** limite l’objectif au mois choisi. **Retirer cet objectif** le retire à partir du mois sélectionné sans effacer les transactions; un montant de zéro reste un objectif valide, distinct d’un objectif absent. Reprendre le mois précédent copie seulement les objectifs manquants, sans remplacer ceux qui existent ou sont déjà reconduits.
+
+Les anciennes réserves, leurs liens de catégories et leurs programmations sont conservés. Les anciens objectifs restent lisibles; lorsqu’ils avaient une fréquence, ils sont affichés en moyenne mensuelle. Un ancien objectif limité à un mois ne réapparaît pas dans les suivants. Modifier un nouvel objectif global ne change ni les soldes, ni les enveloppes, ni les récurrences, ni les prévisions ou le Safe-to-Spend. Les anciennes API de programmation restent compatibles avec l’historique; le formulaire Budget n’offre plus de création ou d’ajustement de réserve.
+
+Mettez à jour normalement, puis actualisez Safari : **v7.4**. Aucune remise à zéro. Le fichier `global-budget.js` doit accompagner tous les fichiers de l’application. La vue iPhone simplifiée de la v7.3 reste disponible et inchangée.
+
+**Validation : 214 tests** (63 Node et 151 API), plus les parcours Chromium du nouveau Budget, des six fréquences, de la compatibilité des anciennes réserves et de la vue iPhone partagée. Captures : [Budget clair](docs/v74-budget-clair.png), [Budget sombre](docs/v74-budget-sombre.png), [iPhone](docs/v74-budget-iphone.png), [Formulaire sans date](docs/v74-objectif-sans-date.png), [Sous-catégories](docs/v74-sous-categories.png).
 
 ## Nouveautés 7.3 : avances d’enveloppes et vue iPhone simplifiée
 

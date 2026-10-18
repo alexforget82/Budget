@@ -1,4 +1,22 @@
-# Vérifications — Mon Budget 7.3
+# Vérifications — Mon Budget 7.4
+
+`npm test` : **214 tests réussis** (63 Node, 151 API), sans échec ni test ignoré. Les nouvelles vérifications portent sur les moyennes mensuelles des six fréquences, la précision au cent, l’absence de dates ou d’option de réservation, la reconduction, les exceptions mensuelles, le retrait et le zéro, les quatre abonnements à échéances distinctes, les achats sur carte et retours, les transactions non catégorisées et les virements exclus des dépenses. Les objectifs archivés et le Bilan mensuel restent cohérents; les anciens objectifs ponctuels ne sont pas reconduits par erreur.
+
+Les budgets détaillés sont vérifiés : remplacement de l’ancien objectif parent, somme des sous-objectifs sans double comptage, fréquences différentes, reconduction et arrêt indépendants, copie de la hiérarchie, retour explicite au global, priorité des objectifs futurs (y compris hérités), revenu détaillé, activité sans sous-catégorie, dépassement enfant même sous le total parent, archivage, validation du lien parent/enfant et des imports, annulation et persistance. Une fusion ambiguë de catégories détaillées est refusée sans mutation.
+
+Les tests comparent exactement les comptes, enveloppes, récurrences, opérations, renouvellements, réserves, Safe-to-Spend et prévisions avant et après les nouveaux objectifs. Les aperçus sont en lecture seule, les confirmations périmées sont refusées, les imports corrompus sont rejetés. Annulation, redémarrage, sauvegarde/restauration, copie sans écrasement, fusion et suppression de catégories sont couverts. Le registre financier n’est pas migré; les nouveaux objectifs sont des métadonnées sauvegardées dans les réglages existants.
+
+Parcours Chromium exécutés :
+
+- `tests/budget-v74-ui.py` : formulaire sans date ni réserve, cible mensuelle, quatre récurrences et écart, réel incluant les non-catégorisées, groupes, recherche, filtres, reconduction et aperçu de retrait; saisie des budgets Alex 200 $ et Jenny 300 $ avec total parent 500 $, recherche par sous-catégorie et vérification sur six largeurs; registre et prévisions inchangés; clair/sombre et six largeurs (320 à 1500 px).
+- `tests/budget-v61-ui.py` : six fréquences, choix explicite de reconduction, moyenne mensuelle stable, édition sans perte de montant, persistance et objectif ponctuel limité; sombre et cinq largeurs. Les anciennes attentes de quatre/cinq semaines ont été remplacées par la moyenne mensuelle voulue.
+- `tests/budget-v60-ui.py` : réserve historique créée par l’ancien système et conservée lors d’un nouvel objectif, achats ultérieurs et confirmations de récurrences; recherche, copie et cinq largeurs. Le nouveau formulaire ne crée plus cette réserve.
+- `tests/budget-v73-ui.py` : non-régression des avances d’enveloppes, partage limité, choix 30/60/90 et révocation sur iPhone; clair/sombre et six largeurs.
+
+Captures : `docs/v74-budget-clair.png`, `docs/v74-budget-sombre.png`, `docs/v74-budget-iphone.png`, `docs/v74-objectif-sans-date.png`, `docs/v74-sous-categories.png` et `docs/v74-sous-categories-iphone.png`. Tests exclusivement sur bases temporaires; installation native Mac et Safari réel à vérifier sur les appareils de l’utilisateur.
+
+## Historique des vérifications v7.3
+
 
 Validation v7.3 : `npm test` — **196 tests** (60 Node, 136 API). Les bases de test sont temporaires. Les nouveaux scénarios couvrent les avances complètes et partielles, les six fréquences avec ou sans report, les achats anticipés sur compte et carte, le renouvellement réel identique à la simulation et idempotent, la prochaine allocation hebdomadaire complète, la libération partielle, le changement de date, la suppression d’enveloppe, l’annulation, la sauvegarde/restauration et le redémarrage. Une ancienne attente v7.2 a été adaptée : le montant réservé à la création d’une période future devient maintenant une avance sur cette première allocation.
 
