@@ -1,4 +1,4 @@
-# Vérifications — Mon Budget 8.0
+# Vérifications — Mon Budget 8.1
 
 `npm test` : **223 tests réussis** (63 Node, 160 API), sans échec ni test ignoré.
 
@@ -17,6 +17,10 @@ Parcours Chromium exécutés pour cette version :
 - `tests/budget-v74-ui.py` : objectifs globaux et sous-catégories, total parent sans double comptage, registre et prévisions inchangés.
 - `tests/budget-v73-ui.py` : alimentation anticipée, partage limité et révocable, chiffres 30/60/90 de la vue iPhone.
 - `tests/budget-v41-ui.py` : rapprochement puis correction explicite, annulation, profils CSV mémorisés, sauvegardes et scénarios.
+
+## Parcours 8.1
+
+`tests/budget-v81-ui.py` vérifie la distinction entre disponible actuel et minimum 30/60/90, la formule exacte banque moins protections, la séparation réserve / achats sur carte, une facture future dans le détail quotidien, les cartes secondaires repliées et les informations des enveloppes. Vérification clair/sombre et quatre largeurs (320 à 1500 px); registre et prévision inchangés après consultation. Les anciens tests d’espace de travail et de protection sur carte suivent maintenant les nouvelles sections repliées. Aucun calcul financier n’est remplacé.
 
 ## Vérifications historiques 7.4
 

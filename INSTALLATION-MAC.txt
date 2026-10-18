@@ -1,11 +1,16 @@
-VERSION 8.0 — NOUVEL ESPACE BUDGET
+NOUVEAU 8.1 : tableau de bord simplifie et explications du disponible.
+Pourquoi ce montant ? = calcul actuel. Comprendre le minimum prevu =
+calcul a la date du point bas, avec detail jour par jour sur 90 jours.
+Les enveloppes distinguent objectif, protections et achats.
+
+VERSION 8.1 — NOUVEL ESPACE BUDGET
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v8.0.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v8.1.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js, shared-view.html, global-budget.js, budget-tools-v80.js, budget-v80.js et budget-v80.css.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js, budget-v73.js, shared-view.html, global-budget.js, budget-tools-v80.js, budget-v80.js, budget-v80.css, budget-v81.js et budget-v81.css.
 
 NOUVEAU 8.0 : tableau de bord 30/60/90, previsions a deux courbes,
 calendrier epure, classement groupe et division des achats.

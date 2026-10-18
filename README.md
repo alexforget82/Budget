@@ -1,4 +1,4 @@
-# Mon Budget 8.0
+# Mon Budget 8.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,18 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 8.1 : comprendre votre disponible
+
+Le tableau de bord met en avant **le disponible maintenant**, **le minimum prévu sur 30, 60 ou 90 jours** et **la prochaine rentrée**. Le disponible actuel n’est pas une garantie pour les semaines à venir : consultez le minimum avant un achat. Les anciennes cartes restent accessibles dans des sections repliées; vos dispositions personnalisées sont conservées.
+
+**Pourquoi ce montant ?** explique le disponible actuel : comptes inclus, réserve inutilisée des enveloppes et achats sur carte encore protégés. **Comprendre le minimum prévu** ouvre sa date. Le sélecteur permet de consulter chaque journée des 90 prochains jours, avec la formule solde bancaire moins protections, la variation depuis maintenant et le parcours jour par jour. Les mouvements à effet nul restent visibles. Ces consultations ne créent aucune écriture.
+
+Les enveloppes distinguent **objectif par période**, **protégé maintenant** (réserve inutilisée + achats sur carte encore protégés), **achats enregistrés** et **objectif moins achats**. Ce dernier repère peut être négatif et ne représente pas une réserve disponible. Sans période commencée, les achats mensuels sont explicitement indiqués. Les virements restent consultables dans la fiche. Dépliez « Comprendre cette enveloppe » pour voir la décomposition et la prochaine échéance.
+
+Mise à jour : utilisez votre raccourci permanent **Mettre a jour Mon Budget.command**, sélectionnez le dossier décompressé, puis actualisez Safari. Vos données sont conservées. Le badge affiche **v8.1**.
+
+Aperçus 8.1 : [tableau de bord](docs/v81-dashboard-dark.png), [explication du disponible](docs/v81-explication.png), [enveloppes](docs/v81-enveloppes.png).
 
 ## Nouveautés 8.0 : un espace de budget plus lisible
 
