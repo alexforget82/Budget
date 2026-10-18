@@ -1,4 +1,4 @@
-# Mon Budget 7.0
+# Mon Budget 7.1
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,28 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 7.1 : Conjoint, trois cartes et virements personnels
+
+Les **virements entre comptes restent disponibles**, déjà effectués ou programmés. Une sortie de Conjoint vers un compte personnel réduit son disponible; le solde du compte personnel ne finance pas le Safe-to-Spend commun. Aucun lien à une facture n’est nécessaire dans la nouvelle configuration.
+
+Dans **Comptes → Configurer mes comptes de dépenses** (également accessible dans Bien démarrer, étape 3), choisissez Conjoint et vos cartes existantes : **CIBC MasterCard**, **Capital One MasterCard**, **VISA Desjardins**. Si elles manquent, ajoutez-les d’abord avec leur solde réel, puis revenez à la configuration. Les formulaires de nouvelles dépenses et de factures proposent ensuite ces comptes; tous les comptes restent accessibles pour les virements et les revenus. Les opérations historiques et imports restent consultables.
+
+**Voir les changements** affiche les factures actives des autres comptes qui seront réaffectées à Conjoint, ainsi que les enveloppes à paiement daté. Les montants et calendriers sont conservés. Les transactions déjà enregistrées et les soldes ne sont pas réécrits; les factures déjà rapprochées restent réglées. Les anciens virements réguliers vers les comptes personnels sont proposés séparément : cochez uniquement ceux à suspendre. Les autres restent actifs et continuent d’influencer la prévision. L’application ne suppose pas qu’un virement personnel est devenu inutile.
+
+Cliquez sur **Appliquer cette configuration** après vérification. Un aperçu périmé est refusé. Les anciens liens de financement v7.0 d’une facture à déplacer doivent d’abord être retirés dans Bien démarrer, étape 7; leurs écritures bancaires restent conservées. La configuration peut être annulée avec l’annulation de la dernière modification et elle est incluse dans les sauvegardes.
+
+**Cartes** : un achat augmente la dette sans créer de réserve automatique de remboursement. Un remboursement depuis Conjoint se saisit comme un virement vers la carte et diminue le disponible. Exemple : 1 000 $ dans Conjoint, virement personnel de 75 $ → 925 $; achat CIBC de 100 $ → dette de 100 $, disponible toujours 925 $; remboursement CIBC de 100 $ → disponible de 825 $. Les réserves de budgets existantes conservent leur fonctionnement.
+
+**Interac pour la marge** : si la marge n’est pas suivie comme compte dans le logiciel, saisissez le paiement comme une dépense de Conjoint, catégorie Marge de crédit. Si son solde est suivi comme compte, utilisez un virement de remboursement pour ajuster les deux soldes. Saisissez chaque paiement une seule fois.
+
+**Frais CIBC** : conservez une seule facture mensuelle de frais bancaires sur Conjoint au montant réel du forfait. Suspendez les anciens frais personnels devenus inutiles dans Récurrences. Aucun frais n’est créé ou fusionné automatiquement.
+
+La démonstration neuve reprend Conjoint et les trois cartes. La mise à jour conserve votre budget; la réaffectation demande l’application de l’aperçu dans l’interface. Après la mise à jour habituelle, actualisez Safari et vérifiez le badge **v7.1**.
+
+**Validation : 159 tests Node/API** (52 Node, 107 API). Les parcours Chromium vérifient la transition, les choix de comptes, les virements personnels, les cartes sans réserve automatique, le guide, le mode sombre et cinq largeurs. L’installation native macOS reste à vérifier sur votre Mac.
+
+Aperçus fictifs : [configuration du Conjoint](docs/v71-configuration-conjoint.png) · [configuration sur iPhone](docs/v71-configuration-iphone.png) · [guide des virements sur iPhone](docs/v71-virements-personnels-iphone.png).
 
 ## Nouveautés 7.0 : configuration guidée et disponible du Conjoint
 

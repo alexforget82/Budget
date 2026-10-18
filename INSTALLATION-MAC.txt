@@ -1,11 +1,27 @@
-VERSION 7.0 — CONFIGURATION GUIDEE ET DISPONIBLE DU CONJOINT
+VERSION 7.1 — CONJOINT, CARTES ET VIREMENTS PERSONNELS
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.0.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.1.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js et budget-v70.css.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js et budget-v71.js.
+
+NOUVEAU 7.1 : Comptes > Configurer mes comptes de depenses.
+Choisissez Conjoint et les trois cartes existantes : CIBC MasterCard,
+Capital One MasterCard, VISA Desjardins. Ajoutez-les d'abord si elles manquent.
+Voir les changements : verifiez les factures personnelles reassignees a Conjoint.
+Cochez uniquement les anciens virements reguliers a suspendre, puis Appliquer.
+Les autres virements restent actifs. Aucun solde ni transaction reelle n'est reecrit.
+Si une facture a encore un lien de financement v7.0, retirez son lien dans
+Bien demarrer, etape 7, avant de refaire l'apercu.
+Les virements personnels restent possibles et reduisent le disponible de Conjoint.
+Les cartes ne creent pas de reserve automatique de remboursement.
+Pour la marge externe non suivie comme compte : depense Interac depuis Conjoint.
+Pour une marge suivie comme compte : virement de remboursement, une seule saisie.
+Conservez une seule facture Frais bancaires mensuelle sur Conjoint;
+suspendez les anciens frais personnels inutiles dans Recurrences.
+La mise a jour ne modifie pas automatiquement votre configuration bancaire.
 
 NOUVEAU : ouvrez Bien demarrer pour suivre les sept etapes.
 Choisissez explicitement Conjoint comme compte du Safe-to-Spend.

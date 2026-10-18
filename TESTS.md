@@ -1,3 +1,15 @@
+# Vérifications — Mon Budget 7.1
+
+`npm test` : **159 tests réussis** (52 Node, 107 API), sans échec ni test ignoré, sur des bases temporaires.
+
+Les tests supplémentaires couvrent l’aperçu sans écriture, le refus des choix invalides et des aperçus périmés, la réaffectation des factures et enveloppes datées, la suspension facultative des anciens virements, la préservation du registre réel et des rapprochements automatiques, l’annulation, le redémarrage, la sauvegarde/restauration et la remise à zéro. Ils vérifient aussi les virements personnels réels/prévus, les cartes sans réserve de remboursement automatique et le paiement Interac externe déduit une seule fois.
+
+Parcours Chromium exécutés : `tests/budget-v71-ui.py`, `tests/budget-v70-ui.py`, `tests/transaction-transfers-ui.py`, `tests/budget-v61-ui.py`. La nouvelle configuration, ses choix de comptes, les virements conservés, le guide, le mode sombre et cinq largeurs sont vérifiés avec des données fictives.
+
+L’installation native macOS et Safari sur le Mac de l’utilisateur restent à vérifier sur son appareil.
+
+---
+
 # Vérifications — Mon Budget 7.0
 
 `npm test` : **152 tests réussis** (52 Node, 100 API), sans échec ni test ignoré. Données et serveurs temporaires exclusivement.
