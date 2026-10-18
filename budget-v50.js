@@ -58,3 +58,48 @@
  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','disabled']});
  new MutationObserver(()=>{document.documentElement.classList.add('theme-changing');schedule();requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('theme-changing')));}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});schedule();
 })();
+
+/* v5.3: one daily workflow, backed by the existing ledger and forecast. */
+(()=>{
+ const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;},money=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'}),button=(text,fn)=>{const b=el('button',text,'secondary');b.type='button';b.onclick=fn;return b;};
+ let latest,period='week';
+ const checks=el('div',undefined,'v53-checks');checks.id='v53-account-checks';$('accounts').before(checks);
+ const daily=el('section',undefined,'life-panel v53-daily');daily.id='v53-daily';$('app-dashboard').prepend(daily);
+ const follow=el('div',undefined,'life-panel v53-follow');follow.id='v53-follow';$('planning-review').prepend(follow);
+ const dialog=el('dialog',undefined,'editor-dialog v53-calculation');dialog.id='v53-calculation';dialog.setAttribute('aria-label','Calcul du disponible');const inner=el('div',undefined,'dialog-inner');dialog.append(inner);document.body.append(dialog);
+ const head=el('div',undefined,'dialog-heading');head.append(el('h2','D’où vient mon disponible ?'),button('Fermer',()=>dialog.close()));
+ const select=el('select');select.setAttribute('aria-label','Période du disponible');for(const [value,label] of [['now','Maintenant'],['week','Cette semaine'],['pay','Jusqu’à la paie'],['30','30 jours'],['90','90 jours']])select.add(new Option(label,value));select.value=period;
+ const content=el('div');inner.append(head,select,content);select.onchange=()=>{period=select.value;explain();};
+ function openCalculation(value='week'){period=value;select.value=value;explain();dialog.showModal();}
+ function line(host,label,value){const row=el('div',undefined,'v53-equation');row.append(el('span',label),el('strong',money(value)));host.append(row);}
+ function explain(){
+  if(!latest)return;const s=latest,w=s.spending_windows;content.replaceChildren();
+  const end=period==='now'?null:period==='week'?w.week_end:period==='pay'?w.payday_date:s.forecast[Math.min(s.forecast.length-1,Number(period)-1)]?.date;
+  content.append(el('p','Les comptes inclus et les réserves actuelles donnent votre disponible de départ. Les périodes futures retiennent son point le plus bas, même si le solde remonte ensuite.','quiet-copy'));
+  line(content,'Soldes bancaires inclus',s.cash_cents);line(content,'Enveloppes actuellement gelées',-s.reserved_cents);line(content,'Disponible maintenant',s.safe_cents);
+  const accounts=el('details');accounts.append(el('summary','Voir les comptes et les enveloppes du calcul'));for(const a of s.accounts)line(accounts,a.name+(a.kind==='credit'?' · crédit exclu':a.included?' · inclus':' · exclu'),a.balance_cents);for(const e of s.envelopes.filter(e=>e.reserved_cents>0))line(accounts,e.name+' · réserve',-e.reserved_cents);content.append(accounts);
+  if(period==='pay'&&!end){content.append(el('p','Aucune prochaine paie admissible n’est prévue dans les 30 jours. Ajoutez un revenu récurrent sur un compte inclus pour utiliser cette période.'));return;}
+  const days=end?s.forecast.filter(d=>period==='pay'?d.date<end:d.date<=end):[];let low={date:s.forecast[0].date,safe_cents:s.safe_cents,cash_cents:s.cash_cents,reserved_cents:s.reserved_cents};for(const d of days)if(d.safe_cents<low.safe_cents)low=d;
+  const result=el('div',undefined,'life-preview');result.id='v53-calculation-result';result.append(el('span',period==='now'?'Disponible maintenant':(period==='pay'?'Montant prudent avant la paie du ':'Montant prudent jusqu’au ')+date(end)),el('strong',money(low.safe_cents)));if(end)result.append(el('small','Point le plus bas : '+date(low.date)));content.append(result);
+  if(end){
+   if(period==='pay')content.append(el('p','Le jour de la paie est exclu : son revenu ne devient pas disponible avant sa réception.','quiet-copy'));content.append(el('h3','Du disponible actuel au point le plus bas'));line(content,'Disponible de départ',s.safe_cents);line(content,'Variation du solde bancaire prévu',low.cash_cents-s.cash_cents);line(content,'Effet de la variation des réserves',s.reserved_cents-low.reserved_cents);line(content,'Disponible au minimum',low.safe_cents);
+   const movements=el('details');movements.append(el('summary','Examiner les mouvements jusqu’au '+date(end)));for(const d of days){if(!d.events.length)continue;const day=el('details',undefined,'v53-day');day.append(el('summary',date(d.date)+' · disponible prévu '+money(d.safe_cents)));for(const e of d.events){const row=el('div',undefined,'v53-event');row.append(el('span',e.description||e.type),el('strong',money(e.sts_impact_cents||0)));day.append(row);}movements.append(day);}if(movements.children.length===1)movements.append(el('p','Aucun mouvement prévu sur cette période.'));content.append(movements);
+  }
+  content.append(el('p','Une réserve gèle de l’argent : elle n’est pas une dépense bancaire. Une dépense associée utilise cette réserve. Les virements entre comptes inclus ont un effet net nul. Aucun remboursement de carte n’est réservé automatiquement; seuls vos paiements programmés ou saisis sont pris en compte.','quiet-copy'));
+  if(s.planning.warnings.length)content.append(el('p',s.planning.warnings.length+' point(s) de configuration à vérifier dans Prévision. Le calcul dépend des comptes, des montants et des dates saisis.','life-preview'));
+ }
+ function draw(s){
+  latest=s;checks.replaceChildren(el('h3','Vérification de vos comptes'),el('p','Comparez vos soldes à ceux de votre banque, examinez les opérations, puis validez le rapprochement. Toute modification d’un compte ou de ses opérations demande une nouvelle vérification.','quiet-copy'));
+  for(const a of s.accounts){const check=s.support41.bank_checks?.find(c=>c.account_id===a.id),row=el('div',undefined,'v53-check-row'),copy=el('div');copy.append(el('strong',a.name),el('small',check?.current?'Rapprochement à jour · '+new Date(check.checked_at).toLocaleDateString('fr-CA'):check?.checked_at?'À vérifier depuis le dernier rapprochement':'Pas encore rapproché'));row.append(copy,el('strong',money(a.balance_cents)),button('Vérifier ce compte',()=>window.budgetOpenBankCheck(a.id)));checks.append(row);}if(!s.accounts.length)checks.append(el('p','Ajoutez un compte pour commencer.'));
+  const today=s.forecast[0].date,rows=s.planning.rows,waiting=rows.filter(r=>['planned','pending'].includes(r.status)&&r.type!=='reserve'&&r.remaining_cents>0),due=waiting.filter(r=>r.date<=today),done=rows.filter(r=>r.status==='actual'),pending=(s.calendar_actuals||[]).filter(t=>!t.reviewed&&t.happened_on<=today),unchecked=s.accounts.filter(a=>!s.support41.bank_checks?.find(c=>c.account_id===a.id)?.current);
+  daily.replaceChildren(el('p','VOTRE SUIVI QUOTIDIEN','eyebrow'),el('h3','Votre budget, à jour'),el('p',due.length+' opération(s) prévue(s) à confirmer · '+pending.length+' transaction(s) à vérifier · '+unchecked.length+' compte(s) à rapprocher','quiet-copy'));
+  const actions=el('div',undefined,'v53-actions');actions.append(button('Confirmer mes opérations',()=>window.budgetOpenPlanningQueue()),button('Vérifier mes comptes',()=>document.querySelector('.app-shell-nav [data-view="comptes"]').click()),button('Comprendre mon disponible',()=>openCalculation()));daily.append(actions);
+  follow.replaceChildren(el('h3','Du prévu au réellement payé'),el('p','Une confirmation remplace le prévu par le réel. Si la transaction est déjà saisie, associez-la pour conserver un seul mouvement bancaire. Les réserves restent distinctes des dépenses.','quiet-copy'));const metrics=el('div',undefined,'life-metrics');for(const [label,value] of [['À confirmer aujourd’hui ou avant',due.length],['Réels rapprochés sur la période suivie',done.length],['Échéances encore prévues',waiting.length]]){const box=el('div');box.append(el('span',label),el('strong',value));metrics.append(box);}follow.append(metrics);
+  for(const r of due.slice(0,3)){const row=el('div',undefined,'v53-check-row');row.append(el('span',date(r.date)+' · '+r.description),el('strong',money(r.remaining_cents)),button('Confirmer cette opération',()=>window.budgetConfirmPlanned(r.key)));follow.append(row);}
+  if(!due.length)follow.append(el('p','Aucune échéance passée à confirmer. Vous pouvez consulter les prochaines dates ou l’historique ci-dessous.'));
+  for(const [id,value] of [['sts-today','now'],['sts-week','week'],['sts-pay','pay']]){const target=$(id);target.setAttribute('role','button');target.tabIndex=0;target.setAttribute('aria-label',target.textContent+' · voir le calcul');target.onclick=()=>openCalculation(value);target.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCalculation(value);}};}
+  if(dialog.open)explain();
+ }
+ const previous=render;render=function(s){previous(s);draw(s);};if(typeof state!=='undefined'&&state)draw(state);
+ $('v21-sts-detail').onclick=()=>openCalculation();
+})();

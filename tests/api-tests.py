@@ -34,6 +34,13 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_bank_checkpoint_preserves_money_rejects_stale_and_survives_restore(self):
+  aid=self.account(balance=1000);self.transaction(aid,-20);before=self.get('/api/backup/export')['tables'];out=self.post('/api/support/reconcile',{'account_id':aid,'balance':980});self.assertEqual(before,self.get('/api/backup/export')['tables'])
+  args={'account_id':aid,'balance':980,'fingerprint':out['fingerprint'],'confirm':True};self.post('/api/support/checkpoint',{**args,'confirm':False},400);self.post('/api/support/checkpoint',{**args,'balance':981},400);self.post('/api/support/checkpoint',{**args,'fingerprint':'stale'},400)
+  state=self.post('/api/support/checkpoint',args);check=state['support41']['bank_checks'][0];self.assertTrue(check['current']);self.assertEqual(check['balance_cents'],98000);after=self.get('/api/backup/export')['tables'];self.assertTrue(all(before[k]==after[k] for k in before if k!='app_settings'));backup=self.get('/api/backup/export');self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertTrue(self.get('/api/state')['support41']['bank_checks'][0]['current'])
+  tid=state['transactions'][0]['id'];state=self.post('/api/transactions/review',{'id':tid,'reviewed':True});self.assertFalse(state['support41']['bank_checks'][0]['current']);self.post('/api/support/checkpoint',args,400);self.assertEqual(state['cash_cents'],98000);self.assertEqual(state['credit_reserved_cents'],0)
+ def test_bank_checkpoint_invalidates_even_when_net_balance_is_unchanged(self):
+  aid=self.account();out=self.post('/api/support/reconcile',{'account_id':aid,'balance':1000});args={'account_id':aid,'balance':1000,'fingerprint':out['fingerprint'],'confirm':True};self.post('/api/support/checkpoint',args);self.transaction(aid,-10);self.transaction(aid,10);state=self.get('/api/state');self.assertEqual(state['cash_cents'],100000);self.assertFalse(state['support41']['bank_checks'][0]['current']);self.post('/api/support/checkpoint',args,400)
  def test_life_paycheck_reserves_future_money_once_and_requires_received_income(self):
   aid=self.account(balance=1000)
   state=self.post('/api/envelopes',{'name':'Maison','reserved':0,'budget':0,'frequency':'none','forecast_spend':False});eid=state['envelopes'][0]['id']

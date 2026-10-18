@@ -1,4 +1,4 @@
-# Mon Budget 5.2
+# Mon Budget 5.3
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,18 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.3 : vérifier, confirmer et comprendre
+
+- **Tableau de bord → Votre budget, à jour** : opérations prévues à confirmer, transactions non vérifiées et comptes à rapprocher, avec accès direct à chaque suivi.
+- **Comptes → Vérifier ce compte** : comparez le solde bancaire actuel (pour une carte, le montant dû positif), examinez transactions et virements, marquez individuellement les transactions vérifiées. Lorsque les soldes concordent, **Valider ce rapprochement** conserve une vérification datée sans modifier les soldes. Toute modification du compte ou de ses opérations invalide ce statut, même si le solde net reste identique. Une comparaison devenue périmée doit être refaite avant validation. Ce statut porte sur votre comparaison manuelle, pas sur une synchronisation bancaire ni un verrouillage du relevé.
+- **Planifier → Prévu / Réel** : un récapitulatif distingue les échéances à confirmer, les réels rapprochés et les prochaines opérations. **Confirmer cette opération** permet d’enregistrer le montant réellement payé, ou d’associer une opération déjà saisie. Le traitement existant conserve un seul mouvement bancaire et remplace la prévision. Les réserves d’enveloppes restent distinctes des dépenses.
+- **Disponible → cliquez sur le montant**, ou **Comprendre mon disponible** : choisissez Maintenant, Cette semaine, Jusqu’à la paie, 30 ou 90 jours. Consultez soldes inclus, réserves gelées, minimum prudent et sa date, puis l’équation et les mouvements détaillés. Le jour de paie est exclu du calcul avant la paie. Sans prochaine paie admissible, aucun montant n’est inventé.
+- Aucun service bancaire payant et aucune réserve automatique pour rembourser les cartes. Seuls les paiements que vous programmez ou saisissez influencent les comptes concernés.
+
+Les **121 tests Node/API** passent (52 Node, 69 API). `python3 tests/budget-v53-ui.py` vérifie les cinq périodes, la paie exclue, la navigation sans écriture, la vérification d’une transaction, la validation et l’invalidation d’un rapprochement, la confirmation au montant réel, le mode sombre et cinq largeurs. Les tests de support v4.1 et du parcours Prévu / Réel restent disponibles.
+
+Aperçus avec données fictives : [rapprochement des comptes](docs/v53-comptes-verifies.png) · [calcul du disponible](docs/v53-calcul-disponible.png) · [sur iPhone](docs/v53-comptes-iphone.png).
 
 ## Nouveautés 5.2 : un répertoire de catégories compact
 
@@ -104,7 +116,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.2**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.3**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 

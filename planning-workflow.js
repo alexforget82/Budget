@@ -33,6 +33,7 @@
    }
   }
  }
+ window.budgetConfirmPlanned=key=>{const row=current?.planning.rows.find(r=>r.key===key);if(row&&['planned','pending'].includes(row.status))openAction(row,'confirm');};
  function candidates(row,account){
   const type=row.type==='transfer'?'transfer':'transaction',actuals=type==='transfer'?current.calendar_transfers:current.calendar_actuals,claimed=new Set([...current.planning.rows.filter(r=>r.source==='recurring').flatMap(r=>r.actual_ids),...(current.planning.envelope_actual_links||[]).map(l=>'transaction:'+l.transaction_id)]);
   return (actuals||[]).filter(a=>a.happened_on<=current.forecast[0].date&&!claimed.has(type+':'+a.id)&&(type==='transfer'?a.from_account_id===row.account_id&&a.to_account_id===row.to_account_id:a.account_id===Number(account)&&(row.type==='income'?a.amount_cents>0:a.amount_cents<0)&&(!a.envelope_id||a.envelope_id===row.envelope_id))).sort((a,b)=>Math.abs(Date.parse(a.happened_on)-Date.parse(row.date))-Math.abs(Date.parse(b.happened_on)-Date.parse(row.date))).slice(0,100);
