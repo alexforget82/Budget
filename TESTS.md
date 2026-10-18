@@ -1,6 +1,6 @@
 # Vérifications — Sillage 2
 
-`npm test` : **226 tests réussis** (63 Node, 163 API), sans échec ni test ignoré.
+`npm test` : **228 tests réussis** (65 Node, 163 API), sans échec ni test ignoré.
 
 Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
 
@@ -384,3 +384,11 @@ Les parcours navigateur existants et le cycle du service Mac simulé sont conser
 `python3 tests/free-budgets-ui.py` : réussi. Parcours du sous-onglet et du badge v4.2, réutilisation d’une ancienne Maison avec achats, séparation des enveloppes régulières, neuf suggestions sans répétition ni changement d’une ancienne Outils, reprise explicite de cette Outils, aperçu sans écriture, réservation, achat réel sur la bonne enveloppe sans deuxième baisse du disponible libre, libération, refus après changement depuis l’autre appareil, acquittement négatif, création à zéro, pause/réactivation et suppression d’un budget vide. La recherche tolère les accents. Les cinq vues et les formulaires d’aperçu sont vérifiés à 375/390/768/1024/1440 px, sans débordement ni erreur JavaScript, et la consultation ne change pas les tables financières.
 
 Les parcours 4.0/4.1, enveloppes, prévisions, cartes, import/restauration et le cycle du service Mac simulé restent validés. Les captures ne contiennent que des données fictives. L’intégration Finder/Tailscale et Safari/iPhone réelle reste à vérifier sur les appareils de l’utilisateur.
+
+## Correctif 9.0.1 — ressources de la copie installée
+
+Le défaut initial a été reproduit en appliquant la sélection de fichiers de l’ancien installateur : SVG absent, requête du logo interrompue puis arrêt du serveur avec `ERR_HTTP_HEADERS_SENT`.
+
+`tests/installed-assets.test.js` utilise le même helper de copie que l’installateur, démarre le serveur depuis cette copie, contrôle toutes les ressources de la page et leurs types MIME, puis supprime le logo et vérifie une réponse 404 sans arrêt du serveur ni modification des soldes. Il vérifie aussi la préservation du dossier data et l’exclusion des fichiers étrangers.
+
+`tests/installed-assets-ui.py` ouvre cette copie installée dans Chromium : styles appliqués, scripts exécutés, logo chargé, montants affichés et ouverture de l’explication. Les annulations de requêtes de liste par le navigateur sont attendues; les autres erreurs réseau et réponses HTTP d’erreur font échouer le parcours. Registre inchangé. Aucun essai natif de launchd/Safari sur Mac n’est revendiqué.

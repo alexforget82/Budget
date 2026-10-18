@@ -1,3 +1,7 @@
+CORRECTIF 9.0.1 : copie complete des styles, scripts, logo et icones.
+Reinstallez avec le raccourci de mise a jour puis actualisez Safari.
+Vos donnees restent conservees.
+
 SILLAGE 2 — VOTRE ARGENT, VOTRE CAP
 Nouvelle generation de Mon Budget, avec vos donnees existantes.
 
@@ -9,7 +13,7 @@ MISE A JOUR D'UNE INSTALLATION EXISTANTE
 Les nouveaux raccourcis seront dans ~/Applications/Sillage.
 Les anciens raccourcis et dossiers internes restent conserves.
 Ne remplacez pas votre base active par un ancien dossier data.
-La version technique 9.0.0 assure la compatibilite de la mise a jour.
+La version technique 9.0.1 assure la compatibilite de la mise a jour.
 
 PREMIERE INSTALLATION
 Ouvrez Installer Sillage.command et suivez les instructions existantes.

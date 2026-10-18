@@ -26,6 +26,12 @@ export function shortcutScript(node,script,action=''){
 export function openAfterInstall({firstInstall,quiet,shortcuts,origin},open){
  if(firstInstall&&!quiet){open(shortcuts);open(origin);}
 }
+// Copy application assets only. The stable data directory is never part of this copy.
+export function copyReleaseFiles(from,to){
+ fs.mkdirSync(to,{recursive:true});
+ if(fs.realpathSync(from)===fs.realpathSync(to))return;
+ for(const entry of fs.readdirSync(from,{withFileTypes:true}))if(entry.isFile()&&(/\.(js|html|css|svg|png|webmanifest)$/.test(entry.name)||entry.name==='package.json'||entry.name==='Acces prive iPhone.command'))fs.copyFileSync(path.join(from,entry.name),path.join(to,entry.name));
+}
 function command(exe,args,allowFailure=false){const r=spawnSync(exe,args,{encoding:'utf8'});if(r.error)throw r.error;if(r.status&&!allowFailure)throw Error((r.stderr||r.stdout||exe+' a échoué').trim());return r;}
 async function status(){try{const r=await fetch('http://127.0.0.1:3030/api/private/status',{signal:AbortSignal.timeout(1500)});return r.ok?await r.json():null;}catch{return null;}}
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
@@ -72,7 +78,7 @@ async function main(){
   const {DatabaseSync}=await import('node:sqlite'),db=new DatabaseSync(path.join(data,'budget.sqlite'));const backups=path.join(data,'backups');fs.mkdirSync(backups,{recursive:true,mode:0o700});
   try{db.prepare('VACUUM INTO ?').run(path.join(backups,'budget-before-service-update-'+Date.now()+'.sqlite'));}finally{db.close();}
  }
- if(source!==root){for(const name of fs.readdirSync(source)){if(/\.(js|html|css)$/.test(name)||name==='package.json'||name==='Acces prive iPhone.command')fs.copyFileSync(path.join(source,name),path.join(root,name));}}
+ copyReleaseFiles(source,root);
  // Reuse the same identity and Serve conflict checks as the interactive launcher.
  const prepare=spawnSync('/bin/bash',[path.join(root,'Acces prive iPhone.command'),'--prepare-service'],{cwd:root,stdio:'inherit'});if(prepare.status!==0)throw Error('Configuration Tailscale incomplète. Relancez l’installation après avoir corrigé le message ci-dessus.');
  fs.writeFileSync(plist,servicePlist(process.execPath,root,logs),{mode:0o600});

@@ -8,6 +8,12 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Correctif d’installation Sillage 2 — 9.0.1
+
+L’installateur copie désormais aussi les SVG, PNG et le manifeste de l’application. Un logo manquant ne peut plus arrêter le serveur : il reçoit une réponse 404 propre. Le dossier de mise à jour est contrôlé pour les ressources référencées par la page. Le correctif est vérifié sur une copie installée, y compris dans le navigateur, avec conservation du registre.
+
+Si la première installation de Sillage affiche une page sans styles, téléchargez à nouveau le ZIP puis utilisez votre raccourci permanent de mise à jour. Choisissez le nouveau dossier et actualisez Safari sur votre adresse Tailscale habituelle. Il n’est pas nécessaire de déplacer ou de supprimer vos données.
+
 ## Deuxième génération : Sillage 2
 
 Sillage reprend votre budget existant dans une nouvelle identité : boussole originale, palette ardoise et menthe, icône iPhone et présentation harmonisée. Il reste local et privé. Aucun abonnement, aucune connexion bancaire ni compte externe supplémentaire n’est ajouté.
