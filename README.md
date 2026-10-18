@@ -1,4 +1,4 @@
-# Mon Budget 7.1.1
+# Mon Budget 7.2
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,26 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 7.2 : un disponible protégé avant et après les achats
+
+La même somme reste protégée pendant tout le parcours : **enveloppe → achat → remboursement**. Pour Épicerie, 230 $ prévus dans une enveloppe réduisent le Safe-to-Spend dès la date de la période, avant toute transaction. Un achat sur CIBC MasterCard déplace la protection de l’enveloppe vers ses achats sur carte non remboursés; il ne rend plus cet argent disponible. Le remboursement depuis Conjoint réduit le solde bancaire et libère la protection correspondante : le même achat n’est pas déduit deux fois.
+
+Exemple : Conjoint 1 000 $, enveloppe 230 $ → disponible **770 $**. Achat CIBC de 100 $ → banque toujours 1 000 $, enveloppe inutilisée 130 $, achats sur carte protégés 100 $, disponible toujours **770 $**. Remboursement de 100 $ → banque 900 $, enveloppe 130 $, protection carte 0 $, disponible toujours **770 $**.
+
+**Nouvelles enveloppes simplifiées** : le formulaire propose par défaut **Budget protégé — achats aux dates réelles**, avec **Conserver le restant et ajouter le prochain budget**. Choisissez le montant, la fréquence et la date; aucune dépense fictive n’est créée. Chaque nouvelle période ajoute son budget complet à la protection, même sans achat : 230 $ par semaine donnent 230 $, puis 460 $ protégés après deux dates sans dépense. L’option Remplacer le restant reste disponible si vous souhaitez seulement ramener l’enveloppe à son plafond. Les choix des enveloppes existantes sont conservés.
+
+Pour chaque achat réel, choisissez son enveloppe et le compte effectivement utilisé, Conjoint ou une carte. Un achat bancaire consomme sa réserve au débit; un achat sur carte reste protégé jusqu’à un remboursement enregistré ou programmé. Les enveloppes existantes en mode paiement daté sur carte bénéficient aussi du correctif dans leurs prévisions. Les remboursements partiels et les remboursements regroupant plusieurs enveloppes sont gérés par carte, en utilisant d’abord les achats protégés les plus anciens; aucun choix d’enveloppe n’est nécessaire au remboursement. Les corrections, suppressions et annulations recalculent le résultat.
+
+**Comprendre mon disponible** sépare désormais le solde bancaire, les montants encore utilisables dans les enveloppes et les achats d’enveloppes sur carte encore protégés. La fiche de l’enveloppe indique la carte et le montant à rembourser. Les aperçus de budgets, les répartitions, Ma prochaine paie et les prévisions utilisent la même protection. Une avance sur une période future ne réserve pas son montant une deuxième fois au renouvellement; les reports de solde conservent les allocations complètes.
+
+La dette de carte sans achat lié à une enveloppe ne crée pas de réserve automatique. Les anciens soldes déclarés et les imports en historique ne sont pas transformés en nouveaux budgets. Un achat sans enveloppe n’ajoute pas de protection : associez les achats aux bonnes enveloppes et saisissez les remboursements pour garder un calcul juste. Les allocations personnelles comme Anaïs restent protégées à leur sortie de Conjoint; leurs achats ne sont pas protégés une deuxième fois dans le budget commun.
+
+Vos données sont conservées, sans nouvelle base ni remise à zéro. Mettez à jour normalement, puis actualisez Safari : le badge indique **v7.2**. Les protections sont calculées à partir des soldes et opérations enregistrés; les montants ou paiements absents du logiciel ne peuvent pas être devinés.
+
+**Validation : 187 tests Node/API** (60 Node, 127 API), avec bases temporaires uniquement. Ils couvrent les dates hebdomadaires, les achats partiels, plusieurs cartes et enveloppes, les remboursements, les retours, les corrections, la restauration, les avances et les calculs des autres écrans. Les parcours Chromium vérifient aussi le nouveau formulaire, le détail du disponible, l’iPhone et le mode sombre.
+
+Aperçus fictifs : [avant le remboursement](docs/v72-disponible-protege.png) · [après le remboursement sur iPhone](docs/v72-disponible-iphone.png).
 
 ## Correctif 7.1.1 : enveloppes vers un compte personnel
 

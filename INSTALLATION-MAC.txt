@@ -1,11 +1,25 @@
-VERSION 7.1.1 — CONJOINT, CARTES ET VIREMENTS PERSONNELS
+VERSION 7.2 — CONJOINT, CARTES ET VIREMENTS PERSONNELS
 Décompressez le ZIP. Ouvrez votre raccourci permanent
 Mettre a jour Mon Budget.command dans ~/Applications/Mon Budget,
 puis choisissez le nouveau dossier téléchargé. La base active est conservée
 et sauvegardée; ne recopiez pas d’ancien dossier data.
-Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.1.1.
+Rechargez Safari sur Mac et iPhone : le badge en bas du menu gauche doit indiquer v7.2.
 Gardez tous les fichiers ensemble, dont budget-life.js, budget-v50.js
-et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js et budget-v71.js.
+et budget-v50.css, budget-schedule.js, monthly-budget.js, budget-v60.js et budget-v60.css, budget-journey.js, demo-workspace.js, budget-v70.js, budget-v70.css, budget-banking.js, budget-v71.js et card-envelope-funds.js.
+
+NOUVEAU 7.2 : enveloppes protegees avant l'achat et jusqu'au remboursement.
+Exemple : 1 000 $ dans Conjoint et 230 $ d'epicerie = 770 $ disponibles.
+Apres un achat CIBC de 100 $, 130 $ restent dans l'enveloppe et 100 $
+restent proteges pour cet achat. Le disponible demeure 770 $.
+Le remboursement CIBC de 100 $ utilise cette protection, sans second debit du disponible.
+Associez chaque achat a son enveloppe. Saisissez le remboursement comme un virement.
+Les nouvelles enveloppes proposent Budget protege, achats aux dates reelles,
+et Conserver le restant pour proteger chaque nouvelle allocation complete.
+L'option Remplacer le restant reste disponible; les choix existants sont conserves.
+Comprendre mon disponible montre le detail des montants proteges.
+Aucune dette de carte sans achat lie a une enveloppe n'est reservee automatiquement.
+Les allocations personnelles comme Anais restent gerees par leur virement.
+Aucune remise a zero n'est necessaire pour cette mise a jour.
 
 CORRECTIF 7.1.1 : allocation vers un compte personnel.
 Dans l'enveloppe Anais : budget 283 $, frequence mensuelle, date 31 octobre,

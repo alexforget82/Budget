@@ -1,3 +1,4 @@
+import {cardEnvelopeTotal} from './card-envelope-funds.js';
 // Envelope presentation and reviewed configuration use the existing ledger exclusively.
 import {createHash} from 'node:crypto';
 export function createEnvelopeTools({db,atomic,cents,validDate,today,exportBackup,forecastInput,buildForecast}) {
@@ -25,7 +26,7 @@ export function createEnvelopeTools({db,atomic,cents,validDate,today,exportBacku
   });
   const envelopes=args.envelopes.map(e=>changes.find(c=>c.id===e.id)?.after||e),before=buildForecast(args).days,after=buildForecast({...args,envelopes}).days;
   const min=after.reduce((a,b)=>a.safe_cents<=b.safe_cents?a:b),token=createHash('sha256').update(JSON.stringify([exportBackup().tables,args.today,changes.map(c=>c.after)])).digest('hex');
-  const cash=args.accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((n,a)=>n+a.balance_cents,0),reserved=args.envelopes.reduce((n,e)=>n+e.reserved_cents,0);
+  const cash=args.accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((n,a)=>n+a.balance_cents,0),reserved=args.envelopes.reduce((n,e)=>n+e.reserved_cents,0)+cardEnvelopeTotal(args);
   return {changes,token,cash_cents:cash,safe_cents:cash-reserved,min_before_cents:Math.min(...before.map(d=>d.safe_cents)),min_after_cents:min.safe_cents,min_on:min.date,needs_ack:min.safe_cents<0};
  }
  function post(route,x){
@@ -43,7 +44,7 @@ export function createEnvelopeTools({db,atomic,cents,validDate,today,exportBacku
    return {id:e.id,mode:freeIds.has(e.id)?'free':e.forecast_spend===0?'reserved':'dated',spent_month_cents:spent,spent_period_cents:period,period_budget_cents:budget,over_budget_cents:detail?.period_start&&e.frequency!=='none'?Math.max(0,period-budget):0,transferred_month_cents:transfers.filter(t=>t.envelope_id===e.id&&t.happened_on.startsWith(month)).reduce((n,t)=>n+t.amount_cents,0),transfers:transfers.filter(t=>t.envelope_id===e.id).slice(0,30),recent:own.slice(0,10),transaction_count:own.length,next_renewal:detail?.next_renewal,period_start:detail?.period_start};
   });
   const unassigned=transactions.filter(t=>t.amount_cents<0&&!t.envelope_id&&t.happened_on.startsWith(month));
-  const currentCash=all('SELECT * FROM accounts').filter(a=>a.kind!=='credit'&&a.included).reduce((n,a)=>n+a.balance_cents,0),currentSafe=currentCash-envelopes.reduce((n,e)=>n+e.reserved_cents,0);
+  const currentCash=all('SELECT * FROM accounts').filter(a=>a.kind!=='credit'&&a.included).reduce((n,a)=>n+a.balance_cents,0),currentSafe=currentCash-envelopes.reduce((n,e)=>n+e.reserved_cents,0)-cardEnvelopeTotal({accounts:all('SELECT * FROM accounts'),envelopes,transactions,transfers:all('SELECT * FROM account_transfers'),today:today()});
   const payday=simulation.days.flatMap(d=>d.events.map(e=>({...e,date:d.date}))).find(e=>e.type==='income'&&e.cash_impact_cents>0&&!e.overdue),window=simulation.days.filter(d=>!payday||d.date<payday.date||d.date===today()).slice(0,payday?90:30),risk=currentSafe<0?{date:today(),safe_cents:currentSafe}:window.find(d=>d.safe_cents<0);
   return {month,items,unassigned_count:unassigned.length,unassigned_cents:unassigned.reduce((n,t)=>n-t.amount_cents,0),unassigned_recent:unassigned.slice(0,5),risk:risk?{date:risk.date,safe_cents:risk.safe_cents,payday:payday?.date||null}:null};
  }

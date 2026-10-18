@@ -1,3 +1,4 @@
+import {cardEnvelopeTotal} from './card-envelope-funds.js';
 // Free budgets share envelope IDs, reserves and transaction links. No second ledger.
 import {createHash} from 'node:crypto';
 export const suggestions=['Piscine et terrassement','Outils','Meubles et fournitures','Électroniques','Vêtements','Jeux et jouets','Essentiels pour la maison','Auto : Entretien et pièces','Maison : Entretien et amélioration'];
@@ -20,7 +21,7 @@ export function createFreeBudgets({db,atomic,cents,today,exportBackup,forecastIn
   const e=find(x.id),amount=cents(x.amount),direction=x.direction??'add';if(!e||!isFree(e)||!e.active||amount===null||amount<=0||!['add','release'].includes(direction))throw Error('Choisissez un budget libre actif et un montant positif.');
   if(direction==='release'&&amount>e.reserved_cents)throw Error('Le montant à libérer dépasse la réserve de ce budget.');
   const delta=direction==='add'?amount:-amount,next=e.reserved_cents+delta;if(!Number.isSafeInteger(next)||next>1e12)throw Error('Montant réservé trop élevé.');
-  const args=forecastInput(),cash=args.accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+a.balance_cents,0),reserved=args.envelopes.reduce((s,e)=>s+e.reserved_cents,0),baseline=buildForecast(args).days;
+  const args=forecastInput(),cash=args.accounts.filter(a=>a.kind!=='credit'&&a.included).reduce((s,a)=>s+a.balance_cents,0),reserved=args.envelopes.reduce((s,e)=>s+e.reserved_cents,0)+cardEnvelopeTotal(args),baseline=buildForecast(args).days;
   const projected=buildForecast({...args,envelopes:args.envelopes.map(item=>item.id===e.id?{...item,reserved_cents:next}:item)}).days,min=projected.reduce((a,b)=>a.safe_cents<=b.safe_cents?a:b);
   const token=createHash('sha256').update(JSON.stringify([exportBackup().tables,args.today,e.id,amount,direction])).digest('hex');
   return {id:e.id,name:e.name,direction,amount_cents:amount,reserved_before_cents:e.reserved_cents,reserved_after_cents:next,cash_cents:cash,safe_before_cents:cash-reserved,safe_after_cents:cash-reserved-delta,min_before_cents:Math.min(...baseline.map(d=>d.safe_cents)),min_after_cents:min.safe_cents,min_on:min.date,needs_ack:direction==='add'&&(cash-reserved-delta<0||min.safe_cents<0),token};

@@ -1,3 +1,15 @@
+# Vérifications — Mon Budget 7.2
+
+`npm test` : **187 tests réussis** (60 Node, 127 API), sans échec ni test ignoré, avec des données temporaires exclusivement.
+
+Les nouveaux tests couvrent la protection des achats d’enveloppes sur carte avant remboursement, les remboursements partiels et regroupés, la séparation entre cartes, les retours, le rapprochement à zéro, les avances avec ou sans report, les échéances hebdomadaires et les paiements le même jour. Le solde initial d’une carte, les achats non associés et les imports historiques ne créent pas de protection. Les achats privés d’une allocation Anaïs ne sont pas déduits deux fois. Les tests vérifient les aperçus de budgets/répartitions, l’annulation, la modification/suppression, le redémarrage et les sauvegardes.
+
+Parcours Chromium exécutés : `tests/card-envelope-protection-ui.py`, `tests/transaction-transfers-ui.py`, `tests/envelope-transfers-ui.py`, `tests/planning-workflow-ui.py`, `tests/budget-v44-ui.py`, `tests/budget-v61-ui.py`. Le nouveau formulaire protège chaque allocation hebdomadaire complète par défaut, sans achat fictif. Le parcours CIBC vérifie 1 000 − 230 = 770 avant achat, puis 1 000 − 130 − 100 = 770 après l’achat, et 900 − 130 = 770 après remboursement. Les détails du calcul et des cartes sont vérifiés en mode sombre et sur cinq largeurs.
+
+La protection est un calcul pur sur le registre existant; aucune nouvelle table ni réécriture du registre n’est introduite. L’installation native macOS et Safari restent à vérifier sur l’appareil de l’utilisateur.
+
+---
+
 # Vérifications — Mon Budget 7.1.1
 
 `npm test` : **169 tests réussis** (52 Node, 117 API), sans échec ni test ignoré, avec des données temporaires exclusivement.
