@@ -17,3 +17,13 @@ def navigate_legacy(page,view):
  if identifier:
   detail=page.locator('#'+identifier)
   if detail.count() and detail.get_attribute('open') is None:detail.locator(':scope > summary').click()
+
+def manage_category(page,category_id):
+ """Open a compact category row before using its management actions."""
+ row=page.locator(f'.category-list-row[data-category-id="{category_id}"]')
+ if row.count():
+  group=row.locator('xpath=ancestor::details[contains(@class,"v52-category-group")]')
+  if group.count() and group.get_attribute('open') is None:group.locator(':scope>summary').click()
+  toggle=row.locator('.v52-row-toggle')
+  if toggle.count() and toggle.get_attribute('aria-expanded')!='true':toggle.click()
+ return row

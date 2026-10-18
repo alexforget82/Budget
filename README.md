@@ -1,4 +1,4 @@
-# Mon Budget 5.1.3
+# Mon Budget 5.2
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,20 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Nouveautés 5.2 : un répertoire de catégories compact
+
+La liste occupe toute la largeur. Les grandes fiches sont remplacées par des lignes compactes d’environ 46 pixels; les groupes sont repliés au premier affichage. Cliquez sur un groupe pour consulter ses catégories, puis sur le nom d’une catégorie pour ouvrir ses actions et ses sous-catégories.
+
+- **Tout déplier / Tout replier** agit sur les groupes. Les actions restent à la demande pour garder la lecture légère. Les groupes ouverts sont mémorisés dans ce navigateur, indépendamment du budget et de l’autre appareil.
+- La **recherche** et le **filtre par groupe** ouvrent les résultats concernés. Une recherche dans les sous-catégories affiche leur catégorie et ses détails. Vous pouvez refermer une ligne même pendant une recherche.
+- **+ Catégorie** ouvre la création dans une petite fenêtre intégrée. **Renommer**, dans les détails d’une ligne, ouvre le formulaire correspondant. Une nouvelle catégorie est révélée automatiquement après sa création.
+- **Reprendre ma liste Lunch Money** reste directement accessible dans la barre d’outils. Les fonctions de sous-catégorie, archivage, groupe, fusion et suppression restent disponibles. Non-catégorisé reste visible dans un bandeau compact.
+- Aucun solde, calcul, transaction ou classement n’est modifié par ce nouvel affichage.
+
+Les 119 tests Node/API passent. `python3 tests/categories-v52-ui.py` vérifie les groupes repliés, leur mémorisation, la largeur de la liste, la hauteur des lignes, les détails à la demande, la recherche, la création, le renommage et les sous-catégories, sans écriture financière pendant la navigation. L’affichage est aussi vérifié en sombre et sur cinq largeurs, dont iPhone.
+
+Aperçus avec données fictives : [vue compacte](docs/v52-categories-compactes.png) · [groupe ouvert](docs/v52-groupe-ouvert.png) · [sur iPhone](docs/v52-categories-iphone.png).
 
 ## Nouveautés 5.1.3 : supprimer toutes les catégories
 
@@ -90,7 +104,7 @@ Aperçus avec données fictives : [pleine largeur en sombre](docs/v501-pleine-la
 
 Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
 
-**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.1.3**.
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v5.2**.
 
 Aperçus avec données fictives : [mode sombre](docs/v50-paie-sombre.png) · [mode clair](docs/v50-paie-clair.png) · [sur iPhone](docs/v50-iphone.png).
 
