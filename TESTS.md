@@ -2,6 +2,12 @@
 
 `npm test` : **241 tests réussis** (65 Node, 176 API), sans échec ni test ignoré.
 
+## Association proposée à la saisie — v11.1.0
+
+`python3 tests/transaction-match-v111-ui.py` vérifie sur une base temporaire : dépense anticipée avec montant différent, plusieurs échéances, exclusion des autres comptes et dates éloignées, association en un clic sans second débit ni nouvelle transaction, refus sans écriture, Enregistrer et continuer, absence de proposition sur achat sans lien ou rechargement, correspondance par catégorie, erreur de prévision périmée sans perte de la transaction, et maintien du reste d’une enveloppe pour plusieurs achats. Affichage vérifié à 320, 390, 768 et 1440 px avec Chromium.
+
+Régressions : `npm test`, `python3 tests/transactions-ui.py`, `python3 tests/sillage-v10-ui.py`. Ces contrôles utilisent des données fictives; ils ne vérifient pas Safari natif ni les données bancaires de l’installation privée.
+
 ## Refonte Sillage 2026 — v11.0.0
 
 `tests/sillage-2026-ui.py` : identité et numéro de version, groupe Outils et réglages, neuf écrans en clair/sombre, cinq largeurs de 320 à 1850 px, formulaires conservés, accès quotidien, vue simplifiée renommée et comparaison du registre complet avant/après (seul le choix explicite du thème est exclu). Captures fictives sur ordinateur et iPhone.

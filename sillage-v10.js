@@ -9,6 +9,45 @@
  function drawWork(){const tx=current.calendar_actuals||[],pending=tx.filter(t=>!t.reviewed),uncat=tx.filter(t=>!t.category_id),groups=new Map();for(const t of tx){const key=JSON.stringify([t.account_id,t.happened_on,t.amount_cents,t.description.trim().toLocaleLowerCase('fr-CA')]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);}const duplicates=[...groups.values()].filter(g=>g.length>1);workBody.replaceChildren(el('p','Importez, classez puis associez les opérations réelles au prévu. La sélection multiple reste disponible dans la liste.','quiet-copy'));const actions=el('div',undefined,'v10-actions');actions.append(button('Importer un relevé CSV',()=>go('importer')),button('À vérifier · '+pending.length,()=>filterRecords('pending')),button('Sans catégorie · '+uncat.length,()=>filterRecords('uncategorized')),button('Doublons possibles · '+duplicates.length,()=>{go('verification');}));workBody.append(actions,el('p','Aucune suppression ni association automatique. Les totaux portent sur tout l’historique chargé.','quiet-copy'));}
  const match=dialog('v10-match','Associer au prévu');
  function openMatch(t){while(match.inside.children.length>1)match.inside.lastChild.remove();const used=new Set(current.planning.rows.flatMap(r=>r.actual_ids)),claimed=used.has('transaction:'+t.id)||(current.planning.envelope_actual_links||[]).some(l=>l.transaction_id===t.id),rows=claimed?[]:current.planning.rows.filter(r=>['recurring','envelope'].includes(r.source)&&['planned','pending'].includes(r.status)&&r.type===(t.amount_cents<0?'expense':'income')&&r.account_id===t.account_id&&(!t.envelope_id||t.envelope_id===r.envelope_id)&&Math.abs(Date.parse(r.date)-Date.parse(t.happened_on))<=7*86400000);match.inside.append(el('p',t.description+' · '+money(t.amount_cents)+' · '+t.happened_on),el('p','Choisissez une échéance à proximité (±7 jours). Vérifiez le montant avant de valider. Associer cette transaction ne débitera pas une seconde fois le compte.','quiet-copy'));if(!rows.length)match.inside.append(el('p',claimed?'Cette opération est déjà associée à une prévision.':'Aucune échéance compatible à proximité. Consultez le calendrier si la date est plus éloignée.'));for(const r of rows)match.inside.append(button(r.date+' · '+r.description+' · '+money(r.remaining_cents),()=>{match.d.close();window.budgetPlanningAction(r.key,'confirm',{actualId:t.id});}));match.d.showModal();}
+ // Propose a match only after a successful manual creation, never on import/edit/refresh.
+ const suggestion=dialog('v111-match','Associer cette transaction au prévu ?');
+ function matchingRows(t){
+  const used=new Set(current.planning.rows.flatMap(r=>r.actual_ids||[]));
+  if(used.has('transaction:'+t.id)||(current.planning.envelope_actual_links||[]).some(l=>l.transaction_id===t.id))return [];
+  const normalize=value=>(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr-CA').replace(/[^a-z0-9]+/g,' ').trim();
+  return current.planning.rows.filter(r=>{
+   if(!['recurring','envelope'].includes(r.source)||!['planned','pending'].includes(r.status)||r.remaining_cents<=0||r.type!==(t.amount_cents<0?'expense':'income')||r.account_id!==t.account_id||Math.abs(Date.parse(r.date)-Date.parse(t.happened_on))>7*86400000)return false;
+   if(t.envelope_id&&t.envelope_id!==r.envelope_id)return false;
+   if(t.category_id&&r.category_id&&t.category_id!==r.category_id)return false;
+   if(t.subcategory_id&&r.subcategory_id&&t.subcategory_id!==r.subcategory_id)return false;
+   return !!(t.envelope_id&&t.envelope_id===r.envelope_id)||!!(t.category_id&&t.category_id===r.category_id)||normalize(t.description)===normalize(r.description)||normalize(t.description).split(' ').some(word=>word.length>=4&&!['achat','paiement','depense','revenu','carte','compte','pour','avec'].includes(word)&&normalize(r.description).split(' ').includes(word));
+  }).sort((a,b)=>Math.abs(Date.parse(a.date)-Date.parse(t.happened_on))-Math.abs(Date.parse(b.date)-Date.parse(t.happened_on))||Math.abs(a.remaining_cents-Math.abs(t.amount_cents))-Math.abs(b.remaining_cents-Math.abs(t.amount_cents)));
+ }
+ function proposeMatch(t){
+  const rows=matchingRows(t);if(!rows.length)return;
+  while(suggestion.inside.children.length>1)suggestion.inside.lastChild.remove();
+  suggestion.inside.append(el('p','Transaction enregistrée : '+t.description+' · '+money(t.amount_cents)+' · '+t.happened_on),el('p','Correspond-elle à une échéance ci-dessous ? L’association ne débite pas le compte une deuxième fois.','quiet-copy'));
+  const error=el('p',undefined,'sillage-error');error.setAttribute('role','alert');
+  for(const row of rows){
+   const box=el('section',undefined,'v10-panel');box.append(el('h3',row.description),el('p','Prévu le '+row.date+' · '+money(row.remaining_cents)));
+   const complete=el('input');complete.type='checkbox';complete.checked=false;
+   if(row.source==='envelope')box.append(field('Aucun autre achat prévu pour cette période',complete));
+   box.append(button('Associer',async()=>{
+    const buttons=[...suggestion.d.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);error.textContent='';
+    try{const out=await request('/api/planning/action',{key:row.key,signature:row.signature,action:'confirm',account_id:t.account_id,actual_id:t.id,complete_period:row.source!=='envelope'||complete.checked,allow_new_payment:false});render(out);suggestion.d.close();window.budgetRefreshTransactions();}
+    catch(e){error.textContent=e.message+' La transaction reste enregistrée. Vous pouvez réessayer depuis « Associer au prévu ».';}
+    finally{buttons.forEach(b=>b.disabled=false);}
+   }));suggestion.inside.append(box);
+  }
+  suggestion.inside.append(error,button('Garder séparée',()=>suggestion.d.close()));suggestion.d.showModal();
+ }
+ const sendBeforeSuggestion=send;
+ send=async function(url,data){
+  const manual=url==='/api/transactions',before=manual?new Set((current?.calendar_actuals||[]).map(t=>t.id)):null;
+  const ok=await sendBeforeSuggestion(url,data);
+  if(ok&&manual){const created=(current.calendar_actuals||[]).filter(t=>!before.has(t.id)&&t.account_id===Number(data.account_id)&&t.happened_on===data.happened_on&&t.description===data.description&&t.amount_cents===Math.round(Number(data.amount)*100));if(created.length===1)setTimeout(()=>proposeMatch(created[0]),0);}
+  return ok;
+ };
  document.addEventListener('budget:transactions-loaded',event=>{for(const t of event.detail.rows){const row=document.querySelector(`.ledger-row[data-transaction-id="${t.id}"]`);row?.querySelector('.ledger-menu-items').append(button('Associer au prévu',()=>{row.querySelector('.ledger-menu').open=false;openMatch(t);}));}});
  // Compact envelope directory clarifies targets versus actual protected money.
  const envelopes=el('details',undefined,'v10-panel');envelopes.id='v10-envelopes';envelopes.append(el('summary','Mes enveloppes en un coup d’œil'));const envelopeList=el('div');envelopes.append(el('p','L’objectif moins les achats est un repère budgétaire. Seul le montant protégé est retiré du disponible.','quiet-copy'),envelopeList);$('section-enveloppes').querySelector('.page-intro').after(envelopes);

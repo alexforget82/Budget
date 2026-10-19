@@ -8,6 +8,14 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Sillage 2026 — v11.1.0
+
+À l’enregistrement manuel d’une dépense ou d’un revenu, Sillage propose les échéances compatibles à ±7 jours : même compte et sens, avec une enveloppe, une catégorie ou un libellé correspondant. Les opérations déjà rapprochées ne sont pas proposées. Le montant peut être différent.
+
+Choisissez **Associer** pour utiliser la transaction déjà enregistrée sans débiter le compte à nouveau, ou **Garder séparée**. Pour une échéance d’enveloppe, cochez **Aucun autre achat prévu pour cette période** seulement si les achats sont terminés; sinon, le reste reste prévu. Fermer la proposition conserve la transaction et laisse l’association manuelle disponible. Les imports et les modifications ne déclenchent pas cette proposition.
+
+Mise à jour : lancez **Mettre a jour Sillage.command**, puis rechargez complètement Safari pour charger le nouveau code. Les données et le lien iPhone existant sont conservés.
+
 ## Sillage 2026 — v11.0.0
 
 [Aperçu du tableau de bord](docs/sillage-2026-dashboard.png) · [Aperçu sur iPhone](docs/sillage-2026-iphone.png) — données fictives.
