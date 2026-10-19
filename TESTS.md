@@ -1,12 +1,18 @@
 # Vérifications — Sillage 2
 
-`npm test` : **234 tests réussis** (65 Node, 169 API), sans échec ni test ignoré.
+`npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
 
 Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
 
 `tests/sillage-ui.py` : identité, centre de vérification, tri, panneau latéral, classement avec soldes/prévisions identiques, brouillon de remboursement, comparaison sur six mois et déplacement d’une échéance vers une simulation sans écriture; six écrans, quatre largeurs de 320 à 1500 px, clair/sombre. `tests/budget-v80-ui.py` : division d’achats, profils CSV, classement groupé, filtres mémorisés et sept écrans sur six largeurs. `tests/budget-v81-ui.py` : calcul actuel/futur et protections des enveloppes. `tests/budget-v73-ui.py` : partage privé limité et révocation.
 
 Les essais utilisent Chromium sous Linux. Safari natif, Gatekeeper, launchd et Tailscale sur un Mac réel ne sont pas exécutés dans cet environnement. Les helpers d’installation, la compatibilité des versions, les fichiers requis et l’absence d’ouverture de Safari lors d’une mise à jour sont couverts par les tests Node. Les SVG/PNG et le manifeste sont servis localement; aucun service worker ni cache de données bancaires hors ligne n’est ajouté.
+
+## Vue iPhone simplifiée — 9.1.5
+
+Quatre nouveaux tests API vérifient les 90 soldes quotidiens identiques à la prévision canonique, la réponse Oui/Non identique au simulateur propriétaire selon 30/60/90 jours, l’absence d’écriture et les restrictions de champs, origine, période et révocation. L’accès Tailscale partagé autorise uniquement cette simulation et refuse toujours les API du propriétaire.
+
+`tests/shared-tools-ui.py` : liste repliable et défilante, soldes quotidiens exacts, Oui/Non selon l’horizon, invalidation après modification et réponse tardive ignorée, actualisation, révocation, absence de détails privés, clair/sombre de 320 à 768 px. Les parcours `shared-periods-ui.py`, `shared-owner-match-ui.py` et `budget-v73-ui.py` ont aussi été exécutés.
 
 Historique des vérifications :
 

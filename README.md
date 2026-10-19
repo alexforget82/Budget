@@ -8,6 +8,14 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Deux outils dans la vue iPhone simplifiée — 9.1.5
+
+**Puis-je me permettre cet achat ?** : entrez le montant et la date, puis touchez **Vérifier cet achat**. La réponse est simplement **Oui** ou **Non**, selon le Safe-to-Spend projeté sur la période sélectionnée (30, 60 ou 90 jours). Il s’agit d’un achat supplémentaire, non déjà couvert par une enveloppe. Le simulateur utilise le moteur de la vue complète et ne crée aucune transaction. Modifier un champ, la période ou les données financières efface l’ancienne réponse.
+
+**Disponible jour par jour** : ouvrez la liste repliable puis faites défiler les dates. Chaque ligne indique le Safe-to-Spend prévu en fin de journée, après les protections, pour la période sélectionnée. Aucun détail de compte ou de transaction n’est exposé. Le lien partagé reste limité à ces agrégats et à une simulation sans écriture.
+
+Après la mise à jour du Mac, rechargez entièrement la page Safari sur l’iPhone. Le lien reste le même.
+
 ## Mêmes chiffres sur les deux vues — 9.1.4
 
 La vue simplifiée affiche désormais **Disponible maintenant**, puis **Safe-to-Spend le plus haut** et **Safe-to-Spend le plus bas** sur **30, 60 ou 90 jours**. Tous ces montants sont après protections des enveloppes et achats sur carte. Le tableau de bord complet affiche aussi **Maximum prévu** pour permettre une comparaison directe, en plus de son disponible et de son minimum.

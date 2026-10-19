@@ -380,7 +380,12 @@ const sharedAccessFile=path.join(dir,'shared-view.json');
 function sharedToken(){if(!fs.existsSync(sharedAccessFile))return null;return JSON.parse(fs.readFileSync(sharedAccessFile,'utf8')).token||null;}
 function sharedPath(){const token=sharedToken();return token?'/shared/'+token:null;}
 function sharedSummary(){applyEnvelopeRenewals();const args=forecastInput(),days=buildForecast(args).days,cash=args.accounts.filter(a=>a.included&&a.kind!=='credit').reduce((n,a)=>n+a.balance_cents,0),safe=cash-args.envelopes.reduce((n,e)=>n+e.reserved_cents,0)-cardEnvelopeTotal(args),point={date:todayLocal(),cash_cents:cash,safe_cents:safe},first=[point,...days.slice(0,30)],lowest=first.reduce((a,b)=>b.cash_cents<a.cash_cents?b:a),highest=first.reduce((a,b)=>b.cash_cents>a.cash_cents?b:a);
- return {updated_at:new Date().toISOString(),current_safe_cents:safe,periods:Object.fromEntries([30,60,90].map(n=>{const window=[point,...days.slice(0,n)],low=window.reduce((a,b)=>b.safe_cents<a.safe_cents?b:a),range=key=>{const min=window.reduce((a,b)=>b[key]<a[key]?b:a),max=window.reduce((a,b)=>b[key]>a[key]?b:a);return {lowest:{amount_cents:min[key],on:min.date},highest:{amount_cents:max[key],on:max.date}};};return [n,{safe_cents:low.safe_cents,on:low.date,safe:range('safe_cents')}];})),highest_30:{amount_cents:highest.cash_cents,on:highest.date},lowest_30:{amount_cents:lowest.cash_cents,on:lowest.date}};
+ return {updated_at:new Date().toISOString(),current_safe_cents:safe,daily:days.map(d=>({date:d.date,safe_cents:d.safe_cents})),periods:Object.fromEntries([30,60,90].map(n=>{const window=[point,...days.slice(0,n)],low=window.reduce((a,b)=>b.safe_cents<a.safe_cents?b:a),range=key=>{const min=window.reduce((a,b)=>b[key]<a[key]?b:a),max=window.reduce((a,b)=>b[key]>a[key]?b:a);return {lowest:{amount_cents:min[key],on:min.date},highest:{amount_cents:max[key],on:max.date}};};return [n,{safe_cents:low.safe_cents,on:low.date,safe:range('safe_cents')}];})),highest_30:{amount_cents:highest.cash_cents,on:highest.date},lowest_30:{amount_cents:lowest.cash_cents,on:lowest.date}};
+}
+function sharedPurchase(x){
+ if(!x||Array.isArray(x)||Object.keys(x).some(k=>!['amount','date','days'].includes(k))||![30,60,90].includes(x.days)||!validDate(x.date)||x.date<todayLocal()||x.date>new Date(Date.parse(todayLocal()+'T12:00:00Z')+(x.days-1)*86400000).toISOString().slice(0,10)||cents(x.amount)===null||cents(x.amount)<=0||cents(x.amount)>1e10)throw Error('Indiquez un montant positif et une date dans la période choisie.');
+ const included=q("SELECT * FROM accounts WHERE included=1 AND kind!='credit'"),scope=journey.state().scope,account=included.find(a=>a.id===scope?.account_id)||included[0];if(!account)throw Error('Le compte du disponible doit être configuré par le propriétaire.');
+ const result=simulateBudget({kind:'purchase',amount:x.amount,date:x.date,account_id:account.id});return {allowed:result.scenario.slice(0,x.days).every(d=>d.safe_cents>=0),days:x.days};
 }
 const handleRequest=async(req,res)=>{try{
 res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');res.setHeader('Content-Security-Policy',"frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
@@ -395,9 +400,16 @@ if(privateAccess&&req.socket.localPort===privateAccess.port){
 }
 if(process.env.BUDGET_DEMO!=='1'&&req.headers['x-budget-workspace']==='demo'&&req.url.startsWith('/api/'))return reply(res,409,{error:'Une requête de démonstration ne peut pas modifier ou lire le budget réel.'});
 if(viewing){
- const match=/^\/shared\/([a-f0-9]{64})(\/data)?$/.exec(req.url),token=sharedToken();res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Robots-Tag','noindex, nofollow');
- if(!match||!token||!timingSafeEqual(Buffer.from(match[1]),Buffer.from(token))||req.method!=='GET')return reply(res,403,{error:'Lien de consultation invalide ou révoqué.'});
- if(match[2])return reply(res,200,sharedSummary());
+ const match=/^\/shared\/([a-f0-9]{64})(\/(?:data|simulate))?$/.exec(req.url),token=sharedToken();res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Robots-Tag','noindex, nofollow');
+ if(!match||!token||!timingSafeEqual(Buffer.from(match[1]),Buffer.from(token))||!['GET','POST'].includes(req.method))return reply(res,403,{error:'Lien de consultation invalide ou révoqué.'});
+ if(match[2]==='/simulate'){
+  const origin=privateAccess&&req.socket.localPort===privateAccess.port?privateAccess.origin:'http://'+req.headers.host;
+  if(req.method!=='POST'||req.headers.origin!==origin||!String(req.headers['content-type']||'').startsWith('application/json'))return reply(res,403,{error:'Simulation JSON depuis votre page de consultation requise.'});
+  let body='';for await(const chunk of req){body+=chunk;if(body.length>2048)return reply(res,413,{error:'Requête trop volumineuse.'});}
+  try{return reply(res,200,sharedPurchase(JSON.parse(body)));}catch(e){return reply(res,400,{error:e instanceof SyntaxError?'Requête invalide.':e.message});}
+ }
+ if(req.method!=='GET')return reply(res,403,{error:'Consultation seulement.'});
+ if(match[2]==='/data')return reply(res,200,sharedSummary());
  res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(new URL('./shared-view.html',import.meta.url)));
 }
 if(req.method==='GET'&&req.url.startsWith('/api/budget/global?'))return reply(res,200,globalBudget.monthState(new URL(req.url,'http://localhost').searchParams.get('month')));
@@ -410,7 +422,7 @@ if(req.method==='POST'&&req.url==='/api/sharing'){
 }
 
 if(req.url==='/demo'||req.url.startsWith('/demo/')){if(!demonstration)return reply(res,404,{error:'Démonstration déjà ouverte.'});return await demonstration.proxy(req,res);}
-if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'9.1.4',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'9.1.5',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/setup/recovery?')){const name=new URL(req.url,'http://localhost').searchParams.get('name'),body=journey.recoveryFile(name);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="'+name+'"','Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/backup?')){const date=new URL(req.url,'http://localhost').searchParams.get('date'),body=support.dailyFile(date);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="budget-${date}.json"`,'Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/search?'))return reply(res,200,support.search(new URL(req.url,'http://localhost').searchParams.get('q')));
@@ -570,5 +582,5 @@ if(x.type==='transfer'&&envelope){validateTransferEnvelope(x,account,to);if(jour
 const funding=x.type==='transfer'?journey.prepareFunding(x,{from:account,to,amount,date:x.start_on}):null;
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense','transfer'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];atomic(()=>{if(req.url.endsWith('update')){if(funding)throw Error('Associez le financement lors de la création du virement.');run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);}else{const created=Number(run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields).lastInsertRowid);journey.addLink(funding,{rule_id:created});}})}}
 journey.enforceScope();return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url.startsWith('/api/transfers')||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/banking/')||req.url.startsWith('/api/setup/')||req.url.startsWith('/api/workspace/')||req.url.startsWith('/api/budget/')||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/life/')||req.url.startsWith('/api/subcategories')||req.url.startsWith('/api/categories/')||req.url.startsWith('/api/envelope-tools/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
-if(process.env.BUDGET_DEMO==='1'&&process.env.BUDGET_SOCKET)http.createServer(handleRequest).listen(process.env.BUDGET_SOCKET,()=>fs.chmodSync(process.env.BUDGET_SOCKET,0o600));else http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Sillage 2 (9.1.4) : http://${HOST}:${PORT}`));
+if(process.env.BUDGET_DEMO==='1'&&process.env.BUDGET_SOCKET)http.createServer(handleRequest).listen(process.env.BUDGET_SOCKET,()=>fs.chmodSync(process.env.BUDGET_SOCKET,0o600));else http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Sillage 2 (9.1.5) : http://${HOST}:${PORT}`));
 if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));

@@ -13,7 +13,7 @@ try:
   context=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True);viewer=context.new_page();viewer.on('pageerror',lambda e:errors.append(str(e)));requests=[];viewer.on('request',lambda r:requests.append(r.url));viewer.goto(url);data=f.get(url.removeprefix(f.base)+'/data');money=lambda n:viewer.evaluate("n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(n/100)",n)
   for n in [30,60,90,30]:
    viewer.get_by_role('button',name=f'{n} jours',exact=True).click();expect(viewer.locator('#safe')).to_have_text(money(data['current_safe_cents']));expect(viewer.get_by_role('button',name=f'{n} jours',exact=True)).to_have_attribute('aria-pressed','true')
-  expect(viewer.locator('#high')).to_have_text(money(data['periods']['30']['safe']['highest']['amount_cents']));expect(viewer.locator('#low')).to_have_text(money(data['periods']['30']['safe']['lowest']['amount_cents']));assert not viewer.locator('input,select,textarea,a').count();assert all('/api/' not in u for u in requests)
+  expect(viewer.locator('#high')).to_have_text(money(data['periods']['30']['safe']['highest']['amount_cents']));expect(viewer.locator('#low')).to_have_text(money(data['periods']['30']['safe']['lowest']['amount_cents']));assert viewer.locator('input').count()==2;assert not viewer.locator('select,textarea,a').count();assert all('/api/' not in u for u in requests)
   for scheme in ['light','dark']:
    viewer.emulate_media(color_scheme=scheme)
    for width in [320,375,390,430,768,1440]:
