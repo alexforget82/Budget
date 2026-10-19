@@ -402,3 +402,7 @@ Cinq tests API couvrent : réel depuis le 18 inclus et jusqu’à la fin d’oct
 ## Configuration terminée — 9.1.1
 
 `tests/setup-completion-ui.py` vérifie la disparition de Bien démarrer après la confirmation finale, sa persistance après rechargement, la réouverture depuis État des données, la conservation du statut terminé en parcourant les étapes, l’accès sur iPhone et le retour du guide après remise à zéro d’une base jetable. Les tables financières et la prévision restent inchangées lors de la consultation.
+
+## Achat simplifié — 9.1.2
+
+`tests/simple-purchase-ui.py` contrôle le compte du disponible par identifiant plutôt que par nom, le formulaire simplifié, les minimums et maximums exacts sur 30/60/90 jours, le oui à zéro, le non en négatif et le montant manquant, la date hors période, le message prudent sur carte, l’absence de mutation financière et la période d’un scénario enregistré. Clair/sombre et quatre largeurs. Les tests du calendrier et des scénarios mémorisés ont été adaptés aux volets facultatifs et réexécutés. Le calcul serveur de la simulation reste inchangé.

@@ -8,6 +8,14 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Puis-je me permettre cet achat ? — 9.1.2
+
+Saisissez **montant et date**, puis cliquez **Vérifier cet achat**. Le compte bancaire du Safe-to-Spend est choisi par défaut, indépendamment de son nom. La réponse indique **Oui, selon vos prévisions** lorsque le minimum reste positif ou nul, ou **Non, un manque est prévu** avec la somme manquante et sa date.
+
+Les cartes **Le plus bas / Le plus haut** présentent le disponible prévu avec cet achat et leurs dates sur **30, 60 ou 90 prochains jours**. La période commence aujourd’hui; elle peut donc inclure des journées précédant la date de l’achat. Une date hors de la période choisie est refusée : allongez la période ou rapprochez la date. Le calcul utilise les soldes de fin de journée du moteur existant et ne garantit pas l’ordre des opérations dans la journée.
+
+L’achat doit être supplémentaire, **non déjà couvert par une enveloppe**. La simulation ne crée aucune transaction et ne réserve aucun montant. Le volet **Options** permet de consulter ou changer le compte; une carte ou un compte exclu ne reçoit pas un « oui » trompeur. **Détails et scénario enregistré** conserve l’accès aux courbes et à l’enregistrement facultatif du scénario, avec sa période. Les anciens scénarios restent utilisables. Les simulations de report d’échéance conservent leur parcours de confirmation existant.
+
 ## Configuration terminée — 9.1.1
 
 Après **Terminer la configuration**, l’entrée **Bien démarrer** disparaît du menu, y compris après rechargement et sur iPhone. Pour retrouver le guide, ouvrez **État des données → Revoir la configuration**. Consulter ses étapes ne remet pas la configuration à zéro. Une remise à zéro du budget fait réapparaître le guide et son entrée de menu.
