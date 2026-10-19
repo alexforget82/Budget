@@ -2,6 +2,8 @@
 
 `npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
 
+`tests/dashboard-daily-ui.py` : accès en un clic depuis les deux modes du tableau de bord, reprise de l’horizon sélectionné, dates et montants quotidiens identiques à la prévision canonique après réserves sur 30/60/90 jours, défilement, quatre largeurs de 320 à 1440 px, fermeture au clavier et retour du focus, actualisation dans la fenêtre et absence d’écriture lors de la consultation.
+
 `tests/essential-home-ui.py` : trois indicateurs canoniques, seuil de 100 $ et manque selon 30/60 jours, échéances dues seulement, navigation vers une date ou la file de confirmation, disparition des alertes après confirmation, état calme sans signalement, mode détaillé mémorisé, personnalisation conservée et dates visibles sur chaque transaction. Clair/sombre, cinq largeurs de 320 à 1500 px, aucune écriture financière lors de la consultation. Les tests de disposition ouvrent explicitement le tableau détaillé.
 
 `tests/compact-register-ui.py` : 80 opérations, lignes compactes, alignement réel des colonnes avec les en-têtes, pagination sans répétition, recherche, sélection multiple, densité mémorisée, six largeurs de 320 à 1850 px, clair/sombre et registre inchangé. Les parcours existants `transactions-ui.py`, `budget-v80-ui.py` et `sillage-ui.py` couvrent aussi la saisie, les totaux filtrés, les outils de classement, les vues enregistrées et l’inspection.

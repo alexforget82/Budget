@@ -8,6 +8,10 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Disponible jour par jour — 9.3.1
+
+Le bouton **Disponible jour par jour**, en haut du tableau de bord, ouvre directement une liste défilante du Safe-to-Spend prévu en fin de journée, après les enveloppes et protections. Disponible en mode essentiel comme en mode détaillé. La liste reprend d’abord la période sélectionnée sur le tableau de bord; choisissez ensuite **30, 60 ou 90 jours** dans la fenêtre. Le disponible actuel reste indiqué séparément des montants de fin de journée. **Actualiser les montants** recharge les données; **Fermer** ou Échap revient au tableau de bord.
+
 ## Accueil essentiel et alertes — 9.3.0
 
 L’accueil présente trois repères : **Disponible maintenant**, **Minimum prévu** et **Prochaine rentrée**. Les périodes 30/60/90 utilisent les mêmes calculs que les autres vues. Touchez un repère pour ouvrir son explication ou sa date. **Voir tous les tableaux** retrouve les graphiques, le maximum et votre disposition personnalisée; **Revenir à l’essentiel** simplifie à nouveau l’accueil. Ce choix est mémorisé sur l’appareil et ne modifie pas la disposition enregistrée. La personnalisation permet toujours d’accéder à tous les blocs.
