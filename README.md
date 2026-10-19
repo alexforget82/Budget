@@ -8,6 +8,12 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Vue iPhone simplifiée — 9.1.3
+
+Le titre précise **Safe-to-Spend · minimum prévu** et indique la période sélectionnée. Comparez ce chiffre à **Minimum prévu sur 30/60/90 jours** du tableau de bord complet, plutôt qu’au **Disponible maintenant**. Un message explique lorsque plusieurs périodes retiennent le même minimum : changer d’horizon ne force pas le montant à changer.
+
+La sélection d’une période demande maintenant des chiffres frais au serveur. L’actualisation au retour dans Safari, au retour d’un onglet et chaque minute reste active; une réponse ancienne ne peut pas remplacer une réponse plus récente. Une erreur ou un lien révoqué efface aussi les dates et l’heure des anciennes valeurs. Les deux cartes bancaires haut/bas restent sur 30 jours, comme prévu initialement. Le lien et les trois seuls indicateurs autorisés restent inchangés.
+
 ## Puis-je me permettre cet achat ? — 9.1.2
 
 Saisissez **montant et date**, puis cliquez **Vérifier cet achat**. Le compte bancaire du Safe-to-Spend est choisi par défaut, indépendamment de son nom. La réponse indique **Oui, selon vos prévisions** lorsque le minimum reste positif ou nul, ou **Non, un manque est prévu** avec la somme manquante et sa date.

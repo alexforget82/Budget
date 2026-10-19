@@ -406,3 +406,7 @@ Cinq tests API couvrent : réel depuis le 18 inclus et jusqu’à la fin d’oct
 ## Achat simplifié — 9.1.2
 
 `tests/simple-purchase-ui.py` contrôle le compte du disponible par identifiant plutôt que par nom, le formulaire simplifié, les minimums et maximums exacts sur 30/60/90 jours, le oui à zéro, le non en négatif et le montant manquant, la date hors période, le message prudent sur carte, l’absence de mutation financière et la période d’un scénario enregistré. Clair/sombre et quatre largeurs. Les tests du calendrier et des scénarios mémorisés ont été adaptés aux volets facultatifs et réexécutés. Le calcul serveur de la simulation reste inchangé.
+
+## Vue simplifiée — 9.1.3
+
+`tests/shared-periods-ui.py` compare exactement les trois minimums aux prévisions du propriétaire avec des échéances à 10, 40 et 70 jours : les montants diffèrent quand les prévisions le justifient, puis deviennent identiques après retrait des échéances. Une nouvelle transaction apparaît lors du changement de période sans recharger la page. Les cartes bancaires restent sur 30 jours, un lien révoqué efface valeurs/dates/heure, et aucun accès propriétaire n’est ajouté. Réexécution du parcours iPhone historique et des trois tests API de partage. Aucun changement de formule financière ni extension des données partagées.
