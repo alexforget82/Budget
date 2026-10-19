@@ -8,6 +8,12 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Transactions compactes — 9.2.1
+
+La liste est prioritaire : vue compacte par défaut, lignes resserrées, colonnes alignées, initiales décoratives retirées et résumé réduit à trois indicateurs. Recherche, compte, période et tri restent accessibles. Les vues enregistrées sont rangées dans **Filtres avancés**. Le bouton **Vue aérée / Vue compacte** mémorise la densité sur cet appareil.
+
+La pagination conserve 50 transactions par page; 80 opérations occupent deux pages. Les filtres, totaux et tris restent calculés sur l’ensemble des résultats. Les téléphones et petites tablettes conservent une disposition lisible avec des actions tactiles. Aucun calcul ni aucune donnée financière n’est modifié.
+
 ## Disponible, banque et calendrier — 9.2.0
 
 Le numéro **v9.2.0** est visible en bas à gauche, sous **+ Transaction**.

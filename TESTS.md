@@ -2,6 +2,8 @@
 
 `npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
 
+`tests/compact-register-ui.py` : 80 opérations, lignes compactes, alignement réel des colonnes avec les en-têtes, pagination sans répétition, recherche, sélection multiple, densité mémorisée, six largeurs de 320 à 1850 px, clair/sombre et registre inchangé. Les parcours existants `transactions-ui.py`, `budget-v80-ui.py` et `sillage-ui.py` couvrent aussi la saisie, les totaux filtrés, les outils de classement, les vues enregistrées et l’inspection.
+
 `tests/release-v92-ui.py` vérifie le numéro de version sous le bouton Transaction, l’accès au clavier à l’explication du disponible, le minimum canonique et sa date, les pistes et filtres du rapprochement sans écriture, la confirmation d’un montant réel différent remplaçant le prévu, le refus d’une seconde confirmation et le report direct sans changement du solde réel. Quatre largeurs de 320 à 1440 px et le mode sombre sont vérifiés.
 
 Les parcours existants `budget-v81-ui.py`, `budget-v41-ui.py`, `planning-v4-ui.py`, `sillage-ui.py`, `shared-tools-ui.py` et `shared-owner-match-ui.py` vérifient aussi les explications, correction et annulation, simulation de report, outils propriétaires et accès simplifié. Les tests d’affichage du numéro lisent maintenant la version technique du serveur.
