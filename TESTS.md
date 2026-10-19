@@ -1,6 +1,14 @@
-# Vérifications — Sillage 2
+# Vérifications — Sillage 2026
 
 `npm test` : **241 tests réussis** (65 Node, 176 API), sans échec ni test ignoré.
+
+## Refonte Sillage 2026 — v11.0.0
+
+`tests/sillage-2026-ui.py` : identité et numéro de version, groupe Outils et réglages, neuf écrans en clair/sombre, cinq largeurs de 320 à 1850 px, formulaires conservés, accès quotidien, vue simplifiée renommée et comparaison du registre complet avant/après (seul le choix explicite du thème est exclu). Captures fictives sur ordinateur et iPhone.
+
+`responsive-v501-ui.py` vérifie aussi 16 largeurs jusqu’à 3440 px, l’utilisation de toute la fenêtre, la barre latérale, le nouveau chemin mobile vers les sauvegardes, les contrastes des boutons sombres ≥4,5 et les données financières inchangées. `compact-register-ui.py` confirme que 80 transactions conservent leur densité, leur pagination et leurs colonnes alignées.
+
+Les parcours `sillage-v10-ui.py`, `installed-assets-ui.py`, `shared-tools-ui.py`, `shared-owner-match-ui.py`, `planning-v4-ui.py` et `sillage-ui.py` vérifient les workflows, les nouvelles ressources installées, les chiffres partagés, les simulations et les confirmations. Les deux nouveaux fichiers de présentation sont requis par l’installateur et présents dans ses tests.
 
 ## Vérifications V10
 

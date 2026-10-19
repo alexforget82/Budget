@@ -1,4 +1,4 @@
-# Sillage — Votre argent, votre cap
+# Sillage 2026 — Votre argent, votre cap
 
 Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
 
@@ -7,6 +7,18 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## Sillage 2026 — v11.0.0
+
+[Aperçu du tableau de bord](docs/sillage-2026-dashboard.png) · [Aperçu sur iPhone](docs/sillage-2026-iphone.png) — données fictives.
+
+Une présentation harmonisée pour le tableau de bord, les transactions, le budget, les comptes, les enveloppes, la prévision, le calendrier et les fenêtres de saisie : palette bleu ardoise et sarcelle, cartes plus sobres, tableaux compacts, contrôles cohérents et contrastes vérifiés dans les thèmes clair et sombre.
+
+La barre latérale regroupe **Centre de vérification, Catégories, Virements, Importer CSV, Exceptions et Sauvegardes** dans **Outils et réglages**. Le menu s’ouvre aussi lorsque l’un des raccourcis existants mène à ces écrans. Sur iPhone, ouvrez d’abord **Choisir un écran**, puis le groupe d’outils. La recherche globale, l’annulation et l’état des données y sont également regroupés pour alléger l’en-tête. Les boutons, routes et calculs existants sont conservés. La barre du Budget sépare ses filtres et ses actions pour préserver une recherche lisible.
+
+Le nom **Sillage 2026** apparaît dans l’application et la vue iPhone simplifiée; la version technique **v11.0.0** reste en bas à gauche. Les raccourcis Mac existants et les dossiers internes conservent leur emplacement pour retrouver vos données et sauvegardes.
+
+Installez la mise à jour complète puis rechargez entièrement Safari. Les nouveaux fichiers `sillage-2026.css` et `sillage-2026.js` font partie de la version vérifiée par l’installateur. Aucun service externe ni police téléchargée n’est nécessaire.
 
 ## V10 — traiter, prévoir et comprendre
 

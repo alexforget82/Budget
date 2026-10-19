@@ -86,7 +86,7 @@ async function main(){
  const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'))).version;let ready;
  for(let i=0;i<60;i++){const s=await status();if(s?.data_key===targetKey&&s.version===version&&s.enabled){ready=s;break;}await delay(200);}
  if(!ready)throw Error('Le service est installé mais ne répond pas. Consultez '+path.join(logs,'budget-error.log')+'.');
- console.log('\nSillage 2 · '+version+' fonctionne en arrière-plan. Vous pouvez fermer Terminal.');
+ console.log('\nSillage 2026 · '+version+' fonctionne en arrière-plan. Vous pouvez fermer Terminal.');
  console.log('Démarrage automatique à chaque ouverture de session Mac.');console.log('Données utilisées : '+data);console.log('Accès iPhone : '+ready.origin);
  const shortcuts=path.join(home,'Applications','Mon Budget');fs.mkdirSync(shortcuts,{recursive:true,mode:0o700});
  // Write content locally; do not copy downloaded Finder metadata or strip quarantine.

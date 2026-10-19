@@ -25,7 +25,7 @@ BUDGET_DATA_KEY="$(node -e 'process.stdout.write(require("crypto").createHash("s
 BUDGET_SERVER_PID=""
 cleanup(){ if [ -n "$BUDGET_SERVER_PID" ]; then kill "$BUDGET_SERVER_PID" 2>/dev/null || true; fi; }
 trap cleanup EXIT
-if curl --silent --fail http://127.0.0.1:3030/api/private/status | BUDGET_DATA_KEY="$BUDGET_DATA_KEY" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="10.0.0"&&x.enabled&&x.port===3031&&x.data_key===process.env.BUDGET_DATA_KEY?0:1)}catch{process.exit(1)}})'; then
+if curl --silent --fail http://127.0.0.1:3030/api/private/status | BUDGET_DATA_KEY="$BUDGET_DATA_KEY" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="11.0.0"&&x.enabled&&x.port===3031&&x.data_key===process.env.BUDGET_DATA_KEY?0:1)}catch{process.exit(1)}})'; then
  echo "Mon Budget est déjà ouvert avec l’accès privé."
 else
  if curl --silent --fail http://127.0.0.1:3030/api/state >/dev/null; then fail "Arrêtez l’ancienne fenêtre Mon Budget avec Control + C, puis relancez ce fichier."; fi
@@ -35,7 +35,7 @@ fi
 BUDGET_READY=false
 for attempt in {1..50}; do
  if [ -n "$BUDGET_SERVER_PID" ] && ! kill -0 "$BUDGET_SERVER_PID" 2>/dev/null; then fail "Le serveur n’a pas pu démarrer. Consultez les messages ci-dessus."; fi
- if curl --silent --fail -H "Tailscale-User-Login: $BUDGET_OWNER_LOGIN" http://127.0.0.1:3031/api/private/status | BUDGET_PRIVATE_ORIGIN="$BUDGET_PRIVATE_ORIGIN" BUDGET_DATA_KEY="$BUDGET_DATA_KEY" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="10.0.0"&&x.enabled&&x.origin===process.env.BUDGET_PRIVATE_ORIGIN&&x.data_key===process.env.BUDGET_DATA_KEY?0:1)}catch{process.exit(1)}})'; then BUDGET_READY=true; break; fi
+ if curl --silent --fail -H "Tailscale-User-Login: $BUDGET_OWNER_LOGIN" http://127.0.0.1:3031/api/private/status | BUDGET_PRIVATE_ORIGIN="$BUDGET_PRIVATE_ORIGIN" BUDGET_DATA_KEY="$BUDGET_DATA_KEY" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="11.0.0"&&x.enabled&&x.origin===process.env.BUDGET_PRIVATE_ORIGIN&&x.data_key===process.env.BUDGET_DATA_KEY?0:1)}catch{process.exit(1)}})'; then BUDGET_READY=true; break; fi
  sleep 0.2
 done
 [ "$BUDGET_READY" = true ] || fail "L’accès privé n’est pas prêt. Vérifiez que le bon dossier de Mon Budget est ouvert."

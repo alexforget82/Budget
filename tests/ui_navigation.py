@@ -4,7 +4,10 @@ def navigate(page,view):
  target='prevision' if view in labels else view
  button=page.locator(f'.app-shell-nav [data-view="{target}"]')
  if not button.is_visible():
-  page.locator('.mobile-navigation-trigger').click()
+  trigger=page.locator('.mobile-navigation-trigger')
+  if trigger.is_visible() and not page.locator('.app-shell-nav').evaluate('(n)=>n.classList.contains("mobile-menu-open")'):trigger.click()
+  tools=button.locator('xpath=ancestor::details[@id="s26-tools"]')
+  if tools.count() and tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
  button.click()
  if view in labels:
   page.locator('section.view-active .planning-tabs').get_by_role('button',name=labels[view],exact=True).click()
