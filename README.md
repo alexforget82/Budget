@@ -8,6 +8,10 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Configuration terminée — 9.1.1
+
+Après **Terminer la configuration**, l’entrée **Bien démarrer** disparaît du menu, y compris après rechargement et sur iPhone. Pour retrouver le guide, ouvrez **État des données → Revoir la configuration**. Consulter ses étapes ne remet pas la configuration à zéro. Une remise à zéro du budget fait réapparaître le guide et son entrée de menu.
+
 ## Budget du mois de démarrage — 9.1.0
 
 Dans **Budget**, sélectionnez octobre puis **Mois de démarrage** et indiquez le **18 octobre 2026**. Après confirmation, le réel de ce mois comprend uniquement les transactions du 18 à la fin du mois, sans suppression de l’historique. Le Bilan mensuel conserve sa vue sur le mois complet.

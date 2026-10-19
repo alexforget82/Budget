@@ -398,3 +398,7 @@ Le défaut initial a été reproduit en appliquant la sélection de fichiers de 
 Cinq tests API couvrent : réel depuis le 18 inclus et jusqu’à la fin d’octobre, crédits dans les dépenses et non-catégorisées, montant × occurrences pour revenus/dépenses, budgets détaillés sans double comptage, zéro, retrait, aperçus sans écriture, données invalides et confirmation périmée, retour intégral aux objectifs de novembre, copie des montants habituels, suppression de catégories, annulation, redémarrage et sauvegarde/restauration. Soldes, enveloppes, opérations et prévisions restent identiques.
 
 `tests/start-budget-ui.py` exécute la configuration du 18 octobre, un paiement Alex et deux paiements Jenny, un total de salaire, l’exclusion du réel avant le 18 et le retour aux objectifs habituels en novembre. Clair/sombre et quatre largeurs. `tests/budget-v74-ui.py` vérifie le parcours habituel sans période de démarrage; `tests/installed-assets-ui.py` vérifie le démarrage depuis une copie installée contenant le nouveau module.
+
+## Configuration terminée — 9.1.1
+
+`tests/setup-completion-ui.py` vérifie la disparition de Bien démarrer après la confirmation finale, sa persistance après rechargement, la réouverture depuis État des données, la conservation du statut terminé en parcourant les étapes, l’accès sur iPhone et le retour du guide après remise à zéro d’une base jetable. Les tables financières et la prévision restent inchangées lors de la consultation.

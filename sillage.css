@@ -7,3 +7,5 @@ html[data-theme] body.sillage-app dialog .dialog-inner{background:var(--v80-surf
 
 .start-budget-banner{padding:16px;border:1px solid var(--v80-line);background:var(--v80-raised);border-radius:12px;color:var(--v80-ink);font-size:12px;line-height:1.8}.start-budget-tag{color:var(--v80-accent)!important;font-weight:650}#start-budget-editor [hidden]{display:none!important}
 .v60-category-copy .start-budget-button{display:inline-block;margin:2px 0 2px 12px;padding:3px 8px!important;min-height:28px;border:1px solid var(--v80-line)!important;border-radius:6px;background:var(--v80-raised)!important;font-size:10px!important;vertical-align:middle;max-width:100%}
+
+.sillage-app .app-shell-nav [data-view="demarrage"][hidden]{display:none!important}
