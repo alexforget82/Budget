@@ -28,7 +28,7 @@
 })();
 /* Adapt legacy surfaces and measure text contrast against their actual background. */
 (()=>{
- let pending=false;const inlineColors=new WeakMap(),flags=['data-night-surface','data-night-ink','data-night-border'];
+ let pending=false;const audited=new Set(),inlineColors=new WeakMap(),flags=['data-night-surface','data-night-ink','data-night-border'];
  const color=s=>{const m=s.match(/[\d.]+/g);return m&&m.length>=3?m.map(Number):null;};
  const luminance=c=>c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
  const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
@@ -36,9 +36,9 @@
  const palette={neutral:[213,231,217],green:[158,225,179],red:[255,179,175],orange:[255,211,139],blue:[166,200,255],purple:[220,192,255],dark:[16,37,26]};
  function tone([r,g,b]){if(r-g>8&&r-b>8)return g-b>12?'orange':'red';if(b-r>7&&b-g>4)return r-g>5?'purple':'blue';return g-r>5?'green':'neutral';}
  function audit(){
-  pending=false;document.documentElement.classList.add('contrast-checking');const finish=()=>requestAnimationFrame(()=>document.documentElement.classList.remove('contrast-checking'));const dark=document.documentElement.dataset.theme==='dark',nodes=[...document.body.querySelectorAll('*')].filter(n=>n.namespaceURI==='http://www.w3.org/1999/xhtml'&&!/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(n.tagName));
-  for(const n of nodes){for(const a of flags)n.removeAttribute(a);const saved=inlineColors.get(n);if(saved){if(saved.value)n.style.setProperty('color',saved.value,saved.priority);else n.style.removeProperty('color');inlineColors.delete(n);}}
-  if(!dark){finish();return;}
+  pending=false;document.documentElement.classList.add('contrast-checking');const finish=()=>requestAnimationFrame(()=>document.documentElement.classList.remove('contrast-checking'));const dark=document.documentElement.dataset.theme==='dark',nodes=dark?[...document.body.querySelectorAll('*')].filter(n=>n.namespaceURI==='http://www.w3.org/1999/xhtml'&&!/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(n.tagName)&&n.getClientRects().length):[];
+  for(const n of new Set([...audited,...nodes])){for(const a of flags)n.removeAttribute(a);const saved=inlineColors.get(n);if(saved){if(saved.value)n.style.setProperty('color',saved.value,saved.priority);else n.style.removeProperty('color');inlineColors.delete(n);}}
+  audited.clear();if(!dark){finish();return;}for(const n of nodes)audited.add(n);
   const backgrounds=new WeakMap();function background(n){if(!n)return [17,29,24];if(backgrounds.has(n))return backgrounds.get(n);const bg=color(getComputedStyle(n).backgroundColor)||[0,0,0,0],out=bg[3]===1||bg.length===3?bg.slice(0,3):blend(bg,background(n.parentElement));backgrounds.set(n,out);return out;}
   for(const n of nodes){
    let c=getComputedStyle(n);const bg=color(c.backgroundColor),border=color(c.borderTopColor);

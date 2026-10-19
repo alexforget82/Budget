@@ -8,6 +8,17 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## V10 — traiter, prévoir et comprendre
+
+- **Transactions → Centre de transactions à traiter** : import CSV, filtres À vérifier et Sans catégorie, accès aux doublons possibles. Dans le menu « … » d’une transaction, **Associer au prévu** propose les échéances compatibles à ±7 jours. La validation réutilise la transaction existante; aucun second débit n’est créé. Le classement groupé et la sélection restent dans le registre compact.
+- **Enveloppes → Mes enveloppes en un coup d’œil** : objectif, achats, reste sur l’objectif et montant réellement protégé. **Achat réel** et **Prévoir un achat** préparent les formulaires existants avec l’enveloppe sélectionnée. Un financement d’un compte personnel conserve le type virement. Vérifiez toujours le montant, le compte et la date avant d’enregistrer.
+- **Tableau de bord → Scénarios** (aussi dans Prévision) : composez jusqu’à dix changements, achats imprévus et reports de dépenses ou revenus. Comparez le budget actuel avec votre brouillon et jusqu’à deux scénarios enregistrés sur 30/60/90 jours. Minimum, date, écart au minimum actuel et fin de période sont affichés. Les paramètres sont mémorisables, puis recalculés avec les données actuelles. Une simulation ne crée aucune transaction et les résultats s’effacent quand ses paramètres ou le budget changent.
+- **Bilan mensuel → Ce mois-ci : variations et abonnements à revoir** : variations par catégorie, paiements récurrents dont le libellé évoque un abonnement (à vérifier manuellement) et analyse à la demande des dépassements sur les trois derniers mois terminés. Les tendances budgétaires portent sur tous les comptes et les objectifs définis; une catégorie est signalée à partir de deux mois dépassés. Le mois en cours reste une comparaison provisoire.
+
+**Fluidité** : un état identique conserve les éléments affichés; une vraie modification déclenche toujours les mises à jour. La correction des contrastes parcourt les éléments visibles et la configuration Budget est lue une fois par calcul de synthèse, plutôt qu’une fois par occurrence. Aucun cache des soldes bancaires n’est ajouté côté serveur. Le gain mesuré concerne surtout les rafraîchissements inchangés et le travail du mode sombre, pas une garantie de temps pour tous les appareils.
+
+Mettez à jour le Mac puis rechargez complètement Safari pour charger le nouveau module. Les données et les liens privés existants sont conservés.
+
 ## Disponible jour par jour — 9.3.1
 
 Le bouton **Disponible jour par jour**, en haut du tableau de bord, ouvre directement une liste défilante du Safe-to-Spend prévu en fin de journée, après les enveloppes et protections. Disponible en mode essentiel comme en mode détaillé. La liste reprend d’abord la période sélectionnée sur le tableau de bord; choisissez ensuite **30, 60 ou 90 jours** dans la fenêtre. Le disponible actuel reste indiqué séparément des montants de fin de journée. **Actualiser les montants** recharge les données; **Fermer** ou Échap revient au tableau de bord.

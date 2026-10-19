@@ -1,6 +1,16 @@
 # Vérifications — Sillage 2
 
-`npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
+`npm test` : **241 tests réussis** (65 Node, 176 API), sans échec ni test ignoré.
+
+## Vérifications V10
+
+Trois nouveaux tests API couvrent un achat combiné à une paie retardée, la précision du minimum et des soldes quotidiens, deux achats distincts, le refus des reports répétés/identifiants et dates invalides, l’absence d’écriture financière, ainsi que la sauvegarde et le redémarrage des scénarios combinés. Les nouvelles ressources sont requises par l’installateur et incluses dans ses tests.
+
+`tests/sillage-v10-ui.py` : centre de traitement sur tout le registre, association manuelle au prévu sans double débit, formulaires préparés depuis une enveloppe, scénarios combinés/enregistrés/comparés, résultats périmés effacés, analyse de deux dépassements dans trois mois, cache de rendu identique et rafraîchissement effectif après un nouvel achat. Quatre largeurs de 320 à 1440 px et mode sombre.
+
+`tests/benchmark-v10.py` mesure cinq lectures API et trois rendus d’un même état avec 80 transactions et 20 récurrences. Dans cette machine Linux/Chromium, le rendu inchangé passe d’environ 177–194 ms avant modification à 0,4–0,7 ms après. La lecture serveur reste autour de 13–28 ms : aucun gain serveur global n’est revendiqué. Les durées dépendent de l’appareil; ce benchmark produit des mesures, sans seuil artificiel de réussite. Les écritures financières restent recalculées.
+
+Les parcours `budget-v50-ui.py`, `responsive-v501-ui.py`, `budget-v80-ui.py`, `shared-tools-ui.py`, `installed-assets-ui.py`, `shared-owner-match-ui.py`, `sillage-ui.py` et `dashboard-daily-ui.py` sont exécutés pour la compatibilité, les contrastes, l’installation, les opérations réelles et les deux vues.
 
 `tests/dashboard-daily-ui.py` : accès en un clic depuis les deux modes du tableau de bord, reprise de l’horizon sélectionné, dates et montants quotidiens identiques à la prévision canonique après réserves sur 30/60/90 jours, défilement, quatre largeurs de 320 à 1440 px, fermeture au clavier et retour du focus, actualisation dans la fenêtre et absence d’écriture lors de la consultation.
 

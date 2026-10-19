@@ -91,6 +91,6 @@
  for(const id of ['safe','sts-today','sts-week','sts-pay','low']){const e=$(id);e.tabIndex=0;e.setAttribute('role','button');e.setAttribute('aria-label',({'safe':'Comprendre le disponible actuel','sts-today':'Comprendre le disponible aujourd’hui','sts-week':'Comprendre le disponible de la semaine','sts-pay':'Comprendre le disponible jusqu’à la paie','low':'Comprendre le minimum sur 90 jours'})[id]);e.classList.add('v44-safe-link');e.onclick=()=>$('v21-sts-detail').click();e.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();e.click();}};}
  function draw(s){current=s;if(!s.envelope_insights)return;summary.replaceChildren(metric('Enveloppes et budgets',String(s.envelopes.length)),metric('Total réservé',cash(s.reserved_cents)),metric('Achats associés ce mois-ci',cash(s.envelope_insights.items.reduce((n,e)=>n+e.spent_month_cents,0))));decorate();drawAlerts();explainSafe();}
  const freeGrid=$('free-budgets-workspace').querySelector('.free-grid');new MutationObserver(()=>decorate()).observe(freeGrid,{childList:true});
- window.budgetOpenEnvelopeSheet=showSheet;
+ window.budgetOpenEnvelopeSheet=showSheet;window.budgetDraftEnvelopePurchase=openPurchase;
  const previousRender=render;render=function(s){previousRender(s);draw(s);};if(typeof state!=='undefined'&&state)draw(state);
 })();
