@@ -8,6 +8,14 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Mêmes chiffres sur les deux vues — 9.1.4
+
+La vue simplifiée affiche désormais **Disponible maintenant**, puis **Safe-to-Spend le plus haut** et **Safe-to-Spend le plus bas** sur **30, 60 ou 90 jours**. Tous ces montants sont après protections des enveloppes et achats sur carte. Le tableau de bord complet affiche aussi **Maximum prévu** pour permettre une comparaison directe, en plus de son disponible et de son minimum.
+
+Les deux extrema et leurs dates suivent la période sélectionnée, à partir d’aujourd’hui. Le minimum peut rester identique alors que le maximum augmente : cela ne signifie pas que les boutons ne fonctionnent pas. Le disponible actuel, lui, ne dépend pas de l’horizon. Les données restent des agrégats de consultation, sans comptes nominatifs ni transactions dans l’accès simplifié. Les anciens champs bancaires sur 30 jours restent dans l’API pour compatibilité, mais ne sont plus utilisés par les nouvelles cartes.
+
+Après la mise à jour du Mac, **rechargez entièrement les deux pages Safari**. Le bouton Actualiser dans une ancienne page recharge ses chiffres, mais pas le nouveau code de présentation. Le lien de consultation reste le même.
+
 ## Vue iPhone simplifiée — 9.1.3
 
 Le titre précise **Safe-to-Spend · minimum prévu** et indique la période sélectionnée. Comparez ce chiffre à **Minimum prévu sur 30/60/90 jours** du tableau de bord complet, plutôt qu’au **Disponible maintenant**. Un message explique lorsque plusieurs périodes retiennent le même minimum : changer d’horizon ne force pas le montant à changer.

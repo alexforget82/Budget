@@ -157,7 +157,7 @@ class BudgetAPI(unittest.TestCase):
   self.account();future=self.future73();payload={'name':'Avance','reserved':0,'budget':230,'frequency':'weekly','start_on':future,'rollover':True,'forecast_spend':False};s=self.post('/api/envelopes',payload);eid=s['envelopes'][0]['id'];self.fund73(eid,100);s=self.post('/api/envelopes/update',{**payload,'id':eid,'reserved':60});self.assertEqual(s['safe_cents'],94000);self.assertEqual(next(d for d in s['forecast'] if d['date']==future)['safe_cents'],77000);backup=self.get('/api/backup/export');self.post('/api/support/undo',{'token':s['support41']['undo']['token']});self.assertEqual(self.get('/api/state')['safe_cents'],90000);self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.stop();self.start();self.assertEqual(next(d for d in self.get('/api/state')['forecast'] if d['date']==future)['safe_cents'],77000)
   self.assertIn('envelope_advances_v73',[a['key'] for a in backup['tables']['app_settings']]);self.post('/api/envelopes/fund',{'id':eid,'amount':10,'expected_reserved_cents':0},400)
  def test_v73_shared_summary_only_expected_fields_rotation_revocation(self):
-  self.account();self.assertIsNone(self.get('/api/sharing')['path']);path=self.post('/api/sharing',{'action':'create'})['path'];html=self.call(path,raw=True);self.assertIn('Sillage',html);data=self.get(path+'/data');self.assertEqual(set(data),{'updated_at','periods','highest_30','lowest_30'});self.assertEqual(set(data['periods']),{'30','60','90'});self.assertEqual(data['periods']['30']['safe_cents'],100000);self.assertEqual(data['highest_30']['amount_cents'],100000)
+  self.account();self.assertIsNone(self.get('/api/sharing')['path']);path=self.post('/api/sharing',{'action':'create'})['path'];html=self.call(path,raw=True);self.assertIn('Sillage',html);data=self.get(path+'/data');self.assertEqual(set(data),{'updated_at','current_safe_cents','periods','highest_30','lowest_30'});self.assertEqual(set(data['periods']),{'30','60','90'});self.assertEqual(data['periods']['30']['safe_cents'],100000);self.assertEqual(data['highest_30']['amount_cents'],100000)
   self.call(path+'/api/state',status=403);self.post(path+'/data',{'amount':100},403);self.call('/shared/'+'a'*64+'/data',status=403);self.assertNotIn(path.split('/')[-1],json.dumps(self.get('/api/backup/export')))
   second=self.post('/api/sharing',{'action':'create'})['path'];self.assertNotEqual(second,path);self.call(path,status=403);self.post('/api/sharing',{'action':'revoke'});self.call(second+'/data',status=403);self.assertEqual(self.get('/api/state')['cash_cents'],100000)
  def test_v73_shared_private_view_cannot_read_owner_api_or_write(self):
@@ -167,6 +167,16 @@ class BudgetAPI(unittest.TestCase):
   try:
    self.assertEqual(self.get(path+'/data')['periods']['90']['safe_cents'],100000);self.call('/api/state',status=403);self.call('/api/pro/overview?month='+DAY[:7],status=403);self.call('/api/pro/transaction?id=1',status=403);self.call('/api/sharing',status=403);self.call('/api/state',headers={'Tailscale-User-Login':'wife@example.test'},status=403);self.post('/api/sharing',{'action':'create'},403);self.call(path+'/data',headers={'Host':'evil.example'},status=403)
   finally:self.base=local
+ def test_shared_ranges_follow_selected_horizon_even_when_minimum_is_unchanged(self):
+  account=self.account();self.post('/api/envelopes',{'name':'Reserve partagee','reserved':230,'budget':0,'frequency':'none','forecast_spend':False})
+  for offset,amount,kind in [(10,100,'expense'),(35,600,'income'),(70,200,'income')]:self.post('/api/recurring',{'description':'Mouvement '+str(offset),'type':kind,'amount':amount,'account_id':account,'frequency':'monthly','one_time':True,'start_on':self.future73(offset)})
+  state=self.get('/api/state');path=self.post('/api/sharing',{'action':'create'})['path'];data=self.get(path+'/data');opening={'date':state['forecast'][0]['date'],'cash_cents':state['cash_cents'],'safe_cents':state['safe_cents']}
+  for n in [30,60,90]:
+   window=[opening,*state['forecast'][:n]]
+   for name,key in [('safe','safe_cents')]:
+    self.assertEqual(data['periods'][str(n)][name]['lowest']['amount_cents'],min(d[key] for d in window));self.assertEqual(data['periods'][str(n)][name]['highest']['amount_cents'],max(d[key] for d in window))
+   self.assertEqual(data['periods'][str(n)]['safe_cents'],67000)
+  self.assertEqual([data['periods'][str(n)]['safe']['highest']['amount_cents'] for n in [30,60,90]],[77000,127000,147000])
  def test_v73_shared_extrema_and_horizons_match_forecast(self):
   account=self.account();future=self.future73();self.post('/api/envelopes',{'name':'Protection','reserved':0,'budget':230,'frequency':'monthly','start_on':future,'forecast_spend':False});self.post('/api/recurring',{'description':'Paie','type':'income','amount':600,'account_id':account,'frequency':'monthly','start_on':self.future73(35),'one_time':True});s=self.get('/api/state');path=self.post('/api/sharing',{'action':'create'})['path'];data=self.get(path+'/data')
   for n in [30,60,90]:self.assertEqual(data['periods'][str(n)]['safe_cents'],min(s['safe_cents'],*[d['safe_cents'] for d in s['forecast'][:n]]))

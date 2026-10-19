@@ -1,6 +1,6 @@
 # Vérifications — Sillage 2
 
-`npm test` : **233 tests réussis** (65 Node, 168 API), sans échec ni test ignoré.
+`npm test` : **234 tests réussis** (65 Node, 169 API), sans échec ni test ignoré.
 
 Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
 
@@ -410,3 +410,7 @@ Cinq tests API couvrent : réel depuis le 18 inclus et jusqu’à la fin d’oct
 ## Vue simplifiée — 9.1.3
 
 `tests/shared-periods-ui.py` compare exactement les trois minimums aux prévisions du propriétaire avec des échéances à 10, 40 et 70 jours : les montants diffèrent quand les prévisions le justifient, puis deviennent identiques après retrait des échéances. Une nouvelle transaction apparaît lors du changement de période sans recharger la page. Les cartes bancaires restent sur 30 jours, un lien révoqué efface valeurs/dates/heure, et aucun accès propriétaire n’est ajouté. Réexécution du parcours iPhone historique et des trois tests API de partage. Aucun changement de formule financière ni extension des données partagées.
+
+## Mêmes chiffres propriétaire / consultation — 9.1.4
+
+Le nouveau test API compare les extrema après protections de chaque période aux prévisions canoniques avec une réserve de 230 $, une dépense à 10 jours et des revenus à 35 et 70 jours. Le minimum reste à 670 $ tandis que les maximums sont 770, 1 270 et 1 470 $. `tests/shared-owner-match-ui.py` ouvre les deux vues et compare les montants et dates pour 30/60/90, sans mutation du registre. `tests/shared-periods-ui.py` couvre aussi des minimums distincts, une nouvelle dépense, l’actualisation et la révocation. Le parcours iPhone historique est adapté aux extrema après protections. L’accès ne reçoit aucun compte ni opération individuels.
