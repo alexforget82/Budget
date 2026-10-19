@@ -1,3 +1,9 @@
+BUDGET DU MOIS DE DEMARRAGE — 9.1.0
+Budget > Mois de demarrage > 18 octobre 2026, puis confirmer.
+Exception sur les categories concernees : montant x nombre restant,
+ou Total exceptionnel. Les objectifs habituels reprennent en novembre.
+Aucun changement au Safe-to-Spend. Gardez budget-start.js avec le ZIP.
+
 CORRECTIF 9.0.1 : copie complete des styles, scripts, logo et icones.
 Reinstallez avec le raccourci de mise a jour puis actualisez Safari.
 Vos donnees restent conservees.

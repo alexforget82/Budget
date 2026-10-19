@@ -8,6 +8,18 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Budget du mois de démarrage — 9.1.0
+
+Dans **Budget**, sélectionnez octobre puis **Mois de démarrage** et indiquez le **18 octobre 2026**. Après confirmation, le réel de ce mois comprend uniquement les transactions du 18 à la fin du mois, sans suppression de l’historique. Le Bilan mensuel conserve sa vue sur le mois complet.
+
+Cliquez **Exception** dans les catégories ou sous-catégories concernées : saisissez un montant par paiement/paie et le nombre restant (ex. 175,53 $ × 1 pour Alex; 100 $ × 2 pour Jenny). Le choix **Total exceptionnel** permet un montant unique. Zéro occurrence est accepté. Les objectifs non ajustés conservent leur montant habituel; aucun prorata n’est imposé.
+
+Les sous-catégories s’additionnent sans ajouter un second budget parent. Les lignes indiquent l’exception et le montant habituel conservé. En novembre, vos fréquences et objectifs habituels s’appliquent automatiquement; une exception ne se reconduit pas. La copie du mois précédent reprend les objectifs habituels, jamais les exceptions de démarrage. Aucune transaction, réserve, récurrence ni déduction du Safe-to-Spend n’est créée.
+
+Rouvrez une exception pour la modifier ou la retirer. **Mois de démarrage → Retirer le mois de démarrage** rétablit le mois complet et retire toutes ses exceptions après confirmation. Les réglages sont sauvegardés, restaurables et annulables. Une fusion de catégories portant des exceptions demande de les retirer d’abord afin d’éviter une combinaison ambiguë.
+
+Aperçus : [exceptions d’octobre](docs/demarrage-octobre-exceptions.png), [sur iPhone](docs/demarrage-octobre-dark-iphone.png).
+
 ## Correctif d’installation Sillage 2 — 9.0.1
 
 L’installateur copie désormais aussi les SVG, PNG et le manifeste de l’application. Un logo manquant ne peut plus arrêter le serveur : il reçoit une réponse 404 propre. Le dossier de mise à jour est contrôlé pour les ressources référencées par la page. Le correctif est vérifié sur une copie installée, y compris dans le navigateur, avec conservation du registre.

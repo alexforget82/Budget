@@ -1,6 +1,6 @@
 # Vérifications — Sillage 2
 
-`npm test` : **228 tests réussis** (65 Node, 163 API), sans échec ni test ignoré.
+`npm test` : **233 tests réussis** (65 Node, 168 API), sans échec ni test ignoré.
 
 Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
 
@@ -392,3 +392,9 @@ Le défaut initial a été reproduit en appliquant la sélection de fichiers de 
 `tests/installed-assets.test.js` utilise le même helper de copie que l’installateur, démarre le serveur depuis cette copie, contrôle toutes les ressources de la page et leurs types MIME, puis supprime le logo et vérifie une réponse 404 sans arrêt du serveur ni modification des soldes. Il vérifie aussi la préservation du dossier data et l’exclusion des fichiers étrangers.
 
 `tests/installed-assets-ui.py` ouvre cette copie installée dans Chromium : styles appliqués, scripts exécutés, logo chargé, montants affichés et ouverture de l’explication. Les annulations de requêtes de liste par le navigateur sont attendues; les autres erreurs réseau et réponses HTTP d’erreur font échouer le parcours. Registre inchangé. Aucun essai natif de launchd/Safari sur Mac n’est revendiqué.
+
+## Budget du mois de démarrage — 9.1.0
+
+Cinq tests API couvrent : réel depuis le 18 inclus et jusqu’à la fin d’octobre, crédits dans les dépenses et non-catégorisées, montant × occurrences pour revenus/dépenses, budgets détaillés sans double comptage, zéro, retrait, aperçus sans écriture, données invalides et confirmation périmée, retour intégral aux objectifs de novembre, copie des montants habituels, suppression de catégories, annulation, redémarrage et sauvegarde/restauration. Soldes, enveloppes, opérations et prévisions restent identiques.
+
+`tests/start-budget-ui.py` exécute la configuration du 18 octobre, un paiement Alex et deux paiements Jenny, un total de salaire, l’exclusion du réel avant le 18 et le retour aux objectifs habituels en novembre. Clair/sombre et quatre largeurs. `tests/budget-v74-ui.py` vérifie le parcours habituel sans période de démarrage; `tests/installed-assets-ui.py` vérifie le démarrage depuis une copie installée contenant le nouveau module.

@@ -4,3 +4,6 @@
 @media(max-width:1100px){.sillage-ledger-head{display:flex;flex-wrap:wrap;gap:15px;padding:9px 12px}.sillage-ledger-head>span{display:none}.sillage-app .register-tools>label{min-width:0;max-width:100%}.sillage-app #sillage-sort{max-width:100%;min-width:0}}
 html[data-theme] body.sillage-app :is(#v80-spending-overview,.v44-overview .v44-metric,#v44-alerts,.v4-calendar-main,.v4-alert){background:var(--v80-surface)!important;color:var(--v80-ink)!important;border-color:var(--v80-line)!important}html[data-theme] body.sillage-app #v44-alerts .v44-alert{background:var(--v80-raised)!important;color:var(--v80-muted)!important;border-color:var(--v80-line)!important}
 html[data-theme] body.sillage-app dialog .dialog-inner{background:var(--v80-surface)!important;color:var(--v80-ink)!important}
+
+.start-budget-banner{padding:16px;border:1px solid var(--v80-line);background:var(--v80-raised);border-radius:12px;color:var(--v80-ink);font-size:12px;line-height:1.8}.start-budget-tag{color:var(--v80-accent)!important;font-weight:650}#start-budget-editor [hidden]{display:none!important}
+.v60-category-copy .start-budget-button{display:inline-block;margin:2px 0 2px 12px;padding:3px 8px!important;min-height:28px;border:1px solid var(--v80-line)!important;border-radius:6px;background:var(--v80-raised)!important;font-size:10px!important;vertical-align:middle;max-width:100%}
