@@ -12,7 +12,7 @@ try:
  f.post('/api/recurring',{'description':'Paie','amount':1000,'type':'income','account_id':joint,'frequency':'monthly','start_on':f.future73(5)})
  before=f.get('/api/backup/export')['tables'];s=f.get('/api/state')
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1500,'height':1050});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('Sillage 2');money=lambda c:page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",c)
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1500,'height':1050});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);money=lambda c:page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",c)
   expect(page.locator('#v80-safe')).to_have_text(money(s['safe_cents']));expect(page.locator('#safe')).not_to_be_visible();expect(page.locator('#sts-today')).not_to_be_visible()
   for days in [30,60,90]:
    page.locator('#v80-hero').get_by_role('button',name=f'{days} jours',exact=True).click();low=min(s['safe_cents'],*[d['safe_cents'] for d in s['forecast'][:days]]);expect(page.locator('.v80-hero-facts>div:nth-child(2) strong')).to_have_text(money(low));expect(page.locator('#v80-safe')).to_have_text(money(s['safe_cents']))

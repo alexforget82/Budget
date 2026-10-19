@@ -58,9 +58,10 @@
   if(withActions){const actions=n('div',undefined,'v4-event-actions');
    if(e.real){if((e.type==='transfer'?current.transfers:current.transactions).some(t=>t.id===e.id))actions.append(b('Modifier',()=>window.v2Edit?.(e.type==='transfer'?'transfer':'transaction',e.id),'v4-text-button'));}
    else if(e.row?.source==='paycheck'){actions.append(b('Gérer la répartition',()=>navigate('paie'),'v4-text-button'));}
+   else if(e.type==='reserve'){actions.append(b('Voir l’enveloppe',()=>navigate('enveloppes'),'v4-text-button'));}
    else if(e.row&&['planned','pending'].includes(e.row.status)){
-    if(e.type!=='reserve')actions.append(b('Confirmer',()=>window.budgetPlanningAction(e.row.key,'confirm'),'v4-text-button'));
-    actions.append(b('Montant',()=>window.budgetPlanningAction(e.row.key,'adjust'),'v4-text-button'),b('Déplacer',()=>openMove(e.row),'v4-text-button'));
+    if(e.type!=='reserve')actions.append(b(e.type==='income'?'Reçu':e.type==='transfer'?'Effectué':'Payé',()=>window.budgetPlanningAction(e.row.key,'confirm'),'v4-text-button'));
+    actions.append(b('Montant différent',()=>window.budgetPlanningAction(e.row.key,'confirm',{focusAmount:true}),'v4-text-button'),b('Reporter',()=>window.budgetPlanningAction(e.row.key,'move'),'v4-text-button'),b('Simuler un report',()=>openMove(e.row),'v4-text-button'));
    }
    if(actions.childNodes.length)row.append(actions);
   }return row;

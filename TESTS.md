@@ -2,6 +2,10 @@
 
 `npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
 
+`tests/release-v92-ui.py` vérifie le numéro de version sous le bouton Transaction, l’accès au clavier à l’explication du disponible, le minimum canonique et sa date, les pistes et filtres du rapprochement sans écriture, la confirmation d’un montant réel différent remplaçant le prévu, le refus d’une seconde confirmation et le report direct sans changement du solde réel. Quatre largeurs de 320 à 1440 px et le mode sombre sont vérifiés.
+
+Les parcours existants `budget-v81-ui.py`, `budget-v41-ui.py`, `planning-v4-ui.py`, `sillage-ui.py`, `shared-tools-ui.py` et `shared-owner-match-ui.py` vérifient aussi les explications, correction et annulation, simulation de report, outils propriétaires et accès simplifié. Les tests d’affichage du numéro lisent maintenant la version technique du serveur.
+
 Sillage ajoute trois tests API : tri stable et global sur 55 opérations (deux pages), paramètres de tri malveillants ignorés; comparaison des comptes, agrégation exacte, doublons et absence d’écriture; inspection d’une opération et validation des identifiants. Les tests de la vue privée vérifient aussi que les nouveaux points d’accès sont refusés sans autorisation propriétaire.
 
 `tests/sillage-ui.py` : identité, centre de vérification, tri, panneau latéral, classement avec soldes/prévisions identiques, brouillon de remboursement, comparaison sur six mois et déplacement d’une échéance vers une simulation sans écriture; six écrans, quatre largeurs de 320 à 1500 px, clair/sombre. `tests/budget-v80-ui.py` : division d’achats, profils CSV, classement groupé, filtres mémorisés et sept écrans sur six largeurs. `tests/budget-v81-ui.py` : calcul actuel/futur et protections des enveloppes. `tests/budget-v73-ui.py` : partage privé limité et révocation.

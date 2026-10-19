@@ -8,6 +8,16 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Disponible, banque et calendrier — 9.2.0
+
+Le numéro **v9.2.0** est visible en bas à gauche, sous **+ Transaction**.
+
+- **Comprendre le disponible** : cliquez sur le montant du tableau de bord (ou « Pourquoi ce montant ? »). La fiche indique le minimum sur la période sélectionnée et sa date. « Voir le calcul de ce minimum » explique les soldes, revenus, paiements, virements et protections à cette date, puis permet de suivre chaque variation quotidienne.
+- **Rapprocher avec ma banque** : accès direct depuis le tableau de bord. Choisissez le compte, entrez le solde bancaire actuel et comparez. Le guide explique le sens de l’écart, affiche les opérations du même montant à examiner et permet une recherche et un filtre sur les transactions non vérifiées. Les indices ne déclenchent aucune suppression ni correction automatique. Le parcours existant conserve la saisie d’une opération manquante, la correction explicite et la validation du rapprochement quand les soldes concordent.
+- **Du calendrier au réel** : sélectionnez une date puis **Payé**, **Reçu** ou **Effectué**. **Montant différent** ouvre directement la saisie du montant réel. Vérifiez le compte, la date et si l’opération est déjà enregistrée, puis validez. Une association remplace la prévision sans débiter de nouveau le compte; une nouvelle opération est enregistrée une seule fois. **Reporter** déplace une seule occurrence; **Simuler un report** reste disponible pour comparer avant d’appliquer. Les enveloppes en mode protection ne sont pas traitées comme des factures.
+
+Ces améliorations utilisent les calculs et actions existants. Les réserves d’enveloppes, le Budget global et l’accès simplifié restent compatibles. Après la mise à jour du Mac, rechargez complètement les pages Safari ouvertes.
+
 ## Deux outils dans la vue iPhone simplifiée — 9.1.5
 
 **Puis-je me permettre cet achat ?** : entrez le montant et la date, puis touchez **Vérifier cet achat**. La réponse est simplement **Oui** ou **Non**, selon le Safe-to-Spend projeté sur la période sélectionnée (30, 60 ou 90 jours). Il s’agit d’un achat supplémentaire, non déjà couvert par une enveloppe. Le simulateur utilise le moteur de la vue complète et ne crée aucune transaction. Modifier un champ, la période ou les données financières efface l’ancienne réponse.
