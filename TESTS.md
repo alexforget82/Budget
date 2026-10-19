@@ -2,6 +2,8 @@
 
 `npm test` : **238 tests réussis** (65 Node, 173 API), sans échec ni test ignoré.
 
+`tests/essential-home-ui.py` : trois indicateurs canoniques, seuil de 100 $ et manque selon 30/60 jours, échéances dues seulement, navigation vers une date ou la file de confirmation, disparition des alertes après confirmation, état calme sans signalement, mode détaillé mémorisé, personnalisation conservée et dates visibles sur chaque transaction. Clair/sombre, cinq largeurs de 320 à 1500 px, aucune écriture financière lors de la consultation. Les tests de disposition ouvrent explicitement le tableau détaillé.
+
 `tests/compact-register-ui.py` : 80 opérations, lignes compactes, alignement réel des colonnes avec les en-têtes, pagination sans répétition, recherche, sélection multiple, densité mémorisée, six largeurs de 320 à 1850 px, clair/sombre et registre inchangé. Les parcours existants `transactions-ui.py`, `budget-v80-ui.py` et `sillage-ui.py` couvrent aussi la saisie, les totaux filtrés, les outils de classement, les vues enregistrées et l’inspection.
 
 `tests/release-v92-ui.py` vérifie le numéro de version sous le bouton Transaction, l’accès au clavier à l’explication du disponible, le minimum canonique et sa date, les pistes et filtres du rapprochement sans écriture, la confirmation d’un montant réel différent remplaçant le prévu, le refus d’une seconde confirmation et le report direct sans changement du solde réel. Quatre largeurs de 320 à 1440 px et le mode sombre sont vérifiés.

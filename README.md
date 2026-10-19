@@ -8,6 +8,14 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## Accueil essentiel et alertes — 9.3.0
+
+L’accueil présente trois repères : **Disponible maintenant**, **Minimum prévu** et **Prochaine rentrée**. Les périodes 30/60/90 utilisent les mêmes calculs que les autres vues. Touchez un repère pour ouvrir son explication ou sa date. **Voir tous les tableaux** retrouve les graphiques, le maximum et votre disposition personnalisée; **Revenir à l’essentiel** simplifie à nouveau l’accueil. Ce choix est mémorisé sur l’appareil et ne modifie pas la disposition enregistrée. La personnalisation permet toujours d’accéder à tous les blocs.
+
+La section **À surveiller** affiche une alerte pour le premier solde négatif prévu, ou à défaut le premier passage sous 100 $, et les opérations dues aujourd’hui ou avant encore à confirmer. Le seuil est un repère visuel, sans réservation supplémentaire. Les points de configuration sont également accessibles. Chaque alerte ouvre la date concernée, la file de confirmation ou les réglages à vérifier. Les avertissements sont recalculés avec les données chargées et la période sélectionnée, sans notification externe ni modification bancaire. **Actualiser le tableau de bord** recharge les chiffres.
+
+Chaque ligne de transaction affiche maintenant sa **date réelle**, à côté du compte, dans les vues compacte et aérée et quel que soit le tri.
+
 ## Transactions compactes — 9.2.1
 
 La liste est prioritaire : vue compacte par défaut, lignes resserrées, colonnes alignées, initiales décoratives retirées et résumé réduit à trois indicateurs. Recherche, compte, période et tri restent accessibles. Les vues enregistrées sont rangées dans **Filtres avancés**. Le bouton **Vue aérée / Vue compacte** mémorise la densité sur cet appareil.
