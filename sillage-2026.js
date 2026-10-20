@@ -24,6 +24,114 @@ export function initialize(runtime) {
       button.addEventListener("click", () => (tools.open = true));
       if (button.classList.contains("active")) tools.open = true;
     }
+    const help = document.createElement("button");
+    help.type = "button";
+    help.className = "s26-chatgpt-button";
+    help.textContent = "Poser une question à ChatGPT";
+    const dialog = document.createElement("dialog");
+    dialog.id = "s26-chatgpt-dialog";
+    dialog.className = "editor-dialog";
+    const heading = document.createElement("h2");
+    heading.id = "s26-chatgpt-title";
+    heading.textContent = "Votre budget dans ChatGPT";
+    dialog.setAttribute("aria-labelledby", heading.id);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "secondary";
+    close.textContent = "Fermer";
+    close.onclick = () => dialog.close();
+    const header = document.createElement("div");
+    header.className = "section-head";
+    header.append(heading, close);
+    const intro = document.createElement("p");
+    intro.textContent =
+      "Téléchargez le fichier, ouvrez ChatGPT, puis joignez-le à votre question. Il contient vos montants et libellés, sans lien d’accès privé. Rien n’est envoyé automatiquement à ChatGPT.";
+    const label = document.createElement("label");
+    label.textContent = "Historique des transactions";
+    const period = document.createElement("select");
+    period.id = "s26-chatgpt-history";
+    for (const [value, text] of [
+      ["90", "90 derniers jours"],
+      ["365", "Dernière année"],
+      ["all", "Tout l’historique"],
+    ])
+      period.add(new Option(text, value));
+    label.append(period);
+    const status = document.createElement("p");
+    status.setAttribute("role", "status");
+    const actions = document.createElement("div");
+    actions.className = "s26-chatgpt-actions";
+    const download = document.createElement("a");
+    download.textContent = "Télécharger mon fichier";
+    download.download = "Sillage-pour-ChatGPT.json";
+    download.hidden = true;
+    const chat = document.createElement("a");
+    chat.textContent = "Ouvrir ChatGPT ↗";
+    chat.href = "https://chatgpt.com/";
+    chat.target = "_blank";
+    chat.rel = "noopener noreferrer";
+    actions.append(download, chat);
+    const preview = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Vérifier le contenu avant de le partager";
+    const content = document.createElement("textarea");
+    content.readOnly = true;
+    content.setAttribute("aria-label", "Contenu du fichier pour ChatGPT");
+    preview.append(summary, content);
+    const note = document.createElement("p");
+    note.className = "sub";
+    note.textContent =
+      "Le fichier comprend les prévisions sur 90 jours et les budgets des trois mois précédents aux trois mois suivants. C’est un instantané : préparez un nouveau fichier après vos changements. Sans clé API ni frais API supplémentaires. Ce fichier ne remplace pas une sauvegarde.";
+    dialog.append(header, intro, label, status, actions, preview, note);
+    document.body.append(dialog);
+    body.append(help);
+    let fileURL = null,
+      request = null;
+    async function prepare() {
+      request?.abort();
+      const controller = new AbortController();
+      request = controller;
+      if (fileURL) URL.revokeObjectURL(fileURL);
+      fileURL = null;
+      download.hidden = true;
+      download.removeAttribute("href");
+      content.value = "";
+      status.textContent = "Préparation du fichier…";
+      try {
+        const response = await fetch(
+          "/api/chatgpt/export?history=" + period.value,
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (!response.ok)
+          throw Error("Le fichier n’a pas pu être préparé. Réessayez.");
+        const text = await response.text();
+        if (controller.signal.aborted) return;
+        content.value = text;
+        fileURL = URL.createObjectURL(
+          new Blob([text], { type: "application/json;charset=utf-8" }),
+        );
+        download.href = fileURL;
+        download.hidden = false;
+        status.textContent =
+          "Fichier prêt. Vérifiez son contenu, puis téléchargez-le pour le joindre dans ChatGPT.";
+      } catch (error) {
+        if (!controller.signal.aborted && error.name !== "AbortError")
+          status.textContent = error.message;
+      }
+    }
+    help.onclick = () => {
+      dialog.showModal();
+      prepare();
+    };
+    period.onchange = prepare;
+    dialog.addEventListener("close", () => {
+      request?.abort();
+      if (fileURL) URL.revokeObjectURL(fileURL);
+      fileURL = null;
+      download.removeAttribute("href");
+      download.hidden = true;
+      content.value = "";
+    });
     const budgetToolbar = document.querySelector(
       "#monthly-budget-workspace>.v60-toolbar",
     );

@@ -1,3 +1,4 @@
+import { chatgptSnapshot } from "./chatgpt-export.js";
 export function createReadRoutes({
   createHash,
   dir,
@@ -17,6 +18,40 @@ export function createReadRoutes({
   todayLocal,
 }) {
   return function handle(req, res) {
+    if (
+      req.method === "GET" &&
+      (req.url === "/api/chatgpt/export" ||
+        req.url.startsWith("/api/chatgpt/export?"))
+    ) {
+      const history =
+        new URL(req.url, "http://localhost").searchParams.get("history") ||
+        "90";
+      if (!["90", "365", "all"].includes(history))
+        return reply(res, 400, { error: "Période invalide." });
+      const state = snapshot(),
+        today = todayLocal(),
+        budgets = [];
+      for (let offset = -3; offset <= 3; offset++) {
+        const month = new Date(
+          Date.UTC(
+            Number(today.slice(0, 4)),
+            Number(today.slice(5, 7)) - 1 + offset,
+            1,
+            12,
+          ),
+        )
+          .toISOString()
+          .slice(0, 7);
+        budgets.push(globalBudget.monthState(month));
+      }
+      const file = chatgptSnapshot({ state, today, history, budgets });
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="Sillage-pour-ChatGPT-${today}.json"`,
+        "Cache-Control": "no-store",
+      });
+      return res.end(JSON.stringify(file, null, 2));
+    }
     if (req.method === "GET" && req.url.startsWith("/api/budget/global?"))
       return reply(
         res,
@@ -32,7 +67,7 @@ export function createReadRoutes({
       });
     if (req.method === "GET" && req.url === "/api/private/status")
       return reply(res, 200, {
-        version: "11.4.2",
+        version: "11.4.3",
         data_key: createHash("sha256").update(path.resolve(dir)).digest("hex"),
         enabled: !!privateAccess,
         origin: privateAccess?.origin || null,

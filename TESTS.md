@@ -1,5 +1,9 @@
 # Vérifications de Sillage 11.4
 
+## Export ChatGPT — 11.4.3
+
+**97 tests Node et 188 tests API réussis**, y compris les contrôles de confidentialité et d’accès de l’export. Le parcours `chatgpt-export-ui.py` passe sur ordinateur/iPhone, en clair/sombre, avec panne/reprise et téléchargement du contenu vérifié. La copie installée, la simulation du service et les 40 comparaisons historiques passent. La suite Python complète n’a pas été relancée. Voir [le guide et le relevé détaillé](docs/chatgpt-export-11.4.3.md).
+
 ## Vérification complémentaire des enveloppes
 
 **95 tests Node et 186 tests API réussis**, sans nouveau changement du code applicatif v11.4.2. Les huit tests de `envelope-protection-matrix.test.js` couvrent 304 configurations. Voir la [vérification détaillée](docs/protection-periodes-11.4.2.md#vérification-complémentaire-de-tous-les-types-denveloppes).

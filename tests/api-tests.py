@@ -192,6 +192,17 @@ class BudgetAPI(unittest.TestCase):
    for account in [joint,cards[0]]:
     with self.subTest(rollover=rollover,account=account):
      future=self.future73();future_before=next(d for d in self.get('/api/state')['forecast'] if d['date']==future)['safe_cents'];s=self.post('/api/envelopes',{'name':f'Avance {account} {rollover}','reserved':0,'budget':230,'frequency':'weekly','start_on':future,'rollover':rollover,'forecast_spend':False});eid=s['envelopes'][0]['id'];before=s['safe_cents'];s=self.fund73(eid,100);s=self.transaction(account,-100,envelope_id=eid);self.assertEqual(s['safe_cents'],before-10000);d=next(d for d in s['forecast'] if d['date']==future);self.assertEqual(d['safe_cents'],future_before-23000)
+ def test_v1143_chatgpt_export_is_scoped_private_and_financially_readonly(self):
+  aid=self.account();cid=self.make_category('Épicerie exportée');self.transaction(aid,-10,category_id=cid,description='Achat récent');old=(datetime.date.fromisoformat(DAY)-datetime.timedelta(days=150)).isoformat();self.transaction(aid,-7,happened_on=old,description='Achat ancien');self.post('/api/envelopes',{'name':'Épicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':self.future73(2),'rollover':False,'forecast_spend':False});path=self.post('/api/sharing',{'action':'create'})['path'];before=self.get('/api/backup/export')['tables'];state=self.get('/api/state');raw=self.call('/api/chatgpt/export',raw=True);out=json.loads(raw)
+  self.assertEqual(out['format'],'sillage-chatgpt-1');self.assertEqual(out['current']['safe_cents'],state['safe_cents']);self.assertEqual([d['safe_cents'] for d in out['forecast']],[d['safe_cents'] for d in state['forecast']]);self.assertEqual(len(out['forecast']),90);self.assertEqual(len(out['transactions']),1);self.assertEqual(out['transactions'][0]['description'],'Achat récent');self.assertEqual(len(out['budgets']),7);self.assertNotIn(path.split('/')[-1],raw);self.assertNotIn('support41',out);self.assertNotIn('app_settings',out);self.assertNotIn('setup70',out)
+  self.assertEqual(len(self.get('/api/chatgpt/export?history=all')['transactions']),2);self.assertEqual(len(self.get('/api/chatgpt/export?history=365')['transactions']),2);self.call('/api/chatgpt/export?history=invalid',status=400);self.call(path+'/api/chatgpt/export',status=403);self.assertEqual(self.get('/api/backup/export')['tables'],before)
+ def test_v1143_chatgpt_export_private_listener_requires_owner_identity(self):
+  self.account();self.stop()
+  with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+  (self.dir/'data/private-access.json').write_text(json.dumps({'origin':'https://budget.example.ts.net','login':'owner@example.test','port':port}));self.start();local=self.base;self.base=f'http://127.0.0.1:{port}'
+  try:
+   self.call('/api/chatgpt/export',status=403);self.call('/api/chatgpt/export',headers={'Tailscale-User-Login':'wife@example.test'},status=403);out=self.call('/api/chatgpt/export',headers={'Tailscale-User-Login':'owner@example.test'});self.assertEqual(out['format'],'sillage-chatgpt-1');self.assertEqual(out['current']['cash_cents'],100000)
+  finally:self.base=local
  def test_v1142_each_future_week_is_protected_and_survives_restart_restore(self):
   self.account();s=self.post('/api/envelopes',{'name':'Épicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':self.future73(2),'rollover':False,'forecast_spend':False})
   for offset,expected in [(2,77000),(8,77000),(9,54000),(16,31000)]:

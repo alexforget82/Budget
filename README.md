@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v11.4.2](https://github.com/alexforget82/Budget/archive/refs/tags/v11.4.2.zip).
+Téléchargez et décompressez [la version v11.4.3](https://github.com/alexforget82/Budget/archive/refs/tags/v11.4.3.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -26,6 +26,10 @@ Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répert
 - **Récurrences** programme les revenus, factures et virements. **Enveloppes** protège les sommes du Safe-to-Spend, à la date prévue ou plus tôt si alimentées. Chaque période future protège son propre montant, même si le report du restant est désactivé; les soldes bancaires réels restent inchangés.
 - Enregistrez une dépense réelle dans **Transactions** et confirmez l’association proposée si elle remplace une échéance prévue.
 - **Disponible jour par jour** permet de consulter les prévisions. La vue simplifiée utilise les mêmes calculs.
+
+## Questions dans ChatGPT
+
+Dans **Outils et réglages → Poser une question à ChatGPT**, préparez puis vérifiez le fichier. Téléchargez-le, ouvrez ChatGPT et joignez-le à votre question. L’historique peut couvrir 90 jours, un an ou toutes les transactions. Les prévisions couvrent 90 jours; les budgets couvrent sept mois autour du mois courant. Aucun envoi automatique, aucune clé API. Le fichier contient des données financières personnelles et reste un instantané, sans lien d’accès privé. Régénérez-le après vos changements.
 
 ## Confidentialité et sauvegardes
 

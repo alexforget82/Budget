@@ -12,6 +12,7 @@
 | `routes-accounts.js`, `routes-transactions.js`, `routes-transfers.js` | Validations et mutations par domaine |
 | `routes-envelopes.js`, `routes-recurrences.js`, `routes-planning.js` | Programmation, enveloppes et rapprochements |
 | `routes-read.js` | Réponses de consultation, exportations et état |
+| `chatgpt-export.js` | Instantané financier à champs explicites pour partage manuel dans ChatGPT, sans API externe |
 | `http-body.js`, `http-security.js`, `http-assets.js` | JSON borné, hôte/origine, en-têtes et liste fermée des ressources |
 | `forecast-engine.js`, `card-envelope-funds.js`, `global-budget.js`, `budget-calendar.js` | Calculs financiers existants, séparés du transport HTTP |
 

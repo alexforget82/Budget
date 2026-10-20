@@ -2491,3 +2491,51 @@ html[data-theme]
     overscroll-behavior: contain;
   }
 }
+
+.s26-chatgpt-button {
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  padding: 10px 12px;
+  margin-top: 8px;
+  color: var(--v80-ink);
+  background: var(--v80-raised);
+  border: 1px solid var(--v80-line);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.s26-chatgpt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+.s26-chatgpt-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--v80-line);
+  border-radius: 8px;
+  background: var(--v80-raised);
+  color: var(--v80-ink);
+  text-decoration: none;
+}
+.s26-chatgpt-actions a[hidden] {
+  display: none;
+}
+.s26-chatgpt-actions a:focus-visible,
+.s26-chatgpt-button:focus-visible {
+  outline: 3px solid var(--v80-accent);
+  outline-offset: 2px;
+}
+#s26-chatgpt-dialog textarea {
+  width: 100%;
+  min-height: 220px;
+  max-height: 45vh;
+  font-family: monospace;
+  font-size: 12px;
+}
+#s26-chatgpt-dialog {
+  overflow-wrap: anywhere;
+}

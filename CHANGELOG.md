@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.4.3 — fichier pour poser des questions dans ChatGPT
+
+Ajout dans Outils et réglages : préparer et vérifier un instantané financier, le télécharger puis ouvrir ChatGPT pour le joindre à une question. Historique au choix (90 jours, un an, tout), comptes, budgets, enveloppes, récurrences et prévisions canoniques. Aucun envoi automatique ni clé API. Export propriétaire distinct des sauvegardes, sans configuration ni jeton d’accès. Calculs financiers conservés.
+
 ## 11.4.2 — protection de chaque période future
 
 Corrige une surestimation du Safe-to-Spend lorsque plusieurs périodes d’un budget protégé réutilisaient la même réserve avec le report désactivé. Chaque semaine/mois futur protège son propre montant. Les alimentations anticipées et achats associés au début de période sont comptés une seule fois, sur compte bancaire ou carte. Les soldes réels et la règle de report lors du renouvellement réel restent conservés. La v11.4.1 ne corrigeait que l’affichage de ces échéances.
