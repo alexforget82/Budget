@@ -7,13 +7,13 @@ spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-
 f=api.BudgetAPI();f.setUp()
 try:
  f.account(balance=1000)
- s=f.post('/api/envelopes',{'name':'Essence Alex','reserved':0,'budget':60,'frequency':'weekly','start_on':f.future73(2),'rollover':False,'forecast_spend':False})
+ s=f.post('/api/envelopes',{'name':'Essence Alex','reserved':60,'budget':60,'frequency':'weekly','start_on':f.future73(2),'rollover':False,'forecast_spend':False})
  dates=[f.future73(n) for n in (2,9,16)]
- for date in dates:
+ for i,date in enumerate(dates):
   d=next(d for d in s['forecast'] if d['date']==date)
-  assert d['safe_cents']==94000 and d['cash_cents']==100000
+  assert d['safe_cents']==100000-(i+1)*6000 and d['cash_cents']==100000
   assert len([e for e in d['events'] if e.get('envelope_renewal')])==1
- assert next(d for d in s['forecast'] if d['date']==dates[1])['events'][0]['amount_cents']==0
+ assert next(d for d in s['forecast'] if d['date']==dates[0])['events'][0]['amount_cents']==0
  before=f.get('/api/backup/export')['tables']
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+s['version']);navigate(page,'calendrier')
@@ -22,7 +22,7 @@ try:
    for date in dates:
     page.locator('#v41-calendar-month').fill(date[:7]);page.locator('#v41-calendar-month').dispatch_event('change')
     cell=page.locator(f'#v4-cal-grid [data-date="{date}"]');expect(cell).to_contain_text('Essence Alex');cell.click();panel=page.locator('#v4-calendar-day');expect(panel).to_contain_text('Essence Alex')
-    if date!=dates[0]:expect(panel).to_contain_text('Réserve inchangée');expect(panel).to_contain_text('Aucun montant supplémentaire à réserver')
+    if date==dates[0]:expect(panel).to_contain_text('Réserve inchangée');expect(panel).to_contain_text('Aucun montant supplémentaire à réserver')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   assert not errors,errors;browser.close()
  assert f.get('/api/backup/export')['tables']==before

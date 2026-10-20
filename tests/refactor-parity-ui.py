@@ -4,9 +4,10 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 from ui_navigation import navigate
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
+# Use a cumulative envelope: the intentional 11.4.2 correction for non-cumulative future protection is tested separately.
 current=api.ROOT;work=Path(tempfile.mkdtemp(prefix='sillage-refactor-parity-'));baseline=work/'v113';baseline.mkdir();archive=work/'source.tar';subprocess.run(['git','archive','-o',str(archive),'731a58b68532e67ac9f63e6765752db34ee32d9c'],cwd=current,check=True);subprocess.run(['tar','-xf',str(archive),'-C',str(baseline)],check=True);api.ROOT=baseline;f=api.BudgetAPI();f.setUp()
 try:
- aid=f.account(balance=5000);card=f.account('credit',200);cid=f.make_category('Budget de référence');f.global74(cid,230,frequency='weekly');f.post('/api/envelopes',{'name':'Épicerie de test','reserved':100,'budget':230,'frequency':'weekly','start_on':f.future73(),'forecast_spend':False});f.post('/api/recurring',{'description':'Paie','amount':1168.05,'type':'income','account_id':aid,'frequency':'biweekly','start_on':f.future73(3)})
+ aid=f.account(balance=5000);card=f.account('credit',200);cid=f.make_category('Budget de référence');f.global74(cid,230,frequency='weekly');f.post('/api/envelopes',{'name':'Épicerie de test','rollover':True,'reserved':100,'budget':230,'frequency':'weekly','start_on':f.future73(),'forecast_spend':False});f.post('/api/recurring',{'description':'Paie','amount':1168.05,'type':'income','account_id':aid,'frequency':'biweekly','start_on':f.future73(3)})
  for i in range(8):f.transaction(aid,-10-i,description='Achat '+str(i),category_id=cid)
  before=f.get('/api/backup/export')['tables'];financial=f.get('/api/state');samples={};differences=[]
  selector='.workspace-header,.app-shell-nav,.view-active,.view-active button,.view-active input,.view-active select,.view-active .v60-budget-row,.view-active .ledger-row,.view-active summary,.view-active h2,.view-active h3,.view-active strong'

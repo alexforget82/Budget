@@ -1,5 +1,11 @@
 # Vérifications de Sillage 11.4
 
+## Correctif 11.4.2
+
+**87 tests Node et 186 tests API réussis.** Sept nouveaux tests Node et trois tests API vérifient les réservations par période et l’absence de double comptage. La suite complète des scripts supplémentaires donne **55/56**; le test historique `categories-v46-ui.py` échoue de manière intermittente sur le rappel marchand, puis réussit à la relance ciblée, sans modification de ce test dans cette version. Le nouveau calendrier, les prévisions, l’installation, les sauvegardes, le retour au code précédent et les vues partagées passent.
+
+[Explication du correctif et exemple du 28/29 octobre](docs/protection-periodes-11.4.2.md) · [Résultats détaillés avec l’échec et la relance](docs/protection-periodes-11.4.2-results.json). La comparaison historique utilise désormais une enveloppe avec report actif; le changement intentionnel du calcul sans report est vérifié dans les nouveaux tests.
+
 ## Correctif 11.4.1
 
 80 tests Node et 183 tests API réussis. Le nouveau scénario `calendar-envelope-renewals-ui.py` reproduit d’abord le renouvellement invisible, puis vérifie trois semaines consécutives en largeur ordinateur et iPhone, sans changement des prévisions, soldes ni données. Les scénarios existants `planning-v4-ui.py`, `refactor-parity-ui.py` (40 combinaisons) et `installed-assets-ui.py` passent également. La suite complète des 56 scripts Python n’a pas été relancée pour ce correctif ciblé; le rapport complet ci-dessous concerne la v11.4.0.

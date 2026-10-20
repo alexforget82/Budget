@@ -23,7 +23,7 @@ import { createBudgetTools80 } from "./budget-tools-v80.js";
 import { createGlobalBudget } from "./global-budget.js";
 import {
   cardEnvelopeTotal,
-  earlyCardEnvelopePurchases,
+  earlyEnvelopePurchases,
 } from "./card-envelope-funds.js";
 import { createBudgetBanking } from "./budget-banking.js";
 import { createBudgetJourney } from "./budget-journey.js";
@@ -385,7 +385,7 @@ function applyEnvelopeRenewals() {
             0,
           ),
           remaining = Math.max(0, budget - early);
-        const cardEarly = earlyCardEnvelopePurchases(
+        const cardEarly = earlyEnvelopePurchases(
             {
               accounts: q("SELECT * FROM accounts"),
               transactions: q("SELECT * FROM transactions"),
@@ -2105,7 +2105,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.4.1) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (11.4.2) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

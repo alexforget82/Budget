@@ -1,4 +1,4 @@
-import {createCardEnvelopeFunds,earlyCardEnvelopePurchases} from './card-envelope-funds.js';
+import {createCardEnvelopeFunds,earlyEnvelopePurchases} from './card-envelope-funds.js';
 import {envelopeBudgetDates} from './budget-schedule.js';
 import {deriveCardPayments} from './card-payments-engine.js';
 
@@ -85,7 +85,10 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
   for(const e of envelopes){if(!e.active||e.frequency==='none'||!e.start_on)continue;
    const scheduled=e.budget_schedules?envelopeBudgetDates(e,date,date,nextOccurrence)[0]:null;let due=!!scheduled;if(!e.budget_schedules)for(let i=0;i<20000;i++){const d=nextOccurrence(e.start_on,e.frequency,i);if(d>=date){due=d===date;break;}}
    if(!due||renewals.some(r=>r.envelope_id===e.id&&r.occurrence_on===date))continue;
-   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,early=transfers.filter(t=>t.envelope_id===e.id&&t.envelope_on===date&&t.happened_on<date).reduce((n,t)=>n+Math.max(0,t.amount_cents-(e.rollover?(t.envelope_effect_cents||0):0)),0),remaining=Math.max(0,budget-early-earlyCardEnvelopePurchases({accounts,transactions,envelopeLinks},e,date)),advance=e.advance_funding?.[date],credit=advance?.amount_cents||0,kept=Math.min(before,advance?.remaining_cents||0),overlap=e.rollover?0:credit-kept,other=early+earlyCardEnvelopePurchases({accounts,transactions,envelopeLinks},e,date),addition=Math.max(0,budget-credit-Math.max(0,other-overlap)),after=advance?(e.rollover?before+addition:kept+addition):(e.rollover?before+remaining:remaining);
+   // Protected future periods are separate commitments. Never reuse an earlier
+   // projected allocation to fund the following week/month. Rollover still governs
+   // real renewals; advance credits belong only to their designated occurrence.
+   const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,early=transfers.filter(t=>t.envelope_id===e.id&&t.envelope_on===date&&t.happened_on<date).reduce((n,t)=>n+Math.max(0,t.amount_cents-(e.rollover?(t.envelope_effect_cents||0):0)),0),remaining=Math.max(0,budget-early-earlyEnvelopePurchases({accounts,transactions,envelopeLinks},e,date)),advance=e.advance_funding?.[date],credit=advance?.amount_cents||0,kept=Math.min(before,advance?.remaining_cents||0),overlap=e.rollover?0:credit-kept,other=early+earlyEnvelopePurchases({accounts,transactions,envelopeLinks},e,date),addition=Math.max(0,budget-credit-Math.max(0,other-overlap)),accumulate=e.rollover||(e.forecast_spend===0&&date>today),after=advance?(accumulate?before+addition:kept+addition):(accumulate?before+remaining:remaining);
    reserves.set(e.id,after);reserved+=after-before;events.push({id:'env-'+e.id,description:'Renouvellement · '+e.name,type:'reserve',amount_cents:after-before,envelope_id:e.id,envelope_renewal:true,cash_impact_cents:0,sts_impact_cents:before-after});
   }
   for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0).sort((a,b)=>{const rank=r=>fundingByTransfer.has(r.key)?100:r.type==='expense'&&r.envelope_id&&accountMap.get(r.account_id)?.kind==='credit'?50:0;return rank(b)-rank(a);})){

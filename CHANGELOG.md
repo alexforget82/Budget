@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.4.2 — protection de chaque période future
+
+Corrige une surestimation du Safe-to-Spend lorsque plusieurs périodes d’un budget protégé réutilisaient la même réserve avec le report désactivé. Chaque semaine/mois futur protège son propre montant. Les alimentations anticipées et achats associés au début de période sont comptés une seule fois, sur compte bancaire ou carte. Les soldes réels et la règle de report lors du renouvellement réel restent conservés. La v11.4.1 ne corrigeait que l’affichage de ces échéances.
+
 ## 11.4.1 — renouvellements d’enveloppes au calendrier
 
 Les renouvellements hebdomadaires restent visibles lorsque la réserve supplémentaire est nulle. Le détail indique « Réserve inchangée » lorsque le renouvellement ne change pas le disponible. Les calculs, les choix de report et les soldes bancaires restent inchangés.

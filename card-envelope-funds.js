@@ -15,9 +15,10 @@ export function createCardEnvelopeFunds({accounts=[],envelopes=[],transactions=[
 }
 export const cardEnvelopeTotal=args=>createCardEnvelopeFunds(args).total();
 
-// An early purchase already protected on its card must not be allocated again
-// when its envelope's period starts. Explicit period associations take priority.
-export function earlyCardEnvelopePurchases({accounts=[],transactions=[],envelopeLinks=[]},envelope,on) {
- const cards=new Set(accounts.filter(a=>a.kind==='credit').map(a=>a.id)),links=new Map(envelopeLinks.map(l=>[l.transaction_id,l]));
- return transactions.filter(t=>t.envelope_id===envelope.id&&cards.has(t.account_id)&&t.affects_balance!==0&&t.amount_cents<0&&t.happened_on<on&&(links.has(t.id)?links.get(t.id).occurrence_on===on:envelope.start_on===on&&t.happened_on>=(envelope.planning_since||t.happened_on))).reduce((n,t)=>n+Math.max(0,-t.amount_cents-(envelope.rollover?(t.envelope_effect_cents||0):0)),0);
+// An early purchase must not be allocated again at the start of its period.
+// Protected budgets also recognize purchases on included bank accounts.
+// Explicit period associations take priority.
+export function earlyEnvelopePurchases({accounts=[],transactions=[],envelopeLinks=[]},envelope,on) {
+ const eligible=new Set(accounts.filter(a=>a.kind==='credit'||(envelope.forecast_spend===0&&a.included)).map(a=>a.id)),links=new Map(envelopeLinks.map(l=>[l.transaction_id,l]));
+ return transactions.filter(t=>t.envelope_id===envelope.id&&eligible.has(t.account_id)&&t.affects_balance!==0&&t.amount_cents<0&&t.happened_on<on&&(links.has(t.id)?links.get(t.id).occurrence_on===on:envelope.start_on===on&&t.happened_on>=(envelope.planning_since||t.happened_on))).reduce((n,t)=>n+Math.max(0,-t.amount_cents-(envelope.rollover?(t.envelope_effect_cents||0):0)),0);
 }
