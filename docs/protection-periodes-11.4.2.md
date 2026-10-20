@@ -38,3 +38,9 @@ Quatre attentes historiques ont été corrigées : elles supposaient le réemplo
 La comparaison historique de styles et de calculs utilise une enveloppe avec report actif pour isoler les chemins inchangés. Le changement intentionnel des enveloppes sans report est couvert séparément par les nouveaux tests; il n’est pas déclaré identique à la v11.3.
 
 Résultat : **87 tests Node et 186 tests API réussis**. La suite Python complète termine à **55/56**; le test de rappel marchand des catégories, déjà intermittent, réussit à la relance ciblée. Aucun test n’a été supprimé ou ignoré. Les [résultats détaillés](protection-periodes-11.4.2-results.json) conservent les deux résultats. Les essais utilisent des données fictives sous Linux/Chromium, et non les finances du Mac ou Safari/iOS natif.
+
+## Vérification complémentaire de tous les types d’enveloppes
+
+Le code de la v11.4.2 n’a pas changé. Huit tests supplémentaires couvrent **304 configurations** : six fréquences, deux modes d’enveloppe, deux choix de report, compte conjoint et trois cartes, avances, achats anticipés, calendriers liés aux catégories, exceptions, compte personnel et réserve récurrente en double. Un cas mélange cinq enveloppes et vérifie séparément leurs engagements sur 750 jours; cela permet aussi de contrôler plusieurs échéances annuelles.
+
+La suite Node complète passe à **95 tests réussis** et les **186 tests API passent**. Les enveloppes sans programmation ou suspendues conservent leur réserve actuelle, sans créer d’échéance imaginaire. Ces vérifications portent sur le moteur avec des données fictives; elles ne constituent pas une inspection des réglages enregistrés sur le Mac de l’utilisateur. Aucune nouvelle installation n’est nécessaire pour un utilisateur déjà en v11.4.2.

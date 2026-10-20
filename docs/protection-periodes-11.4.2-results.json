@@ -310,5 +310,24 @@
   "limits": [
     "Temporary fictitious finances only.",
     "Chromium on Linux; real Safari/iPhone/Mac configuration not verified."
-  ]
+  ],
+  "supplementary_envelope_audit": {
+    "runtime_tag": "v11.4.2",
+    "runtime_changes": false,
+    "node_passed": 95,
+    "api_passed": 186,
+    "matrix_tests": 8,
+    "matrix_configurations": 304,
+    "matrix_breakdown": {
+      "frequency_mode_rollover_payment_account": 96,
+      "advance_funding": 24,
+      "early_bank_or_card_purchase": 144,
+      "managed_schedule_and_exceptions": 12,
+      "mixed_envelopes": 1,
+      "free_or_paused": 2,
+      "personal_account_allowances": 24,
+      "duplicate_recurring_reserve": 1
+    },
+    "note": "Additional automated checks against unchanged runtime code, using fictitious data. Mac envelope settings were not accessible."
+  }
 }
