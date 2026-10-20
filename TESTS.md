@@ -1,6 +1,15 @@
 # Vérifications — Sillage 2026
 
-`npm test` : **250 tests réussis** (74 Node, 176 API), sans échec ni test ignoré, pour la v11.2.0.
+`npm test` : **256 tests réussis** (75 Node, 181 API), sans échec ni test ignoré, pour la v11.3.0.
+
+## Budget calendaire — v11.3.0
+
+- `tests/global-budget.test.js` : quatre tests couvrant 2/3 paies, 4/5 paiements, années bissextiles, passage d’année, début de série, références invalides et refus du lissage hebdomadaire.
+- Cinq nouveaux tests API vérifient les revenus et dépenses, les objectifs existants sans date, les calendriers absents/ambigus, un choix explicite puis la suppression de sa récurrence, les sous-catégories, la copie avec date conservée, les exceptions de démarrage, les reports/annulations d’occurrence, le calendrier d’une enveloppe, l’annulation, le redémarrage et la sauvegarde/restauration avec validation des nouvelles métadonnées. Les tables financières et prévisions restent inchangées lors de la modification des objectifs.
+- `python3 tests/calendar-budget-v113-ui.py` : novembre à 2/4 occurrences et décembre à 3/5; salaire de 1 168,05 $ affiché à 2 336,10 $ puis 3 504,15 $, montant unitaire inchangé, aperçu des dates, récurrence explicite, référence autonome, erreur sans calendrier, effacement d’un aperçu périmé, clair/sombre et largeurs 320/390/768/1440.
+- Régressions exécutées : `budget-v61-ui.py`, `budget-v74-ui.py`, `budget-v80-ui.py`, `start-budget-ui.py`, `sillage-v10-ui.py`, `installed-assets-ui.py` et `migration-rollback-ui.py`, en plus de `npm test`. Ce sont des données fictives sous Chromium; aucune vérification native de Safari ni de la base privée du Mac n’est revendiquée.
+
+Les anciennes attentes qui imposaient 52/12 et 26/12 ont été remplacées par des décomptes calendaires; les fixtures des objectifs autonomes fournissent maintenant une date de référence explicite. Les objectifs mensuels restent sans date visible.
 
 ## Étapes 0 et 1 — v11.2.0
 

@@ -8,6 +8,18 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## v11.3.0 — Budget selon les occurrences du mois
+
+Les objectifs à la semaine et aux deux semaines utilisent maintenant les dates du mois : **4 ou 5 occurrences** à la semaine, **2 ou 3** aux deux semaines. Le montant saisi reste un montant par occurrence; il n’est plus multiplié par 52/12 ou 26/12. Par exemple, 1 168,05 $ donne 2 336,10 $ pour deux paies et 3 504,15 $ pour trois.
+
+Le calendrier vient automatiquement d’une récurrence compatible liée à la catégorie, ou d’une enveloppe liée. Dans **Budget → montant de la catégorie**, le choix **Calendrier des occurrences** permet de sélectionner explicitement une récurrence ou de saisir une seule date de référence. Les dates de la récurrence respectent les reports et les annulations d’occurrence; le montant unitaire du budget reste celui choisi. Les catégories et sous-catégories affichent le nombre retenu, et l’aperçu détaille les dates.
+
+Si un ancien objectif n’a pas de calendrier exploitable, il affiche **Calendrier à choisir** et le total est signalé incomplet. Aucune moyenne ni date arbitraire ne la remplace. Une date de référence est le début de la série : aucune occurrence n’est inventée avant cette date. La reconduction et la copie conservent cette référence et recalculent le nombre pour chaque mois. Les exceptions du mois de démarrage restent prioritaires.
+
+Cette correction concerne les fréquences à la semaine et aux deux semaines. Les budgets mensuels fixes et les conversions des autres fréquences conservent leur fonctionnement. Elle ne modifie pas les soldes, les réserves, les récurrences ou le Safe-to-Spend et ne crée aucune transaction. Les budgets suivant un calendrier ne sont pas fusionnés en un montant mensuel fixe qui ferait perdre les mois à occurrence supplémentaire.
+
+Installez le dossier complet avec **Mettre a jour Sillage.command**, puis rechargez entièrement Safari. Le nouveau module serveur `budget-calendar.js` est inclus et vérifié à l’installation. Les sécurités de la v11.2 sont conservées; les phases techniques suivantes ne sont pas engagées. Le retour à la v11.1 reste disponible, mais cette ancienne version retrouve aussi son ancien calcul en moyenne dans Budget.
+
 ## v11.2.0 — étapes 0 et 1 uniquement
 
 Cette livraison centralise et numérote les migrations SQLite (`PRAGMA user_version`). Elle conserve les fonctions, les calculs et l’apparence de la v11.1. Une base existante est sauvegardée avec `VACUUM INTO` avant sa première prise en charge; les changements de schéma sont transactionnels. Une base inconnue ou plus récente est refusée plutôt que modifiée au hasard.
