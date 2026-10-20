@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v11.4.0](https://github.com/alexforget82/Budget/archive/refs/tags/v11.4.0.zip).
+Téléchargez et décompressez [la version v11.4.1](https://github.com/alexforget82/Budget/archive/refs/tags/v11.4.1.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.

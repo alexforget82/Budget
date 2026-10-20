@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.4.1 — renouvellements d’enveloppes au calendrier
+
+Les renouvellements hebdomadaires restent visibles lorsque la réserve supplémentaire est nulle. Le détail indique « Réserve inchangée » lorsque le renouvellement ne change pas le disponible. Les calculs, les choix de report et les soldes bancaires restent inchangés.
+
 ## 11.4.0 — organisation et robustesse, étapes 2 à 5
 
 - Base et transactions SQLite, calendrier des récurrences, routes par domaine, lecture HTTP, fichiers statiques et contrôles d’accès séparés du serveur principal. Calculs conservés.

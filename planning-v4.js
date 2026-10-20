@@ -292,7 +292,7 @@ export function initialize(runtime) {
             to_account_id: t.to_account_id,
           });
       for (const e of dayFor(d)?.events || [])
-        if (e.type !== "reserve" || e.amount_cents !== 0)
+        if (e.type !== "reserve" || e.amount_cents !== 0 || e.envelope_renewal)
           items.push({
             ...e,
             real: false,
@@ -322,6 +322,7 @@ export function initialize(runtime) {
         );
     }
     function entryCard(e, withActions = true) {
+      const unchangedRenewal = e.envelope_renewal && e.amount_cents === 0;
       const row = n(
         "article",
         undefined,
@@ -347,6 +348,10 @@ export function initialize(runtime) {
             (e.to_account_id ? " → " + accountName(e.to_account_id) : ""),
         ),
       );
+      if (unchangedRenewal)
+        copy.append(
+          n("small", "Aucun montant supplémentaire à réserver à cette date."),
+        );
       if (e.overdue)
         copy.append(
           n(
@@ -380,8 +385,10 @@ export function initialize(runtime) {
         copy,
         n(
           "strong",
-          (e.type === "income" ? "+" : e.type === "expense" ? "−" : "") +
-            cash(e.amount_cents),
+          unchangedRenewal
+            ? "Réserve inchangée"
+            : (e.type === "income" ? "+" : e.type === "expense" ? "−" : "") +
+                cash(e.amount_cents),
           "v4-event-amount",
         ),
       );

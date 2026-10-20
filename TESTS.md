@@ -1,5 +1,9 @@
 # Vérifications de Sillage 11.4
 
+## Correctif 11.4.1
+
+80 tests Node et 183 tests API réussis. Le nouveau scénario `calendar-envelope-renewals-ui.py` reproduit d’abord le renouvellement invisible, puis vérifie trois semaines consécutives en largeur ordinateur et iPhone, sans changement des prévisions, soldes ni données. Les scénarios existants `planning-v4-ui.py`, `refactor-parity-ui.py` (40 combinaisons) et `installed-assets-ui.py` passent également. La suite complète des 56 scripts Python n’a pas été relancée pour ce correctif ciblé; le rapport complet ci-dessous concerne la v11.4.0.
+
 Les essais utilisent des données fictives et des dossiers temporaires. Ils ne lisent pas les finances du Mac de l’utilisateur.
 
 ## Exécuter les contrôles
