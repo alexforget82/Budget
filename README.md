@@ -8,6 +8,16 @@ npm start
 
 Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
 
+## v11.2.0 — étapes 0 et 1 uniquement
+
+Cette livraison centralise et numérote les migrations SQLite (`PRAGMA user_version`). Elle conserve les fonctions, les calculs et l’apparence de la v11.1. Une base existante est sauvegardée avec `VACUUM INTO` avant sa première prise en charge; les changements de schéma sont transactionnels. Une base inconnue ou plus récente est refusée plutôt que modifiée au hasard.
+
+Pour mettre à jour : **Applications → Sillage → Mettre a jour Sillage.command**, choisissez le dossier complet du nouveau ZIP, puis rechargez complètement Safari.
+
+**Retour à la v11.1 : Applications → Sillage → Revenir a Sillage 11.1.command.** Lors d’une mise à jour depuis la v11.1 officielle, son code complet est conservé et ses empreintes vérifiées avant l’arrêt du service. Le retour conserve les transactions actuelles et fait une sauvegarde SQLite supplémentaire. Ce n’est pas une restauration d’une ancienne copie de vos finances. Le raccourci est préparé avant le redémarrage du nouveau serveur, pour rester accessible si ce redémarrage échoue.
+
+[Procédure de retour et archive v11.1 figée](docs/RETOUR-11.1.md) · [Résultats complets des étapes 0 et 1](docs/phases-0-1-validation.md).
+
 ## Sillage 2026 — v11.1.0
 
 À l’enregistrement manuel d’une dépense ou d’un revenu, Sillage propose les échéances compatibles à ±7 jours : même compte et sens, avec une enveloppe, une catégorie ou un libellé correspondant. Les opérations déjà rapprochées ne sont pas proposées. Le montant peut être différent.

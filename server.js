@@ -1,3 +1,4 @@
+import {migrateDatabase} from './database-migrations.js';
 import {createProWorkspace} from './pro-workspace.js';
 import {createBudgetTools80} from './budget-tools-v80.js';
 import {createGlobalBudget} from './global-budget.js';
@@ -27,118 +28,19 @@ import { DatabaseSync } from 'node:sqlite';
 const HOST='127.0.0.1',PORT=Number(process.env.PORT||3030);
 const dir=path.join(process.cwd(),'data');fs.mkdirSync(dir,{recursive:true,mode:0o700});
 const privateAccess=loadPrivateAccess(dir,PORT);
-// Sauvegarde avant toute migration (et avant l'ouverture de la base).
-const databasePath=path.join(dir,'budget.sqlite'),initialDemo=process.env.BUDGET_DEMO==='1'&&!fs.existsSync(path.join(dir,'budget.sqlite'));
-if(fs.existsSync(databasePath)&&!fs.existsSync(path.join(dir,'backups','.v2-backup-complete'))){
- const backups=path.join(dir,'backups');fs.mkdirSync(backups,{recursive:true,mode:0o700});
- const backup=path.join(backups,'budget-before-v2-'+new Date().toISOString().replace(/[:.]/g,'-')+'.sqlite');
- // Copie cohérente du fichier principal + WAL/SHM lorsqu'ils existent.
- for(const suffix of ['','-wal','-shm'])if(fs.existsSync(databasePath+suffix))fs.copyFileSync(databasePath+suffix,backup+suffix);
- fs.writeFileSync(path.join(backups,'.v2-backup-complete'),backup);
-}
-// v2.1 : sauvegarde unique avant les migrations additives, y compris depuis v2.0.2.
-if(fs.existsSync(databasePath)&&!fs.existsSync(path.join(dir,'backups','.v2.1-backup-complete'))){
- const backups=path.join(dir,'backups');fs.mkdirSync(backups,{recursive:true,mode:0o700});
- const backup=path.join(backups,'budget-before-v2.1-'+new Date().toISOString().replace(/[:.]/g,'-')+'.sqlite');
- for(const suffix of ['','-wal','-shm'])if(fs.existsSync(databasePath+suffix))fs.copyFileSync(databasePath+suffix,backup+suffix);
- fs.writeFileSync(path.join(backups,'.v2.1-backup-complete'),backup);
-}
+const databasePath=path.join(dir,'budget.sqlite'),initialDemo=process.env.BUDGET_DEMO==='1'&&!fs.existsSync(databasePath);
 const db=new DatabaseSync(databasePath);
-db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
-CREATE TABLE IF NOT EXISTS accounts(id INTEGER PRIMARY KEY,name TEXT NOT NULL,balance_cents INTEGER NOT NULL DEFAULT 0,kind TEXT NOT NULL CHECK(kind IN ('checking','savings','credit')),included INTEGER NOT NULL DEFAULT 1);
-CREATE TABLE IF NOT EXISTS envelopes(id INTEGER PRIMARY KEY,name TEXT NOT NULL,reserved_cents INTEGER NOT NULL DEFAULT 0 CHECK(reserved_cents>=0));
-CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY,account_id INTEGER NOT NULL REFERENCES accounts(id),envelope_id INTEGER REFERENCES envelopes(id),amount_cents INTEGER NOT NULL,description TEXT NOT NULL,happened_on TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS recurring(id INTEGER PRIMARY KEY,description TEXT NOT NULL,type TEXT NOT NULL CHECK(type IN ('income','expense','transfer','reserve')),amount_cents INTEGER NOT NULL CHECK(amount_cents>0),account_id INTEGER REFERENCES accounts(id),to_account_id INTEGER REFERENCES accounts(id),envelope_id INTEGER REFERENCES envelopes(id),start_on TEXT NOT NULL,frequency TEXT NOT NULL CHECK(frequency IN ('weekly','biweekly','monthly','last_business_day','rrq')),active INTEGER NOT NULL DEFAULT 1);
-CREATE TABLE IF NOT EXISTS account_transfers(id INTEGER PRIMARY KEY,from_account_id INTEGER NOT NULL REFERENCES accounts(id),to_account_id INTEGER NOT NULL REFERENCES accounts(id),amount_cents INTEGER NOT NULL CHECK(amount_cents>0),description TEXT NOT NULL,happened_on TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS recurring_overrides(id INTEGER PRIMARY KEY,recurring_id INTEGER NOT NULL REFERENCES recurring(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,amount_cents INTEGER NOT NULL CHECK(amount_cents>=0),UNIQUE(recurring_id,occurrence_on));
-`);
-// Migration non destructive de la table recurring v0.2 vers v0.3 (préserve les IDs et règles).
-const schema=db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='recurring'").get()?.sql||'';
-if(!schema.includes("'last_business_day'")){
- db.exec(`BEGIN;
- ALTER TABLE recurring RENAME TO recurring_v02_backup;
- CREATE TABLE recurring(id INTEGER PRIMARY KEY,description TEXT NOT NULL,type TEXT NOT NULL CHECK(type IN ('income','expense','transfer','reserve')),amount_cents INTEGER NOT NULL CHECK(amount_cents>0),account_id INTEGER REFERENCES accounts(id),to_account_id INTEGER REFERENCES accounts(id),envelope_id INTEGER REFERENCES envelopes(id),start_on TEXT NOT NULL,frequency TEXT NOT NULL CHECK(frequency IN ('weekly','biweekly','monthly','last_business_day','rrq')),active INTEGER NOT NULL DEFAULT 1);
- INSERT INTO recurring SELECT * FROM recurring_v02_backup;
- DROP TABLE recurring_v02_backup;
- COMMIT;`);
-}
-// Migration additive : conserve toutes les règles, transactions et exceptions existantes.
-if(!db.prepare('PRAGMA table_info(recurring)').all().some(c=>c.name==='day_adjust')) db.exec("ALTER TABLE recurring ADD COLUMN day_adjust TEXT NOT NULL DEFAULT 'none'");
-if(!db.prepare('PRAGMA table_info(transactions)').all().some(c=>c.name==='reviewed')) db.exec('ALTER TABLE transactions ADD COLUMN reviewed INTEGER NOT NULL DEFAULT 0 CHECK(reviewed IN (0,1))');
-// v1.3: additive migration; existing envelope balances and linked transactions are preserved.
-for(const [column,definition] of Object.entries({budget_cents:'INTEGER NOT NULL DEFAULT 0',frequency:"TEXT NOT NULL DEFAULT 'none'",start_on:"TEXT",rollover:'INTEGER NOT NULL DEFAULT 0',active:'INTEGER NOT NULL DEFAULT 1'})){
- if(!db.prepare('PRAGMA table_info(envelopes)').all().some(c=>c.name===column))db.exec(`ALTER TABLE envelopes ADD COLUMN ${column} ${definition}`);
-}
-const q=(sql,...args)=>db.prepare(sql).all(...args),run=(sql,...args)=>db.prepare(sql).run(...args);
-// v1.5 : renouvellements réels et idempotents. La date d'activation empêche
-// d'appliquer rétroactivement des renouvellements avant l'installation.
-db.exec(`CREATE TABLE IF NOT EXISTS envelope_renewal_log(
- envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
- occurrence_on TEXT NOT NULL, applied_cents INTEGER NOT NULL,
- PRIMARY KEY(envelope_id,occurrence_on));
- CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);`);
-// v2.1: liens explicites, additifs; aucune transaction bancaire modifiée.
-db.exec(`CREATE TABLE IF NOT EXISTS envelope_budget_overrides(envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,budget_cents INTEGER NOT NULL CHECK(budget_cents>=0),PRIMARY KEY(envelope_id,occurrence_on));`);
-db.exec(`CREATE TABLE IF NOT EXISTS recurring_moves(recurring_id INTEGER NOT NULL REFERENCES recurring(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,new_on TEXT NOT NULL,PRIMARY KEY(recurring_id,occurrence_on));`);
-db.exec(`CREATE TABLE IF NOT EXISTS reconciliation_links(
- id INTEGER PRIMARY KEY,
- recurring_id INTEGER NOT NULL REFERENCES recurring(id) ON DELETE CASCADE,
- occurrence_on TEXT NOT NULL,
- actual_type TEXT NOT NULL CHECK(actual_type IN ('transaction','transfer')),
- actual_id INTEGER NOT NULL,
- UNIQUE(recurring_id,occurrence_on), UNIQUE(actual_type,actual_id));`);
 const todayLocal=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-if(!db.prepare("SELECT value FROM app_settings WHERE key='renewal_activation'").get())
- db.prepare("INSERT INTO app_settings(key,value) VALUES('renewal_activation',?)").run(todayLocal());
+migrateDatabase(db,{dataDir:dir,today:todayLocal()});
+db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON');
+const q=(sql,...args)=>db.prepare(sql).all(...args),run=(sql,...args)=>db.prepare(sql).run(...args);
 
 const cents=v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<100000000?Math.round(v*100):null;
 const reply=(r,status,o)=>{if(r.budgetBefore&&status===200){support.recordUndo(r.budgetBefore,r.budgetRoute);if(o.accounts)o.support41=support.state();else if(o.state)o.state.support41=support.state();}r.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});r.end(JSON.stringify(o))};
 const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'))&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s;
 const dateFrom=s=>new Date(s+'T12:00:00Z'),iso=d=>d.toISOString().slice(0,10);
-const migrationBackup=path.join(dir,'backups','budget-before-v3.sqlite');
-if(!db.prepare("SELECT value FROM app_settings WHERE key='features_v3'").get()&&!fs.existsSync(migrationBackup)){
- fs.mkdirSync(path.dirname(migrationBackup),{recursive:true,mode:0o700});
- db.prepare('VACUUM INTO ?').run(migrationBackup);
-}
-// Extend the CHECK constraint while preserving IDs and every dependent link.
-const recurrenceSchema=db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='recurring'").get().sql;
-if(!recurrenceSchema.includes("'quarterly'")){
- const backup=path.join(dir,'backups','budget-before-extended-recurrences.sqlite');
- fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);
- const columns=db.prepare('PRAGMA table_info(recurring)').all().map(c=>'"'+c.name+'"').join(',');
- const replacement=recurrenceSchema.replace(/CREATE TABLE\s+(?:"recurring"|recurring)/i,'CREATE TABLE recurring_extended').replace("'monthly'","'monthly','quarterly','semiannual','yearly'");
- db.exec('PRAGMA foreign_keys=OFF; BEGIN');
- try{db.exec(replacement);db.exec(`INSERT INTO recurring_extended (${columns}) SELECT ${columns} FROM recurring; DROP TABLE recurring; ALTER TABLE recurring_extended RENAME TO recurring;`);if(db.prepare('PRAGMA foreign_key_check').all().length)throw Error('Liens de récurrence invalides après migration');db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}finally{db.exec('PRAGMA foreign_keys=ON');}
-}
-// Preserve legacy transfers; envelope allocations are optional and start at zero.
-const transferColumns={envelope_id:'INTEGER REFERENCES envelopes(id)',envelope_effect_cents:'INTEGER NOT NULL DEFAULT 0 CHECK(envelope_effect_cents>=0)',envelope_on:'TEXT'};
-const transferSchema=new Set(q('PRAGMA table_info(account_transfers)').map(c=>c.name));
-if(Object.keys(transferColumns).some(c=>!transferSchema.has(c))){const backup=path.join(dir,'backups','budget-before-envelope-transfers.sqlite');fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);atomic(()=>{for(const [name,definition] of Object.entries(transferColumns))if(!transferSchema.has(name))db.exec(`ALTER TABLE account_transfers ADD COLUMN ${name} ${definition}`);});}
 const features=createFeatures({db,dir,cents,validDate,today:todayLocal,atomic,addTransaction});
-// Additive planning migration; save a coherent copy before changing the schema.
-const planningColumns={forecast_account_id:'INTEGER REFERENCES accounts(id)',forecast_spend:'INTEGER NOT NULL DEFAULT 1 CHECK(forecast_spend IN (0,1))',planning_since:'TEXT'};
-const existingPlanningColumns=new Set(q('PRAGMA table_info(envelopes)').map(c=>c.name));
-if(Object.keys(planningColumns).some(c=>!existingPlanningColumns.has(c))){
- const backup=path.join(dir,'backups','budget-before-planning-v4.sqlite');
- fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);
- atomic(()=>{for(const [column,definition] of Object.entries(planningColumns))if(!existingPlanningColumns.has(column))db.exec(`ALTER TABLE envelopes ADD COLUMN ${column} ${definition}`);run('UPDATE envelopes SET planning_since=? WHERE planning_since IS NULL',todayLocal());});
-}
-if(!db.prepare('PRAGMA table_info(recurring)').all().some(c=>c.name==='one_time'))db.exec('ALTER TABLE recurring ADD COLUMN one_time INTEGER NOT NULL DEFAULT 0 CHECK(one_time IN (0,1))');
-db.exec("CREATE TABLE IF NOT EXISTS envelope_period_status(envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN ('open','complete','skipped')),PRIMARY KEY(envelope_id,occurrence_on))");
-run("INSERT OR IGNORE INTO app_settings(key,value) VALUES('forecast_tracking_since',?)",todayLocal());
-// Confirmation links and postponed envelope spending preserve occurrence identity.
-if(!db.prepare("SELECT value FROM app_settings WHERE key='planning_actions_v1'").get()){
- const backup=path.join(dir,'backups','budget-before-planning-actions.sqlite');fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);
-}
-db.exec(`CREATE TABLE IF NOT EXISTS envelope_occurrence_moves(envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL,new_on TEXT NOT NULL,PRIMARY KEY(envelope_id,occurrence_on));
- CREATE TABLE IF NOT EXISTS envelope_actual_links(transaction_id INTEGER PRIMARY KEY REFERENCES transactions(id) ON DELETE CASCADE,envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,occurrence_on TEXT NOT NULL);`);
-run("INSERT OR IGNORE INTO app_settings(key,value) VALUES('planning_actions_v1','1')");
 const planningActions=createPlanningActions({db,snapshot,atomic,addTransaction,validateTransfer,accountEffect,cents,validDate,today:todayLocal,applyTransferEnvelope,prepareConfirmation:(row,amount)=>journey.confirmationLink(row,amount),confirmFunding:(link,id,amount)=>journey.confirmLink(link,id,amount)});
-if(!db.prepare("SELECT value FROM app_settings WHERE key='card_payments_v1'").get()){
- const backup=path.join(dir,'backups','budget-before-card-payments.sqlite');fs.mkdirSync(path.dirname(backup),{recursive:true,mode:0o700});if(!fs.existsSync(backup))db.prepare('VACUUM INTO ?').run(backup);
-}
-db.exec("CREATE TABLE IF NOT EXISTS card_payment_plans(card_account_id INTEGER PRIMARY KEY REFERENCES accounts(id),recurring_id INTEGER NOT NULL UNIQUE REFERENCES recurring(id) ON DELETE CASCADE,mode TEXT NOT NULL CHECK(mode IN ('purchases','fixed')))");
-run("INSERT OR IGNORE INTO app_settings(key,value) VALUES('card_payments_v1','1')");
 const cardPayments=createCardPayments({db,cents,validDate,today:todayLocal,atomic});
 const freeBudgets=createFreeBudgets({db,atomic,cents,today:todayLocal,exportBackup:features.exportBackup,forecastInput,buildForecast});
 const envelopeTools=createEnvelopeTools({db,atomic,cents,validDate,today:todayLocal,exportBackup:features.exportBackup,forecastInput,buildForecast});
@@ -425,7 +327,7 @@ if(req.method==='POST'&&req.url==='/api/sharing'){
 }
 
 if(req.url==='/demo'||req.url.startsWith('/demo/')){if(!demonstration)return reply(res,404,{error:'Démonstration déjà ouverte.'});return await demonstration.proxy(req,res);}
-if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'11.1.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
+if(req.method==='GET'&&req.url==='/api/private/status')return reply(res,200,{version:'11.2.0',data_key:createHash('sha256').update(path.resolve(dir)).digest('hex'),enabled:!!privateAccess,origin:privateAccess?.origin||null,port:privateAccess?.port||null});
 if(req.method==='GET'&&req.url.startsWith('/api/setup/recovery?')){const name=new URL(req.url,'http://localhost').searchParams.get('name'),body=journey.recoveryFile(name);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="'+name+'"','Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/backup?')){const date=new URL(req.url,'http://localhost').searchParams.get('date'),body=support.dailyFile(date);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="budget-${date}.json"`,'Cache-Control':'no-store'});return res.end(body);}
 if(req.method==='GET'&&req.url.startsWith('/api/support/search?'))return reply(res,200,support.search(new URL(req.url,'http://localhost').searchParams.get('q')));
@@ -585,5 +487,5 @@ if(x.type==='transfer'&&envelope){validateTransferEnvelope(x,account,to);if(jour
 const funding=x.type==='transfer'?journey.prepareFunding(x,{from:account,to,amount,date:x.start_on}):null;
 const fields=[description,x.type,amount,x.type==='reserve'?null:account,x.type==='transfer'?to:null,['reserve','expense','transfer'].includes(x.type)?envelope:null,x.start_on,x.frequency,x.active===false?0:1,x.day_adjust||'none',x.one_time===true||x.one_time===1||x.one_time==='true'?1:0];atomic(()=>{if(req.url.endsWith('update')){if(funding)throw Error('Associez le financement lors de la création du virement.');run('UPDATE recurring SET description=?,type=?,amount_cents=?,account_id=?,to_account_id=?,envelope_id=?,start_on=?,frequency=?,active=?,day_adjust=?,one_time=? WHERE id=?',...fields,id);}else{const created=Number(run('INSERT INTO recurring(description,type,amount_cents,account_id,to_account_id,envelope_id,start_on,frequency,active,day_adjust,one_time) VALUES(?,?,?,?,?,?,?,?,?,?,?)',...fields).lastInsertRowid);journey.addLink(funding,{rule_id:created});}})}}
 journey.enforceScope();return reply(res,200,snapshot())}catch(e){console.error(e);return reply(res,400,{error:(featureRoutes.has(req.url)||req.url.startsWith('/api/transfers')||req.url==='/api/planning/action'||req.url==='/api/simulate'||req.url.startsWith('/api/banking/')||req.url.startsWith('/api/setup/')||req.url.startsWith('/api/workspace/')||req.url.startsWith('/api/budget/')||req.url.startsWith('/api/support/')||req.url.startsWith('/api/free-budgets/')||req.url.startsWith('/api/life/')||req.url.startsWith('/api/subcategories')||req.url.startsWith('/api/categories/')||req.url.startsWith('/api/envelope-tools/')||req.url.startsWith('/api/card-payments'))?(String(e.message).includes('UNIQUE constraint')?'Ce nom existe déjà.':e.message):'Données invalides'})}};
-if(process.env.BUDGET_DEMO==='1'&&process.env.BUDGET_SOCKET)http.createServer(handleRequest).listen(process.env.BUDGET_SOCKET,()=>fs.chmodSync(process.env.BUDGET_SOCKET,0o600));else http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Sillage 2026 (11.1.0) : http://${HOST}:${PORT}`));
+if(process.env.BUDGET_DEMO==='1'&&process.env.BUDGET_SOCKET)http.createServer(handleRequest).listen(process.env.BUDGET_SOCKET,()=>fs.chmodSync(process.env.BUDGET_SOCKET,0o600));else http.createServer(handleRequest).listen(PORT,HOST,()=>console.log(`Sillage 2026 (11.2.0) : http://${HOST}:${PORT}`));
 if(privateAccess)http.createServer(handleRequest).listen(privateAccess.port,HOST,()=>console.log('Accès privé : backend Tailscale prêt sur l’interface locale.'));

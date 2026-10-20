@@ -1,3 +1,4 @@
+import {preserveRollbackRelease} from './mac-rollback.js';
 // Per-user macOS service. The installed copy owns the stable data directory.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,6 +66,11 @@ async function main(){
  const existingData=path.join(root,'data','budget.sqlite'),incomingData=path.join(source,'data','budget.sqlite');
  const firstInstall=!fs.existsSync(existingData);
  if(!fs.existsSync(existingData)&&!fs.existsSync(incomingData))throw Error('Placez votre dossier data actuel à côté de ce fichier avant la première installation. Aucun budget vide n’a été créé.');
+ const rollbackRelease=preserveRollbackRelease(root,path.join(root,'data'));
+ if(rollbackRelease){
+  const shortcuts=path.join(home,'Applications','Sillage');fs.mkdirSync(shortcuts,{recursive:true,mode:0o700});
+  const file=path.join(shortcuts,'Revenir a Sillage 11.1.command');fs.writeFileSync(file,shortcutScript(process.execPath,path.join(root,'mac-rollback.js')),{mode:0o700});fs.chmodSync(file,0o700);
+ }
  if(loaded){command('/bin/launchctl',['bootout',service]);for(let i=0;i<50&&await status();i++)await delay(200);if(await status())throw Error('Le serveur précédent ne s’est pas arrêté. Aucune mise à jour effectuée.');}
  fs.mkdirSync(root,{recursive:true,mode:0o700});fs.mkdirSync(logs,{recursive:true,mode:0o700});fs.mkdirSync(agents,{recursive:true,mode:0o700});
  const data=path.join(root,'data');

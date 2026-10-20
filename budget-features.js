@@ -43,21 +43,9 @@ export function bankAmount(value){
 }
 
 const tables=['accounts','envelopes','categories','subcategories','import_batches','transactions','recurring','account_transfers','recurring_overrides','envelope_renewal_log','app_settings','envelope_budget_overrides','recurring_moves','reconciliation_links','category_budgets','goals','balance_reconciliations','envelope_period_status','envelope_occurrence_moves','envelope_actual_links','card_payment_plans'];
-const categoryDefaults=['Épicerie','Logement','Transport','Restaurants','Santé','Loisirs','Abonnements','Achats','Revenus','Autres'];
 
 export function createFeatures({db,dir,cents,validDate,today,atomic,addTransaction}){
   const q=(sql,...values)=>db.prepare(sql).all(...values),run=(sql,...values)=>db.prepare(sql).run(...values);
-  db.exec(`CREATE TABLE IF NOT EXISTS categories(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE);
-    CREATE TABLE IF NOT EXISTS import_batches(id INTEGER PRIMARY KEY,created_at TEXT NOT NULL,account_id INTEGER NOT NULL REFERENCES accounts(id),affects_balance INTEGER NOT NULL CHECK(affects_balance IN (0,1)),imported_count INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS category_budgets(category_id INTEGER PRIMARY KEY REFERENCES categories(id),limit_cents INTEGER NOT NULL CHECK(limit_cents>=0));
-    CREATE TABLE IF NOT EXISTS goals(id INTEGER PRIMARY KEY,name TEXT NOT NULL,target_cents INTEGER NOT NULL CHECK(target_cents>0),saved_cents INTEGER NOT NULL DEFAULT 0 CHECK(saved_cents>=0),target_date TEXT);
-    CREATE TABLE IF NOT EXISTS balance_reconciliations(id INTEGER PRIMARY KEY,account_id INTEGER NOT NULL REFERENCES accounts(id),old_balance_cents INTEGER NOT NULL,new_balance_cents INTEGER NOT NULL,happened_on TEXT NOT NULL,note TEXT NOT NULL);`);
-  if(!q('PRAGMA table_info(categories)').some(c=>c.name==='archived')){if(q('SELECT id FROM accounts LIMIT 1').length){const file=path.join(dir,'backups','budget-before-v4.6.sqlite');fs.mkdirSync(path.dirname(file),{recursive:true,mode:0o700});if(!fs.existsSync(file))db.prepare('VACUUM INTO ?').run(file);}db.exec('ALTER TABLE categories ADD COLUMN archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1))');}
-  db.exec('CREATE TABLE IF NOT EXISTS subcategories(id INTEGER PRIMARY KEY,category_id INTEGER NOT NULL REFERENCES categories(id),name TEXT NOT NULL,archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),UNIQUE(category_id,name COLLATE NOCASE))');
-  const existing=new Set(q('PRAGMA table_info(transactions)').map(c=>c.name));
-  for(const [name,definition] of Object.entries({subcategory_id:'INTEGER REFERENCES subcategories(id)',category_id:'INTEGER REFERENCES categories(id)',import_batch_id:'INTEGER REFERENCES import_batches(id)',affects_balance:'INTEGER NOT NULL DEFAULT 1 CHECK(affects_balance IN (0,1))',envelope_effect_cents:'INTEGER'}))if(!existing.has(name))db.exec(`ALTER TABLE transactions ADD COLUMN ${name} ${definition}`);
-  if(!q("SELECT value FROM app_settings WHERE key='features_v3'").length)atomic(()=>{for(const name of categoryDefaults)run('INSERT OR IGNORE INTO categories(name) VALUES(?)',name);run("INSERT INTO app_settings(key,value) VALUES('features_v3','1')");});
-
   const categoryId=(value,allowArchived=false)=>{if(value===null||value===undefined||value==='')return null;const id=Number(value);if(!Number.isSafeInteger(id)||!q('SELECT id FROM categories WHERE id=? AND (? OR archived=0)',id,allowArchived?1:0).length)throw Error('Catégorie introuvable.');return id;};
   const exportBackup=()=>({format:'mon-budget',version:1,created_at:new Date().toISOString(),tables:Object.fromEntries(tables.map(table=>[table,q(`SELECT * FROM ${table}`)]))});
   function saveBackup(){const backupDir=path.join(dir,'backups');fs.mkdirSync(backupDir,{recursive:true,mode:0o700});const name='budget-'+Date.now()+'-'+Math.random().toString(16).slice(2)+'.json';fs.writeFileSync(path.join(backupDir,name),JSON.stringify(exportBackup()),{mode:0o600,flag:'wx'});return name;}
@@ -198,5 +186,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'11.1.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'11.2.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

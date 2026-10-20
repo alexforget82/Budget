@@ -1,0 +1,539 @@
+{
+  "reference_commit": "bb25864082819775d6ce65d860cbe30806c01e54",
+  "reference_version": "11.1.0",
+  "delivery_version": "11.2.0",
+  "reference_node": {
+    "passed": 65,
+    "failed": 0
+  },
+  "reference_api": {
+    "passed": 176,
+    "failed": 0
+  },
+  "reference_python": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 4.7
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 1,
+      "seconds": 17.5
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 1,
+      "seconds": 8.9
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 1,
+      "seconds": 6.3
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 1,
+      "seconds": 32.0
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 1,
+      "seconds": 6.0
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 1,
+      "seconds": 31.2
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 5.5
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 8.5
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 0,
+      "seconds": 4.6
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 4.4
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 4.3
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 12.7
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 14.0
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 5.5
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 1,
+      "seconds": 31.9
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 1,
+      "seconds": 12.2
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 1,
+      "seconds": 5.4
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.4
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 2.5
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 3.7
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 5.2
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.1
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 11.3
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 12.0
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 5.0
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 8.5
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 1,
+      "seconds": 12.4
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.1
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 2.7
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 1,
+      "seconds": 1.1
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 9.6
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 16.7
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 4.4
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 19.1
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 1,
+      "seconds": 32.2
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 1.7
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 1.8
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 1,
+      "seconds": 6.2
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 0,
+      "seconds": 7.8
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 5.4
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 4.8
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 11.6
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 1,
+      "seconds": 31.4
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 9.0
+    }
+  ],
+  "delivery_python": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 4.7
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 1,
+      "seconds": 16.5
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 1,
+      "seconds": 8.7
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 1,
+      "seconds": 6.1
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 1,
+      "seconds": 31.9
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 1,
+      "seconds": 5.9
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 1,
+      "seconds": 31.0
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 5.4
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 8.4
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 0,
+      "seconds": 4.6
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 3.9
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 10.7
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 14.4
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 5.6
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 1,
+      "seconds": 32.2
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 1,
+      "seconds": 12.3
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 4.8
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 1,
+      "seconds": 6.2
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.7
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 3.1
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 5.5
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.3
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 11.8
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 11.6
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 4.9
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 8.4
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 1,
+      "seconds": 12.2
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.1
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 2.7
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 1,
+      "seconds": 1.2
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 9.6
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 16.5
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 4.0
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 19.7
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 1,
+      "seconds": 32.1
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 1.5
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 1.8
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 1,
+      "seconds": 6.4
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 0,
+      "seconds": 8.2
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 5.2
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 4.4
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 4.3
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 3.8
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 11.4
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 1,
+      "seconds": 31.1
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 9.6
+    }
+  ],
+  "new_integration_test": {
+    "test": "migration-rollback-ui.py",
+    "code": 0
+  },
+  "delivery_node": {
+    "passed": 74,
+    "failed": 0
+  },
+  "delivery_api": {
+    "passed": 176,
+    "failed": 0
+  }
+}

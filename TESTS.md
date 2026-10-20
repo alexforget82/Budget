@@ -1,6 +1,18 @@
 # Vérifications — Sillage 2026
 
-`npm test` : **241 tests réussis** (65 Node, 176 API), sans échec ni test ignoré.
+`npm test` : **250 tests réussis** (74 Node, 176 API), sans échec ni test ignoré, pour la v11.2.0.
+
+## Étapes 0 et 1 — v11.2.0
+
+Référence immuable : `bb25864082819775d6ce65d860cbe30806c01e54` (v11.1.0). Tous les tests utilisent leurs propres dossiers temporaires, pas le dossier `data/` de l’installation privée. Aucun dossier `data/` réel n’était présent dans le dépôt de travail.
+
+- `npm test` : suite Node et API, y compris migrations historiques, sauvegardes/restaurations, accès privé et installation des nouveaux fichiers.
+- `node --test tests/database-migrations.test.js tests/rollback-v111.test.js` : adoption sans perte, WAL inclus dans la sauvegarde, redémarrage idempotent, anciennes récurrences et liens préservés, restauration effective, échec atomique, sauvegarde impossible, schéma inconnu/futur refusé, copie du code v11.1 authentifiée et indépendante.
+- `python3 tests/migration-rollback-ui.py` : vrai code v11.1 archivé depuis Git, mise à jour, comparaison de toutes les tables et prévisions à 90 jours, montants 30/60/90, liste quotidienne visible et vue partagée; transaction supplémentaire puis retour au code v11.1 avec conservation des chiffres.
+- `python3 tests/run-python-checks.py` : tous les scripts Python supplémentaires (les tests API sont déjà exécutés par npm). Conserve un journal par script et renvoie un code non nul en présence d’échecs; aucune exclusion des tests anciens qui échouent.
+
+La référence complète a révélé **14 échecs préexistants** parmi les 51 scripts Python supplémentaires. Ils sont documentés et comparés avant/après dans [le relevé détaillé](docs/phases-0-1-validation.md). La suite entière d’interface n’est donc pas déclarée verte. Safari/macOS/Tailscale natifs restent des vérifications sur le Mac; Chromium et la simulation du service sont utilisés ici.
+
 
 ## Association proposée à la saisie — v11.1.0
 

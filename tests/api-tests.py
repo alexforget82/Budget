@@ -467,8 +467,8 @@ class BudgetAPI(unittest.TestCase):
   self.post('/api/support/undo',{'token':state['support41']['undo']['token']});self.assertEqual(self.get('/api/backup/export')['tables'],before)
  def test_v45_sqlite_migration_preserves_ids_money_and_creates_coherent_backup(self):
   aid=self.account();parent=self.make_category('Maison');self.transaction(aid,-30,category_id=parent);before=self.get('/api/backup/export')['tables'];self.stop()
-  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('ALTER TABLE transactions DROP COLUMN subcategory_id');db.execute('DROP TABLE subcategories');db.execute('ALTER TABLE categories DROP COLUMN archived')
-  self.start();s=self.get('/api/state');self.assertEqual(s['cash_cents'],97000);self.assertEqual(s['transactions'][0]['category_id'],parent);self.assertIsNone(s['transactions'][0]['subcategory_id']);self.assertEqual(s['accounts'],before['accounts']);file=self.dir/'data'/'backups'/'budget-before-v4.6.sqlite';self.assertTrue(file.exists())
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('ALTER TABLE transactions DROP COLUMN subcategory_id');db.execute('DROP TABLE subcategories');db.execute('ALTER TABLE categories DROP COLUMN archived');db.execute('PRAGMA user_version=0')
+  self.start();s=self.get('/api/state');self.assertEqual(s['cash_cents'],97000);self.assertEqual(s['transactions'][0]['category_id'],parent);self.assertIsNone(s['transactions'][0]['subcategory_id']);self.assertEqual(s['accounts'],before['accounts']);file=max((self.dir/'data'/'backups').glob('budget-before-schema-v1-*.sqlite'));self.assertTrue(file.exists())
   with sqlite3.connect(file) as backup:self.assertEqual(backup.execute('SELECT balance_cents FROM accounts WHERE id=?',(aid,)).fetchone()[0],97000);self.assertEqual(backup.execute('SELECT category_id FROM transactions').fetchone()[0],parent)
  def test_subcategory_backup_compatibility_consistency_and_csv(self):
   aid=self.account();parent=self.make_category('Maison');other=self.make_category('Auto');sub=self.make_subcategory(parent,'Meubles');payload=self.csv_data(aid,category_id=parent,subcategory_id=sub);p=self.post('/api/import/preview',payload);self.assertEqual(p['rows'][0]['subcategory_id'],sub);result=self.import_rows(payload);self.assertTrue(all(t['subcategory_id']==sub for t in result['state']['transactions']));self.assertEqual(result['state']['cash_cents'],100000)
@@ -795,12 +795,12 @@ class BudgetAPI(unittest.TestCase):
    db.execute("UPDATE recurring SET frequency='monthly'")
    schema=db.execute("SELECT sql FROM sqlite_master WHERE name='recurring'").fetchone()[0]
    old=schema.replace('"recurring"','recurring_old',1).replace("'quarterly','semiannual','yearly',",'')
-   db.execute(old);db.execute('INSERT INTO recurring_old SELECT * FROM recurring');db.execute('DROP TABLE recurring');db.execute('ALTER TABLE recurring_old RENAME TO recurring');db.commit()
+   db.execute(old);db.execute('INSERT INTO recurring_old SELECT * FROM recurring');db.execute('DROP TABLE recurring');db.execute('ALTER TABLE recurring_old RENAME TO recurring');db.execute('PRAGMA user_version=0');db.commit()
    before=db.execute('SELECT * FROM recurring').fetchall();links=db.execute('SELECT * FROM recurring_overrides').fetchall()
   self.start()
   with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:
    self.assertEqual(db.execute('SELECT * FROM recurring').fetchall(),before);self.assertEqual(db.execute('SELECT * FROM recurring_overrides').fetchall(),links);self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])
-  self.assertTrue((self.dir/'data'/'backups'/'budget-before-extended-recurrences.sqlite').exists())
+  self.assertTrue(list((self.dir/'data'/'backups').glob('budget-before-schema-v1-*.sqlite')))
 
  def test_card_payment_plan_projects_purchases_and_confirms_actual_once(self):
   aid=self.account(balance=2000);cid=self.account('credit',5000);day=lambda n:(datetime.date.today()+datetime.timedelta(days=n)).isoformat()
@@ -855,7 +855,7 @@ class BudgetAPI(unittest.TestCase):
   ''');con.execute('INSERT INTO transactions VALUES(11,7,9,-500,?,?)',('Achat existant',DAY));con.commit();con.close();self.start();s=self.get('/api/state')
   self.assertEqual(s['accounts'][0]['balance_cents'],123456);self.assertEqual(s['envelopes'][0]['reserved_cents'],1000);self.assertEqual(s['transactions'][0]['id'],11);self.assertIsNone(s['transactions'][0]['category_id']);self.assertEqual(s['transactions'][0]['affects_balance'],1)
   category=s['categories'][0]['id'];s=self.post('/api/transactions/update',{'id':11,'account_id':7,'envelope_id':9,'amount':-5,'description':'Achat classé','happened_on':DAY,'category_id':category});self.assertEqual(s['envelopes'][0]['reserved_cents'],1000);self.assertEqual(s['accounts'][0]['balance_cents'],123456)
-  backup=sqlite3.connect(self.dir/'data'/'backups'/'budget-before-v3.sqlite');self.assertEqual(backup.execute('SELECT balance_cents FROM accounts WHERE id=7').fetchone()[0],123456);self.assertNotIn('category_id',[r[1] for r in backup.execute('PRAGMA table_info(transactions)')]);backup.close()
+  backup=sqlite3.connect(max((self.dir/'data'/'backups').glob('budget-before-schema-v1-*.sqlite')));self.assertEqual(backup.execute('SELECT balance_cents FROM accounts WHERE id=7').fetchone()[0],123456);self.assertNotIn('category_id',[r[1] for r in backup.execute('PRAGMA table_info(transactions)')]);backup.close()
   self.stop();self.start();self.assertEqual(len(self.get('/api/state')['categories']),10)
 
 if __name__=='__main__':unittest.main(verbosity=2)
