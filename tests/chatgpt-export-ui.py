@@ -14,7 +14,7 @@ try:
    page.set_viewport_size({'width':width,'height':1000})
    if width==1440:page.get_by_label('Apparence',exact=True).select_option(theme)
    header_action(page,'Poser une question à ChatGPT');dialog=page.locator('#s26-chatgpt-dialog');expect(dialog).to_be_visible();expect(dialog.get_by_role('status')).to_contain_text('Fichier prêt');expect(dialog).to_contain_text('Rien n’est envoyé automatiquement');assert not external
-   
+
    if dialog.locator('details').get_attribute('open') is None:dialog.locator('summary').click()
    content=dialog.get_by_label('Contenu du fichier pour ChatGPT');expect(content).to_be_visible();assert content.get_attribute('readonly') is not None;out=json.loads(content.input_value());assert out['current']['cash_cents']==100000
    dialog.get_by_label('Historique des transactions').select_option('all');expect(dialog.get_by_role('status')).to_contain_text('Fichier prêt');expect(content).to_have_value(__import__('re').compile('"history_selection": "all"'))
