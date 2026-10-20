@@ -1,24 +1,388 @@
-/* Read-only presentation of the canonical ledger and forecast. */
-(()=>{
- const $=id=>document.getElementById(id),n=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;},money=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'long'}),button=(text,fn)=>{const b=n('button',text,'secondary');b.type='button';b.onclick=fn;return b;};let current;
- const dialog=n('dialog',undefined,'editor-dialog v81-explanation');dialog.id='v81-explanation';dialog.setAttribute('aria-labelledby','v81-title');const inner=n('div',undefined,'dialog-inner'),head=n('div',undefined,'dialog-heading'),title=n('h2','Pourquoi ce montant ?');title.id='v81-title';head.append(title,button('Fermer',()=>dialog.close()));const choose=n('select');choose.id='v81-date';choose.setAttribute('aria-label','Date du calcul');const content=n('div');inner.append(head,n('p','Chaque chiffre provient de vos soldes, protections et prévisions. Consulter ce détail ne modifie aucune donnée.','quiet-copy'),choose,content);dialog.append(inner);document.body.append(dialog);
- function row(host,label,value,cls=''){const r=n('div',undefined,'v81-line '+cls);r.append(n('span',label),n('strong',money(value)));host.append(r);return r;}
- function details(host,label,items){const d=n('details'),s=n('summary',label);d.append(s);if(!items.length)d.append(n('p','Aucun montant.','quiet-copy'));for(const item of items)row(d,item.name,item.value);host.append(d);}
- function explain(){if(!current)return;content.replaceChildren();const s=current,horizon=Number(hero.querySelector('[aria-pressed=true]')?.dataset.horizon||30),low=[{date:'now',safe_cents:s.safe_cents},...s.forecast.slice(0,horizon)].reduce((a,b)=>b.safe_cents<a.safe_cents?b:a),overview=n('div',undefined,'v92-overview');overview.append(n('p','Votre point le plus bas sur '+horizon+' jours','quiet-copy'),n('strong',money(low.safe_cents)),n('p',low.date==='now'?'Maintenant':('Prévu le '+date(low.date)),'quiet-copy'),button('Voir le calcul de ce minimum',()=>{choose.value=low.date;explain();}));content.append(overview);const day=s.forecast.find(d=>d.date===choose.value),now=!day;const cash=now?s.cash_cents:day.cash_cents,reserved=now?s.reserved_cents:day.reserved_cents,safe=now?s.safe_cents:day.safe_cents;
-  content.append(n('h3',now?'Disponible maintenant':'Disponible prévu au '+date(day.date)));row(content,'Solde bancaire inclus',cash);row(content,'Argent protégé',-reserved);row(content,'Disponible après protections',safe,'v81-total');
-  row(content,'Dont réserves encore dans les enveloppes',now?s.envelope_reserved_cents:day.envelope_reserved_cents);row(content,'Dont achats sur carte encore protégés',now?s.card_envelope_reserved_cents:day.card_envelope_reserved_cents);if(now){details(content,'Comptes compris dans le calcul',s.sts_breakdown.accounts.map(a=>({name:a.name,value:a.balance_cents})));details(content,'Réserves par enveloppe',s.sts_breakdown.envelopes.map(e=>({name:e.name,value:e.reserved_cents})));details(content,'Achats sur carte à rembourser',s.sts_breakdown.card_envelopes.map(f=>({name:f.name+' · '+f.card_name,value:f.amount_cents})));}
-  else {const bridge=day.bridge;if(bridge){const totals=n('div',undefined,'v92-bridge');totals.append(n('h3','Du solde actuel au solde prévu'));for(const [label,value] of [['Solde bancaire de départ',bridge.opening_cash_cents],['Revenus à venir',bridge.income_cents],['Factures et dépenses prévues',bridge.expense_cents],['Paiements prévus des enveloppes',bridge.envelope_cents],['Virements nets prévus',bridge.transfer_cents],['Protections à cette date',-bridge.reserved_cents]])row(totals,label,value);content.append(totals);}const days=s.forecast.filter(d=>d.date<=day.date);row(content,'Disponible maintenant · point de départ',s.safe_cents);row(content,'Variation prévue jusqu’à cette date',day.safe_cents-s.safe_cents);const path=n('details');path.append(n('summary','Suivre le calcul jour par jour'));let previous=s.safe_cents;for(const d of days){const delta=d.safe_cents-previous;previous=d.safe_cents;if(!delta&&!d.events.length)continue;const entry=n('details',undefined,'v81-day');entry.append(n('summary',date(d.date)+' · variation '+money(delta)+' · disponible '+money(d.safe_cents)));row(entry,'Solde bancaire en fin de journée',d.cash_cents);row(entry,'Protections en fin de journée',d.reserved_cents);for(const event of d.events)row(entry,event.description+' · effet sur le disponible',event.sts_impact_cents||0);path.append(entry);}content.append(path,n('p','Les variations quotidiennes sont celles du moteur de prévision, après prise en compte des réserves et des opérations déjà enregistrées. Un mouvement sans effet sur le disponible reste visible avec 0 $.','quiet-copy'));}
-  content.append(n('p','Les objectifs de la page Budget ne réservent pas d’argent. La dette générale des cartes ne crée aucune réserve automatique. Un achat couvert par une enveloppe et son remboursement ne sont pas déduits deux fois.','v81-note'));
- }
- choose.onchange=explain;
- function open(on='now'){choose.value=[...choose.options].some(o=>o.value===on)?on:'now';explain();dialog.showModal();}
- window.budgetExplainAvailable=open;const available=$('v80-safe');available.setAttribute('role','button');available.tabIndex=0;available.setAttribute('aria-label','Comprendre le disponible maintenant');available.onclick=()=>open();available.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();open();}};
- const hero=$('v80-hero'),actions=n('div',undefined,'v81-hero-actions');actions.append(button('Rapprocher avec ma banque',()=>{const id=current?.setup70?.scope?.account_id||current?.accounts.find(a=>a.included&&a.kind!=='credit')?.id;if(id)window.budgetOpenBankCheck(id);}),button('Pourquoi ce montant ?',()=>open()),button('Comprendre le minimum prévu',()=>{const horizon=Number(hero.querySelector('[aria-pressed=true]')?.dataset.horizon||30),low=[{date:'now',safe_cents:current.safe_cents},...current.forecast.slice(0,horizon)].reduce((a,b)=>b.safe_cents<a.safe_cents?b:a);open(low.date);}));hero.append(actions);
- const more=n('details',undefined,'v81-dashboard-details');more.id='v81-dashboard-details';more.append(n('summary','Autres repères : aujourd’hui, cette semaine et jusqu’à la paie'));document.querySelector('.sts-windows').before(more);more.append(document.querySelector('.sts-windows'));
- const summary=document.querySelector('[data-widget=summary] .v47-widget-body'),summaryDetails=n('details',undefined,'v81-dashboard-details');summaryDetails.append(n('summary','Voir les soldes et les protections'));while(summary.firstChild)summaryDetails.append(summary.firstChild);summary.append(summaryDetails);
- function envelopes(s){for(const card of document.querySelectorAll('#envelopes [data-envelope-id],.free-card[data-budget-id]')){card.querySelector('.v81-envelope-facts')?.remove();const id=Number(card.dataset.envelopeId||card.dataset.budgetId),e=s.envelopes.find(e=>e.id===id),i=s.envelope_insights.items.find(i=>i.id===id);if(!e||!i)continue;const caption=card.querySelector('.balance-caption');if(caption)caption.textContent='Réserve inutilisée';const held=s.sts_breakdown.card_envelopes.filter(f=>f.envelope_id===id).reduce((v,f)=>v+f.amount_cents,0),box=n('div',undefined,'v81-envelope-facts'),period=!!i.period_start,spent=period?i.spent_period_cents:i.spent_month_cents;row(box,'Objectif par période',i.period_budget_cents);row(box,'Protégé maintenant',e.reserved_cents+held);row(box,period?'Achats de la période':'Achats ce mois-ci',spent);if(period)row(box,'Objectif moins achats',i.period_budget_cents-spent);else box.append(n('p','Pas de période en cours.','quiet-copy'));const d=n('details');d.append(n('summary','Comprendre cette enveloppe'));row(d,'Réserve inutilisée',e.reserved_cents);row(d,'Achats sur carte encore protégés',held);d.append(n('p',i.next_renewal?'Prochaine échéance : '+date(i.next_renewal)+'. La prévision tient compte des avances déjà réservées.':'Sans prochaine échéance programmée. Seule la protection actuelle est déduite.','quiet-copy'),n('p','L’objectif moins les achats est un repère budgétaire, pas un solde bancaire ni un montant nécessairement réservé. Les virements sont consultables dans la fiche.','quiet-copy'));box.append(d);card.querySelector('.v44-card-tools')?.before(box);}}
- function polishHero(){if(!current)return;const horizon=Number(hero.querySelector('[aria-pressed=true]')?.dataset.horizon||30),low=[{date:current.forecast[0].date,safe_cents:current.safe_cents},...current.forecast.slice(0,horizon)].reduce((a,b)=>b.safe_cents<a.safe_cents?b:a);hero.querySelector('h2').textContent='Disponible maintenant';$('v80-safe').textContent=money(current.safe_cents);$('v80-safe').classList.toggle('v80-negative',current.safe_cents<0);hero.querySelector('.v80-hero-caption').textContent='Votre argent libre après les protections actuelles. Vérifiez le minimum prévu avant de décider d’un achat.';const fact=hero.querySelector('.v80-hero-facts>div:nth-child(2)');fact.querySelector('span').textContent='Minimum prévu sur '+horizon+' jours';fact.querySelector('strong').textContent=money(low.safe_cents);fact.querySelector('small').textContent=date(low.date);const high=[{date:current.forecast[0].date,safe_cents:current.safe_cents},...current.forecast.slice(0,horizon)].reduce((a,b)=>b.safe_cents>a.safe_cents?b:a);let max=hero.querySelector('#v81-maximum');if(!max){max=n('div',undefined,'v81-maximum');max.id='v81-maximum';max.append(n('span'),n('strong'),n('small'));const facts=hero.querySelector('.v80-hero-facts');facts.insertBefore(max,facts.querySelector('button'));}max.querySelector('span').textContent='Maximum prévu sur '+horizon+' jours';max.querySelector('strong').textContent=money(high.safe_cents);max.querySelector('small').textContent=date(high.date);}
- hero.addEventListener('click',event=>{if(event.target.closest('[data-horizon]'))polishHero();});
- function draw(s){current=s;polishHero();const selected=choose.value;choose.replaceChildren(new Option('Maintenant','now'),...s.forecast.map(d=>new Option(date(d.date),d.date)));choose.value=selected&&[...choose.options].some(o=>o.value===selected)?selected:'now';envelopes(s);if(dialog.open)explain();}
- const previous=render;render=function(s){previous(s);draw(s);};if(typeof state!=='undefined'&&state)draw(state);document.body.classList.add('v81-app');
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* Read-only presentation of the canonical ledger and forecast. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      n = (tag, text, cls) => {
+        const e = document.createElement(tag);
+        if (text !== undefined) e.textContent = text;
+        if (cls) e.className = cls;
+        return e;
+      },
+      money = (c) =>
+        (c / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      date = (d) =>
+        new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+          day: "numeric",
+          month: "long",
+        }),
+      button = (text, fn) => {
+        const b = n("button", text, "secondary");
+        b.type = "button";
+        b.onclick = fn;
+        return b;
+      };
+    let current;
+    const dialog = n("dialog", undefined, "editor-dialog v81-explanation");
+    dialog.id = "v81-explanation";
+    dialog.setAttribute("aria-labelledby", "v81-title");
+    const inner = n("div", undefined, "dialog-inner"),
+      head = n("div", undefined, "dialog-heading"),
+      title = n("h2", "Pourquoi ce montant ?");
+    title.id = "v81-title";
+    head.append(
+      title,
+      button("Fermer", () => dialog.close()),
+    );
+    const choose = n("select");
+    choose.id = "v81-date";
+    choose.setAttribute("aria-label", "Date du calcul");
+    const content = n("div");
+    inner.append(
+      head,
+      n(
+        "p",
+        "Chaque chiffre provient de vos soldes, protections et prévisions. Consulter ce détail ne modifie aucune donnée.",
+        "quiet-copy",
+      ),
+      choose,
+      content,
+    );
+    dialog.append(inner);
+    document.body.append(dialog);
+    function row(host, label, value, cls = "") {
+      const r = n("div", undefined, "v81-line " + cls);
+      r.append(n("span", label), n("strong", money(value)));
+      host.append(r);
+      return r;
+    }
+    function details(host, label, items) {
+      const d = n("details"),
+        s = n("summary", label);
+      d.append(s);
+      if (!items.length) d.append(n("p", "Aucun montant.", "quiet-copy"));
+      for (const item of items) row(d, item.name, item.value);
+      host.append(d);
+    }
+    function explain() {
+      if (!current) return;
+      content.replaceChildren();
+      const s = current,
+        horizon = Number(
+          hero.querySelector("[aria-pressed=true]")?.dataset.horizon || 30,
+        ),
+        low = [
+          { date: "now", safe_cents: s.safe_cents },
+          ...s.forecast.slice(0, horizon),
+        ].reduce((a, b) => (b.safe_cents < a.safe_cents ? b : a)),
+        overview = n("div", undefined, "v92-overview");
+      overview.append(
+        n(
+          "p",
+          "Votre point le plus bas sur " + horizon + " jours",
+          "quiet-copy",
+        ),
+        n("strong", money(low.safe_cents)),
+        n(
+          "p",
+          low.date === "now" ? "Maintenant" : "Prévu le " + date(low.date),
+          "quiet-copy",
+        ),
+        button("Voir le calcul de ce minimum", () => {
+          choose.value = low.date;
+          explain();
+        }),
+      );
+      content.append(overview);
+      const day = s.forecast.find((d) => d.date === choose.value),
+        now = !day;
+      const cash = now ? s.cash_cents : day.cash_cents,
+        reserved = now ? s.reserved_cents : day.reserved_cents,
+        safe = now ? s.safe_cents : day.safe_cents;
+      content.append(
+        n(
+          "h3",
+          now
+            ? "Disponible maintenant"
+            : "Disponible prévu au " + date(day.date),
+        ),
+      );
+      row(content, "Solde bancaire inclus", cash);
+      row(content, "Argent protégé", -reserved);
+      row(content, "Disponible après protections", safe, "v81-total");
+      row(
+        content,
+        "Dont réserves encore dans les enveloppes",
+        now ? s.envelope_reserved_cents : day.envelope_reserved_cents,
+      );
+      row(
+        content,
+        "Dont achats sur carte encore protégés",
+        now ? s.card_envelope_reserved_cents : day.card_envelope_reserved_cents,
+      );
+      if (now) {
+        details(
+          content,
+          "Comptes compris dans le calcul",
+          s.sts_breakdown.accounts.map((a) => ({
+            name: a.name,
+            value: a.balance_cents,
+          })),
+        );
+        details(
+          content,
+          "Réserves par enveloppe",
+          s.sts_breakdown.envelopes.map((e) => ({
+            name: e.name,
+            value: e.reserved_cents,
+          })),
+        );
+        details(
+          content,
+          "Achats sur carte à rembourser",
+          s.sts_breakdown.card_envelopes.map((f) => ({
+            name: f.name + " · " + f.card_name,
+            value: f.amount_cents,
+          })),
+        );
+      } else {
+        const bridge = day.bridge;
+        if (bridge) {
+          const totals = n("div", undefined, "v92-bridge");
+          totals.append(n("h3", "Du solde actuel au solde prévu"));
+          for (const [label, value] of [
+            ["Solde bancaire de départ", bridge.opening_cash_cents],
+            ["Revenus à venir", bridge.income_cents],
+            ["Factures et dépenses prévues", bridge.expense_cents],
+            ["Paiements prévus des enveloppes", bridge.envelope_cents],
+            ["Virements nets prévus", bridge.transfer_cents],
+            ["Protections à cette date", -bridge.reserved_cents],
+          ])
+            row(totals, label, value);
+          content.append(totals);
+        }
+        const days = s.forecast.filter((d) => d.date <= day.date);
+        row(content, "Disponible maintenant · point de départ", s.safe_cents);
+        row(
+          content,
+          "Variation prévue jusqu’à cette date",
+          day.safe_cents - s.safe_cents,
+        );
+        const path = n("details");
+        path.append(n("summary", "Suivre le calcul jour par jour"));
+        let previous = s.safe_cents;
+        for (const d of days) {
+          const delta = d.safe_cents - previous;
+          previous = d.safe_cents;
+          if (!delta && !d.events.length) continue;
+          const entry = n("details", undefined, "v81-day");
+          entry.append(
+            n(
+              "summary",
+              date(d.date) +
+                " · variation " +
+                money(delta) +
+                " · disponible " +
+                money(d.safe_cents),
+            ),
+          );
+          row(entry, "Solde bancaire en fin de journée", d.cash_cents);
+          row(entry, "Protections en fin de journée", d.reserved_cents);
+          for (const event of d.events)
+            row(
+              entry,
+              event.description + " · effet sur le disponible",
+              event.sts_impact_cents || 0,
+            );
+          path.append(entry);
+        }
+        content.append(
+          path,
+          n(
+            "p",
+            "Les variations quotidiennes sont celles du moteur de prévision, après prise en compte des réserves et des opérations déjà enregistrées. Un mouvement sans effet sur le disponible reste visible avec 0 $.",
+            "quiet-copy",
+          ),
+        );
+      }
+      content.append(
+        n(
+          "p",
+          "Les objectifs de la page Budget ne réservent pas d’argent. La dette générale des cartes ne crée aucune réserve automatique. Un achat couvert par une enveloppe et son remboursement ne sont pas déduits deux fois.",
+          "v81-note",
+        ),
+      );
+    }
+    choose.onchange = explain;
+    function open(on = "now") {
+      choose.value = [...choose.options].some((o) => o.value === on)
+        ? on
+        : "now";
+      explain();
+      dialog.showModal();
+    }
+    window.budgetExplainAvailable = open;
+    const available = $("v80-safe");
+    available.setAttribute("role", "button");
+    available.tabIndex = 0;
+    available.setAttribute("aria-label", "Comprendre le disponible maintenant");
+    available.onclick = () => open();
+    available.onkeydown = (event) => {
+      if (["Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        open();
+      }
+    };
+    const hero = $("v80-hero"),
+      actions = n("div", undefined, "v81-hero-actions");
+    actions.append(
+      button("Rapprocher avec ma banque", () => {
+        const id =
+          current?.setup70?.scope?.account_id ||
+          current?.accounts.find((a) => a.included && a.kind !== "credit")?.id;
+        if (id) window.budgetOpenBankCheck(id);
+      }),
+      button("Pourquoi ce montant ?", () => open()),
+      button("Comprendre le minimum prévu", () => {
+        const horizon = Number(
+            hero.querySelector("[aria-pressed=true]")?.dataset.horizon || 30,
+          ),
+          low = [
+            { date: "now", safe_cents: current.safe_cents },
+            ...current.forecast.slice(0, horizon),
+          ].reduce((a, b) => (b.safe_cents < a.safe_cents ? b : a));
+        open(low.date);
+      }),
+    );
+    hero.append(actions);
+    const more = n("details", undefined, "v81-dashboard-details");
+    more.id = "v81-dashboard-details";
+    more.append(
+      n(
+        "summary",
+        "Autres repères : aujourd’hui, cette semaine et jusqu’à la paie",
+      ),
+    );
+    document.querySelector(".sts-windows").before(more);
+    more.append(document.querySelector(".sts-windows"));
+    const summary = document.querySelector(
+        "[data-widget=summary] .v47-widget-body",
+      ),
+      summaryDetails = n("details", undefined, "v81-dashboard-details");
+    summaryDetails.append(n("summary", "Voir les soldes et les protections"));
+    while (summary.firstChild) summaryDetails.append(summary.firstChild);
+    summary.append(summaryDetails);
+    function envelopes(s) {
+      for (const card of document.querySelectorAll(
+        "#envelopes [data-envelope-id],.free-card[data-budget-id]",
+      )) {
+        card.querySelector(".v81-envelope-facts")?.remove();
+        const id = Number(card.dataset.envelopeId || card.dataset.budgetId),
+          e = s.envelopes.find((e) => e.id === id),
+          i = s.envelope_insights.items.find((i) => i.id === id);
+        if (!e || !i) continue;
+        const caption = card.querySelector(".balance-caption");
+        if (caption) caption.textContent = "Réserve inutilisée";
+        const held = s.sts_breakdown.card_envelopes
+            .filter((f) => f.envelope_id === id)
+            .reduce((v, f) => v + f.amount_cents, 0),
+          box = n("div", undefined, "v81-envelope-facts"),
+          period = !!i.period_start,
+          spent = period ? i.spent_period_cents : i.spent_month_cents;
+        row(box, "Objectif par période", i.period_budget_cents);
+        row(box, "Protégé maintenant", e.reserved_cents + held);
+        row(box, period ? "Achats de la période" : "Achats ce mois-ci", spent);
+        if (period)
+          row(box, "Objectif moins achats", i.period_budget_cents - spent);
+        else box.append(n("p", "Pas de période en cours.", "quiet-copy"));
+        const d = n("details");
+        d.append(n("summary", "Comprendre cette enveloppe"));
+        row(d, "Réserve inutilisée", e.reserved_cents);
+        row(d, "Achats sur carte encore protégés", held);
+        d.append(
+          n(
+            "p",
+            i.next_renewal
+              ? "Prochaine échéance : " +
+                  date(i.next_renewal) +
+                  ". La prévision tient compte des avances déjà réservées."
+              : "Sans prochaine échéance programmée. Seule la protection actuelle est déduite.",
+            "quiet-copy",
+          ),
+          n(
+            "p",
+            "L’objectif moins les achats est un repère budgétaire, pas un solde bancaire ni un montant nécessairement réservé. Les virements sont consultables dans la fiche.",
+            "quiet-copy",
+          ),
+        );
+        box.append(d);
+        card.querySelector(".v44-card-tools")?.before(box);
+      }
+    }
+    function polishHero() {
+      if (!current) return;
+      const horizon = Number(
+          hero.querySelector("[aria-pressed=true]")?.dataset.horizon || 30,
+        ),
+        low = [
+          { date: current.forecast[0].date, safe_cents: current.safe_cents },
+          ...current.forecast.slice(0, horizon),
+        ].reduce((a, b) => (b.safe_cents < a.safe_cents ? b : a));
+      hero.querySelector("h2").textContent = "Disponible maintenant";
+      $("v80-safe").textContent = money(current.safe_cents);
+      $("v80-safe").classList.toggle("v80-negative", current.safe_cents < 0);
+      hero.querySelector(".v80-hero-caption").textContent =
+        "Votre argent libre après les protections actuelles. Vérifiez le minimum prévu avant de décider d’un achat.";
+      const fact = hero.querySelector(".v80-hero-facts>div:nth-child(2)");
+      fact.querySelector("span").textContent =
+        "Minimum prévu sur " + horizon + " jours";
+      fact.querySelector("strong").textContent = money(low.safe_cents);
+      fact.querySelector("small").textContent = date(low.date);
+      const high = [
+        { date: current.forecast[0].date, safe_cents: current.safe_cents },
+        ...current.forecast.slice(0, horizon),
+      ].reduce((a, b) => (b.safe_cents > a.safe_cents ? b : a));
+      let max = hero.querySelector("#v81-maximum");
+      if (!max) {
+        max = n("div", undefined, "v81-maximum");
+        max.id = "v81-maximum";
+        max.append(n("span"), n("strong"), n("small"));
+        const facts = hero.querySelector(".v80-hero-facts");
+        facts.insertBefore(max, facts.querySelector("button"));
+      }
+      max.querySelector("span").textContent =
+        "Maximum prévu sur " + horizon + " jours";
+      max.querySelector("strong").textContent = money(high.safe_cents);
+      max.querySelector("small").textContent = date(high.date);
+    }
+    hero.addEventListener("click", (event) => {
+      if (event.target.closest("[data-horizon]")) polishHero();
+    });
+    function draw(s) {
+      current = s;
+      polishHero();
+      const selected = choose.value;
+      choose.replaceChildren(
+        new Option("Maintenant", "now"),
+        ...s.forecast.map((d) => new Option(date(d.date), d.date)),
+      );
+      choose.value =
+        selected && [...choose.options].some((o) => o.value === selected)
+          ? selected
+          : "now";
+      envelopes(s);
+      if (dialog.open) explain();
+    }
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      draw(s);
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state)
+      draw(runtime.state);
+    document.body.classList.add("v81-app");
+  })();
+}

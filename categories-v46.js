@@ -1,119 +1,1235 @@
-/* One level of optional subcategories. Category operations never touch financial balances. */
-(()=>{
- const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;},button=(text,fn,cls='secondary')=>{const e=node('button',text,cls);e.type='button';e.onclick=fn;return e;},field=(text,input)=>{const e=node('label',text);e.append(input);return e;},money=v=>(v/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
- let current=null,ticket=0;
- async function request(url,data){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),out=await r.json();if(!r.ok)throw Error(out.error||'Action impossible.');return out;}
- const dialog=node('dialog',undefined,'editor-dialog v46-dialog'),inner=node('div',undefined,'dialog-inner');dialog.id='v46-category-dialog';dialog.append(inner);document.body.append(dialog);
- function shell(title){ticket++;inner.replaceChildren();const head=node('div',undefined,'dialog-heading');head.append(node('h2',title),button('Fermer',()=>dialog.close()));const error=node('p',undefined,'v4-error');error.setAttribute('role','alert');inner.append(head,error);return error;}
- dialog.addEventListener('close',()=>ticket++);
- const status=node('p',undefined,'v46-status');status.id='category-action-status';status.setAttribute('role','status');$('category-list').before(status);
- const showArchived=node('input');showArchived.type='checkbox';showArchived.id='category-show-archived';const archivedLabel=field('Afficher les catégories archivées',showArchived);archivedLabel.className='v44-check';$('category-search').parentElement.after(archivedLabel);showArchived.onchange=()=>$('category-search').dispatchEvent(new Event('input'));
- const mergeButton=button('Fusionner deux catégories',merge);mergeButton.disabled=true;$('section-categories').querySelector('.section-head').append(mergeButton);
- const deleteAllButton=button('Supprimer toutes les catégories',removeAll,'danger');deleteAllButton.id='delete-all-categories';deleteAllButton.disabled=true;$('section-categories').querySelector('.section-head').append(deleteAllButton);
- async function removeAll(){
-  const error=shell('Supprimer toutes les catégories'),summary=node('div');inner.append(summary);dialog.showModal();deleteAllButton.disabled=true;const serial=++ticket;try{const p=await request('/api/categories/delete-all-preview',{});if(serial!==ticket||!dialog.open)return;summary.append(node('p',p.count+' catégorie(s) et '+p.children+' sous-catégorie(s) seront supprimées, y compris les catégories archivées.','sub'),node('p','Non-catégorisé reste disponible. '+p.transactions+' transaction(s) y seront regroupées sans changer leurs montants, comptes ou enveloppes.','sub'));if(p.limits)summary.append(node('p',p.limits+' plafond(s) mensuel(s) de suivi seront retirés. Les réserves des enveloppes ne seront pas modifiées.','sub'));if(p.rules_count)summary.append(node('p',p.rules_count+' règle(s) de classement seront désactivées et pourront être modifiées plus tard.','sub'));summary.append(node('p','Les comptes, soldes, enveloppes, virements et prévisions sont conservés. Vous pourrez annuler cette suppression avec Annuler la dernière modification.','sub'));if(p.count)summary.append(button('Confirmer la suppression de toutes les catégories',async event=>{const save=event.currentTarget;save.disabled=true;try{render(await request('/api/categories/delete-all',{token:p.token,confirm:true}));dialog.close();status.textContent='Toutes les catégories ont été supprimées. Non-catégorisé reste disponible; les transactions sont conservées.';}catch(e){error.textContent=e.message;summary.replaceChildren();}finally{save.disabled=false;}},'danger'));}catch(e){error.textContent=e.message;}finally{deleteAllButton.disabled=!current?.categories.length;}
- }
- async function archive(item,child){status.textContent='';try{const s=await request(child?'/api/subcategories/archive':'/api/categories/archive',{id:item.id,archived:!item.archived,expected_archived:item.archived});render(s);status.textContent=item.name+(item.archived?' réactivée.':' archivée. L’historique est conservé.');}catch(e){status.textContent=e.message;}}
- function editSub(parent,sub=null){
-  const error=shell(sub?'Renommer la sous-catégorie':'Nouvelle sous-catégorie · '+parent.name),form=node('form'),input=node('input');input.name='name';input.required=true;input.maxLength=60;input.value=sub?.name||'';const save=node('button',sub?'Enregistrer':'Créer la sous-catégorie');save.type='submit';form.append(field('Nom de la sous-catégorie',input),node('p','Sous « '+parent.name+' » · un seul niveau, autant de sous-catégories que nécessaire.','sub'),save);inner.append(form);form.onsubmit=async e=>{e.preventDefault();save.disabled=true;error.textContent='';try{const s=await request(sub?'/api/subcategories/update':'/api/subcategories',{name:input.value,category_id:parent.id,...(sub?{id:sub.id,expected_name:sub.name}:{})});render(s);dialog.close();status.textContent='Sous-catégorie enregistrée dans '+parent.name+'.';}catch(err){error.textContent=err.message;}finally{save.disabled=false;}};dialog.showModal();input.focus();
- }
- function merge(){
-  const error=shell('Fusionner deux catégories'),form=node('form'),source=node('select'),target=node('select');source.name='source_id';target.name='target_id';for(const c of current.categories){source.add(new Option(c.name+(c.archived?' (archivée)':''),c.id));if(!c.archived)target.add(new Option(c.name,c.id));}target.selectedIndex=Math.min(1,target.options.length-1);
-  const result=node('div'),preview=node('button','Voir l’aperçu');preview.type='submit';form.append(field('Catégorie à regrouper',source),field('Catégorie de destination',target),node('p','Les achats seront réaffectés à la destination. La catégorie source sera archivée. Les réserves et les soldes resteront inchangés.','sub'),preview);inner.append(form,result);
-  form.onchange=()=>{ticket++;result.replaceChildren();error.textContent='';};form.onsubmit=async event=>{event.preventDefault();const serial=++ticket;preview.disabled=true;result.replaceChildren();error.textContent='';const payload={source_id:Number(source.value),target_id:Number(target.value)};try{const p=await request('/api/categories/merge-preview',payload);if(serial!==ticket||!dialog.open)return;result.append(node('h3',p.source.name+' → '+p.target.name),node('p',p.count+' transaction(s) à réaffecter. La source restera archivée, avec son ancien nom.','sub'),node('p','Plafond mensuel combiné : '+(p.combined_limit_cents===null?'Aucun':money(p.combined_limit_cents))+'. Les plafonds de suivi sont additionnés; ce ne sont pas des réserves.','sub'));
-   for(const s of p.mapping)result.append(node('p',s.name+' : '+(s.target_id?'regroupée avec la sous-catégorie existante (son état actif ou archivé est conservé).':'créée sous la destination, avec son état actuel.'),'sub'));
-   const save=button('Confirmer la fusion',async()=>{save.disabled=true;error.textContent='';try{const s=await request('/api/categories/merge',{...payload,token:p.token});render(s);dialog.close();status.textContent='Fusion effectuée. Disponible et soldes conservés. L’annulation de la dernière modification est disponible.';}catch(e){error.textContent=e.message;result.replaceChildren();}finally{save.disabled=false;}});result.append(save);
-  }catch(e){if(serial===ticket)error.textContent=e.message;}finally{preview.disabled=false;}};dialog.showModal();
- }
- function removeCategory(source){
-  const error=shell('Supprimer « '+source.name+' »'),form=node('form'),target=node('select');target.setAttribute('aria-label','Destination des transactions');target.add(new Option('Non-catégorisé',''));for(const c of current.categories.filter(c=>c.id!==source.id&&!c.archived))target.add(new Option(c.name,c.id));const result=node('div'),preview=node('button','Voir l’effet de la suppression');preview.type='submit';form.append(field('Destination des transactions',target),node('p','Les transactions seront conservées. Vous pouvez les laisser dans Non-catégorisé ou choisir une autre catégorie.','sub'),preview);inner.append(form,result);target.onchange=()=>{ticket++;result.replaceChildren();error.textContent='';};
-  form.onsubmit=async e=>{e.preventDefault();preview.disabled=true;error.textContent='';result.replaceChildren();const serial=++ticket,payload={id:source.id,target_id:target.value?Number(target.value):null};try{const p=await request('/api/categories/delete-preview',payload);if(serial!==ticket||!dialog.open)return;result.append(node('p',p.count+' transaction(s) seront conservées dans « '+(p.target?.name||'Non-catégorisé')+' ».','sub'),node('p',p.children+' sous-catégorie(s) : '+(p.target?'reprises dans la destination.':'retirées; les opérations garderont leurs montants et leurs comptes.'),'sub'));if(p.source_limit_cents!==null)result.append(node('p',p.target?'Plafond de suivi combiné : '+money(p.combined_limit_cents)+'.':'Le plafond mensuel de suivi sera retiré. Aucune réserve d’enveloppe ne sera libérée.','sub'));if(p.rules_count)result.append(node('p',p.rules_count+' règle(s) de classement '+(p.target?'seront réaffectées à la destination.':'seront désactivées, à modifier dans Ma prochaine paie → Règles.'),'sub'));result.append(node('p','La catégorie sera supprimée, y compris si elle était présente à l’installation. L’annulation de la dernière modification reste disponible.','sub'),button('Confirmer la suppression',async event=>{const save=event.currentTarget;save.disabled=true;try{render(await request('/api/categories/delete',{...payload,token:p.token,confirm:true}));dialog.close();status.textContent='Catégorie supprimée. Transactions et soldes conservés.';}catch(err){error.textContent=err.message;result.replaceChildren();}finally{save.disabled=false;}},'danger'));}catch(err){error.textContent=err.message;}finally{preview.disabled=false;}};dialog.showModal();
- }
- function decorate(){
-  if(!current)return;for(const row of $('category-list').querySelectorAll('.category-list-row')){
-   row.querySelector('.v46-tools')?.remove();const parent=current.categories.find(c=>c.id===Number(row.dataset.categoryId));if(!parent)continue;const tools=node('div',undefined,'v46-tools'),actions=node('div',undefined,'v46-actions');
-   const add=button('+ Sous-catégorie',()=>editSub(parent));add.disabled=!!parent.archived;actions.append(add,button(parent.archived?'Réactiver':'Archiver',()=>archive(parent,false)),button('Supprimer',()=>removeCategory(parent),'danger'));tools.append(actions);
-   if(parent.archived)tools.append(node('small','Catégorie archivée · historique conservé'));
-   for(const sub of current.subcategories.filter(s=>s.category_id===parent.id&&(!s.archived||showArchived.checked))){const line=node('div',undefined,'v46-sub-row');line.dataset.subcategoryId=sub.id;line.append(node('span',sub.name+(sub.archived?' (archivée)':'')));const edit=button('Renommer',()=>editSub(parent,sub),'text-action');edit.disabled=!!parent.archived;line.append(edit,button(sub.archived?'Réactiver':'Archiver',()=>archive(sub,true),'text-action'));tools.append(line);}row.append(tools);
-  }
- }
- document.addEventListener('budget:categories-rendered',decorate);
- // Add a child selector immediately after each existing category selector.
- const controls=new Map();
- for(const [id,childId,label] of [['transaction-category','transaction-subcategory','Sous-catégorie (facultatif)'],['v2-edit-category','v2-edit-subcategory','Sous-catégorie (facultatif)'],['csv-category','csv-subcategory','Sous-catégorie par défaut'],['v3-category-filter','v46-subcategory-filter','Sous-catégorie']]){
-  const parent=$(id),select=node('select');select.id=childId;if(id!=='v3-category-filter')select.name='subcategory_id';const container=field(label,select);container.className=id==='transaction-category'?'entry-subcategory':'';parent.parentElement.after(container);controls.set(id,{parent,select,container});parent.addEventListener('change',()=>{fill(id,null);if(id==='csv-category')document.dispatchEvent(new CustomEvent('budget:csv-category-changed'));if(id==='v3-category-filter')window.budgetRefreshTransactions?.();});select.addEventListener('change',()=>{if(id==='transaction-category')document.dispatchEvent(new CustomEvent('budget:subcategory-manual'));if(id==='csv-category')document.dispatchEvent(new CustomEvent('budget:csv-category-changed'));if(id==='v3-category-filter')window.budgetRefreshTransactions?.();});
- }
- function fill(id,value,category){
-  const c=controls.get(id);if(!c||!current)return;if(category!==undefined){const root=current.categories.find(c=>c.id===Number(category));if(root&&![...c.parent.options].some(o=>o.value===String(category))&&id==='v2-edit-category')c.parent.add(new Option(root.name+' (archivée)',root.id));c.parent.value=String(category||'');}const old=value===undefined?c.select.value:String(value||''),parent=Number(c.parent.value);c.select.replaceChildren(new Option(id==='v3-category-filter'?'Toutes':'Sans sous-catégorie',''));
-  for(const s of current.subcategories.filter(s=>s.category_id===parent&&(!s.archived||id==='v3-category-filter'||id==='v2-edit-category'&&String(s.id)===old)))c.select.add(new Option(s.name+(s.archived?' (archivée)':''),s.id));c.select.value=[...c.select.options].some(o=>o.value===old)?old:'';
-  const transfer=id==='v2-edit-category'?$('v2-category-label').hidden:id==='transaction-category'?$('transaction-direction').value==='transfer':false;c.container.hidden=transfer;c.select.disabled=transfer;
- }
- window.budgetSetSubcategory=fill;
- $('transaction-direction').addEventListener('change',()=>fill('transaction-category',null));
- const previousEdit=window.v2Edit;window.v2Edit=function(...args){previousEdit(...args);fill('v2-edit-category');};
- const uncategorized=node('div',undefined,'v512-uncategorized'),uncategorizedCount=node('strong');uncategorized.id='uncategorized-category';uncategorized.append(node('h3','Non-catégorisé'),uncategorizedCount,node('p','Catégorie par défaut, toujours disponible. Les transactions sans catégorie y sont regroupées automatiquement.','sub'),button('Voir ces transactions',()=>{document.querySelector('[data-view="transactions"]').click();$('v3-category-filter').value='uncategorized';$('v3-category-filter').dispatchEvent(new Event('change',{bubbles:true}));const details=$('v3-category-filter').closest('details');if(details)details.open=true;}));$('category-list').before(uncategorized);
- function drawDefault(s){uncategorizedCount.textContent=(s.uncategorized?.count||0)+' transaction(s)';const select=$('v3-category-filter');if(![...select.options].some(o=>o.value==='uncategorized'))select.add(new Option('Non-catégorisé','uncategorized'));}
- const previousRender=render;render=function(s){previousRender(s);current=s;drawDefault(s);deleteAllButton.disabled=!s.categories.length;mergeButton.disabled=s.categories.length<2||!s.categories.some(c=>!c.archived);decorate();for(const id of controls.keys())fill(id);};if(typeof state!=='undefined'&&state){current=state;drawDefault(state);deleteAllButton.disabled=!state.categories.length;mergeButton.disabled=state.categories.length<2||!state.categories.some(c=>!c.archived);decorate();for(const id of controls.keys())fill(id);}
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* One level of optional subcategories. Category operations never touch financial balances. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      node = (tag, text, cls) => {
+        const e = document.createElement(tag);
+        if (text !== undefined) e.textContent = text;
+        if (cls) e.className = cls;
+        return e;
+      },
+      button = (text, fn, cls = "secondary") => {
+        const e = node("button", text, cls);
+        e.type = "button";
+        e.onclick = fn;
+        return e;
+      },
+      field = (text, input) => {
+        const e = node("label", text);
+        e.append(input);
+        return e;
+      },
+      money = (v) =>
+        (v / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        });
+    let current = null,
+      ticket = 0;
+    async function request(url, data) {
+      const r = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }),
+        out = await r.json();
+      if (!r.ok) throw Error(out.error || "Action impossible.");
+      return out;
+    }
+    const dialog = node("dialog", undefined, "editor-dialog v46-dialog"),
+      inner = node("div", undefined, "dialog-inner");
+    dialog.id = "v46-category-dialog";
+    dialog.append(inner);
+    document.body.append(dialog);
+    function shell(title) {
+      ticket++;
+      inner.replaceChildren();
+      const head = node("div", undefined, "dialog-heading");
+      head.append(
+        node("h2", title),
+        button("Fermer", () => dialog.close()),
+      );
+      const error = node("p", undefined, "v4-error");
+      error.setAttribute("role", "alert");
+      inner.append(head, error);
+      return error;
+    }
+    dialog.addEventListener("close", () => ticket++);
+    const status = node("p", undefined, "v46-status");
+    status.id = "category-action-status";
+    status.setAttribute("role", "status");
+    $("category-list").before(status);
+    const showArchived = node("input");
+    showArchived.type = "checkbox";
+    showArchived.id = "category-show-archived";
+    const archivedLabel = field(
+      "Afficher les catégories archivées",
+      showArchived,
+    );
+    archivedLabel.className = "v44-check";
+    $("category-search").parentElement.after(archivedLabel);
+    showArchived.onchange = () =>
+      $("category-search").dispatchEvent(new Event("input"));
+    const mergeButton = button("Fusionner deux catégories", merge);
+    mergeButton.disabled = true;
+    $("section-categories").querySelector(".section-head").append(mergeButton);
+    const deleteAllButton = button(
+      "Supprimer toutes les catégories",
+      removeAll,
+      "danger",
+    );
+    deleteAllButton.id = "delete-all-categories";
+    deleteAllButton.disabled = true;
+    $("section-categories")
+      .querySelector(".section-head")
+      .append(deleteAllButton);
+    async function removeAll() {
+      const error = shell("Supprimer toutes les catégories"),
+        summary = node("div");
+      inner.append(summary);
+      dialog.showModal();
+      deleteAllButton.disabled = true;
+      const serial = ++ticket;
+      try {
+        const p = await request("/api/categories/delete-all-preview", {});
+        if (serial !== ticket || !dialog.open) return;
+        summary.append(
+          node(
+            "p",
+            p.count +
+              " catégorie(s) et " +
+              p.children +
+              " sous-catégorie(s) seront supprimées, y compris les catégories archivées.",
+            "sub",
+          ),
+          node(
+            "p",
+            "Non-catégorisé reste disponible. " +
+              p.transactions +
+              " transaction(s) y seront regroupées sans changer leurs montants, comptes ou enveloppes.",
+            "sub",
+          ),
+        );
+        if (p.limits)
+          summary.append(
+            node(
+              "p",
+              p.limits +
+                " plafond(s) mensuel(s) de suivi seront retirés. Les réserves des enveloppes ne seront pas modifiées.",
+              "sub",
+            ),
+          );
+        if (p.rules_count)
+          summary.append(
+            node(
+              "p",
+              p.rules_count +
+                " règle(s) de classement seront désactivées et pourront être modifiées plus tard.",
+              "sub",
+            ),
+          );
+        summary.append(
+          node(
+            "p",
+            "Les comptes, soldes, enveloppes, virements et prévisions sont conservés. Vous pourrez annuler cette suppression avec Annuler la dernière modification.",
+            "sub",
+          ),
+        );
+        if (p.count)
+          summary.append(
+            button(
+              "Confirmer la suppression de toutes les catégories",
+              async (event) => {
+                const save = event.currentTarget;
+                save.disabled = true;
+                try {
+                  runtime.render(
+                    await request("/api/categories/delete-all", {
+                      token: p.token,
+                      confirm: true,
+                    }),
+                  );
+                  dialog.close();
+                  status.textContent =
+                    "Toutes les catégories ont été supprimées. Non-catégorisé reste disponible; les transactions sont conservées.";
+                } catch (e) {
+                  error.textContent = e.message;
+                  summary.replaceChildren();
+                } finally {
+                  save.disabled = false;
+                }
+              },
+              "danger",
+            ),
+          );
+      } catch (e) {
+        error.textContent = e.message;
+      } finally {
+        deleteAllButton.disabled = !current?.categories.length;
+      }
+    }
+    async function archive(item, child) {
+      status.textContent = "";
+      try {
+        const s = await request(
+          child ? "/api/subcategories/archive" : "/api/categories/archive",
+          {
+            id: item.id,
+            archived: !item.archived,
+            expected_archived: item.archived,
+          },
+        );
+        runtime.render(s);
+        status.textContent =
+          item.name +
+          (item.archived
+            ? " réactivée."
+            : " archivée. L’historique est conservé.");
+      } catch (e) {
+        status.textContent = e.message;
+      }
+    }
+    function editSub(parent, sub = null) {
+      const error = shell(
+          sub
+            ? "Renommer la sous-catégorie"
+            : "Nouvelle sous-catégorie · " + parent.name,
+        ),
+        form = node("form"),
+        input = node("input");
+      input.name = "name";
+      input.required = true;
+      input.maxLength = 60;
+      input.value = sub?.name || "";
+      const save = node(
+        "button",
+        sub ? "Enregistrer" : "Créer la sous-catégorie",
+      );
+      save.type = "submit";
+      form.append(
+        field("Nom de la sous-catégorie", input),
+        node(
+          "p",
+          "Sous « " +
+            parent.name +
+            " » · un seul niveau, autant de sous-catégories que nécessaire.",
+          "sub",
+        ),
+        save,
+      );
+      inner.append(form);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        save.disabled = true;
+        error.textContent = "";
+        try {
+          const s = await request(
+            sub ? "/api/subcategories/update" : "/api/subcategories",
+            {
+              name: input.value,
+              category_id: parent.id,
+              ...(sub ? { id: sub.id, expected_name: sub.name } : {}),
+            },
+          );
+          runtime.render(s);
+          dialog.close();
+          status.textContent =
+            "Sous-catégorie enregistrée dans " + parent.name + ".";
+        } catch (err) {
+          error.textContent = err.message;
+        } finally {
+          save.disabled = false;
+        }
+      };
+      dialog.showModal();
+      input.focus();
+    }
+    function merge() {
+      const error = shell("Fusionner deux catégories"),
+        form = node("form"),
+        source = node("select"),
+        target = node("select");
+      source.name = "source_id";
+      target.name = "target_id";
+      for (const c of current.categories) {
+        source.add(
+          new Option(c.name + (c.archived ? " (archivée)" : ""), c.id),
+        );
+        if (!c.archived) target.add(new Option(c.name, c.id));
+      }
+      target.selectedIndex = Math.min(1, target.options.length - 1);
+      const result = node("div"),
+        preview = node("button", "Voir l’aperçu");
+      preview.type = "submit";
+      form.append(
+        field("Catégorie à regrouper", source),
+        field("Catégorie de destination", target),
+        node(
+          "p",
+          "Les achats seront réaffectés à la destination. La catégorie source sera archivée. Les réserves et les soldes resteront inchangés.",
+          "sub",
+        ),
+        preview,
+      );
+      inner.append(form, result);
+      form.onchange = () => {
+        ticket++;
+        result.replaceChildren();
+        error.textContent = "";
+      };
+      form.onsubmit = async (event) => {
+        event.preventDefault();
+        const serial = ++ticket;
+        preview.disabled = true;
+        result.replaceChildren();
+        error.textContent = "";
+        const payload = {
+          source_id: Number(source.value),
+          target_id: Number(target.value),
+        };
+        try {
+          const p = await request("/api/categories/merge-preview", payload);
+          if (serial !== ticket || !dialog.open) return;
+          result.append(
+            node("h3", p.source.name + " → " + p.target.name),
+            node(
+              "p",
+              p.count +
+                " transaction(s) à réaffecter. La source restera archivée, avec son ancien nom.",
+              "sub",
+            ),
+            node(
+              "p",
+              "Plafond mensuel combiné : " +
+                (p.combined_limit_cents === null
+                  ? "Aucun"
+                  : money(p.combined_limit_cents)) +
+                ". Les plafonds de suivi sont additionnés; ce ne sont pas des réserves.",
+              "sub",
+            ),
+          );
+          for (const s of p.mapping)
+            result.append(
+              node(
+                "p",
+                s.name +
+                  " : " +
+                  (s.target_id
+                    ? "regroupée avec la sous-catégorie existante (son état actif ou archivé est conservé)."
+                    : "créée sous la destination, avec son état actuel."),
+                "sub",
+              ),
+            );
+          const save = button("Confirmer la fusion", async () => {
+            save.disabled = true;
+            error.textContent = "";
+            try {
+              const s = await request("/api/categories/merge", {
+                ...payload,
+                token: p.token,
+              });
+              runtime.render(s);
+              dialog.close();
+              status.textContent =
+                "Fusion effectuée. Disponible et soldes conservés. L’annulation de la dernière modification est disponible.";
+            } catch (e) {
+              error.textContent = e.message;
+              result.replaceChildren();
+            } finally {
+              save.disabled = false;
+            }
+          });
+          result.append(save);
+        } catch (e) {
+          if (serial === ticket) error.textContent = e.message;
+        } finally {
+          preview.disabled = false;
+        }
+      };
+      dialog.showModal();
+    }
+    function removeCategory(source) {
+      const error = shell("Supprimer « " + source.name + " »"),
+        form = node("form"),
+        target = node("select");
+      target.setAttribute("aria-label", "Destination des transactions");
+      target.add(new Option("Non-catégorisé", ""));
+      for (const c of current.categories.filter(
+        (c) => c.id !== source.id && !c.archived,
+      ))
+        target.add(new Option(c.name, c.id));
+      const result = node("div"),
+        preview = node("button", "Voir l’effet de la suppression");
+      preview.type = "submit";
+      form.append(
+        field("Destination des transactions", target),
+        node(
+          "p",
+          "Les transactions seront conservées. Vous pouvez les laisser dans Non-catégorisé ou choisir une autre catégorie.",
+          "sub",
+        ),
+        preview,
+      );
+      inner.append(form, result);
+      target.onchange = () => {
+        ticket++;
+        result.replaceChildren();
+        error.textContent = "";
+      };
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        preview.disabled = true;
+        error.textContent = "";
+        result.replaceChildren();
+        const serial = ++ticket,
+          payload = {
+            id: source.id,
+            target_id: target.value ? Number(target.value) : null,
+          };
+        try {
+          const p = await request("/api/categories/delete-preview", payload);
+          if (serial !== ticket || !dialog.open) return;
+          result.append(
+            node(
+              "p",
+              p.count +
+                " transaction(s) seront conservées dans « " +
+                (p.target?.name || "Non-catégorisé") +
+                " ».",
+              "sub",
+            ),
+            node(
+              "p",
+              p.children +
+                " sous-catégorie(s) : " +
+                (p.target
+                  ? "reprises dans la destination."
+                  : "retirées; les opérations garderont leurs montants et leurs comptes."),
+              "sub",
+            ),
+          );
+          if (p.source_limit_cents !== null)
+            result.append(
+              node(
+                "p",
+                p.target
+                  ? "Plafond de suivi combiné : " +
+                      money(p.combined_limit_cents) +
+                      "."
+                  : "Le plafond mensuel de suivi sera retiré. Aucune réserve d’enveloppe ne sera libérée.",
+                "sub",
+              ),
+            );
+          if (p.rules_count)
+            result.append(
+              node(
+                "p",
+                p.rules_count +
+                  " règle(s) de classement " +
+                  (p.target
+                    ? "seront réaffectées à la destination."
+                    : "seront désactivées, à modifier dans Ma prochaine paie → Règles."),
+                "sub",
+              ),
+            );
+          result.append(
+            node(
+              "p",
+              "La catégorie sera supprimée, y compris si elle était présente à l’installation. L’annulation de la dernière modification reste disponible.",
+              "sub",
+            ),
+            button(
+              "Confirmer la suppression",
+              async (event) => {
+                const save = event.currentTarget;
+                save.disabled = true;
+                try {
+                  runtime.render(
+                    await request("/api/categories/delete", {
+                      ...payload,
+                      token: p.token,
+                      confirm: true,
+                    }),
+                  );
+                  dialog.close();
+                  status.textContent =
+                    "Catégorie supprimée. Transactions et soldes conservés.";
+                } catch (err) {
+                  error.textContent = err.message;
+                  result.replaceChildren();
+                } finally {
+                  save.disabled = false;
+                }
+              },
+              "danger",
+            ),
+          );
+        } catch (err) {
+          error.textContent = err.message;
+        } finally {
+          preview.disabled = false;
+        }
+      };
+      dialog.showModal();
+    }
+    function decorate() {
+      if (!current) return;
+      for (const row of $("category-list").querySelectorAll(
+        ".category-list-row",
+      )) {
+        row.querySelector(".v46-tools")?.remove();
+        const parent = current.categories.find(
+          (c) => c.id === Number(row.dataset.categoryId),
+        );
+        if (!parent) continue;
+        const tools = node("div", undefined, "v46-tools"),
+          actions = node("div", undefined, "v46-actions");
+        const add = button("+ Sous-catégorie", () => editSub(parent));
+        add.disabled = !!parent.archived;
+        actions.append(
+          add,
+          button(parent.archived ? "Réactiver" : "Archiver", () =>
+            archive(parent, false),
+          ),
+          button("Supprimer", () => removeCategory(parent), "danger"),
+        );
+        tools.append(actions);
+        if (parent.archived)
+          tools.append(
+            node("small", "Catégorie archivée · historique conservé"),
+          );
+        for (const sub of current.subcategories.filter(
+          (s) =>
+            s.category_id === parent.id &&
+            (!s.archived || showArchived.checked),
+        )) {
+          const line = node("div", undefined, "v46-sub-row");
+          line.dataset.subcategoryId = sub.id;
+          line.append(
+            node("span", sub.name + (sub.archived ? " (archivée)" : "")),
+          );
+          const edit = button(
+            "Renommer",
+            () => editSub(parent, sub),
+            "text-action",
+          );
+          edit.disabled = !!parent.archived;
+          line.append(
+            edit,
+            button(
+              sub.archived ? "Réactiver" : "Archiver",
+              () => archive(sub, true),
+              "text-action",
+            ),
+          );
+          tools.append(line);
+        }
+        row.append(tools);
+      }
+    }
+    document.addEventListener("budget:categories-rendered", decorate);
+    // Add a child selector immediately after each existing category selector.
+    const controls = new Map();
+    for (const [id, childId, label] of [
+      [
+        "transaction-category",
+        "transaction-subcategory",
+        "Sous-catégorie (facultatif)",
+      ],
+      [
+        "v2-edit-category",
+        "v2-edit-subcategory",
+        "Sous-catégorie (facultatif)",
+      ],
+      ["csv-category", "csv-subcategory", "Sous-catégorie par défaut"],
+      ["v3-category-filter", "v46-subcategory-filter", "Sous-catégorie"],
+    ]) {
+      const parent = $(id),
+        select = node("select");
+      select.id = childId;
+      if (id !== "v3-category-filter") select.name = "subcategory_id";
+      const container = field(label, select);
+      container.className =
+        id === "transaction-category" ? "entry-subcategory" : "";
+      parent.parentElement.after(container);
+      controls.set(id, { parent, select, container });
+      parent.addEventListener("change", () => {
+        fill(id, null);
+        if (id === "csv-category")
+          document.dispatchEvent(
+            new CustomEvent("budget:csv-category-changed"),
+          );
+        if (id === "v3-category-filter") window.budgetRefreshTransactions?.();
+      });
+      select.addEventListener("change", () => {
+        if (id === "transaction-category")
+          document.dispatchEvent(new CustomEvent("budget:subcategory-manual"));
+        if (id === "csv-category")
+          document.dispatchEvent(
+            new CustomEvent("budget:csv-category-changed"),
+          );
+        if (id === "v3-category-filter") window.budgetRefreshTransactions?.();
+      });
+    }
+    function fill(id, value, category) {
+      const c = controls.get(id);
+      if (!c || !current) return;
+      if (category !== undefined) {
+        const root = current.categories.find((c) => c.id === Number(category));
+        if (
+          root &&
+          ![...c.parent.options].some((o) => o.value === String(category)) &&
+          id === "v2-edit-category"
+        )
+          c.parent.add(new Option(root.name + " (archivée)", root.id));
+        c.parent.value = String(category || "");
+      }
+      const old = value === undefined ? c.select.value : String(value || ""),
+        parent = Number(c.parent.value);
+      c.select.replaceChildren(
+        new Option(
+          id === "v3-category-filter" ? "Toutes" : "Sans sous-catégorie",
+          "",
+        ),
+      );
+      for (const s of current.subcategories.filter(
+        (s) =>
+          s.category_id === parent &&
+          (!s.archived ||
+            id === "v3-category-filter" ||
+            (id === "v2-edit-category" && String(s.id) === old)),
+      ))
+        c.select.add(
+          new Option(s.name + (s.archived ? " (archivée)" : ""), s.id),
+        );
+      c.select.value = [...c.select.options].some((o) => o.value === old)
+        ? old
+        : "";
+      const transfer =
+        id === "v2-edit-category"
+          ? $("v2-category-label").hidden
+          : id === "transaction-category"
+            ? $("transaction-direction").value === "transfer"
+            : false;
+      c.container.hidden = transfer;
+      c.select.disabled = transfer;
+    }
+    window.budgetSetSubcategory = fill;
+    $("transaction-direction").addEventListener("change", () =>
+      fill("transaction-category", null),
+    );
+    const previousEdit = window.v2Edit;
+    window.v2Edit = function (...args) {
+      previousEdit(...args);
+      fill("v2-edit-category");
+    };
+    const uncategorized = node("div", undefined, "v512-uncategorized"),
+      uncategorizedCount = node("strong");
+    uncategorized.id = "uncategorized-category";
+    uncategorized.append(
+      node("h3", "Non-catégorisé"),
+      uncategorizedCount,
+      node(
+        "p",
+        "Catégorie par défaut, toujours disponible. Les transactions sans catégorie y sont regroupées automatiquement.",
+        "sub",
+      ),
+      button("Voir ces transactions", () => {
+        document.querySelector('[data-view="transactions"]').click();
+        $("v3-category-filter").value = "uncategorized";
+        $("v3-category-filter").dispatchEvent(
+          new Event("change", { bubbles: true }),
+        );
+        const details = $("v3-category-filter").closest("details");
+        if (details) details.open = true;
+      }),
+    );
+    $("category-list").before(uncategorized);
+    function drawDefault(s) {
+      uncategorizedCount.textContent =
+        (s.uncategorized?.count || 0) + " transaction(s)";
+      const select = $("v3-category-filter");
+      if (![...select.options].some((o) => o.value === "uncategorized"))
+        select.add(new Option("Non-catégorisé", "uncategorized"));
+    }
+    const previousRender = runtime.render;
+    runtime.render = function (s) {
+      previousRender(s);
+      current = s;
+      drawDefault(s);
+      deleteAllButton.disabled = !s.categories.length;
+      mergeButton.disabled =
+        s.categories.length < 2 || !s.categories.some((c) => !c.archived);
+      decorate();
+      for (const id of controls.keys()) fill(id);
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      current = runtime.state;
+      drawDefault(runtime.state);
+      deleteAllButton.disabled = !runtime.state.categories.length;
+      mergeButton.disabled =
+        runtime.state.categories.length < 2 ||
+        !runtime.state.categories.some((c) => !c.archived);
+      decorate();
+      for (const id of controls.keys()) fill(id);
+    }
+  })();
 
-/* Lunch Money headings are visual groups; subcategories remain available for people/accounts. */
-(()=>{
- const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};let current;
- async function request(route,data={}){const r=await fetch('/api/categories/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),s=await r.json();if(!r.ok)throw Error(s.error||'Action impossible.');return s;}
- const action=(text,fn)=>{const b=node('button',text,'secondary');b.type='button';b.onclick=async()=>{b.disabled=true;try{await fn();}catch(e){status.textContent=e.message;}finally{b.disabled=false;}};return b;};
- const status=node('p','','v46-status');status.setAttribute('role','status');const setup=node('div',undefined,'v511-catalog-setup');setup.append(node('h3','Votre liste Lunch Money'),node('p','Vos grands groupes organisent les catégories. Sous Frais bancaires, les sous-catégories Conjoint, Jenny et Alex permettent de préciser le compte.','sub'),action('Reprendre ma liste Lunch Money',preview),status);$('category-create-form').parentElement.append(setup);
- const filter=node('select');filter.id='category-group-filter';filter.add(new Option('Tous les groupes',''));const filterLabel=node('label','Filtrer par groupe');filterLabel.append(filter);filterLabel.className='category-search-label';$('category-search').parentElement.after(filterLabel);filter.onchange=()=>$('category-search').dispatchEvent(new Event('input'));
- const dialog=node('dialog',undefined,'editor-dialog v46-dialog');dialog.id='v511-catalog-dialog';document.body.append(dialog);
- async function preview(){status.textContent='';const p=await request('catalog-preview');dialog.replaceChildren();const inner=node('div',undefined,'dialog-inner'),head=node('div',undefined,'dialog-heading');head.append(node('h2','Reprendre vos catégories Lunch Money'),action('Fermer',()=>dialog.close()));inner.append(head,node('p',p.rows.length+' catégories dans 5 groupes : '+p.create_count+' à créer, '+p.reuse_count+' à réutiliser, '+p.reactivate_count+' à réactiver.','sub'),node('p','Les noms et identifiants existants sont conservés. Aucune transaction, réserve ou somme bancaire ne sera modifiée. Les catégories non présentes dans la liste restent disponibles.','sub'),node('p','Frais bancaires recevra trois sous-catégories : Conjoint, Jenny et Alex. Les grands groupes ne prennent pas leur place.','sub'));
-  let group;for(const r of p.rows){if(group!==r.group){group=r.group;inner.append(node('h3',group));}inner.append(node('p',r.name+' · '+({create:'Créer',reuse:'Réutiliser',reactivate:'Réactiver'})[r.action]+(r.existing_name&&r.existing_name!==r.name?' (« '+r.existing_name+' »)':''),'sub'));}
-  const error=node('p','','v46-status');error.setAttribute('role','alert');const apply=action('Ajouter ces catégories et groupes',async()=>{try{const s=await request('catalog-apply',{token:p.token});render(s);dialog.close();status.textContent='Votre liste est prête. Les catégories existantes et leur historique sont conservés.';}catch(e){error.textContent=e.message;}});inner.append(node('p','Les libellés du groupe Transfert ne transforment pas une dépense en virement. Utilisez Virements pour un paiement de carte ou un transfert, et Vérifier avec votre banque pour un ajustement de solde.','sub'),error,apply);dialog.append(inner);dialog.showModal();
- }
- function groupSelects(catalog){
-  for(const id of ['transaction-category','v2-edit-category','v3-category-filter','csv-category','budget-category','category-edit-choice']){const select=$(id);if(!select)continue;const value=select.value,options=[...select.options];select.replaceChildren(...options.filter(o=>!o.value||o.value==='uncategorized'));for(const group of [...catalog.groups,'Autres catégories conservées']){const members=options.filter(o=>o.value&&o.value!=='uncategorized'&&(catalog.assignments[o.value]||'Autres catégories conservées')===group);if(members.length){const optgroup=node('optgroup');optgroup.label=group;optgroup.append(...members);select.append(optgroup);}}select.value=value;}
- }
- function draw(){if(!current?.category_catalog)return;const catalog=current.category_catalog,selected=filter.value;filter.replaceChildren(new Option('Tous les groupes',''));for(const name of catalog.groups)filter.add(new Option(name,name));filter.add(new Option('Autres catégories conservées','other'));filter.value=selected;
-  filter.disabled=!Object.keys(catalog.assignments).length;if(filter.disabled)return;groupSelects(catalog);
-  const host=$('category-list'),rows=[...host.querySelectorAll('.category-list-row')];if(!rows.length)return;host.replaceChildren();let shown=0;
-  for(const group of [...catalog.groups,'Autres catégories conservées']){const members=rows.filter(r=>(catalog.assignments[r.dataset.categoryId]||'Autres catégories conservées')===group);if(!members.length||filter.value&&(filter.value==='other'?group!=='Autres catégories conservées':filter.value!==group))continue;const section=node('div',undefined,'v511-category-group');section.dataset.group=group;section.append(node('h3',group+' · '+members.length));if(group==='Transfert'){const help=node('div',undefined,'v511-transfer-help');help.append(node('p','Pour déplacer de l’argent, utilisez un virement. Pour corriger un solde, vérifiez le compte avec votre banque. Ces catégories ne créent ni dépense ni réserve automatiquement.','sub'),action('Enregistrer un virement',()=>document.querySelector('[data-view="virements"]').click()),action('Vérifier un solde',()=>document.querySelector('[data-view="comptes"]').click()));section.append(help);}
-   for(const row of members){shown++;row.querySelector('.v511-group-control')?.remove();const id=Number(row.dataset.categoryId),label=node('label','Groupe','v511-group-control'),select=node('select');select.setAttribute('aria-label','Groupe de '+current.categories.find(c=>c.id===id).name);select.add(new Option('Autres catégories conservées',''));for(const name of catalog.groups)select.add(new Option(name,name));select.value=catalog.assignments[id]||'';select.onchange=async()=>{select.disabled=true;try{render(await request('group',{id,group:select.value||null}));}catch(e){status.textContent=e.message;select.value=catalog.assignments[id]||'';}finally{select.disabled=false;}};label.append(select);row.append(label);section.append(row);}host.append(section);
-  }
-  $('category-count').textContent=shown+' / '+current.categories.length;if(!shown)host.append(node('p','Aucune catégorie dans ce groupe pour cette recherche.','sub'));
+  /* Lunch Money headings are visual groups; subcategories remain available for people/accounts. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      node = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      };
+    let current;
+    async function request(route, data = {}) {
+      const r = await fetch("/api/categories/" + route, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }),
+        s = await r.json();
+      if (!r.ok) throw Error(s.error || "Action impossible.");
+      return s;
+    }
+    const action = (text, fn) => {
+      const b = node("button", text, "secondary");
+      b.type = "button";
+      b.onclick = async () => {
+        b.disabled = true;
+        try {
+          await fn();
+        } catch (e) {
+          status.textContent = e.message;
+        } finally {
+          b.disabled = false;
+        }
+      };
+      return b;
+    };
+    const status = node("p", "", "v46-status");
+    status.setAttribute("role", "status");
+    const setup = node("div", undefined, "v511-catalog-setup");
+    setup.append(
+      node("h3", "Votre liste Lunch Money"),
+      node(
+        "p",
+        "Vos grands groupes organisent les catégories. Sous Frais bancaires, les sous-catégories Conjoint, Jenny et Alex permettent de préciser le compte.",
+        "sub",
+      ),
+      action("Reprendre ma liste Lunch Money", preview),
+      status,
+    );
+    $("category-create-form").parentElement.append(setup);
+    const filter = node("select");
+    filter.id = "category-group-filter";
+    filter.add(new Option("Tous les groupes", ""));
+    const filterLabel = node("label", "Filtrer par groupe");
+    filterLabel.append(filter);
+    filterLabel.className = "category-search-label";
+    $("category-search").parentElement.after(filterLabel);
+    filter.onchange = () =>
+      $("category-search").dispatchEvent(new Event("input"));
+    const dialog = node("dialog", undefined, "editor-dialog v46-dialog");
+    dialog.id = "v511-catalog-dialog";
+    document.body.append(dialog);
+    async function preview() {
+      status.textContent = "";
+      const p = await request("catalog-preview");
+      dialog.replaceChildren();
+      const inner = node("div", undefined, "dialog-inner"),
+        head = node("div", undefined, "dialog-heading");
+      head.append(
+        node("h2", "Reprendre vos catégories Lunch Money"),
+        action("Fermer", () => dialog.close()),
+      );
+      inner.append(
+        head,
+        node(
+          "p",
+          p.rows.length +
+            " catégories dans 5 groupes : " +
+            p.create_count +
+            " à créer, " +
+            p.reuse_count +
+            " à réutiliser, " +
+            p.reactivate_count +
+            " à réactiver.",
+          "sub",
+        ),
+        node(
+          "p",
+          "Les noms et identifiants existants sont conservés. Aucune transaction, réserve ou somme bancaire ne sera modifiée. Les catégories non présentes dans la liste restent disponibles.",
+          "sub",
+        ),
+        node(
+          "p",
+          "Frais bancaires recevra trois sous-catégories : Conjoint, Jenny et Alex. Les grands groupes ne prennent pas leur place.",
+          "sub",
+        ),
+      );
+      let group;
+      for (const r of p.rows) {
+        if (group !== r.group) {
+          group = r.group;
+          inner.append(node("h3", group));
+        }
+        inner.append(
+          node(
+            "p",
+            r.name +
+              " · " +
+              { create: "Créer", reuse: "Réutiliser", reactivate: "Réactiver" }[
+                r.action
+              ] +
+              (r.existing_name && r.existing_name !== r.name
+                ? " (« " + r.existing_name + " »)"
+                : ""),
+            "sub",
+          ),
+        );
+      }
+      const error = node("p", "", "v46-status");
+      error.setAttribute("role", "alert");
+      const apply = action("Ajouter ces catégories et groupes", async () => {
+        try {
+          const s = await request("catalog-apply", { token: p.token });
+          runtime.render(s);
+          dialog.close();
+          status.textContent =
+            "Votre liste est prête. Les catégories existantes et leur historique sont conservés.";
+        } catch (e) {
+          error.textContent = e.message;
+        }
+      });
+      inner.append(
+        node(
+          "p",
+          "Les libellés du groupe Transfert ne transforment pas une dépense en virement. Utilisez Virements pour un paiement de carte ou un transfert, et Vérifier avec votre banque pour un ajustement de solde.",
+          "sub",
+        ),
+        error,
+        apply,
+      );
+      dialog.append(inner);
+      dialog.showModal();
+    }
+    function groupSelects(catalog) {
+      for (const id of [
+        "transaction-category",
+        "v2-edit-category",
+        "v3-category-filter",
+        "csv-category",
+        "budget-category",
+        "category-edit-choice",
+      ]) {
+        const select = $(id);
+        if (!select) continue;
+        const value = select.value,
+          options = [...select.options];
+        select.replaceChildren(
+          ...options.filter((o) => !o.value || o.value === "uncategorized"),
+        );
+        for (const group of [
+          ...catalog.groups,
+          "Autres catégories conservées",
+        ]) {
+          const members = options.filter(
+            (o) =>
+              o.value &&
+              o.value !== "uncategorized" &&
+              (catalog.assignments[o.value] ||
+                "Autres catégories conservées") === group,
+          );
+          if (members.length) {
+            const optgroup = node("optgroup");
+            optgroup.label = group;
+            optgroup.append(...members);
+            select.append(optgroup);
+          }
+        }
+        select.value = value;
+      }
+    }
+    function draw() {
+      if (!current?.category_catalog) return;
+      const catalog = current.category_catalog,
+        selected = filter.value;
+      filter.replaceChildren(new Option("Tous les groupes", ""));
+      for (const name of catalog.groups) filter.add(new Option(name, name));
+      filter.add(new Option("Autres catégories conservées", "other"));
+      filter.value = selected;
+      filter.disabled = !Object.keys(catalog.assignments).length;
+      if (filter.disabled) return;
+      groupSelects(catalog);
+      const host = $("category-list"),
+        rows = [...host.querySelectorAll(".category-list-row")];
+      if (!rows.length) return;
+      host.replaceChildren();
+      let shown = 0;
+      for (const group of [...catalog.groups, "Autres catégories conservées"]) {
+        const members = rows.filter(
+          (r) =>
+            (catalog.assignments[r.dataset.categoryId] ||
+              "Autres catégories conservées") === group,
+        );
+        if (
+          !members.length ||
+          (filter.value &&
+            (filter.value === "other"
+              ? group !== "Autres catégories conservées"
+              : filter.value !== group))
+        )
+          continue;
+        const section = node("div", undefined, "v511-category-group");
+        section.dataset.group = group;
+        section.append(node("h3", group + " · " + members.length));
+        if (group === "Transfert") {
+          const help = node("div", undefined, "v511-transfer-help");
+          help.append(
+            node(
+              "p",
+              "Pour déplacer de l’argent, utilisez un virement. Pour corriger un solde, vérifiez le compte avec votre banque. Ces catégories ne créent ni dépense ni réserve automatiquement.",
+              "sub",
+            ),
+            action("Enregistrer un virement", () =>
+              document.querySelector('[data-view="virements"]').click(),
+            ),
+            action("Vérifier un solde", () =>
+              document.querySelector('[data-view="comptes"]').click(),
+            ),
+          );
+          section.append(help);
+        }
+        for (const row of members) {
+          shown++;
+          row.querySelector(".v511-group-control")?.remove();
+          const id = Number(row.dataset.categoryId),
+            label = node("label", "Groupe", "v511-group-control"),
+            select = node("select");
+          select.setAttribute(
+            "aria-label",
+            "Groupe de " + current.categories.find((c) => c.id === id).name,
+          );
+          select.add(new Option("Autres catégories conservées", ""));
+          for (const name of catalog.groups) select.add(new Option(name, name));
+          select.value = catalog.assignments[id] || "";
+          select.onchange = async () => {
+            select.disabled = true;
+            try {
+              runtime.render(
+                await request("group", { id, group: select.value || null }),
+              );
+            } catch (e) {
+              status.textContent = e.message;
+              select.value = catalog.assignments[id] || "";
+            } finally {
+              select.disabled = false;
+            }
+          };
+          label.append(select);
+          row.append(label);
+          section.append(row);
+        }
+        host.append(section);
+      }
+      $("category-count").textContent =
+        shown + " / " + current.categories.length;
+      if (!shown)
+        host.append(
+          node(
+            "p",
+            "Aucune catégorie dans ce groupe pour cette recherche.",
+            "sub",
+          ),
+        );
+    }
+    document.addEventListener("budget:categories-rendered", draw);
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      current = s;
+      previous(s);
+      draw();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      current = runtime.state;
+      draw();
+    }
+  })();
 
- }
- document.addEventListener('budget:categories-rendered',draw);const previous=render;render=function(s){current=s;previous(s);draw();};if(typeof state!=='undefined'&&state){current=state;draw();}
-})();
-
-/* V5.2: a compact directory; editing tools are opened only when needed. */
-(()=>{
- const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};let current,expanded=new Set(),openGroups=new Set(),painting=false,lastSearch='',searchClosed=new Set();
- try{const value=JSON.parse(localStorage.getItem('budget-category-groups-v52')||'[]');if(Array.isArray(value))openGroups=new Set(value.filter(v=>typeof v==='string'));}catch{}
- const remember=()=>{try{localStorage.setItem('budget-category-groups-v52',JSON.stringify([...openGroups]));}catch{}};
- const button=(text,fn,cls='secondary')=>{const b=node('button',text,cls);b.type='button';b.onclick=fn;return b;};
- const section=$('section-categories');section.classList.add('v52-category-directory');const panel=section.querySelector('.category-create-panel'),tools=node('dialog',undefined,'editor-dialog v46-dialog v52-category-editor');tools.id='category-tools-dialog';tools.setAttribute('aria-label','Créer ou modifier une catégorie');const inner=node('div',undefined,'dialog-inner'),head=node('div',undefined,'dialog-heading');head.append(node('h2','Vos catégories'),button('Fermer',()=>tools.close()));inner.append(head,panel);tools.append(inner);document.body.append(tools);panel.querySelector('.step-label')?.remove();
- const setup=panel.querySelector('.v511-catalog-setup'),importButton=setup?.querySelector('button');if(setup)setup.hidden=true;
- const toolbar=node('div',undefined,'v52-category-toolbar'),intro=node('p','Un groupe pour vous repérer, une ligne par catégorie. Ouvrez une ligne pour la gérer.','sub'),message=node('p','','v46-status');message.setAttribute('role','status');
- function openCreate(){if(!tools.open)tools.showModal();$('category-manager').open=false;$('category-create-form').elements.name.focus();}
- toolbar.append(button('+ Catégorie',openCreate,'v52-create-button'),button('Reprendre ma liste Lunch Money',()=>importButton?.click()),button('Tout déplier',()=>setGroups(true)),button('Tout replier',()=>setGroups(false)));const oldIntro=section.querySelector('.page-intro');oldIntro.after(toolbar,intro,message);oldIntro.remove();
- for(const [id,kind] of [['category-create-form','create'],['category-edit-form','edit']]){const form=$(id),previous=form.onsubmit;form.onsubmit=async event=>{const count=current?.categories.length||0,id=Number($('category-edit-choice').value),name=form.elements.name.value.trim();await previous.call(form,event);if(kind==='create'&&(current?.categories.length||0)>count||kind==='edit'&&current?.categories.find(c=>c.id===id)?.name===name)tools.close();};}
- function setGroups(open){for(const d of $('category-list').querySelectorAll('.v52-category-group')){if(open)openGroups.add(d.dataset.group);else openGroups.delete(d.dataset.group);d.open=open;}remember();}
- function groupName(category){return current?.category_catalog?.assignments[category]||(Object.keys(current?.category_catalog?.assignments||{}).length?'Autres catégories conservées':'Vos catégories');}
- function paint(){
-  if(painting||!current)return;painting=true;const host=$('category-list'),search=$('category-search').value.trim(),filtered=!!$('category-group-filter')?.value;
-  try{
-   if(search!==lastSearch){searchClosed.clear();lastSearch=search;}
-   const loose=[...host.querySelectorAll(':scope>.category-list-row')];if(loose.length){const group=node('div',undefined,'v511-category-group');group.dataset.group='Vos catégories';group.append(node('h3','Vos catégories · '+loose.length),...loose);host.prepend(group);}
-   for(const old of [...host.querySelectorAll('.v511-category-group')]){
-    let group=old;if(old.tagName!=='DETAILS'){group=node('details',undefined,'v511-category-group v52-category-group');group.dataset.group=old.dataset.group||'Vos catégories';const summary=node('summary'),heading=old.querySelector(':scope>h3');summary.textContent=heading?.textContent||group.dataset.group;heading?.remove();const body=node('div',undefined,'v52-group-body');body.append(...old.childNodes);group.append(summary,body);old.replaceWith(group);group.addEventListener('toggle',()=>{if(!group.isConnected||painting||$('category-search').value.trim()||$('category-group-filter')?.value)return;if(group.open)openGroups.add(group.dataset.group);else openGroups.delete(group.dataset.group);remember();});}
-    group.open=!!search||filtered||openGroups.has(group.dataset.group);
-   }
-   for(const row of host.querySelectorAll('.category-list-row')){
-    const id=Number(row.dataset.categoryId),category=current.categories.find(c=>c.id===id);if(!category)continue;let details=row.querySelector(':scope>.v52-row-details'),toggle=row.querySelector('.v52-row-toggle');
-    if(!details){row.classList.add('v52-category-row');const name=row.querySelector(':scope>strong'),edit=row.querySelector(':scope>button');details=node('div',undefined,'v52-row-details');details.id='category-row-tools-'+id;toggle=button('',()=>{if($('category-search').value.trim()){if(toggle.getAttribute('aria-expanded')==='true'){expanded.delete(id);searchClosed.add(id);}else{expanded.add(id);searchClosed.delete(id);}}else if(expanded.has(id))expanded.delete(id);else expanded.add(id);paint();},'v52-row-toggle');toggle.setAttribute('aria-label','Gérer '+category.name);toggle.setAttribute('aria-controls',details.id);const label=node('span',undefined,'v52-category-name');if(name)label.append(name);toggle.append(label,node('span','','v52-child-count'),node('span','⌄','v52-row-chevron'));toggle.lastChild.setAttribute('aria-hidden','true');row.prepend(toggle);row.append(details);if(edit){edit.textContent='Renommer';const click=edit.onclick;edit.onclick=event=>{if(!tools.open)tools.showModal();click.call(edit,event);};details.append(edit);}}
-    for(const child of [...row.children])if(child.matches('.v46-tools,.v511-group-control'))details.append(child);
-    const count=current.subcategories.filter(c=>c.category_id===id&&(!c.archived||$('category-show-archived').checked)).length;toggle.querySelector('.v52-child-count').textContent=count?count+' sous-catégorie'+(count>1?'s':''):(category.archived?'Archivée':'');const rowOpen=expanded.has(id)||(!!search&&!searchClosed.has(id));toggle.setAttribute('aria-expanded',String(rowOpen));details.hidden=!rowOpen;row.classList.toggle('is-expanded',!details.hidden);
-   }
-   toolbar.querySelectorAll('button').forEach((b,i)=>{if(i>1)b.disabled=!host.querySelector('.v52-category-group');});
-  }finally{painting=false;}
- }
- document.addEventListener('budget:categories-rendered',paint);const previous=render;render=function(s){const before=new Set(current?.categories.map(c=>c.id)||[]),added=current?s.categories.filter(c=>!before.has(c.id)):[];current=s;expanded=new Set([...expanded].filter(id=>s.categories.some(c=>c.id===id)));if(added.length===1){expanded.add(added[0].id);openGroups.add(groupName(added[0].id));remember();}previous(s);paint();};if(typeof state!=='undefined'&&state){current=state;paint();}
-})();
+  /* V5.2: a compact directory; editing tools are opened only when needed. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      node = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      };
+    let current,
+      expanded = new Set(),
+      openGroups = new Set(),
+      painting = false,
+      lastSearch = "",
+      searchClosed = new Set();
+    try {
+      const value = JSON.parse(
+        localStorage.getItem("budget-category-groups-v52") || "[]",
+      );
+      if (Array.isArray(value))
+        openGroups = new Set(value.filter((v) => typeof v === "string"));
+    } catch {}
+    const remember = () => {
+      try {
+        localStorage.setItem(
+          "budget-category-groups-v52",
+          JSON.stringify([...openGroups]),
+        );
+      } catch {}
+    };
+    const button = (text, fn, cls = "secondary") => {
+      const b = node("button", text, cls);
+      b.type = "button";
+      b.onclick = fn;
+      return b;
+    };
+    const section = $("section-categories");
+    section.classList.add("v52-category-directory");
+    const panel = section.querySelector(".category-create-panel"),
+      tools = node(
+        "dialog",
+        undefined,
+        "editor-dialog v46-dialog v52-category-editor",
+      );
+    tools.id = "category-tools-dialog";
+    tools.setAttribute("aria-label", "Créer ou modifier une catégorie");
+    const inner = node("div", undefined, "dialog-inner"),
+      head = node("div", undefined, "dialog-heading");
+    head.append(
+      node("h2", "Vos catégories"),
+      button("Fermer", () => tools.close()),
+    );
+    inner.append(head, panel);
+    tools.append(inner);
+    document.body.append(tools);
+    panel.querySelector(".step-label")?.remove();
+    const setup = panel.querySelector(".v511-catalog-setup"),
+      importButton = setup?.querySelector("button");
+    if (setup) setup.hidden = true;
+    const toolbar = node("div", undefined, "v52-category-toolbar"),
+      intro = node(
+        "p",
+        "Un groupe pour vous repérer, une ligne par catégorie. Ouvrez une ligne pour la gérer.",
+        "sub",
+      ),
+      message = node("p", "", "v46-status");
+    message.setAttribute("role", "status");
+    function openCreate() {
+      if (!tools.open) tools.showModal();
+      $("category-manager").open = false;
+      $("category-create-form").elements.name.focus();
+    }
+    toolbar.append(
+      button("+ Catégorie", openCreate, "v52-create-button"),
+      button("Reprendre ma liste Lunch Money", () => importButton?.click()),
+      button("Tout déplier", () => setGroups(true)),
+      button("Tout replier", () => setGroups(false)),
+    );
+    const oldIntro = section.querySelector(".page-intro");
+    oldIntro.after(toolbar, intro, message);
+    oldIntro.remove();
+    for (const [id, kind] of [
+      ["category-create-form", "create"],
+      ["category-edit-form", "edit"],
+    ]) {
+      const form = $(id),
+        previous = form.onsubmit;
+      form.onsubmit = async (event) => {
+        const count = current?.categories.length || 0,
+          id = Number($("category-edit-choice").value),
+          name = form.elements.name.value.trim();
+        await previous.call(form, event);
+        if (
+          (kind === "create" && (current?.categories.length || 0) > count) ||
+          (kind === "edit" &&
+            current?.categories.find((c) => c.id === id)?.name === name)
+        )
+          tools.close();
+      };
+    }
+    function setGroups(open) {
+      for (const d of $("category-list").querySelectorAll(
+        ".v52-category-group",
+      )) {
+        if (open) openGroups.add(d.dataset.group);
+        else openGroups.delete(d.dataset.group);
+        d.open = open;
+      }
+      remember();
+    }
+    function groupName(category) {
+      return (
+        current?.category_catalog?.assignments[category] ||
+        (Object.keys(current?.category_catalog?.assignments || {}).length
+          ? "Autres catégories conservées"
+          : "Vos catégories")
+      );
+    }
+    function paint() {
+      if (painting || !current) return;
+      painting = true;
+      const host = $("category-list"),
+        search = $("category-search").value.trim(),
+        filtered = !!$("category-group-filter")?.value;
+      try {
+        if (search !== lastSearch) {
+          searchClosed.clear();
+          lastSearch = search;
+        }
+        const loose = [...host.querySelectorAll(":scope>.category-list-row")];
+        if (loose.length) {
+          const group = node("div", undefined, "v511-category-group");
+          group.dataset.group = "Vos catégories";
+          group.append(
+            node("h3", "Vos catégories · " + loose.length),
+            ...loose,
+          );
+          host.prepend(group);
+        }
+        for (const old of [...host.querySelectorAll(".v511-category-group")]) {
+          let group = old;
+          if (old.tagName !== "DETAILS") {
+            group = node(
+              "details",
+              undefined,
+              "v511-category-group v52-category-group",
+            );
+            group.dataset.group = old.dataset.group || "Vos catégories";
+            const summary = node("summary"),
+              heading = old.querySelector(":scope>h3");
+            summary.textContent = heading?.textContent || group.dataset.group;
+            heading?.remove();
+            const body = node("div", undefined, "v52-group-body");
+            body.append(...old.childNodes);
+            group.append(summary, body);
+            old.replaceWith(group);
+            group.addEventListener("toggle", () => {
+              if (
+                !group.isConnected ||
+                painting ||
+                $("category-search").value.trim() ||
+                $("category-group-filter")?.value
+              )
+                return;
+              if (group.open) openGroups.add(group.dataset.group);
+              else openGroups.delete(group.dataset.group);
+              remember();
+            });
+          }
+          group.open =
+            !!search || filtered || openGroups.has(group.dataset.group);
+        }
+        for (const row of host.querySelectorAll(".category-list-row")) {
+          const id = Number(row.dataset.categoryId),
+            category = current.categories.find((c) => c.id === id);
+          if (!category) continue;
+          let details = row.querySelector(":scope>.v52-row-details"),
+            toggle = row.querySelector(".v52-row-toggle");
+          if (!details) {
+            row.classList.add("v52-category-row");
+            const name = row.querySelector(":scope>strong"),
+              edit = row.querySelector(":scope>button");
+            details = node("div", undefined, "v52-row-details");
+            details.id = "category-row-tools-" + id;
+            toggle = button(
+              "",
+              () => {
+                if ($("category-search").value.trim()) {
+                  if (toggle.getAttribute("aria-expanded") === "true") {
+                    expanded.delete(id);
+                    searchClosed.add(id);
+                  } else {
+                    expanded.add(id);
+                    searchClosed.delete(id);
+                  }
+                } else if (expanded.has(id)) expanded.delete(id);
+                else expanded.add(id);
+                paint();
+              },
+              "v52-row-toggle",
+            );
+            toggle.setAttribute("aria-label", "Gérer " + category.name);
+            toggle.setAttribute("aria-controls", details.id);
+            const label = node("span", undefined, "v52-category-name");
+            if (name) label.append(name);
+            toggle.append(
+              label,
+              node("span", "", "v52-child-count"),
+              node("span", "⌄", "v52-row-chevron"),
+            );
+            toggle.lastChild.setAttribute("aria-hidden", "true");
+            row.prepend(toggle);
+            row.append(details);
+            if (edit) {
+              edit.textContent = "Renommer";
+              const click = edit.onclick;
+              edit.onclick = (event) => {
+                if (!tools.open) tools.showModal();
+                click.call(edit, event);
+              };
+              details.append(edit);
+            }
+          }
+          for (const child of [...row.children])
+            if (child.matches(".v46-tools,.v511-group-control"))
+              details.append(child);
+          const count = current.subcategories.filter(
+            (c) =>
+              c.category_id === id &&
+              (!c.archived || $("category-show-archived").checked),
+          ).length;
+          toggle.querySelector(".v52-child-count").textContent = count
+            ? count + " sous-catégorie" + (count > 1 ? "s" : "")
+            : category.archived
+              ? "Archivée"
+              : "";
+          const rowOpen =
+            expanded.has(id) || (!!search && !searchClosed.has(id));
+          toggle.setAttribute("aria-expanded", String(rowOpen));
+          details.hidden = !rowOpen;
+          row.classList.toggle("is-expanded", !details.hidden);
+        }
+        toolbar.querySelectorAll("button").forEach((b, i) => {
+          if (i > 1) b.disabled = !host.querySelector(".v52-category-group");
+        });
+      } finally {
+        painting = false;
+      }
+    }
+    document.addEventListener("budget:categories-rendered", paint);
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      const before = new Set(current?.categories.map((c) => c.id) || []),
+        added = current ? s.categories.filter((c) => !before.has(c.id)) : [];
+      current = s;
+      expanded = new Set(
+        [...expanded].filter((id) => s.categories.some((c) => c.id === id)),
+      );
+      if (added.length === 1) {
+        expanded.add(added[0].id);
+        openGroups.add(groupName(added[0].id));
+        remember();
+      }
+      previous(s);
+      paint();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      current = runtime.state;
+      paint();
+    }
+  })();
+}

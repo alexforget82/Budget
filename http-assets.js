@@ -84,3 +84,23 @@ export const mime = {
   "dashboard-v47.js": "text/javascript; charset=utf-8",
   "dashboard-v47.css": "text/css; charset=utf-8",
 };
+
+// Only release-version query strings are accepted, against the fixed asset allowlist.
+staticFiles.set("/ui-entry.js", "ui-entry.js");
+mime["ui-entry.js"] = "text/javascript; charset=utf-8";
+export function assetName(url) {
+  if (!/^\/(?:[A-Za-z0-9][A-Za-z0-9._-]*)?(?:\?v=\d+\.\d+\.\d+)?$/.test(url))
+    return null;
+  return staticFiles.get(url.split("?")[0]) || null;
+}
+
+for (const file of [
+  "styles.css",
+  "styles-foundation.css",
+  "styles-domains.css",
+  "styles-sillage.css",
+  "styles-tokens.css",
+]) {
+  staticFiles.set("/" + file, file);
+  mime[file] = "text/css; charset=utf-8";
+}

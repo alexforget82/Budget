@@ -1,0 +1,48 @@
+/* The current Sillage palette and token bridge. */
+
+:root,
+html[data-theme="light"] {
+  --v80-bg: #f4f7fa;
+  --v80-surface: #ffffff;
+  --v80-raised: #edf3f7;
+  --v80-line: #dce5ec;
+  --v80-ink: #203248;
+  --v80-muted: #52667d;
+  --v80-accent: #0d7168;
+  --v80-blue: #376dd1;
+  --s26-nav: #fbfcfd;
+  --s26-selected: #e3f1ed;
+  --s26-on-accent: #ffffff;
+  --s26-red: #ae3546;
+  --s26-amber: #855713;
+}
+html[data-theme="dark"] {
+  --v80-bg: #101b28;
+  --v80-surface: #172534;
+  --v80-raised: #1d2e40;
+  --v80-line: #34485c;
+  --v80-ink: #edf3fa;
+  --v80-muted: #b3c2d3;
+  --v80-accent: #79dfcb;
+  --v80-blue: #9bbcff;
+  --s26-nav: #0d1722;
+  --s26-selected: #183c39;
+  --s26-on-accent: #102925;
+  --s26-red: #ffabb5;
+  --s26-amber: #edcd89;
+}
+html[data-theme] {
+  --ink: var(--v80-ink);
+  --muted: var(--v80-muted);
+  --accent: var(--v80-accent);
+  --v2-card: var(--v80-surface);
+  --v2-text: var(--v80-ink);
+  --v2-line: var(--v80-line);
+  --v2-accent: var(--v80-accent);
+  --life-bg: var(--v80-surface);
+  --life-soft: var(--v80-raised);
+  --life-line: var(--v80-line);
+  --life-text: var(--v80-ink);
+  --life-muted: var(--v80-muted);
+  --sillage-focus: var(--v80-accent);
+}

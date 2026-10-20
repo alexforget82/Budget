@@ -1,6 +1,6 @@
 # Revenir à Sillage v11.1
 
-La v11.2.0 livre uniquement les étapes 0 et 1 du chantier technique. Les étapes suivantes attendent une validation séparée.
+La v11.4.0 poursuit les étapes 2 à 5 du chantier technique. Elle conserve le schéma de base de données et le mécanisme de retour introduit dans la v11.2.0.
 
 ## Retour habituel depuis une mise à jour de la v11.1 officielle
 
@@ -10,7 +10,7 @@ La v11.2.0 livre uniquement les étapes 0 et 1 du chantier technique. Les étape
 
 Le raccourci utilise une copie locale du code officiel, créée avant son remplacement et vérifiée par SHA-256. Il reste utilisable si le nouveau serveur ne démarre pas. Le service est arrêté puis relancé par l’installateur original; une sauvegarde cohérente de la base actuelle est créée avant le retour. Le dossier `data/` n’est pas remplacé par celui d’un téléchargement : **les transactions ajoutées après la mise à jour restent présentes**. Le lien iPhone et la configuration privée sont conservés.
 
-Cette compatibilité a été testée pour le schéma 1 de la v11.2.0. Elle ne garantit pas la compatibilité avec d’éventuels changements de schéma futurs.
+Cette compatibilité a été testée pour le schéma 1, conservé jusqu’à la v11.4.0 incluse. Elle ne garantit pas la compatibilité avec d’éventuels changements de schéma futurs.
 
 La copie se trouve dans :
 

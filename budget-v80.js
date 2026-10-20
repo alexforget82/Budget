@@ -1,37 +1,987 @@
-/* v8 workspace: canonical financial data, compact visuals and explicit ledger actions. */
-(()=>{
- 'use strict';
- const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;},btn=(text,fn,cls='secondary')=>{const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;},field=(text,input)=>{const l=el('label',text);input.setAttribute('aria-label',text);l.append(input);return l;},money=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short'}),go=key=>document.querySelector(`.app-shell-nav [data-view="${key}"]`).click();
- const palette=['#22b594','#547ff0','#e4a144','#ad79dc','#30a5c0','#d06d7c'];let latest,period=30,budgetTicket=0;
- async function request(url,payload){const r=await fetch(url,payload===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),out=await r.json();if(!r.ok)throw Error(out.error||'Opération impossible.');return out;}
- function modal(id,title){const d=el('dialog',undefined,'editor-dialog v80-dialog');d.id=id;d.setAttribute('aria-label',title);const inner=el('div',undefined,'dialog-inner'),heading=el('div',undefined,'dialog-heading');heading.append(el('h2',title),btn('Fermer',()=>d.close()));d.append(inner);inner.append(heading);document.body.append(d);return {d,inner};}
- function chart(svg,days,key){svg.replaceChildren();svg.setAttribute('viewBox','0 0 500 90');const vals=days.map(d=>d[key]),low=Math.min(...vals),range=Math.max(...vals)-low||1,points=vals.map((v,i)=>`${4+i*492/Math.max(1,vals.length-1)},${82-(v-low)*70/range}`).join(' '),line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',points);line.setAttribute('fill','none');line.setAttribute('stroke','currentColor');line.setAttribute('stroke-width','2.5');line.setAttribute('vector-effect','non-scaling-stroke');svg.append(line);}
- const hero=el('div',undefined,'v80-hero');hero.id='v80-hero';const heroHead=el('div',undefined,'v80-panel-head'),heroTabs=el('div',undefined,'v80-segment');heroTabs.setAttribute('aria-label','Période du disponible prudent');heroHead.append(el('span','VOTRE MARGE DE MANŒUVRE','v80-eyebrow'),heroTabs);for(const n of [30,60,90]){const b=btn(n+' jours',()=>{period=n;drawHero();});b.dataset.horizon=n;heroTabs.append(b);}hero.append(heroHead);const heroBody=el('div',undefined,'v80-hero-body'),lead=el('div'),heroValue=el('strong','—','v80-hero-value'),heroCaption=el('p',undefined,'v80-hero-caption'),spark=document.createElementNS('http://www.w3.org/2000/svg','svg');heroValue.id='v80-safe';spark.classList.add('v80-spark');spark.setAttribute('role','img');spark.setAttribute('aria-label','Trajectoire du disponible après protections');lead.append(el('h2','Safe-to-Spend'),heroValue,heroCaption,spark);const heroFacts=el('div',undefined,'v80-hero-facts');heroBody.append(lead,heroFacts);hero.append(heroBody);document.querySelector('[data-widget="spending"] .v47-widget-body').prepend(hero);
- function drawHero(){if(!latest?.forecast?.length)return;const days=latest.forecast.slice(0,period),opening={date:days[0].date,safe_cents:latest.safe_cents},low=[opening,...days].reduce((a,b)=>b.safe_cents<a.safe_cents?b:a);heroValue.textContent=money(low.safe_cents);heroValue.classList.toggle('v80-negative',low.safe_cents<0);heroCaption.textContent='Minimum prudent sur '+period+' jours · argent protégé et dépenses prévues pris en compte.';for(const b of heroTabs.children)b.setAttribute('aria-pressed',String(+b.dataset.horizon===period));chart(spark,days,'safe_cents');heroFacts.replaceChildren();const pending=days.flatMap(d=>d.events.filter(e=>e.type==='income'&&e.cash_impact_cents!==0).map(e=>({...e,date:d.date}))).find(e=>e.amount_cents>0);for(const [label,value,caption]of [['Disponible maintenant',money(latest.safe_cents),'Après les protections actuelles'],['Point bas prévu',date(low.date),money(low.safe_cents)],['Prochaine rentrée',pending?money(pending.amount_cents):'Non prévue',pending?date(pending.date)+' · '+pending.description:'Sur la période choisie']]){const card=el('div');card.append(el('span',label),el('strong',value),el('small',caption));heroFacts.append(card);}const check=btn('Vérifier mes soldes',()=>{const a=latest.accounts.find(a=>a.included&&a.kind!=='credit')||latest.accounts[0];if(a)window.budgetOpenBankCheck(a.id);});check.disabled=!latest.accounts.length;heroFacts.append(btn('Explorer les prévisions',()=>window.budgetExploreForecast(low.date,period)),check);}
- const overview=el('section',undefined,'v80-overview');overview.id='v80-spending-overview';document.querySelector('[data-widget="alerts"] .v47-widget-body').append(overview);const budgetOverview=el('details',undefined,'v80-budget-overview');budgetOverview.append(el('summary','Répartition des achats et rythme du budget'));const budgetGraphic=el('div',undefined,'v80-overview');budgetOverview.append(budgetGraphic);$('monthly-budget-workspace').querySelector('.v60-metrics').after(budgetOverview);
- function showCategory(id,month,startOn=null){go('transactions');$('v3-category-filter').value=id==null?'uncategorized':String(id);$('v3-category-filter').dispatchEvent(new Event('change',{bubbles:true}));$('v3-date-from').value=startOn||month+'-01';const end=new Date(month+'-15T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);end.setUTCDate(0);$('v3-date-to').value=end.toISOString().slice(0,10);$('v3-date-to').dispatchEvent(new Event('change',{bubbles:true}));}
- function drawOverview(host,data){host.replaceChildren();const head=el('div',undefined,'v80-panel-head');head.append(el('div','Vos achats en perspective','v80-panel-title'),el('span',data.month+(data.start_period?' · depuis le '+data.start_period.start_on.slice(8):''),'v80-eyebrow'));host.append(head);const groups=new Map();for(const t of latest.calendar_actuals||[])if(t.happened_on.startsWith(data.month)&&(!data.start_period||t.happened_on>=data.start_period.start_on)&&t.amount_cents<0){const id=t.category_id||null;if(!groups.has(id))groups.set(id,{id,name:latest.categories.find(c=>c.id===id)?.name||'Non-catégorisé',cents:0});groups.get(id).cents-=t.amount_cents;}const all=[...groups.values()].sort((a,b)=>b.cents-a.cents),total=all.reduce((n,r)=>n+r.cents,0),top=all.slice(0,5);if(all.length>5)top.push({id:'other',name:'Autres catégories',cents:all.slice(5).reduce((n,r)=>n+r.cents,0)});const content=el('div',undefined,'v80-overview-body'),donut=el('div',undefined,'v80-donut'),center=el('div');donut.setAttribute('role','img');donut.setAttribute('aria-label','Achats du mois : '+money(total));let start=0;donut.style.background=total?'conic-gradient('+top.map((r,i)=>{const end=start+r.cents/total*100,part=palette[i]+' '+start+'% '+end+'%';start=end;return part;}).join(',')+')':'var(--v80-line)';center.append(el('strong',money(total)),el('small',data.start_period?'Achats de la période':'Achats du mois'));donut.append(center);const legend=el('div',undefined,'v80-spending-legend');for(const [i,r]of top.entries()){const row=btn('',()=>r.id==='other'?go('bilan'):showCategory(r.id,data.month,data.start_period?.start_on),'v80-legend-row'),dot=el('i');dot.style.background=palette[i];row.append(dot,el('span',r.name),el('strong',money(r.cents)),el('small',Math.round(r.cents/total*100)+' %'));legend.append(row);}if(!top.length)legend.append(el('p','Aucun achat enregistré pour ce mois.','quiet-copy'));content.append(donut,legend);host.append(content,el('p','Achats enregistrés, hors virements. Les remboursements sont reflétés dans le réel net du Budget.','v80-fine-print'));const pace=el('div',undefined,'v80-pace');pace.append(el('h3','Votre rythme budgétaire'));const currentMonth=latest.forecast[0].date.slice(0,7);const daysInMonth=new Date(Number(data.month.slice(0,4)),Number(data.month.slice(5,7)),0).getDate(),fraction=data.start_period?null:data.month===currentMonth?Number(latest.forecast[0].date.slice(8))/daysInMonth:null;const targets=data.rows.filter(r=>r.direction==='expense'&&r.budget_cents>0&&r.actual_cents>0).sort((a,b)=>b.actual_cents/b.budget_cents-a.actual_cents/a.budget_cents).slice(0,3);for(const r of targets){const row=el('div',undefined,'v80-pace-row'),ratio=r.actual_cents/r.budget_cents,bar=el('progress');bar.max=100;bar.value=Math.min(100,Math.max(0,ratio*100));bar.classList.toggle('v80-over',ratio>1);bar.setAttribute('aria-label',r.name+' : '+Math.round(ratio*100)+' % utilisés');row.append(el('strong',r.name),el('span',Math.round(ratio*100)+' % utilisés'),bar,el('small',fraction!==null?Math.round(fraction*100)+' % du mois écoulé · repère, pas une réserve':money(r.actual_cents)+' sur '+money(r.budget_cents)));pace.append(row);}if(!targets.length)pace.append(el('p','Définissez vos objectifs dans Budget pour comparer votre progression.','quiet-copy'));host.append(pace);}
- async function loadBudgetVisuals(){if(!latest)return;const mine=++budgetTicket;try{const current=latest.forecast[0].date.slice(0,7),chosen=$('v60-month').value||current;const values=await Promise.all([request('/api/budget/global?month='+current),chosen===current?null:request('/api/budget/global?month='+chosen)]);if(mine!==budgetTicket)return;drawOverview(overview,values[0]);drawOverview(budgetGraphic,values[1]||values[0]);}catch{if(mine===budgetTicket){overview.replaceChildren(el('p','Répartition indisponible. Actualisez pour réessayer.','quiet-copy'));budgetGraphic.replaceChildren();}}}
- $('v60-month').addEventListener('change',loadBudgetVisuals);
- function decorateEnvelopes(){for(const card of $('envelopes').querySelectorAll('[data-envelope-id]')){card.querySelector('.v80-card-hold')?.remove();const id=Number(card.dataset.envelopeId),held=(latest.sts_breakdown.card_envelopes||[]).filter(f=>f.envelope_id===id).reduce((n,f)=>n+f.amount_cents,0);if(held){const note=el('div',undefined,'v80-card-hold');note.append(el('span','Achats sur carte encore protégés'),el('strong',money(held)));card.querySelector('.v44-card-tools')?.before(note);}}}
- // Transaction selection stays on the visible page and never alters financial fields.
- const selected=new Set();let rows=[];const bulkBar=el('div',undefined,'v80-bulk-bar');bulkBar.id='v80-bulk-bar';const selectionCount=el('span','Aucune sélection'),selectAll=btn('Sélectionner la page',()=>{for(const r of rows)selected.add(r.id);syncSelection();}),bulkOpen=btn('Modifier la sélection',openBulk),clear=btn('Effacer',()=>{selected.clear();syncSelection();});bulkBar.append(selectionCount,selectAll,bulkOpen,clear);$('v2-transaction-list').before(bulkBar);
- function syncSelection(){selectionCount.textContent=selected.size+' opération(s) sélectionnée(s) sur cette page';bulkOpen.disabled=!selected.size;clear.disabled=!selected.size;for(const c of $('v2-transaction-list').querySelectorAll('.v80-row-check'))c.checked=selected.has(Number(c.dataset.id));}
- document.addEventListener('budget:transactions-loading',()=>{selected.clear();rows=[];syncSelection();});
- document.addEventListener('budget:transactions-loaded',e=>{rows=e.detail.rows||[];for(const r of rows){const row=$('v2-transaction-list').querySelector(`[data-transaction-id="${r.id}"]`);if(!row)continue;const check=el('input',undefined,'v80-row-check');check.type='checkbox';check.dataset.id=r.id;check.setAttribute('aria-label','Sélectionner '+r.description);check.onchange=()=>{if(check.checked)selected.add(r.id);else selected.delete(r.id);syncSelection();};row.append(check);if(r.amount_cents<0){const more=row.querySelector('.ledger-menu-items');more.append(btn('Diviser cette dépense',()=>{row.querySelector('.ledger-menu').open=false;openSplit(r);}));}}syncSelection();});
- const bulk=modal('v80-bulk-dialog','Modifier plusieurs opérations');
- function categorySelect(label,value=null){const c=el('select');c.add(new Option('Non-catégorisé',''));for(const cat of latest.categories.filter(c=>!c.archived))c.add(new Option(cat.name,cat.id));c.value=value||'';c.setAttribute('aria-label',label);return c;}
- function childSelect(c,label,value=null){const sub=el('select');sub.setAttribute('aria-label',label);const fill=()=>{sub.replaceChildren(new Option('Sans sous-catégorie',''),...latest.subcategories.filter(s=>s.category_id===Number(c.value)&&!s.archived).map(s=>new Option(s.name,s.id)));};c.addEventListener('change',fill);fill();sub.value=value||'';return sub;}
- function openBulk(){while(bulk.inner.children.length>1)bulk.inner.lastChild.remove();const ids=[...selected],form=el('form',undefined,'v80-form'),mode=el('select'),category=categorySelect('Catégorie de la sélection'),child=childSelect(category,'Sous-catégorie de la sélection'),review=el('select'),out=el('div'),error=el('p',undefined,'v80-error');error.setAttribute('role','alert');mode.add(new Option('Changer la catégorie','category'));mode.add(new Option('Changer le statut de révision','review'));review.add(new Option('Révisées','true'));review.add(new Option('À vérifier','false'));const categoryField=field('Catégorie',category),childField=field('Sous-catégorie',child),reviewField=field('Révision',review);reviewField.hidden=true;mode.onchange=()=>{categoryField.hidden=childField.hidden=mode.value!=='category';reviewField.hidden=mode.value!=='review';};form.append(el('p',ids.length+' opération(s). Les comptes, montants, dates et enveloppes seront conservés.','quiet-copy'),field('Action',mode),categoryField,childField,reviewField,error);const preview=el('button','Vérifier les modifications','primary');preview.type='submit';form.append(preview,out);let ticket=0;form.oninput=()=>{ticket++;out.replaceChildren();};form.onchange=()=>{ticket++;out.replaceChildren();};form.onsubmit=async e=>{e.preventDefault();const mine=++ticket;preview.disabled=true;error.textContent='';const changes=mode.value==='category'?{category_id:category.value?Number(category.value):null,subcategory_id:child.value?Number(child.value):null}:{reviewed:review.value==='true'};try{const p=await request('/api/workspace/bulk-preview',{ids,changes});if(mine!==ticket)return;out.replaceChildren(el('p',p.items.length+' opération(s) seront modifiées. Aucun effet sur les soldes ni les réserves.','quiet-copy'),btn('Confirmer les modifications',async()=>{try{render(await request('/api/workspace/bulk-apply',{ids,changes,token:p.token}));bulk.d.close();}catch(e){error.textContent=e.message;out.replaceChildren();}},'primary'));}catch(e){error.textContent=e.message;}finally{preview.disabled=false;}};bulk.inner.append(form);bulk.d.showModal();}
- const split=modal('v80-split-dialog','Répartir une dépense');
- function openSplit(r){while(split.inner.children.length>1)split.inner.lastChild.remove();const form=el('form',undefined,'v80-form'),list=el('div',undefined,'v80-split-parts'),total=el('p',undefined,'v80-split-total'),out=el('div'),error=el('p',undefined,'v80-error');error.setAttribute('role','alert');let parts=[],ticket=0;const invalidate=()=>{ticket++;out.replaceChildren();const sum=parts.reduce((n,p)=>n+Math.round(Number(p.amount.value||0)*100),0),difference=-r.amount_cents-sum;total.textContent='Dépense : '+money(-r.amount_cents)+' · Réparti : '+money(sum)+' · Reste : '+money(difference);total.classList.toggle('v80-error',difference!==0);};
-  function addPart(value){if(parts.length>=20)return;const row=el('div',undefined,'v80-split-part'),amount=el('input'),category=categorySelect('Catégorie de la part',r.category_id),child=childSelect(category,'Sous-catégorie de la part',r.subcategory_id),envelope=el('select');amount.type='number';amount.min='.01';amount.step='.01';amount.required=true;amount.value=(value/100).toFixed(2);envelope.add(new Option('Sans enveloppe',''));for(const e of latest.envelopes.filter(e=>e.active))envelope.add(new Option(e.name,e.id));envelope.value=r.envelope_id||'';const part={row,amount,category,child,envelope};parts.push(part);row.append(field('Montant de la part ($)',amount),field('Catégorie de la part',category),field('Sous-catégorie de la part',child),field('Enveloppe de la part',envelope),btn('Retirer',()=>{if(parts.length<=2)return;parts=parts.filter(p=>p!==part);row.remove();invalidate();}));list.append(row);invalidate();}
-  form.append(el('p',r.description+' · '+money(-r.amount_cents),'v80-panel-title'),el('p','Répartissez le montant entre catégories et enveloppes. Le compte, la date et le montant total resteront identiques. Aucun nouveau débit bancaire.','quiet-copy'),list,btn('+ Ajouter une part',()=>addPart(0)),total,error);const preview=el('button','Vérifier la répartition','primary');preview.type='submit';form.append(preview,out);form.oninput=invalidate;form.onchange=invalidate;addPart(Math.round(-r.amount_cents/2));addPart(-r.amount_cents-Math.round(-r.amount_cents/2));form.onsubmit=async e=>{e.preventDefault();const mine=++ticket;preview.disabled=true;error.textContent='';const payload={id:r.id,parts:parts.map(p=>({amount:Number(p.amount.value),category_id:p.category.value?Number(p.category.value):null,subcategory_id:p.child.value?Number(p.child.value):null,envelope_id:p.envelope.value?Number(p.envelope.value):null}))};try{const p=await request('/api/workspace/split-preview',payload);if(mine!==ticket)return;out.replaceChildren(el('p','Disponible maintenant : '+money(p.before.safe_cents)+' → '+money(p.after.safe_cents),'life-preview'),el('p','Minimum prévu sur 90 jours : '+money(p.before.minimum_cents)+' → '+money(p.after.minimum_cents),'quiet-copy'),el('p','Le solde du compte reste identique. Le disponible peut évoluer selon les enveloppes choisies.','quiet-copy'),btn('Confirmer la répartition',async()=>{try{render(await request('/api/workspace/split-apply',{...payload,token:p.token}));split.d.close();}catch(e){error.textContent=e.message;out.replaceChildren();}},'primary'));}catch(e){error.textContent=e.message;}finally{preview.disabled=false;}};split.inner.append(form);split.d.showModal();}
- // Saved filters are local preferences, separate from bank and envelope data.
- const saved=el('details',undefined,'v80-saved-filters');saved.append(el('summary','Mes vues de transactions'));const choice=el('select'),viewName=el('input'),viewStatus=el('p',undefined,'quiet-copy');choice.setAttribute('aria-label','Vue de transactions enregistrée');viewName.placeholder='Ex. Achats CIBC à vérifier';viewName.maxLength=60;viewName.setAttribute('aria-label','Nom de la vue');const key='mon-budget-register-views-v80',filterIds=['sillage-sort','v2-search','v2-account','v2-review','v2-kind','v3-category-filter','v3-date-from','v3-date-to'];function views(){try{return JSON.parse(localStorage.getItem(key)||'[]').filter(v=>v&&typeof v.name==='string'&&v.filters&&typeof v.filters==='object').slice(0,10);}catch{return [];}}function fillViews(){choice.replaceChildren(new Option('Choisir une vue',''),...views().map((v,i)=>new Option(v.name,i)));}fillViews();saved.append(choice,viewName,btn('Mémoriser cette vue',()=>{const name=viewName.value.trim();if(!name){viewStatus.textContent='Donnez un nom à cette vue.';return;}const items=views().filter(v=>v.name!==name);if(items.length>=10){viewStatus.textContent='Limite de 10 vues atteinte.';return;}items.push({name,filters:Object.fromEntries(filterIds.map(id=>[id,$(id).value])),subcategory:$('v46-subcategory-filter')?.value||''});try{localStorage.setItem(key,JSON.stringify(items));fillViews();viewStatus.textContent='Vue enregistrée sur cet appareil.';}catch{viewStatus.textContent='Le navigateur ne permet pas d’enregistrer cette vue.';}}),btn('Ouvrir la vue',()=>{const v=views()[Number(choice.value)];if(choice.value===''||!v)return;for(const id of filterIds)$(id).value=String(v.filters[id]||(id==='sillage-sort'?'date:desc':''));$('sillage-sort')?.dispatchEvent(new Event('change',{bubbles:true}));$('v3-category-filter').dispatchEvent(new Event('change',{bubbles:true}));window.budgetSetSubcategory?.('v3-category-filter',v.subcategory||null);$('v3-date-to').dispatchEvent(new Event('change',{bubbles:true}));viewStatus.textContent=v.name+' appliquée.';}),btn('Supprimer la vue',()=>{if(choice.value==='')return;try{localStorage.setItem(key,JSON.stringify(views().filter((v,i)=>i!==Number(choice.value))));fillViews();viewStatus.textContent='Vue supprimée.';}catch{viewStatus.textContent='Suppression impossible dans ce navigateur.';}}),viewStatus);document.querySelector('.register-tools')?.append(saved);
- // Friendly entry points for the existing exact-header CSV profiles.
- const csvSteps=el('div','1 · Choisir le CSV   →   2 · Vérifier le format et les doublons   →   3 · Confirmer','v80-steps');$('csv-file-info').before(csvSteps);const bankHints=el('div',undefined,'v80-bank-presets');bankHints.append(el('span','Préparer un profil :'));for(const bank of ['CIBC','Capital One','Desjardins'])bankHints.append(btn(bank,()=>{$('v41-profile-name').value=bank;const a=latest?.accounts.find(a=>a.name.toLocaleLowerCase('fr-CA').includes(bank.toLocaleLowerCase('fr-CA')));if(a){$('csv-account').value=String(a.id);$('csv-account').dispatchEvent(new Event('change',{bubbles:true}));}csvHint.textContent='Chargez un CSV, vérifiez les colonnes et le sens des montants, puis mémorisez le format '+bank+'.';}));const csvHint=el('p','Vos profils reconnaissent les titres exacts du fichier. Les doublons restent exclus par défaut.','quiet-copy');$('v41-profiles').prepend(bankHints,csvHint);document.addEventListener('budget:csv-ready',()=>{csvSteps.textContent='Format chargé   →   Vérifiez le compte et les colonnes   →   Examinez l’aperçu avant confirmation';});
- function progressRows(){for(const row of $('monthly-budget-workspace').querySelectorAll('.v60-budget-row')){row.querySelector('.v80-budget-progress')?.remove();const amount=row.querySelector('.v60-money-button'),actual=row.querySelector('.v60-actual');if(!amount||!actual||amount.textContent==='Définir')continue;const parse=text=>Number(text.replace(/[^\d,−-]/g,'').replace('−','-').replace(',','.')),budget=parse(amount.textContent),spent=parse(actual.textContent);if(!(budget>0)||!Number.isFinite(spent))continue;const p=el('progress',undefined,'v80-budget-progress');p.max=100;p.value=Math.max(0,Math.min(100,spent/budget*100));p.classList.toggle('v80-over',spent>budget);p.setAttribute('aria-label','Progression : '+Math.round(spent/budget*100)+' % du budget');row.querySelector('.v60-category-copy')?.append(p);}}
- let progressQueued=false;new MutationObserver(()=>{if(progressQueued)return;progressQueued=true;requestAnimationFrame(()=>{progressQueued=false;progressRows();});}).observe($('monthly-budget-workspace').querySelector('.v60-directory'),{childList:true});
- const previous=render;render=function(s){previous(s);latest=s;drawHero();decorateEnvelopes();loadBudgetVisuals();};if(typeof state!=='undefined'&&state){latest=state;drawHero();decorateEnvelopes();loadBudgetVisuals();}document.body.classList.add('v80-app');window.budgetRefreshTransactions?.();
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* v8 workspace: canonical financial data, compact visuals and explicit ledger actions. */
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id),
+      el = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      },
+      btn = (text, fn, cls = "secondary") => {
+        const b = el("button", text, cls);
+        b.type = "button";
+        b.onclick = fn;
+        return b;
+      },
+      field = (text, input) => {
+        const l = el("label", text);
+        input.setAttribute("aria-label", text);
+        l.append(input);
+        return l;
+      },
+      money = (c) =>
+        (c / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      date = (d) =>
+        new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+          day: "numeric",
+          month: "short",
+        }),
+      go = (key) =>
+        document.querySelector(`.app-shell-nav [data-view="${key}"]`).click();
+    const palette = [
+      "#22b594",
+      "#547ff0",
+      "#e4a144",
+      "#ad79dc",
+      "#30a5c0",
+      "#d06d7c",
+    ];
+    let latest,
+      period = 30,
+      budgetTicket = 0;
+    async function request(url, payload) {
+      const r = await fetch(
+          url,
+          payload === undefined
+            ? { cache: "no-store" }
+            : {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              },
+        ),
+        out = await r.json();
+      if (!r.ok) throw Error(out.error || "Opération impossible.");
+      return out;
+    }
+    function modal(id, title) {
+      const d = el("dialog", undefined, "editor-dialog v80-dialog");
+      d.id = id;
+      d.setAttribute("aria-label", title);
+      const inner = el("div", undefined, "dialog-inner"),
+        heading = el("div", undefined, "dialog-heading");
+      heading.append(
+        el("h2", title),
+        btn("Fermer", () => d.close()),
+      );
+      d.append(inner);
+      inner.append(heading);
+      document.body.append(d);
+      return { d, inner };
+    }
+    function chart(svg, days, key) {
+      svg.replaceChildren();
+      svg.setAttribute("viewBox", "0 0 500 90");
+      const vals = days.map((d) => d[key]),
+        low = Math.min(...vals),
+        range = Math.max(...vals) - low || 1,
+        points = vals
+          .map(
+            (v, i) =>
+              `${4 + (i * 492) / Math.max(1, vals.length - 1)},${82 - ((v - low) * 70) / range}`,
+          )
+          .join(" "),
+        line = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "polyline",
+        );
+      line.setAttribute("points", points);
+      line.setAttribute("fill", "none");
+      line.setAttribute("stroke", "currentColor");
+      line.setAttribute("stroke-width", "2.5");
+      line.setAttribute("vector-effect", "non-scaling-stroke");
+      svg.append(line);
+    }
+    const hero = el("div", undefined, "v80-hero");
+    hero.id = "v80-hero";
+    const heroHead = el("div", undefined, "v80-panel-head"),
+      heroTabs = el("div", undefined, "v80-segment");
+    heroTabs.setAttribute("aria-label", "Période du disponible prudent");
+    heroHead.append(
+      el("span", "VOTRE MARGE DE MANŒUVRE", "v80-eyebrow"),
+      heroTabs,
+    );
+    for (const n of [30, 60, 90]) {
+      const b = btn(n + " jours", () => {
+        period = n;
+        drawHero();
+      });
+      b.dataset.horizon = n;
+      heroTabs.append(b);
+    }
+    hero.append(heroHead);
+    const heroBody = el("div", undefined, "v80-hero-body"),
+      lead = el("div"),
+      heroValue = el("strong", "—", "v80-hero-value"),
+      heroCaption = el("p", undefined, "v80-hero-caption"),
+      spark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    heroValue.id = "v80-safe";
+    spark.classList.add("v80-spark");
+    spark.setAttribute("role", "img");
+    spark.setAttribute(
+      "aria-label",
+      "Trajectoire du disponible après protections",
+    );
+    lead.append(el("h2", "Safe-to-Spend"), heroValue, heroCaption, spark);
+    const heroFacts = el("div", undefined, "v80-hero-facts");
+    heroBody.append(lead, heroFacts);
+    hero.append(heroBody);
+    document
+      .querySelector('[data-widget="spending"] .v47-widget-body')
+      .prepend(hero);
+    function drawHero() {
+      if (!latest?.forecast?.length) return;
+      const days = latest.forecast.slice(0, period),
+        opening = { date: days[0].date, safe_cents: latest.safe_cents },
+        low = [opening, ...days].reduce((a, b) =>
+          b.safe_cents < a.safe_cents ? b : a,
+        );
+      heroValue.textContent = money(low.safe_cents);
+      heroValue.classList.toggle("v80-negative", low.safe_cents < 0);
+      heroCaption.textContent =
+        "Minimum prudent sur " +
+        period +
+        " jours · argent protégé et dépenses prévues pris en compte.";
+      for (const b of heroTabs.children)
+        b.setAttribute("aria-pressed", String(+b.dataset.horizon === period));
+      chart(spark, days, "safe_cents");
+      heroFacts.replaceChildren();
+      const pending = days
+        .flatMap((d) =>
+          d.events
+            .filter((e) => e.type === "income" && e.cash_impact_cents !== 0)
+            .map((e) => ({ ...e, date: d.date })),
+        )
+        .find((e) => e.amount_cents > 0);
+      for (const [label, value, caption] of [
+        [
+          "Disponible maintenant",
+          money(latest.safe_cents),
+          "Après les protections actuelles",
+        ],
+        ["Point bas prévu", date(low.date), money(low.safe_cents)],
+        [
+          "Prochaine rentrée",
+          pending ? money(pending.amount_cents) : "Non prévue",
+          pending
+            ? date(pending.date) + " · " + pending.description
+            : "Sur la période choisie",
+        ],
+      ]) {
+        const card = el("div");
+        card.append(
+          el("span", label),
+          el("strong", value),
+          el("small", caption),
+        );
+        heroFacts.append(card);
+      }
+      const check = btn("Vérifier mes soldes", () => {
+        const a =
+          latest.accounts.find((a) => a.included && a.kind !== "credit") ||
+          latest.accounts[0];
+        if (a) window.budgetOpenBankCheck(a.id);
+      });
+      check.disabled = !latest.accounts.length;
+      heroFacts.append(
+        btn("Explorer les prévisions", () =>
+          window.budgetExploreForecast(low.date, period),
+        ),
+        check,
+      );
+    }
+    const overview = el("section", undefined, "v80-overview");
+    overview.id = "v80-spending-overview";
+    document
+      .querySelector('[data-widget="alerts"] .v47-widget-body')
+      .append(overview);
+    const budgetOverview = el("details", undefined, "v80-budget-overview");
+    budgetOverview.append(
+      el("summary", "Répartition des achats et rythme du budget"),
+    );
+    const budgetGraphic = el("div", undefined, "v80-overview");
+    budgetOverview.append(budgetGraphic);
+    $("monthly-budget-workspace")
+      .querySelector(".v60-metrics")
+      .after(budgetOverview);
+    function showCategory(id, month, startOn = null) {
+      go("transactions");
+      $("v3-category-filter").value = id == null ? "uncategorized" : String(id);
+      $("v3-category-filter").dispatchEvent(
+        new Event("change", { bubbles: true }),
+      );
+      $("v3-date-from").value = startOn || month + "-01";
+      const end = new Date(month + "-15T12:00:00Z");
+      end.setUTCMonth(end.getUTCMonth() + 1);
+      end.setUTCDate(0);
+      $("v3-date-to").value = end.toISOString().slice(0, 10);
+      $("v3-date-to").dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function drawOverview(host, data) {
+      host.replaceChildren();
+      const head = el("div", undefined, "v80-panel-head");
+      head.append(
+        el("div", "Vos achats en perspective", "v80-panel-title"),
+        el(
+          "span",
+          data.month +
+            (data.start_period
+              ? " · depuis le " + data.start_period.start_on.slice(8)
+              : ""),
+          "v80-eyebrow",
+        ),
+      );
+      host.append(head);
+      const groups = new Map();
+      for (const t of latest.calendar_actuals || [])
+        if (
+          t.happened_on.startsWith(data.month) &&
+          (!data.start_period || t.happened_on >= data.start_period.start_on) &&
+          t.amount_cents < 0
+        ) {
+          const id = t.category_id || null;
+          if (!groups.has(id))
+            groups.set(id, {
+              id,
+              name:
+                latest.categories.find((c) => c.id === id)?.name ||
+                "Non-catégorisé",
+              cents: 0,
+            });
+          groups.get(id).cents -= t.amount_cents;
+        }
+      const all = [...groups.values()].sort((a, b) => b.cents - a.cents),
+        total = all.reduce((n, r) => n + r.cents, 0),
+        top = all.slice(0, 5);
+      if (all.length > 5)
+        top.push({
+          id: "other",
+          name: "Autres catégories",
+          cents: all.slice(5).reduce((n, r) => n + r.cents, 0),
+        });
+      const content = el("div", undefined, "v80-overview-body"),
+        donut = el("div", undefined, "v80-donut"),
+        center = el("div");
+      donut.setAttribute("role", "img");
+      donut.setAttribute("aria-label", "Achats du mois : " + money(total));
+      let start = 0;
+      donut.style.background = total
+        ? "conic-gradient(" +
+          top
+            .map((r, i) => {
+              const end = start + (r.cents / total) * 100,
+                part = palette[i] + " " + start + "% " + end + "%";
+              start = end;
+              return part;
+            })
+            .join(",") +
+          ")"
+        : "var(--v80-line)";
+      center.append(
+        el("strong", money(total)),
+        el(
+          "small",
+          data.start_period ? "Achats de la période" : "Achats du mois",
+        ),
+      );
+      donut.append(center);
+      const legend = el("div", undefined, "v80-spending-legend");
+      for (const [i, r] of top.entries()) {
+        const row = btn(
+            "",
+            () =>
+              r.id === "other"
+                ? go("bilan")
+                : showCategory(r.id, data.month, data.start_period?.start_on),
+            "v80-legend-row",
+          ),
+          dot = el("i");
+        dot.style.background = palette[i];
+        row.append(
+          dot,
+          el("span", r.name),
+          el("strong", money(r.cents)),
+          el("small", Math.round((r.cents / total) * 100) + " %"),
+        );
+        legend.append(row);
+      }
+      if (!top.length)
+        legend.append(
+          el("p", "Aucun achat enregistré pour ce mois.", "quiet-copy"),
+        );
+      content.append(donut, legend);
+      host.append(
+        content,
+        el(
+          "p",
+          "Achats enregistrés, hors virements. Les remboursements sont reflétés dans le réel net du Budget.",
+          "v80-fine-print",
+        ),
+      );
+      const pace = el("div", undefined, "v80-pace");
+      pace.append(el("h3", "Votre rythme budgétaire"));
+      const currentMonth = latest.forecast[0].date.slice(0, 7);
+      const daysInMonth = new Date(
+          Number(data.month.slice(0, 4)),
+          Number(data.month.slice(5, 7)),
+          0,
+        ).getDate(),
+        fraction = data.start_period
+          ? null
+          : data.month === currentMonth
+            ? Number(latest.forecast[0].date.slice(8)) / daysInMonth
+            : null;
+      const targets = data.rows
+        .filter(
+          (r) =>
+            r.direction === "expense" &&
+            r.budget_cents > 0 &&
+            r.actual_cents > 0,
+        )
+        .sort(
+          (a, b) =>
+            b.actual_cents / b.budget_cents - a.actual_cents / a.budget_cents,
+        )
+        .slice(0, 3);
+      for (const r of targets) {
+        const row = el("div", undefined, "v80-pace-row"),
+          ratio = r.actual_cents / r.budget_cents,
+          bar = el("progress");
+        bar.max = 100;
+        bar.value = Math.min(100, Math.max(0, ratio * 100));
+        bar.classList.toggle("v80-over", ratio > 1);
+        bar.setAttribute(
+          "aria-label",
+          r.name + " : " + Math.round(ratio * 100) + " % utilisés",
+        );
+        row.append(
+          el("strong", r.name),
+          el("span", Math.round(ratio * 100) + " % utilisés"),
+          bar,
+          el(
+            "small",
+            fraction !== null
+              ? Math.round(fraction * 100) +
+                  " % du mois écoulé · repère, pas une réserve"
+              : money(r.actual_cents) + " sur " + money(r.budget_cents),
+          ),
+        );
+        pace.append(row);
+      }
+      if (!targets.length)
+        pace.append(
+          el(
+            "p",
+            "Définissez vos objectifs dans Budget pour comparer votre progression.",
+            "quiet-copy",
+          ),
+        );
+      host.append(pace);
+    }
+    async function loadBudgetVisuals() {
+      if (!latest) return;
+      const mine = ++budgetTicket;
+      try {
+        const current = latest.forecast[0].date.slice(0, 7),
+          chosen = $("v60-month").value || current;
+        const values = await Promise.all([
+          request("/api/budget/global?month=" + current),
+          chosen === current
+            ? null
+            : request("/api/budget/global?month=" + chosen),
+        ]);
+        if (mine !== budgetTicket) return;
+        drawOverview(overview, values[0]);
+        drawOverview(budgetGraphic, values[1] || values[0]);
+      } catch {
+        if (mine === budgetTicket) {
+          overview.replaceChildren(
+            el(
+              "p",
+              "Répartition indisponible. Actualisez pour réessayer.",
+              "quiet-copy",
+            ),
+          );
+          budgetGraphic.replaceChildren();
+        }
+      }
+    }
+    $("v60-month").addEventListener("change", loadBudgetVisuals);
+    function decorateEnvelopes() {
+      for (const card of $("envelopes").querySelectorAll(
+        "[data-envelope-id]",
+      )) {
+        card.querySelector(".v80-card-hold")?.remove();
+        const id = Number(card.dataset.envelopeId),
+          held = (latest.sts_breakdown.card_envelopes || [])
+            .filter((f) => f.envelope_id === id)
+            .reduce((n, f) => n + f.amount_cents, 0);
+        if (held) {
+          const note = el("div", undefined, "v80-card-hold");
+          note.append(
+            el("span", "Achats sur carte encore protégés"),
+            el("strong", money(held)),
+          );
+          card.querySelector(".v44-card-tools")?.before(note);
+        }
+      }
+    }
+    // Transaction selection stays on the visible page and never alters financial fields.
+    const selected = new Set();
+    let rows = [];
+    const bulkBar = el("div", undefined, "v80-bulk-bar");
+    bulkBar.id = "v80-bulk-bar";
+    const selectionCount = el("span", "Aucune sélection"),
+      selectAll = btn("Sélectionner la page", () => {
+        for (const r of rows) selected.add(r.id);
+        syncSelection();
+      }),
+      bulkOpen = btn("Modifier la sélection", openBulk),
+      clear = btn("Effacer", () => {
+        selected.clear();
+        syncSelection();
+      });
+    bulkBar.append(selectionCount, selectAll, bulkOpen, clear);
+    $("v2-transaction-list").before(bulkBar);
+    function syncSelection() {
+      selectionCount.textContent =
+        selected.size + " opération(s) sélectionnée(s) sur cette page";
+      bulkOpen.disabled = !selected.size;
+      clear.disabled = !selected.size;
+      for (const c of $("v2-transaction-list").querySelectorAll(
+        ".v80-row-check",
+      ))
+        c.checked = selected.has(Number(c.dataset.id));
+    }
+    document.addEventListener("budget:transactions-loading", () => {
+      selected.clear();
+      rows = [];
+      syncSelection();
+    });
+    document.addEventListener("budget:transactions-loaded", (e) => {
+      rows = e.detail.rows || [];
+      for (const r of rows) {
+        const row = $("v2-transaction-list").querySelector(
+          `[data-transaction-id="${r.id}"]`,
+        );
+        if (!row) continue;
+        const check = el("input", undefined, "v80-row-check");
+        check.type = "checkbox";
+        check.dataset.id = r.id;
+        check.setAttribute("aria-label", "Sélectionner " + r.description);
+        check.onchange = () => {
+          if (check.checked) selected.add(r.id);
+          else selected.delete(r.id);
+          syncSelection();
+        };
+        row.append(check);
+        if (r.amount_cents < 0) {
+          const more = row.querySelector(".ledger-menu-items");
+          more.append(
+            btn("Diviser cette dépense", () => {
+              row.querySelector(".ledger-menu").open = false;
+              openSplit(r);
+            }),
+          );
+        }
+      }
+      syncSelection();
+    });
+    const bulk = modal("v80-bulk-dialog", "Modifier plusieurs opérations");
+    function categorySelect(label, value = null) {
+      const c = el("select");
+      c.add(new Option("Non-catégorisé", ""));
+      for (const cat of latest.categories.filter((c) => !c.archived))
+        c.add(new Option(cat.name, cat.id));
+      c.value = value || "";
+      c.setAttribute("aria-label", label);
+      return c;
+    }
+    function childSelect(c, label, value = null) {
+      const sub = el("select");
+      sub.setAttribute("aria-label", label);
+      const fill = () => {
+        sub.replaceChildren(
+          new Option("Sans sous-catégorie", ""),
+          ...latest.subcategories
+            .filter((s) => s.category_id === Number(c.value) && !s.archived)
+            .map((s) => new Option(s.name, s.id)),
+        );
+      };
+      c.addEventListener("change", fill);
+      fill();
+      sub.value = value || "";
+      return sub;
+    }
+    function openBulk() {
+      while (bulk.inner.children.length > 1) bulk.inner.lastChild.remove();
+      const ids = [...selected],
+        form = el("form", undefined, "v80-form"),
+        mode = el("select"),
+        category = categorySelect("Catégorie de la sélection"),
+        child = childSelect(category, "Sous-catégorie de la sélection"),
+        review = el("select"),
+        out = el("div"),
+        error = el("p", undefined, "v80-error");
+      error.setAttribute("role", "alert");
+      mode.add(new Option("Changer la catégorie", "category"));
+      mode.add(new Option("Changer le statut de révision", "review"));
+      review.add(new Option("Révisées", "true"));
+      review.add(new Option("À vérifier", "false"));
+      const categoryField = field("Catégorie", category),
+        childField = field("Sous-catégorie", child),
+        reviewField = field("Révision", review);
+      reviewField.hidden = true;
+      mode.onchange = () => {
+        categoryField.hidden = childField.hidden = mode.value !== "category";
+        reviewField.hidden = mode.value !== "review";
+      };
+      form.append(
+        el(
+          "p",
+          ids.length +
+            " opération(s). Les comptes, montants, dates et enveloppes seront conservés.",
+          "quiet-copy",
+        ),
+        field("Action", mode),
+        categoryField,
+        childField,
+        reviewField,
+        error,
+      );
+      const preview = el("button", "Vérifier les modifications", "primary");
+      preview.type = "submit";
+      form.append(preview, out);
+      let ticket = 0;
+      form.oninput = () => {
+        ticket++;
+        out.replaceChildren();
+      };
+      form.onchange = () => {
+        ticket++;
+        out.replaceChildren();
+      };
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const mine = ++ticket;
+        preview.disabled = true;
+        error.textContent = "";
+        const changes =
+          mode.value === "category"
+            ? {
+                category_id: category.value ? Number(category.value) : null,
+                subcategory_id: child.value ? Number(child.value) : null,
+              }
+            : { reviewed: review.value === "true" };
+        try {
+          const p = await request("/api/workspace/bulk-preview", {
+            ids,
+            changes,
+          });
+          if (mine !== ticket) return;
+          out.replaceChildren(
+            el(
+              "p",
+              p.items.length +
+                " opération(s) seront modifiées. Aucun effet sur les soldes ni les réserves.",
+              "quiet-copy",
+            ),
+            btn(
+              "Confirmer les modifications",
+              async () => {
+                try {
+                  runtime.render(
+                    await request("/api/workspace/bulk-apply", {
+                      ids,
+                      changes,
+                      token: p.token,
+                    }),
+                  );
+                  bulk.d.close();
+                } catch (e) {
+                  error.textContent = e.message;
+                  out.replaceChildren();
+                }
+              },
+              "primary",
+            ),
+          );
+        } catch (e) {
+          error.textContent = e.message;
+        } finally {
+          preview.disabled = false;
+        }
+      };
+      bulk.inner.append(form);
+      bulk.d.showModal();
+    }
+    const split = modal("v80-split-dialog", "Répartir une dépense");
+    function openSplit(r) {
+      while (split.inner.children.length > 1) split.inner.lastChild.remove();
+      const form = el("form", undefined, "v80-form"),
+        list = el("div", undefined, "v80-split-parts"),
+        total = el("p", undefined, "v80-split-total"),
+        out = el("div"),
+        error = el("p", undefined, "v80-error");
+      error.setAttribute("role", "alert");
+      let parts = [],
+        ticket = 0;
+      const invalidate = () => {
+        ticket++;
+        out.replaceChildren();
+        const sum = parts.reduce(
+            (n, p) => n + Math.round(Number(p.amount.value || 0) * 100),
+            0,
+          ),
+          difference = -r.amount_cents - sum;
+        total.textContent =
+          "Dépense : " +
+          money(-r.amount_cents) +
+          " · Réparti : " +
+          money(sum) +
+          " · Reste : " +
+          money(difference);
+        total.classList.toggle("v80-error", difference !== 0);
+      };
+      function addPart(value) {
+        if (parts.length >= 20) return;
+        const row = el("div", undefined, "v80-split-part"),
+          amount = el("input"),
+          category = categorySelect("Catégorie de la part", r.category_id),
+          child = childSelect(
+            category,
+            "Sous-catégorie de la part",
+            r.subcategory_id,
+          ),
+          envelope = el("select");
+        amount.type = "number";
+        amount.min = ".01";
+        amount.step = ".01";
+        amount.required = true;
+        amount.value = (value / 100).toFixed(2);
+        envelope.add(new Option("Sans enveloppe", ""));
+        for (const e of latest.envelopes.filter((e) => e.active))
+          envelope.add(new Option(e.name, e.id));
+        envelope.value = r.envelope_id || "";
+        const part = { row, amount, category, child, envelope };
+        parts.push(part);
+        row.append(
+          field("Montant de la part ($)", amount),
+          field("Catégorie de la part", category),
+          field("Sous-catégorie de la part", child),
+          field("Enveloppe de la part", envelope),
+          btn("Retirer", () => {
+            if (parts.length <= 2) return;
+            parts = parts.filter((p) => p !== part);
+            row.remove();
+            invalidate();
+          }),
+        );
+        list.append(row);
+        invalidate();
+      }
+      form.append(
+        el(
+          "p",
+          r.description + " · " + money(-r.amount_cents),
+          "v80-panel-title",
+        ),
+        el(
+          "p",
+          "Répartissez le montant entre catégories et enveloppes. Le compte, la date et le montant total resteront identiques. Aucun nouveau débit bancaire.",
+          "quiet-copy",
+        ),
+        list,
+        btn("+ Ajouter une part", () => addPart(0)),
+        total,
+        error,
+      );
+      const preview = el("button", "Vérifier la répartition", "primary");
+      preview.type = "submit";
+      form.append(preview, out);
+      form.oninput = invalidate;
+      form.onchange = invalidate;
+      addPart(Math.round(-r.amount_cents / 2));
+      addPart(-r.amount_cents - Math.round(-r.amount_cents / 2));
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const mine = ++ticket;
+        preview.disabled = true;
+        error.textContent = "";
+        const payload = {
+          id: r.id,
+          parts: parts.map((p) => ({
+            amount: Number(p.amount.value),
+            category_id: p.category.value ? Number(p.category.value) : null,
+            subcategory_id: p.child.value ? Number(p.child.value) : null,
+            envelope_id: p.envelope.value ? Number(p.envelope.value) : null,
+          })),
+        };
+        try {
+          const p = await request("/api/workspace/split-preview", payload);
+          if (mine !== ticket) return;
+          out.replaceChildren(
+            el(
+              "p",
+              "Disponible maintenant : " +
+                money(p.before.safe_cents) +
+                " → " +
+                money(p.after.safe_cents),
+              "life-preview",
+            ),
+            el(
+              "p",
+              "Minimum prévu sur 90 jours : " +
+                money(p.before.minimum_cents) +
+                " → " +
+                money(p.after.minimum_cents),
+              "quiet-copy",
+            ),
+            el(
+              "p",
+              "Le solde du compte reste identique. Le disponible peut évoluer selon les enveloppes choisies.",
+              "quiet-copy",
+            ),
+            btn(
+              "Confirmer la répartition",
+              async () => {
+                try {
+                  runtime.render(
+                    await request("/api/workspace/split-apply", {
+                      ...payload,
+                      token: p.token,
+                    }),
+                  );
+                  split.d.close();
+                } catch (e) {
+                  error.textContent = e.message;
+                  out.replaceChildren();
+                }
+              },
+              "primary",
+            ),
+          );
+        } catch (e) {
+          error.textContent = e.message;
+        } finally {
+          preview.disabled = false;
+        }
+      };
+      split.inner.append(form);
+      split.d.showModal();
+    }
+    // Saved filters are local preferences, separate from bank and envelope data.
+    const saved = el("details", undefined, "v80-saved-filters");
+    saved.append(el("summary", "Mes vues de transactions"));
+    const choice = el("select"),
+      viewName = el("input"),
+      viewStatus = el("p", undefined, "quiet-copy");
+    choice.setAttribute("aria-label", "Vue de transactions enregistrée");
+    viewName.placeholder = "Ex. Achats CIBC à vérifier";
+    viewName.maxLength = 60;
+    viewName.setAttribute("aria-label", "Nom de la vue");
+    const key = "mon-budget-register-views-v80",
+      filterIds = [
+        "sillage-sort",
+        "v2-search",
+        "v2-account",
+        "v2-review",
+        "v2-kind",
+        "v3-category-filter",
+        "v3-date-from",
+        "v3-date-to",
+      ];
+    function views() {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]")
+          .filter(
+            (v) =>
+              v &&
+              typeof v.name === "string" &&
+              v.filters &&
+              typeof v.filters === "object",
+          )
+          .slice(0, 10);
+      } catch {
+        return [];
+      }
+    }
+    function fillViews() {
+      choice.replaceChildren(
+        new Option("Choisir une vue", ""),
+        ...views().map((v, i) => new Option(v.name, i)),
+      );
+    }
+    fillViews();
+    saved.append(
+      choice,
+      viewName,
+      btn("Mémoriser cette vue", () => {
+        const name = viewName.value.trim();
+        if (!name) {
+          viewStatus.textContent = "Donnez un nom à cette vue.";
+          return;
+        }
+        const items = views().filter((v) => v.name !== name);
+        if (items.length >= 10) {
+          viewStatus.textContent = "Limite de 10 vues atteinte.";
+          return;
+        }
+        items.push({
+          name,
+          filters: Object.fromEntries(filterIds.map((id) => [id, $(id).value])),
+          subcategory: $("v46-subcategory-filter")?.value || "",
+        });
+        try {
+          localStorage.setItem(key, JSON.stringify(items));
+          fillViews();
+          viewStatus.textContent = "Vue enregistrée sur cet appareil.";
+        } catch {
+          viewStatus.textContent =
+            "Le navigateur ne permet pas d’enregistrer cette vue.";
+        }
+      }),
+      btn("Ouvrir la vue", () => {
+        const v = views()[Number(choice.value)];
+        if (choice.value === "" || !v) return;
+        for (const id of filterIds)
+          $(id).value = String(
+            v.filters[id] || (id === "sillage-sort" ? "date:desc" : ""),
+          );
+        $("sillage-sort")?.dispatchEvent(
+          new Event("change", { bubbles: true }),
+        );
+        $("v3-category-filter").dispatchEvent(
+          new Event("change", { bubbles: true }),
+        );
+        window.budgetSetSubcategory?.(
+          "v3-category-filter",
+          v.subcategory || null,
+        );
+        $("v3-date-to").dispatchEvent(new Event("change", { bubbles: true }));
+        viewStatus.textContent = v.name + " appliquée.";
+      }),
+      btn("Supprimer la vue", () => {
+        if (choice.value === "") return;
+        try {
+          localStorage.setItem(
+            key,
+            JSON.stringify(
+              views().filter((v, i) => i !== Number(choice.value)),
+            ),
+          );
+          fillViews();
+          viewStatus.textContent = "Vue supprimée.";
+        } catch {
+          viewStatus.textContent = "Suppression impossible dans ce navigateur.";
+        }
+      }),
+      viewStatus,
+    );
+    document.querySelector(".register-tools")?.append(saved);
+    // Friendly entry points for the existing exact-header CSV profiles.
+    const csvSteps = el(
+      "div",
+      "1 · Choisir le CSV   →   2 · Vérifier le format et les doublons   →   3 · Confirmer",
+      "v80-steps",
+    );
+    $("csv-file-info").before(csvSteps);
+    const bankHints = el("div", undefined, "v80-bank-presets");
+    bankHints.append(el("span", "Préparer un profil :"));
+    for (const bank of ["CIBC", "Capital One", "Desjardins"])
+      bankHints.append(
+        btn(bank, () => {
+          $("v41-profile-name").value = bank;
+          const a = latest?.accounts.find((a) =>
+            a.name
+              .toLocaleLowerCase("fr-CA")
+              .includes(bank.toLocaleLowerCase("fr-CA")),
+          );
+          if (a) {
+            $("csv-account").value = String(a.id);
+            $("csv-account").dispatchEvent(
+              new Event("change", { bubbles: true }),
+            );
+          }
+          csvHint.textContent =
+            "Chargez un CSV, vérifiez les colonnes et le sens des montants, puis mémorisez le format " +
+            bank +
+            ".";
+        }),
+      );
+    const csvHint = el(
+      "p",
+      "Vos profils reconnaissent les titres exacts du fichier. Les doublons restent exclus par défaut.",
+      "quiet-copy",
+    );
+    $("v41-profiles").prepend(bankHints, csvHint);
+    document.addEventListener("budget:csv-ready", () => {
+      csvSteps.textContent =
+        "Format chargé   →   Vérifiez le compte et les colonnes   →   Examinez l’aperçu avant confirmation";
+    });
+    function progressRows() {
+      for (const row of $("monthly-budget-workspace").querySelectorAll(
+        ".v60-budget-row",
+      )) {
+        row.querySelector(".v80-budget-progress")?.remove();
+        const amount = row.querySelector(".v60-money-button"),
+          actual = row.querySelector(".v60-actual");
+        if (!amount || !actual || amount.textContent === "Définir") continue;
+        const parse = (text) =>
+            Number(
+              text
+                .replace(/[^\d,−-]/g, "")
+                .replace("−", "-")
+                .replace(",", "."),
+            ),
+          budget = parse(amount.textContent),
+          spent = parse(actual.textContent);
+        if (!(budget > 0) || !Number.isFinite(spent)) continue;
+        const p = el("progress", undefined, "v80-budget-progress");
+        p.max = 100;
+        p.value = Math.max(0, Math.min(100, (spent / budget) * 100));
+        p.classList.toggle("v80-over", spent > budget);
+        p.setAttribute(
+          "aria-label",
+          "Progression : " +
+            Math.round((spent / budget) * 100) +
+            " % du budget",
+        );
+        row.querySelector(".v60-category-copy")?.append(p);
+      }
+    }
+    let progressQueued = false;
+    new MutationObserver(() => {
+      if (progressQueued) return;
+      progressQueued = true;
+      requestAnimationFrame(() => {
+        progressQueued = false;
+        progressRows();
+      });
+    }).observe($("monthly-budget-workspace").querySelector(".v60-directory"), {
+      childList: true,
+    });
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      latest = s;
+      drawHero();
+      decorateEnvelopes();
+      loadBudgetVisuals();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      latest = runtime.state;
+      drawHero();
+      decorateEnvelopes();
+      loadBudgetVisuals();
+    }
+    document.body.classList.add("v80-app");
+    window.budgetRefreshTransactions?.();
+  })();
+}

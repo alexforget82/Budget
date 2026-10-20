@@ -1,35 +1,781 @@
-/* Guided setup, separate demonstration and explicit transfer purpose. */
-(()=>{
- const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;},cash=n=>(n/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),button=(text,fn,cls='secondary')=>{const b=el('button',text,cls);b.type='button';b.onclick=fn;return b;},field=(label,input)=>{const l=el('label',label);input.setAttribute('aria-label',label);l.append(input);return l;},go=view=>document.querySelector(`.app-shell-nav [data-view="${view}"]`).click();
- async function request(url,data){const r=await fetch(url,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),s=await r.json();if(!r.ok)throw Error(s.error||'Action impossible.');return s;}
- const workspace=$('setup-workspace'),steps=['Bienvenue','Comptes','Disponible du Conjoint','Catégories','Revenus et factures','Budgets et réserves','Virements personnels et vérification'];let latest,step=0,started=false;
- const stepper=el('nav',undefined,'v70-steps');stepper.setAttribute('aria-label','Étapes de configuration');const content=el('div',undefined,'v70-guide-body'),status=el('p',undefined,'v70-message'),footer=el('div',undefined,'v70-guide-footer');status.setAttribute('role','status');workspace.append(stepper,content,status,footer);
- const scopeBadge=el('div',undefined,'v70-scope-note');document.querySelector('.workspace-header').after(scopeBadge);
- const backLink=el('a','Quitter la démonstration et retrouver mon budget','v70-demo-back');backLink.href='/';const demoBanner=el('div',undefined,'v70-demo-banner');demoBanner.append(el('strong','DÉMONSTRATION — données fictives'),el('span','Ce budget est stocké séparément. Les opérations de cette page ne modifient pas votre budget réel.'),backLink);demoBanner.hidden=true;document.querySelector('.workspace-header').before(demoBanner);
- const reset=el('dialog',undefined,'editor-dialog v70-reset-dialog');reset.id='v70-reset-dialog';reset.setAttribute('aria-label','Effacer le budget actif');const resetInner=el('div',undefined,'dialog-inner');reset.append(resetInner);document.body.append(reset);
- function card(title,copy){const c=el('article',undefined,'v70-card');c.append(el('h3',title));if(copy)c.append(el('p',copy));content.append(c);return c;}
- async function saveStep(value,completed=latest?.setup70.completed===true){status.textContent='';try{const s=await request('/api/setup/progress',{step:value,completed});step=value;render(s);}catch(e){status.textContent=e.message;}}
- function drawGuide(){if(!latest)return;stepper.replaceChildren();for(let i=0;i<steps.length;i++){const b=button((i+1)+'. '+steps[i],()=>saveStep(i));b.setAttribute('aria-current',String(step===i?'step':'false'));stepper.append(b);}content.replaceChildren();footer.replaceChildren();const intro=el('div',undefined,'v70-guide-heading');intro.append(el('p','ÉTAPE '+(step+1)+' SUR '+steps.length,'eyebrow'),el('h2',steps[step]));content.append(intro);({0:welcome,1:accounts,2:scopeView,3:categories,4:recurring,5:budgets,6:review})[step]();if(step>0)footer.append(button('← Étape précédente',()=>saveStep(step-1)));if(step<6)footer.append(button('Étape suivante →',()=>saveStep(step+1),'primary'));else footer.append(button('Terminer la configuration',async()=>{await saveStep(step,true);if(latest.setup70.completed)go('dashboard');},'primary'));}
- function welcome(){const p=card('Un départ clair, sans modifier vos données','Une fois terminé, ce guide reste accessible via État des données → Revoir la configuration. Vous pouvez faire les étapes à votre rythme et revenir aux précédentes.');const list=el('ol');for(const text of ['Créez vos comptes avec leurs soldes bancaires actuels.','Choisissez Conjoint comme seul compte du Safe-to-Spend.','Classez vos revenus et vos factures, puis définissez les budgets.','Vérifiez vos prévisions et les virements pour vos dépenses personnelles.'])list.append(el('li',text));p.append(list);const demo=card('Tester librement','La démonstration possède sa propre base de données. Vous pouvez y essayer les comptes, les budgets, les virements et même la remise à zéro.');if(latest.setup70.demo){demo.append(el('p','Vous êtes déjà dans la démonstration.'));if(!latest.accounts.length)demo.append(button('Charger les exemples fictifs',async()=>{try{render(await request('/api/setup/demo-seed',{}));}catch(e){status.textContent=e.message;}},'primary'));}else{const a=el('a','Ouvrir la démonstration','button-link');a.href='/demo/';demo.append(a);}const start=card('Repartir de zéro, si vous le souhaitez','Cette action efface le budget actif : comptes, opérations, catégories, budgets, règles et réglages budgétaires. Une copie de récupération peut être conservée. Vos sauvegardes existantes et votre accès privé sont conservés séparément.');start.append(button('Préparer la remise à zéro',openReset,'danger'));}
- function accounts(){const p=card('1. Saisissez les soldes actuels','Ajoutez Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins, puis vos comptes personnels si vous souhaitez y virer de l’argent. Un achat sur carte augmente le montant dû; un remboursement de carte est un virement, pas une seconde dépense.');for(const a of latest.accounts){const line=el('div',undefined,'v70-check-row');line.append(el('span',a.name+' · '+({checking:'Chèques',savings:'Épargne',credit:'Crédit / marge'})[a.kind]),el('strong',cash(a.balance_cents)));p.append(line);}p.append(button('Ajouter un compte',()=>{resetAccount();window.appOpenEditor('account');},'primary'),button('Voir et vérifier mes comptes',()=>go('comptes')));card('Évitez de compter le passé deux fois','Un solde actuel comprend déjà les anciennes opérations. Pour importer un ancien relevé sans modifier ce solde, choisissez le mode Historique dans Importer CSV.');}
- function scopeView(){const setup=card('Conjoint et vos trois cartes','Configurez les comptes proposés pour vos dépenses : Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins. Un aperçu permet de réaffecter les anciennes factures personnelles sans changer les soldes ni les opérations réelles.');setup.append(button('Configurer mes comptes de dépenses',()=>window.budgetOpenBankingSetup(),'primary'));if(latest.banking71?.enabled){card('Votre configuration est active','Le disponible concerne '+latest.setup70.scope?.name+'. Les virements vers les comptes personnels restent possibles et réduisent ce disponible. Les cartes ne créent aucune réserve automatique de remboursement.');return;}const p=card('2. Le disponible concerne uniquement Conjoint','Les autres comptes restent visibles, mais ne financent pas ce disponible. Une sortie de Conjoint vers un compte exclu réduit sa trésorerie. Le paiement effectué depuis cet autre compte ne retire pas l’argent une deuxième fois de Conjoint.');const form=el('form',undefined,'v70-form'),select=el('select');select.required=true;select.add(new Option('Choisir le compte du disponible',''));for(const a of latest.accounts.filter(a=>a.kind!=='credit'))select.add(new Option(a.name+' · '+cash(a.balance_cents),a.id));select.value=latest.setup70.scope?.account_id||latest.setup70.suggested_account_id||'';const save=el('button','Utiliser uniquement ce compte','primary');save.type='submit';form.append(field('Compte du Safe-to-Spend',select),save);form.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{render(await request('/api/setup/scope',{account_id:Number(select.value)}));status.textContent='Le disponible porte maintenant uniquement sur '+latest.setup70.scope.name+'.';}catch(err){status.textContent=err.message;}finally{save.disabled=false;}};p.append(form);if(latest.setup70.scope)p.append(el('p','Compte actuellement utilisé : '+latest.setup70.scope.name,'v70-success'));card('Une réserve n’est pas un second paiement','Les enveloppes gelées sont déjà retirées du disponible. Lorsqu’un virement lié utilise cette réserve pour financer une facture, elle est consommée au départ de l’argent. La même somme n’est pas gelée une seconde fois.');}
- function categories(){const p=card('3. Organisez vos catégories','Une catégorie explique ce que vous achetez. Une sous-catégorie précise le détail. Non-catégorisé reste toujours disponible pour les opérations qui ne sont pas encore classées.');p.append(el('p',latest.categories.length+' catégorie(s) enregistrée(s).'),button('Créer ou modifier mes catégories',()=>go('categories'),'primary'));const out=el('div');p.append(button('Préparer ma liste Lunch Money',async()=>{try{const preview=await request('/api/categories/catalog-preview',{});out.replaceChildren(el('p','La liste conserve les catégories existantes. Vérifiez les noms dans Catégories après la reprise.'),button('Importer cette liste de catégories',async()=>{try{render(await request('/api/categories/catalog-apply',{token:preview.token}));status.textContent='Liste reprise. Vos catégories existantes ont été conservées.';}catch(e){status.textContent=e.message;}},'primary'));}catch(e){status.textContent=e.message;}}),out);}
- function recurring(){const p=card('4. Placez vos revenus et factures aux bonnes dates','Indiquez le compte qui reçoit réellement le revenu ou qui paie réellement la facture. Vos dépenses courantes utilisent Conjoint ou vos cartes; les comptes personnels servent aux virements personnels.');p.append(el('p',latest.recurring.filter(r=>r.active).length+' règle(s) active(s).'),button('Ajouter un revenu ou une facture',()=>{resetRec();window.appOpenEditor('recurring');},'primary'),button('Consulter les récurrences',()=>go('recurrences')));card('Un seul frais bancaire mensuel','Dans Récurrences, conservez une seule facture Frais bancaires payée depuis Conjoint, au montant réel du forfait CIBC. Suspendez les anciennes factures de frais personnels devenues inutiles; elles ne sont pas fusionnées automatiquement.');card('Prévu puis réel','La programmation prépare les prévisions. Lorsque le paiement passe, utilisez Confirmer dans Prévu / Réel. Si la transaction est déjà saisie, associez-la au lieu de l’enregistrer à nouveau. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.');}
- function budgets(){const p=card('5. Séparez objectif et argent gelé','Un objectif indique combien vous voulez consacrer à une catégorie. Une réserve gèle réellement une partie du disponible. Les achats à des dates variables, comme Restaurant, peuvent utiliser une réserve sans créer une dépense fictive au début du mois.');p.append(button('Configurer mes budgets',()=>go('budget'),'primary'),button('Vérifier mes réserves existantes',()=>go('enveloppes')));card('Réutilisez vos enveloppes','Liez d’abord les réserves existantes aux catégories. Pour un budget périodique, choisissez le montant par période, la fréquence, la date et Oui/Non pour la reconduction. Une facture récurrente et son budget ne doivent pas devenir deux paiements bancaires.');}
- function review(){const p=card('6. Gardez une place pour les dépenses personnelles','Un cadeau pour votre conjoint ? Enregistrez un virement depuis Conjoint vers votre compte personnel. La sortie réduit le Safe-to-Spend du Conjoint, sans créer une deuxième dépense dans le budget commun. Un virement prévu agit dans la prévision; les soldes réels changent à sa confirmation.');p.append(button('Préparer un virement',()=>{window.appOpenEditor('transaction');$('transaction-direction').value='transfer';$('transaction-direction').dispatchEvent(new Event('change',{bubbles:true}));},'primary'),button('Voir Prévu / Réel',()=>window.budgetOpenPlanningQueue()));card('Un exemple concret','Avec 1 000 $ dans Conjoint et aucune réserve, un virement personnel de 100 $ laisse 900 $ disponibles. Les comptes personnels restent exclus de ce disponible. Les dépenses courantes se saisissent sur Conjoint ou vos cartes.');card('Le paiement de la marge par Interac','Si la marge n’est pas suivie comme compte dans le logiciel, enregistrez le paiement comme une dépense du Conjoint, catégorie Marge de crédit. Si vous suivez aussi son solde comme compte, utilisez un virement de remboursement pour mettre les deux soldes à jour. Ne saisissez pas les deux pour un même paiement.');
- if(latest.setup70.funding_links.length){const bindings=card('Anciens liens de financement v7.0','Ces liens sont conservés pour votre historique. Avant de déplacer une facture personnelle dans Conjoint, retirez son ancien lien ici. Les opérations bancaires restent enregistrées.');for(const l of latest.setup70.funding_links){const row=el('div',undefined,'v70-link-row');row.append(el('span',l.description+' · échéance '+l.expense_on),button('Retirer le lien',()=>confirmUnlink(l)));bindings.append(row);}}}
- function existingLinkForm(){const form=el('form',undefined,'v70-form'),transfer=el('select'),expense=el('select'),save=el('button','Associer ces opérations','secondary');transfer.required=expense.required=true;transfer.add(new Option('Choisir un virement',''));for(const r of latest.planning.rows.filter(r=>r.type==='transfer'&&['planned','pending'].includes(r.status)))transfer.add(new Option(r.date+' · '+r.description+' · '+cash(r.remaining_cents),r.key));for(const t of latest.calendar_transfers)transfer.add(new Option(t.happened_on+' · '+t.description+' · réel · '+cash(t.amount_cents),'actual:'+t.id));expense.add(new Option('Choisir une échéance',''));for(const r of expenseOptions())expense.add(new Option(expenseLabel(r),r.key));save.type='submit';form.append(field('Virement prévu ou enregistré',transfer),field('Facture financée',expense),save);form.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{render(await request('/api/setup/funding-link',{transfer_key:transfer.value,funding_answer:'yes',funding_expense_key:expense.value}));status.textContent='Association enregistrée.';}catch(err){status.textContent=err.message;}finally{save.disabled=false;}};return form;}
- function expenseOptions(){return (latest?.planning.rows||[]).filter(r=>r.type==='expense'&&r.source==='recurring'&&r.status!=='skipped'&&r.account_id);}
- function expenseLabel(r){return r.date+' · '+r.description+' · '+(latest.accounts.find(a=>a.id===r.account_id)?.name||'Compte')+' · '+cash(r.actual_cents??r.planned_cents)+(r.status==='actual'?' · déjà enregistré':'');}
- function confirmUnlink(link){if(!confirm('Retirer cette association ? Les opérations bancaires sont conservées. Une réserve encore nécessaire à la facture pourra redevenir indisponible jusqu’à son paiement.'))return;request('/api/setup/funding-unlink',{id:link.id,confirm:true}).then(render).catch(e=>status.textContent=e.message);}
- async function openReset(){resetInner.replaceChildren();const head=el('div',undefined,'dialog-heading');head.append(el('h2',latest.setup70.demo?'Effacer la démonstration':'Effacer le budget actif'),button('Fermer',()=>reset.close()));const error=el('p',undefined,'v70-error');error.setAttribute('role','alert');resetInner.append(head,error);reset.showModal();try{const preview=await request('/api/setup/reset-preview',{}),counts=el('ul');for(const [key,label] of [['accounts','Comptes'],['transactions','Transactions'],['account_transfers','Virements enregistrés'],['recurring','Règles récurrentes'],['envelopes','Enveloppes'],['categories','Catégories'],['subcategories','Sous-catégories'],['goals','Objectifs']])counts.append(el('li',label+' : '+preview.counts[key]));resetInner.append(el('p','Les données actives seront vidées. Vos sauvegardes existantes et l’accès privé sont conservés séparément. Fermer annule sans effacement.'),counts);const form=el('form',undefined,'v70-form'),backup=el('input'),ack=el('input'),typed=el('input');backup.type=ack.type='checkbox';backup.checked=true;ack.required=true;typed.required=true;typed.pattern='EFFACER';typed.autocomplete='off';const save=el('button','Effacer et recommencer','danger');save.type='submit';form.append(field('Conserver une copie de récupération avant effacement',backup),field('Je confirme l’effacement du budget actif affiché ci-dessus',ack),field('Tapez EFFACER pour confirmer',typed),save);form.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{const s=await request('/api/setup/reset',{token:preview.token,confirmation:typed.value,acknowledged:ack.checked,backup:backup.checked});try{localStorage.clear();}catch{}render(s);step=0;reset.close();go('demarrage');drawGuide();status.textContent=s.reset70.recovery?'Budget actif vidé. Une copie avant effacement est disponible ci-dessous.':'Budget actif vidé. Vous pouvez configurer un nouveau budget.';if(s.reset70.recovery){const a=el('a','Télécharger la copie avant effacement');a.href='/api/setup/recovery?name='+encodeURIComponent(s.reset70.recovery);a.download='';status.append(el('br'),a);}}catch(err){error.textContent=err.message;}finally{save.disabled=false;}};resetInner.append(form);}catch(e){error.textContent=e.message;}}
- const resetPanel=el('div',undefined,'v70-card');resetPanel.append(el('h3','Repartir de zéro'),el('p','Préparez un effacement du budget actif avec récapitulatif, copie de récupération et confirmation explicite.'),button('Préparer la remise à zéro',openReset,'danger'));$('section-sauvegardes').append(resetPanel);
- const blocks=[];
- function fundingBlock(form,type,source,destination){const host=el('div',undefined,'v70-funding'),answer=el('select'),expense=el('select'),hint=el('p',undefined,'quiet-copy');answer.name='funding_answer';expense.name='funding_expense_key';answer.add(new Option('Choisir Oui ou Non',''));answer.add(new Option('Non — autre virement','no'));answer.add(new Option('Oui — financer une dépense','yes'));expense.add(new Option('Choisir une échéance',''));const expenseField=field('Échéance payée depuis le compte destination',expense);host.append(field('Ce virement sert-il à payer une autre dépense ?',answer),expenseField,hint);form.querySelector('.entry-submit-actions')?.before(host);if(!host.isConnected){const save=form.querySelector('#save-rec');if(save)save.before(host);else form.append(host);}function sync(){const isTransfer=type.value==='transfer'&&!latest?.banking71?.enabled,yes=isTransfer&&answer.value==='yes';host.hidden=!isTransfer;answer.disabled=!isTransfer;answer.required=isTransfer;expenseField.hidden=!yes;expense.disabled=!yes;expense.required=yes;const value=expense.value;expense.replaceChildren(new Option('Choisir une échéance',''));for(const r of expenseOptions())expense.add(new Option(expenseLabel(r),r.key));expense.value=value;const from=latest?.accounts.find(a=>String(a.id)===source.value),to=latest?.accounts.find(a=>String(a.id)===destination.value);hint.textContent=yes?'La facture doit être payée depuis '+(to?.name||'le compte destination')+'. Seule la sortie de '+(latest?.setup70.scope?.name||'votre compte du disponible')+' réduit sa trésorerie. Un lien concerne une seule échéance.':from&&to?'De '+from.name+' vers '+to.name+'. Un virement sortant du compte du disponible compte même sans facture liée.':'Choisissez les comptes source et destination.';}answer.onchange=sync;for(const input of [type,source,destination])input.addEventListener('change',sync);form.addEventListener('reset',()=>queueMicrotask(sync));blocks.push({form,answer,expense,sync});return blocks.at(-1);}
- const transactionFunding=fundingBlock($('transaction'),$('transaction-direction'),$('account-options'),$('transaction-destination'));
- fundingBlock($('recurring'),$('rec-type'),$('rec-account'),$('rec-to'));
- const previousSend=send;send=async function(url,payload){const transfer=url==='/api/transfers'||url==='/api/recurring'&&payload.type==='transfer';if(transfer&&!latest?.banking71?.enabled&&$('transaction-dialog').open&&$('transaction-direction').value==='transfer')payload={...payload,funding_answer:transactionFunding.answer.value,funding_expense_key:transactionFunding.expense.value};const ok=await previousSend(url,payload);if(ok&&transfer){for(const b of blocks){b.answer.value='';b.expense.value='';b.sync();}}return ok;};
- const previousOpen=window.appOpenEditor;window.appOpenEditor=function(key){previousOpen(key);for(const b of blocks)b.sync();};
- function draw(s){latest=s;document.querySelector('.app-shell-nav [data-view="demarrage"]').hidden=s.setup70.completed;step=s.setup70.step;scopeBadge.replaceChildren(el('span',s.setup70.scope?'Safe-to-spend : '+s.setup70.scope.name+' uniquement':'Compte du Safe-to-Spend à choisir dans Bien démarrer'),button('Configurer',()=>go('demarrage')));demoBanner.hidden=!s.setup70.demo;for(const b of blocks)b.sync();drawGuide();if(!started){started=true;if(!s.setup70.completed&&(s.accounts.length===0||s.setup70.demo))go('demarrage');}}
- const previous=render;render=function(s){previous(s);draw(s);};if(typeof state!=='undefined'&&state)draw(state);
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* Guided setup, separate demonstration and explicit transfer purpose. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      el = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      },
+      cash = (n) =>
+        (n / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      button = (text, fn, cls = "secondary") => {
+        const b = el("button", text, cls);
+        b.type = "button";
+        b.onclick = fn;
+        return b;
+      },
+      field = (label, input) => {
+        const l = el("label", label);
+        input.setAttribute("aria-label", label);
+        l.append(input);
+        return l;
+      },
+      go = (view) =>
+        document.querySelector(`.app-shell-nav [data-view="${view}"]`).click();
+    async function request(url, data) {
+      const r = await fetch(
+          url,
+          data === undefined
+            ? {}
+            : {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              },
+        ),
+        s = await r.json();
+      if (!r.ok) throw Error(s.error || "Action impossible.");
+      return s;
+    }
+    const workspace = $("setup-workspace"),
+      steps = [
+        "Bienvenue",
+        "Comptes",
+        "Disponible du Conjoint",
+        "Catégories",
+        "Revenus et factures",
+        "Budgets et réserves",
+        "Virements personnels et vérification",
+      ];
+    let latest,
+      step = 0,
+      started = false;
+    const stepper = el("nav", undefined, "v70-steps");
+    stepper.setAttribute("aria-label", "Étapes de configuration");
+    const content = el("div", undefined, "v70-guide-body"),
+      status = el("p", undefined, "v70-message"),
+      footer = el("div", undefined, "v70-guide-footer");
+    status.setAttribute("role", "status");
+    workspace.append(stepper, content, status, footer);
+    const scopeBadge = el("div", undefined, "v70-scope-note");
+    document.querySelector(".workspace-header").after(scopeBadge);
+    const backLink = el(
+      "a",
+      "Quitter la démonstration et retrouver mon budget",
+      "v70-demo-back",
+    );
+    backLink.href = "/";
+    const demoBanner = el("div", undefined, "v70-demo-banner");
+    demoBanner.append(
+      el("strong", "DÉMONSTRATION — données fictives"),
+      el(
+        "span",
+        "Ce budget est stocké séparément. Les opérations de cette page ne modifient pas votre budget réel.",
+      ),
+      backLink,
+    );
+    demoBanner.hidden = true;
+    document.querySelector(".workspace-header").before(demoBanner);
+    const reset = el("dialog", undefined, "editor-dialog v70-reset-dialog");
+    reset.id = "v70-reset-dialog";
+    reset.setAttribute("aria-label", "Effacer le budget actif");
+    const resetInner = el("div", undefined, "dialog-inner");
+    reset.append(resetInner);
+    document.body.append(reset);
+    function card(title, copy) {
+      const c = el("article", undefined, "v70-card");
+      c.append(el("h3", title));
+      if (copy) c.append(el("p", copy));
+      content.append(c);
+      return c;
+    }
+    async function saveStep(
+      value,
+      completed = latest?.setup70.completed === true,
+    ) {
+      status.textContent = "";
+      try {
+        const s = await request("/api/setup/progress", {
+          step: value,
+          completed,
+        });
+        step = value;
+        runtime.render(s);
+      } catch (e) {
+        status.textContent = e.message;
+      }
+    }
+    function drawGuide() {
+      if (!latest) return;
+      stepper.replaceChildren();
+      for (let i = 0; i < steps.length; i++) {
+        const b = button(i + 1 + ". " + steps[i], () => saveStep(i));
+        b.setAttribute("aria-current", String(step === i ? "step" : "false"));
+        stepper.append(b);
+      }
+      content.replaceChildren();
+      footer.replaceChildren();
+      const intro = el("div", undefined, "v70-guide-heading");
+      intro.append(
+        el("p", "ÉTAPE " + (step + 1) + " SUR " + steps.length, "eyebrow"),
+        el("h2", steps[step]),
+      );
+      content.append(intro);
+      ({
+        0: welcome,
+        1: accounts,
+        2: scopeView,
+        3: categories,
+        4: recurring,
+        5: budgets,
+        6: review,
+      })[step]();
+      if (step > 0)
+        footer.append(button("← Étape précédente", () => saveStep(step - 1)));
+      if (step < 6)
+        footer.append(
+          button("Étape suivante →", () => saveStep(step + 1), "primary"),
+        );
+      else
+        footer.append(
+          button(
+            "Terminer la configuration",
+            async () => {
+              await saveStep(step, true);
+              if (latest.setup70.completed) go("dashboard");
+            },
+            "primary",
+          ),
+        );
+    }
+    function welcome() {
+      const p = card(
+        "Un départ clair, sans modifier vos données",
+        "Une fois terminé, ce guide reste accessible via État des données → Revoir la configuration. Vous pouvez faire les étapes à votre rythme et revenir aux précédentes.",
+      );
+      const list = el("ol");
+      for (const text of [
+        "Créez vos comptes avec leurs soldes bancaires actuels.",
+        "Choisissez Conjoint comme seul compte du Safe-to-Spend.",
+        "Classez vos revenus et vos factures, puis définissez les budgets.",
+        "Vérifiez vos prévisions et les virements pour vos dépenses personnelles.",
+      ])
+        list.append(el("li", text));
+      p.append(list);
+      const demo = card(
+        "Tester librement",
+        "La démonstration possède sa propre base de données. Vous pouvez y essayer les comptes, les budgets, les virements et même la remise à zéro.",
+      );
+      if (latest.setup70.demo) {
+        demo.append(el("p", "Vous êtes déjà dans la démonstration."));
+        if (!latest.accounts.length)
+          demo.append(
+            button(
+              "Charger les exemples fictifs",
+              async () => {
+                try {
+                  runtime.render(await request("/api/setup/demo-seed", {}));
+                } catch (e) {
+                  status.textContent = e.message;
+                }
+              },
+              "primary",
+            ),
+          );
+      } else {
+        const a = el("a", "Ouvrir la démonstration", "button-link");
+        a.href = "/demo/";
+        demo.append(a);
+      }
+      const start = card(
+        "Repartir de zéro, si vous le souhaitez",
+        "Cette action efface le budget actif : comptes, opérations, catégories, budgets, règles et réglages budgétaires. Une copie de récupération peut être conservée. Vos sauvegardes existantes et votre accès privé sont conservés séparément.",
+      );
+      start.append(button("Préparer la remise à zéro", openReset, "danger"));
+    }
+    function accounts() {
+      const p = card(
+        "1. Saisissez les soldes actuels",
+        "Ajoutez Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins, puis vos comptes personnels si vous souhaitez y virer de l’argent. Un achat sur carte augmente le montant dû; un remboursement de carte est un virement, pas une seconde dépense.",
+      );
+      for (const a of latest.accounts) {
+        const line = el("div", undefined, "v70-check-row");
+        line.append(
+          el(
+            "span",
+            a.name +
+              " · " +
+              {
+                checking: "Chèques",
+                savings: "Épargne",
+                credit: "Crédit / marge",
+              }[a.kind],
+          ),
+          el("strong", cash(a.balance_cents)),
+        );
+        p.append(line);
+      }
+      p.append(
+        button(
+          "Ajouter un compte",
+          () => {
+            runtime.resetAccount();
+            window.appOpenEditor("account");
+          },
+          "primary",
+        ),
+        button("Voir et vérifier mes comptes", () => go("comptes")),
+      );
+      card(
+        "Évitez de compter le passé deux fois",
+        "Un solde actuel comprend déjà les anciennes opérations. Pour importer un ancien relevé sans modifier ce solde, choisissez le mode Historique dans Importer CSV.",
+      );
+    }
+    function scopeView() {
+      const setup = card(
+        "Conjoint et vos trois cartes",
+        "Configurez les comptes proposés pour vos dépenses : Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins. Un aperçu permet de réaffecter les anciennes factures personnelles sans changer les soldes ni les opérations réelles.",
+      );
+      setup.append(
+        button(
+          "Configurer mes comptes de dépenses",
+          () => window.budgetOpenBankingSetup(),
+          "primary",
+        ),
+      );
+      if (latest.banking71?.enabled) {
+        card(
+          "Votre configuration est active",
+          "Le disponible concerne " +
+            latest.setup70.scope?.name +
+            ". Les virements vers les comptes personnels restent possibles et réduisent ce disponible. Les cartes ne créent aucune réserve automatique de remboursement.",
+        );
+        return;
+      }
+      const p = card(
+        "2. Le disponible concerne uniquement Conjoint",
+        "Les autres comptes restent visibles, mais ne financent pas ce disponible. Une sortie de Conjoint vers un compte exclu réduit sa trésorerie. Le paiement effectué depuis cet autre compte ne retire pas l’argent une deuxième fois de Conjoint.",
+      );
+      const form = el("form", undefined, "v70-form"),
+        select = el("select");
+      select.required = true;
+      select.add(new Option("Choisir le compte du disponible", ""));
+      for (const a of latest.accounts.filter((a) => a.kind !== "credit"))
+        select.add(new Option(a.name + " · " + cash(a.balance_cents), a.id));
+      select.value =
+        latest.setup70.scope?.account_id ||
+        latest.setup70.suggested_account_id ||
+        "";
+      const save = el("button", "Utiliser uniquement ce compte", "primary");
+      save.type = "submit";
+      form.append(field("Compte du Safe-to-Spend", select), save);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        save.disabled = true;
+        try {
+          runtime.render(
+            await request("/api/setup/scope", {
+              account_id: Number(select.value),
+            }),
+          );
+          status.textContent =
+            "Le disponible porte maintenant uniquement sur " +
+            latest.setup70.scope.name +
+            ".";
+        } catch (err) {
+          status.textContent = err.message;
+        } finally {
+          save.disabled = false;
+        }
+      };
+      p.append(form);
+      if (latest.setup70.scope)
+        p.append(
+          el(
+            "p",
+            "Compte actuellement utilisé : " + latest.setup70.scope.name,
+            "v70-success",
+          ),
+        );
+      card(
+        "Une réserve n’est pas un second paiement",
+        "Les enveloppes gelées sont déjà retirées du disponible. Lorsqu’un virement lié utilise cette réserve pour financer une facture, elle est consommée au départ de l’argent. La même somme n’est pas gelée une seconde fois.",
+      );
+    }
+    function categories() {
+      const p = card(
+        "3. Organisez vos catégories",
+        "Une catégorie explique ce que vous achetez. Une sous-catégorie précise le détail. Non-catégorisé reste toujours disponible pour les opérations qui ne sont pas encore classées.",
+      );
+      p.append(
+        el("p", latest.categories.length + " catégorie(s) enregistrée(s)."),
+        button(
+          "Créer ou modifier mes catégories",
+          () => go("categories"),
+          "primary",
+        ),
+      );
+      const out = el("div");
+      p.append(
+        button("Préparer ma liste Lunch Money", async () => {
+          try {
+            const preview = await request(
+              "/api/categories/catalog-preview",
+              {},
+            );
+            out.replaceChildren(
+              el(
+                "p",
+                "La liste conserve les catégories existantes. Vérifiez les noms dans Catégories après la reprise.",
+              ),
+              button(
+                "Importer cette liste de catégories",
+                async () => {
+                  try {
+                    runtime.render(
+                      await request("/api/categories/catalog-apply", {
+                        token: preview.token,
+                      }),
+                    );
+                    status.textContent =
+                      "Liste reprise. Vos catégories existantes ont été conservées.";
+                  } catch (e) {
+                    status.textContent = e.message;
+                  }
+                },
+                "primary",
+              ),
+            );
+          } catch (e) {
+            status.textContent = e.message;
+          }
+        }),
+        out,
+      );
+    }
+    function recurring() {
+      const p = card(
+        "4. Placez vos revenus et factures aux bonnes dates",
+        "Indiquez le compte qui reçoit réellement le revenu ou qui paie réellement la facture. Vos dépenses courantes utilisent Conjoint ou vos cartes; les comptes personnels servent aux virements personnels.",
+      );
+      p.append(
+        el(
+          "p",
+          latest.recurring.filter((r) => r.active).length +
+            " règle(s) active(s).",
+        ),
+        button(
+          "Ajouter un revenu ou une facture",
+          () => {
+            runtime.resetRec();
+            window.appOpenEditor("recurring");
+          },
+          "primary",
+        ),
+        button("Consulter les récurrences", () => go("recurrences")),
+      );
+      card(
+        "Un seul frais bancaire mensuel",
+        "Dans Récurrences, conservez une seule facture Frais bancaires payée depuis Conjoint, au montant réel du forfait CIBC. Suspendez les anciennes factures de frais personnels devenues inutiles; elles ne sont pas fusionnées automatiquement.",
+      );
+      card(
+        "Prévu puis réel",
+        "La programmation prépare les prévisions. Lorsque le paiement passe, utilisez Confirmer dans Prévu / Réel. Si la transaction est déjà saisie, associez-la au lieu de l’enregistrer à nouveau. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.",
+      );
+    }
+    function budgets() {
+      const p = card(
+        "5. Séparez objectif et argent gelé",
+        "Un objectif indique combien vous voulez consacrer à une catégorie. Une réserve gèle réellement une partie du disponible. Les achats à des dates variables, comme Restaurant, peuvent utiliser une réserve sans créer une dépense fictive au début du mois.",
+      );
+      p.append(
+        button("Configurer mes budgets", () => go("budget"), "primary"),
+        button("Vérifier mes réserves existantes", () => go("enveloppes")),
+      );
+      card(
+        "Réutilisez vos enveloppes",
+        "Liez d’abord les réserves existantes aux catégories. Pour un budget périodique, choisissez le montant par période, la fréquence, la date et Oui/Non pour la reconduction. Une facture récurrente et son budget ne doivent pas devenir deux paiements bancaires.",
+      );
+    }
+    function review() {
+      const p = card(
+        "6. Gardez une place pour les dépenses personnelles",
+        "Un cadeau pour votre conjoint ? Enregistrez un virement depuis Conjoint vers votre compte personnel. La sortie réduit le Safe-to-Spend du Conjoint, sans créer une deuxième dépense dans le budget commun. Un virement prévu agit dans la prévision; les soldes réels changent à sa confirmation.",
+      );
+      p.append(
+        button(
+          "Préparer un virement",
+          () => {
+            window.appOpenEditor("transaction");
+            $("transaction-direction").value = "transfer";
+            $("transaction-direction").dispatchEvent(
+              new Event("change", { bubbles: true }),
+            );
+          },
+          "primary",
+        ),
+        button("Voir Prévu / Réel", () => window.budgetOpenPlanningQueue()),
+      );
+      card(
+        "Un exemple concret",
+        "Avec 1 000 $ dans Conjoint et aucune réserve, un virement personnel de 100 $ laisse 900 $ disponibles. Les comptes personnels restent exclus de ce disponible. Les dépenses courantes se saisissent sur Conjoint ou vos cartes.",
+      );
+      card(
+        "Le paiement de la marge par Interac",
+        "Si la marge n’est pas suivie comme compte dans le logiciel, enregistrez le paiement comme une dépense du Conjoint, catégorie Marge de crédit. Si vous suivez aussi son solde comme compte, utilisez un virement de remboursement pour mettre les deux soldes à jour. Ne saisissez pas les deux pour un même paiement.",
+      );
+      if (latest.setup70.funding_links.length) {
+        const bindings = card(
+          "Anciens liens de financement v7.0",
+          "Ces liens sont conservés pour votre historique. Avant de déplacer une facture personnelle dans Conjoint, retirez son ancien lien ici. Les opérations bancaires restent enregistrées.",
+        );
+        for (const l of latest.setup70.funding_links) {
+          const row = el("div", undefined, "v70-link-row");
+          row.append(
+            el("span", l.description + " · échéance " + l.expense_on),
+            button("Retirer le lien", () => confirmUnlink(l)),
+          );
+          bindings.append(row);
+        }
+      }
+    }
+    function existingLinkForm() {
+      const form = el("form", undefined, "v70-form"),
+        transfer = el("select"),
+        expense = el("select"),
+        save = el("button", "Associer ces opérations", "secondary");
+      transfer.required = expense.required = true;
+      transfer.add(new Option("Choisir un virement", ""));
+      for (const r of latest.planning.rows.filter(
+        (r) =>
+          r.type === "transfer" && ["planned", "pending"].includes(r.status),
+      ))
+        transfer.add(
+          new Option(
+            r.date + " · " + r.description + " · " + cash(r.remaining_cents),
+            r.key,
+          ),
+        );
+      for (const t of latest.calendar_transfers)
+        transfer.add(
+          new Option(
+            t.happened_on +
+              " · " +
+              t.description +
+              " · réel · " +
+              cash(t.amount_cents),
+            "actual:" + t.id,
+          ),
+        );
+      expense.add(new Option("Choisir une échéance", ""));
+      for (const r of expenseOptions())
+        expense.add(new Option(expenseLabel(r), r.key));
+      save.type = "submit";
+      form.append(
+        field("Virement prévu ou enregistré", transfer),
+        field("Facture financée", expense),
+        save,
+      );
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        save.disabled = true;
+        try {
+          runtime.render(
+            await request("/api/setup/funding-link", {
+              transfer_key: transfer.value,
+              funding_answer: "yes",
+              funding_expense_key: expense.value,
+            }),
+          );
+          status.textContent = "Association enregistrée.";
+        } catch (err) {
+          status.textContent = err.message;
+        } finally {
+          save.disabled = false;
+        }
+      };
+      return form;
+    }
+    function expenseOptions() {
+      return (latest?.planning.rows || []).filter(
+        (r) =>
+          r.type === "expense" &&
+          r.source === "recurring" &&
+          r.status !== "skipped" &&
+          r.account_id,
+      );
+    }
+    function expenseLabel(r) {
+      return (
+        r.date +
+        " · " +
+        r.description +
+        " · " +
+        (latest.accounts.find((a) => a.id === r.account_id)?.name || "Compte") +
+        " · " +
+        cash(r.actual_cents ?? r.planned_cents) +
+        (r.status === "actual" ? " · déjà enregistré" : "")
+      );
+    }
+    function confirmUnlink(link) {
+      if (
+        !confirm(
+          "Retirer cette association ? Les opérations bancaires sont conservées. Une réserve encore nécessaire à la facture pourra redevenir indisponible jusqu’à son paiement.",
+        )
+      )
+        return;
+      request("/api/setup/funding-unlink", { id: link.id, confirm: true })
+        .then(runtime.render)
+        .catch((e) => (status.textContent = e.message));
+    }
+    async function openReset() {
+      resetInner.replaceChildren();
+      const head = el("div", undefined, "dialog-heading");
+      head.append(
+        el(
+          "h2",
+          latest.setup70.demo
+            ? "Effacer la démonstration"
+            : "Effacer le budget actif",
+        ),
+        button("Fermer", () => reset.close()),
+      );
+      const error = el("p", undefined, "v70-error");
+      error.setAttribute("role", "alert");
+      resetInner.append(head, error);
+      reset.showModal();
+      try {
+        const preview = await request("/api/setup/reset-preview", {}),
+          counts = el("ul");
+        for (const [key, label] of [
+          ["accounts", "Comptes"],
+          ["transactions", "Transactions"],
+          ["account_transfers", "Virements enregistrés"],
+          ["recurring", "Règles récurrentes"],
+          ["envelopes", "Enveloppes"],
+          ["categories", "Catégories"],
+          ["subcategories", "Sous-catégories"],
+          ["goals", "Objectifs"],
+        ])
+          counts.append(el("li", label + " : " + preview.counts[key]));
+        resetInner.append(
+          el(
+            "p",
+            "Les données actives seront vidées. Vos sauvegardes existantes et l’accès privé sont conservés séparément. Fermer annule sans effacement.",
+          ),
+          counts,
+        );
+        const form = el("form", undefined, "v70-form"),
+          backup = el("input"),
+          ack = el("input"),
+          typed = el("input");
+        backup.type = ack.type = "checkbox";
+        backup.checked = true;
+        ack.required = true;
+        typed.required = true;
+        typed.pattern = "EFFACER";
+        typed.autocomplete = "off";
+        const save = el("button", "Effacer et recommencer", "danger");
+        save.type = "submit";
+        form.append(
+          field("Conserver une copie de récupération avant effacement", backup),
+          field(
+            "Je confirme l’effacement du budget actif affiché ci-dessus",
+            ack,
+          ),
+          field("Tapez EFFACER pour confirmer", typed),
+          save,
+        );
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          save.disabled = true;
+          try {
+            const s = await request("/api/setup/reset", {
+              token: preview.token,
+              confirmation: typed.value,
+              acknowledged: ack.checked,
+              backup: backup.checked,
+            });
+            try {
+              localStorage.clear();
+            } catch {}
+            runtime.render(s);
+            step = 0;
+            reset.close();
+            go("demarrage");
+            drawGuide();
+            status.textContent = s.reset70.recovery
+              ? "Budget actif vidé. Une copie avant effacement est disponible ci-dessous."
+              : "Budget actif vidé. Vous pouvez configurer un nouveau budget.";
+            if (s.reset70.recovery) {
+              const a = el("a", "Télécharger la copie avant effacement");
+              a.href =
+                "/api/setup/recovery?name=" +
+                encodeURIComponent(s.reset70.recovery);
+              a.download = "";
+              status.append(el("br"), a);
+            }
+          } catch (err) {
+            error.textContent = err.message;
+          } finally {
+            save.disabled = false;
+          }
+        };
+        resetInner.append(form);
+      } catch (e) {
+        error.textContent = e.message;
+      }
+    }
+    const resetPanel = el("div", undefined, "v70-card");
+    resetPanel.append(
+      el("h3", "Repartir de zéro"),
+      el(
+        "p",
+        "Préparez un effacement du budget actif avec récapitulatif, copie de récupération et confirmation explicite.",
+      ),
+      button("Préparer la remise à zéro", openReset, "danger"),
+    );
+    $("section-sauvegardes").append(resetPanel);
+    const blocks = [];
+    function fundingBlock(form, type, source, destination) {
+      const host = el("div", undefined, "v70-funding"),
+        answer = el("select"),
+        expense = el("select"),
+        hint = el("p", undefined, "quiet-copy");
+      answer.name = "funding_answer";
+      expense.name = "funding_expense_key";
+      answer.add(new Option("Choisir Oui ou Non", ""));
+      answer.add(new Option("Non — autre virement", "no"));
+      answer.add(new Option("Oui — financer une dépense", "yes"));
+      expense.add(new Option("Choisir une échéance", ""));
+      const expenseField = field(
+        "Échéance payée depuis le compte destination",
+        expense,
+      );
+      host.append(
+        field("Ce virement sert-il à payer une autre dépense ?", answer),
+        expenseField,
+        hint,
+      );
+      form.querySelector(".entry-submit-actions")?.before(host);
+      if (!host.isConnected) {
+        const save = form.querySelector("#save-rec");
+        if (save) save.before(host);
+        else form.append(host);
+      }
+      function sync() {
+        const isTransfer =
+            type.value === "transfer" && !latest?.banking71?.enabled,
+          yes = isTransfer && answer.value === "yes";
+        host.hidden = !isTransfer;
+        answer.disabled = !isTransfer;
+        answer.required = isTransfer;
+        expenseField.hidden = !yes;
+        expense.disabled = !yes;
+        expense.required = yes;
+        const value = expense.value;
+        expense.replaceChildren(new Option("Choisir une échéance", ""));
+        for (const r of expenseOptions())
+          expense.add(new Option(expenseLabel(r), r.key));
+        expense.value = value;
+        const from = latest?.accounts.find(
+            (a) => String(a.id) === source.value,
+          ),
+          to = latest?.accounts.find((a) => String(a.id) === destination.value);
+        hint.textContent = yes
+          ? "La facture doit être payée depuis " +
+            (to?.name || "le compte destination") +
+            ". Seule la sortie de " +
+            (latest?.setup70.scope?.name || "votre compte du disponible") +
+            " réduit sa trésorerie. Un lien concerne une seule échéance."
+          : from && to
+            ? "De " +
+              from.name +
+              " vers " +
+              to.name +
+              ". Un virement sortant du compte du disponible compte même sans facture liée."
+            : "Choisissez les comptes source et destination.";
+      }
+      answer.onchange = sync;
+      for (const input of [type, source, destination])
+        input.addEventListener("change", sync);
+      form.addEventListener("reset", () => queueMicrotask(sync));
+      blocks.push({ form, answer, expense, sync });
+      return blocks.at(-1);
+    }
+    const transactionFunding = fundingBlock(
+      $("transaction"),
+      $("transaction-direction"),
+      $("account-options"),
+      $("transaction-destination"),
+    );
+    fundingBlock($("recurring"), $("rec-type"), $("rec-account"), $("rec-to"));
+    const previousSend = runtime.send;
+    runtime.send = async function (url, payload) {
+      const transfer =
+        url === "/api/transfers" ||
+        (url === "/api/recurring" && payload.type === "transfer");
+      if (
+        transfer &&
+        !latest?.banking71?.enabled &&
+        $("transaction-dialog").open &&
+        $("transaction-direction").value === "transfer"
+      )
+        payload = {
+          ...payload,
+          funding_answer: transactionFunding.answer.value,
+          funding_expense_key: transactionFunding.expense.value,
+        };
+      const ok = await previousSend(url, payload);
+      if (ok && transfer) {
+        for (const b of blocks) {
+          b.answer.value = "";
+          b.expense.value = "";
+          b.sync();
+        }
+      }
+      return ok;
+    };
+    const previousOpen = window.appOpenEditor;
+    window.appOpenEditor = function (key) {
+      previousOpen(key);
+      for (const b of blocks) b.sync();
+    };
+    function draw(s) {
+      latest = s;
+      document.querySelector('.app-shell-nav [data-view="demarrage"]').hidden =
+        s.setup70.completed;
+      step = s.setup70.step;
+      scopeBadge.replaceChildren(
+        el(
+          "span",
+          s.setup70.scope
+            ? "Safe-to-spend : " + s.setup70.scope.name + " uniquement"
+            : "Compte du Safe-to-Spend à choisir dans Bien démarrer",
+        ),
+        button("Configurer", () => go("demarrage")),
+      );
+      demoBanner.hidden = !s.setup70.demo;
+      for (const b of blocks) b.sync();
+      drawGuide();
+      if (!started) {
+        started = true;
+        if (!s.setup70.completed && (s.accounts.length === 0 || s.setup70.demo))
+          go("demarrage");
+      }
+    }
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      draw(s);
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state)
+      draw(runtime.state);
+  })();
+}

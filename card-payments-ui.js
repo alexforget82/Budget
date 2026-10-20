@@ -1,56 +1,515 @@
-/* Card purchases and their bank repayments form two distinct dated movements. */
-(()=>{
- const $=id=>document.getElementById(id),n=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
- const cash=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'});
- const button=(label,handler,cls='secondary')=>{const el=n('button',label,cls);el.type='button';el.onclick=handler;return el;},field=(label,input)=>{const el=n('label',label);el.append(input);return el;};
- const panel=n('div',undefined,'card-payment-panel');panel.id='card-payments-panel';$('accounts').after(panel);
- const dialog=n('dialog',undefined,'editor-dialog planning-dialog');dialog.id='card-payment-dialog';const inner=n('div',undefined,'dialog-inner');dialog.append(inner);document.body.append(dialog);
- let current=null,busy=false;
- const planFor=id=>current.card_payment_plans.find(p=>p.card_account_id===id),rowsFor=plan=>current.planning.rows.filter(r=>r.recurring_id===plan.recurring_id),ruleFor=plan=>current.recurring.find(r=>r.id===plan.recurring_id);
- async function write(path,data,error){try{const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),out=await response.json();if(!response.ok)throw Error(out.error||'Enregistrement impossible.');render(out);return true;}catch(err){error.textContent=err.message;return false;}}
- function show(cardId){
-  if(!current)return;const card=current.accounts.find(a=>a.id===cardId&&a.kind==='credit');if(!card)return;
-  const plan=planFor(cardId),rule=plan?ruleFor(plan):null;inner.replaceChildren();const head=n('div',undefined,'dialog-heading');head.append(n('h2','Rembourser '+card.name),button('Fermer',()=>dialog.close()));inner.append(head,n('p','Les achats augmentent la carte. Le remboursement prévu réduit le compte bancaire à sa date. Aucune réserve automatique pour les cartes. Confirmez ensuite les paiements effectués auprès de votre banque.','quiet-copy'));
-  const form=n('form',undefined,'planning-action-form');form.id='card-payment-form';const source=n('select');source.name='from_account_id';source.required=true;source.append(n('option','Choisir le compte bancaire'));source.firstChild.value='';
-  for(const a of current.accounts.filter(a=>a.kind!=='credit')){const option=n('option',a.name+(a.included?'':' · hors disponible'));option.value=a.id;source.append(option);}source.value=rule?.account_id||current.accounts.find(a=>a.kind!=='credit'&&a.name.toLocaleLowerCase('fr-CA')==='conjoint')?.id||'';
-  const mode=n('select');mode.name='mode';for(const [value,label] of [['purchases','Calculer selon les achats de la période'],['fixed','Montant fixe choisi']]){const option=n('option',label);option.value=value;mode.append(option);}mode.value=plan?.mode||'purchases';
-  const amount=n('input');amount.type='number';amount.name='amount';amount.min='0.01';amount.step='0.01';amount.value=plan?.mode==='fixed'?(rule.amount_cents/100).toFixed(2):'';const amountLabel=field('Montant du remboursement ($)',amount);
-  const start=n('input');start.type='date';start.name='start_on';start.required=true;
-  const today=current.forecast[0].date,d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+((5-d.getUTCDay()+7)%7||7));start.value=rule?.start_on||d.toISOString().slice(0,10);if(!plan)start.min=today;
-  const frequency=n('select');frequency.name='frequency';for(const [value,label] of [['weekly','Chaque semaine'],['biweekly','Aux deux semaines'],['monthly','Chaque mois']]){const option=n('option',label);option.value=value;frequency.append(option);}frequency.value=rule?.frequency||'weekly';
-  const active=n('input');active.type='checkbox';active.name='active';active.checked=rule?!!rule.active:true;const activeLabel=field('Inclure les remboursements dans la prévision',active);activeLabel.className='inline-choice';
-  const reuse=n('select');reuse.name='replace_recurring_id';const reuseLabel=field('Remboursement déjà planifié à réutiliser',reuse),existing=current.recurring.filter(r=>r.active&&r.type==='transfer'&&r.to_account_id===cardId&&r.id!==plan?.recurring_id);reuseLabel.hidden=!!plan||!existing.length;reuse.required=!reuseLabel.hidden;
-  const empty=n('option','Choisir la règle existante');empty.value='';reuse.append(empty);for(const r of existing){const option=n('option',r.description+' · '+(current.accounts.find(a=>a.id===r.account_id)?.name||'Compte'));option.value=r.id;reuse.append(option);}
-  reuse.onchange=()=>{const r=existing.find(r=>r.id===Number(reuse.value));if(r){source.value=r.account_id;frequency.value=['weekly','biweekly','monthly'].includes(r.frequency)?r.frequency:'monthly';const next=current.planning.rows.find(p=>p.recurring_id===r.id&&p.date>=today);start.value=next?.date||start.value;if(mode.value==='fixed')amount.value=(r.amount_cents/100).toFixed(2);}sync();};
-  const note=n('p',undefined,'quiet-copy'),sourceNote=n('p',undefined,'action-preview'),error=n('p',undefined,'action-error');error.id='card-payment-error';error.setAttribute('role','alert');
-  function sync(){amountLabel.hidden=mode.value!=='fixed';amount.required=!amountLabel.hidden;note.textContent=mode.value==='purchases'?'Le calcul utilise les achats réels et prévus depuis l’échéance précédente, moins les remboursements marchands. Un montant réel payé différent sera rapproché. L’ancienne dette n’est pas ajoutée automatiquement. Le montant proposé est plafonné à la dette projetée, sauf choix explicite d’un autre montant.':'Le montant choisi sera proposé à chaque date, même s’il dépasse la dette projetée. Vous pouvez modifier une seule occurrence dans À confirmer.';const a=current.accounts.find(a=>a.id===Number(source.value));sourceNote.textContent=a&&!a.included?'Ce compte est exclu du disponible : ses paiements ne réduiront pas le Safe-to-Spend des comptes inclus.':'';}
-  mode.onchange=sync;source.onchange=sync;sync();form.append(field('Compte qui rembourse la carte',source),field('Calcul du paiement',mode),amountLabel,field('Première date prévue',start),field('Fréquence',frequency),activeLabel,reuseLabel,note,sourceNote,error);
-  if(existing.length&&!plan)form.append(n('p','Une règle de remboursement existe déjà. Elle sera réutilisée pour éviter d’ajouter un deuxième paiement. Les virements réels restent inchangés.','quiet-copy'));
-  const save=n('button','Enregistrer le plan','primary');save.type='submit';form.append(save);inner.append(form);
-  form.onsubmit=async event=>{event.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';const ok=await write('/api/card-payments',{card_account_id:cardId,from_account_id:Number(source.value),mode:mode.value,amount:Number(amount.value),start_on:start.value,frequency:frequency.value,active:active.checked,replace_recurring_id:reuse.value?Number(reuse.value):null},error);busy=false;save.disabled=false;if(ok)dialog.close();};
-  if(plan)inner.append(button('Supprimer ce plan',async()=>{if(confirm('Retirer les remboursements prévus de cette carte ? Les virements réels resteront dans l’historique.')){if(await write('/api/card-payments/delete',{card_account_id:cardId},error))dialog.close();}},'quiet-danger'));
-  if(!dialog.open)dialog.showModal();
- }
- function draw(){
-  if(!current)return;panel.replaceChildren();const plans=current.card_payment_plans||[];
-  if(plans.length){const head=n('div',undefined,'panel-heading');head.append(n('div'));head.firstChild.append(n('p','DU COMPTE BANCAIRE À LA CARTE','eyebrow'),n('h3','Vos remboursements prévus'));panel.append(head,n('p','Chaque paiement est un virement. Les achats ne sont pas comptés une deuxième fois comme dépenses.','quiet-copy'));}
-  for(const card of current.accounts.filter(a=>a.kind==='credit')){
-   const bank=$('accounts').querySelector(`[data-account-id="${card.id}"]`);if(bank){bank.querySelector('[data-card-payment-ui]')?.remove();const footer=n('div',undefined,'card-payment-shortcut');footer.dataset.cardPaymentUi='true';footer.append(button(planFor(card.id)?'Régler les remboursements':'Planifier les remboursements',()=>show(card.id),'card-link'));bank.append(footer);}
-   const plan=planFor(card.id);if(!plan)continue;const rule=ruleFor(plan),rows=rowsFor(plan),next=rows.find(r=>r.status==='pending'||r.status==='planned')||rows.find(r=>r.date>=current.forecast[0].date);
-   const article=n('article',undefined,'card-payment-summary');article.dataset.cardAccountId=card.id;const heading=n('div',undefined,'card-payment-heading'),copy=n('div');copy.append(n('h4',card.name),n('p',(current.accounts.find(a=>a.id===rule.account_id)?.name||'Compte')+' → '+card.name,'quiet-copy'));heading.append(copy,n('strong',next?cash(next.planned_cents):'—','card-payment-next-amount'));article.append(heading,n('p',!rule.active?'Plan en pause':next?'Prochain paiement · '+date(next.date)+(plan.mode==='purchases'?' · selon les achats':' · montant fixe'):'Aucun paiement sur les 90 jours','quiet-copy'),button('Modifier le plan',()=>show(card.id)));
-   if(next?.unmatched_payment_ids?.length)article.append(n('p','Un virement réel est déjà saisi près de cette échéance. Associez-le pour éviter un deuxième paiement prévu.','quiet-copy'),button('Voir dans À confirmer',()=>{window.budgetOpenPlanningQueue();document.querySelector('[data-inbox-filter="all"]').click();}));
-   const detail=n('details',undefined,'bridge-detail');detail.append(n('summary','Voir les prochaines échéances et leur calcul'));
-   for(const row of rows.filter(r=>r.date>=current.forecast[0].date||r.status==='pending').slice(0,6)){
-    const item=n('div',undefined,'card-payment-occurrence');item.append(n('strong',date(row.date)+' · '+cash(row.planned_cents)),n('small',row.status==='actual'?'Réel enregistré : '+cash(row.actual_cents):row.status==='skipped'?'Aucun paiement prévu':row.status==='pending'?'À confirmer':'Prévu'));
-    if(row.purchase_period_start){item.append(n('p','Achats du '+date(row.purchase_period_start)+' au '+date(row.purchase_period_end)+' : '+cash(row.purchase_cents)+(row.carried_cents?(row.carried_cents<0?' · crédit reporté : '+cash(-row.carried_cents):' · reste à payer reporté : '+cash(row.carried_cents)):''),'quiet-copy'));const breakdown=n('details');breakdown.append(n('summary','Consulter les achats pris en compte'));for(const entry of row.payment_items||[]){const line=n('div',undefined,'bridge-event');line.append(n('span',date(entry.date)+' · '+entry.description+(entry.real?' · réel':' · prévu')),n('strong',cash(entry.amount_cents)));breakdown.append(line);}item.append(breakdown);}
-    detail.append(item);
-   }
-   article.append(detail);panel.append(article);
-   const tile=$('rec-groups').querySelector(`[data-recurring-id="${rule.id}"]`);if(plan.mode==='purchases')for(const selectId of ['override-rule','v21-link-rule','v21-move-rule']){const option=$(selectId)?.querySelector(`option[value="${rule.id}"]`);if(option)option.textContent=rule.description+' · selon les achats';}
-   if(tile&&plan.mode==='purchases'){tile.querySelector('.rule-amount').textContent=next?cash(next.planned_cents):'Selon les achats';tile.querySelector('.rule-date').textContent=!rule.active?'Remboursement en pause':next?'Prochain paiement · '+date(next.date)+' · selon les achats':'Selon les achats de chaque période';}
-  }
-  panel.hidden=!plans.length;
- }
- const edit=editRule;editRule=function(id){const plan=current?.card_payment_plans.find(p=>p.recurring_id===id);if(plan)show(plan.card_account_id);else edit(id);};
- const previous=render;render=function(s){previous(s);current=s;draw();};if(typeof state!=='undefined'&&state){current=state;draw();}
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* Card purchases and their bank repayments form two distinct dated movements. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      n = (tag, text, cls) => {
+        const el = document.createElement(tag);
+        if (text !== undefined) el.textContent = text;
+        if (cls) el.className = cls;
+        return el;
+      };
+    const cash = (c) =>
+        (c / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      date = (d) =>
+        new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+    const button = (label, handler, cls = "secondary") => {
+        const el = n("button", label, cls);
+        el.type = "button";
+        el.onclick = handler;
+        return el;
+      },
+      field = (label, input) => {
+        const el = n("label", label);
+        el.append(input);
+        return el;
+      };
+    const panel = n("div", undefined, "card-payment-panel");
+    panel.id = "card-payments-panel";
+    $("accounts").after(panel);
+    const dialog = n("dialog", undefined, "editor-dialog planning-dialog");
+    dialog.id = "card-payment-dialog";
+    const inner = n("div", undefined, "dialog-inner");
+    dialog.append(inner);
+    document.body.append(dialog);
+    let current = null,
+      busy = false;
+    const planFor = (id) =>
+        current.card_payment_plans.find((p) => p.card_account_id === id),
+      rowsFor = (plan) =>
+        current.planning.rows.filter(
+          (r) => r.recurring_id === plan.recurring_id,
+        ),
+      ruleFor = (plan) =>
+        current.recurring.find((r) => r.id === plan.recurring_id);
+    async function write(path, data, error) {
+      try {
+        const response = await fetch(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          }),
+          out = await response.json();
+        if (!response.ok)
+          throw Error(out.error || "Enregistrement impossible.");
+        runtime.render(out);
+        return true;
+      } catch (err) {
+        error.textContent = err.message;
+        return false;
+      }
+    }
+    function show(cardId) {
+      if (!current) return;
+      const card = current.accounts.find(
+        (a) => a.id === cardId && a.kind === "credit",
+      );
+      if (!card) return;
+      const plan = planFor(cardId),
+        rule = plan ? ruleFor(plan) : null;
+      inner.replaceChildren();
+      const head = n("div", undefined, "dialog-heading");
+      head.append(
+        n("h2", "Rembourser " + card.name),
+        button("Fermer", () => dialog.close()),
+      );
+      inner.append(
+        head,
+        n(
+          "p",
+          "Les achats augmentent la carte. Le remboursement prévu réduit le compte bancaire à sa date. Aucune réserve automatique pour les cartes. Confirmez ensuite les paiements effectués auprès de votre banque.",
+          "quiet-copy",
+        ),
+      );
+      const form = n("form", undefined, "planning-action-form");
+      form.id = "card-payment-form";
+      const source = n("select");
+      source.name = "from_account_id";
+      source.required = true;
+      source.append(n("option", "Choisir le compte bancaire"));
+      source.firstChild.value = "";
+      for (const a of current.accounts.filter((a) => a.kind !== "credit")) {
+        const option = n(
+          "option",
+          a.name + (a.included ? "" : " · hors disponible"),
+        );
+        option.value = a.id;
+        source.append(option);
+      }
+      source.value =
+        rule?.account_id ||
+        current.accounts.find(
+          (a) =>
+            a.kind !== "credit" &&
+            a.name.toLocaleLowerCase("fr-CA") === "conjoint",
+        )?.id ||
+        "";
+      const mode = n("select");
+      mode.name = "mode";
+      for (const [value, label] of [
+        ["purchases", "Calculer selon les achats de la période"],
+        ["fixed", "Montant fixe choisi"],
+      ]) {
+        const option = n("option", label);
+        option.value = value;
+        mode.append(option);
+      }
+      mode.value = plan?.mode || "purchases";
+      const amount = n("input");
+      amount.type = "number";
+      amount.name = "amount";
+      amount.min = "0.01";
+      amount.step = "0.01";
+      amount.value =
+        plan?.mode === "fixed" ? (rule.amount_cents / 100).toFixed(2) : "";
+      const amountLabel = field("Montant du remboursement ($)", amount);
+      const start = n("input");
+      start.type = "date";
+      start.name = "start_on";
+      start.required = true;
+      const today = current.forecast[0].date,
+        d = new Date(today + "T12:00:00Z");
+      d.setUTCDate(d.getUTCDate() + ((5 - d.getUTCDay() + 7) % 7 || 7));
+      start.value = rule?.start_on || d.toISOString().slice(0, 10);
+      if (!plan) start.min = today;
+      const frequency = n("select");
+      frequency.name = "frequency";
+      for (const [value, label] of [
+        ["weekly", "Chaque semaine"],
+        ["biweekly", "Aux deux semaines"],
+        ["monthly", "Chaque mois"],
+      ]) {
+        const option = n("option", label);
+        option.value = value;
+        frequency.append(option);
+      }
+      frequency.value = rule?.frequency || "weekly";
+      const active = n("input");
+      active.type = "checkbox";
+      active.name = "active";
+      active.checked = rule ? !!rule.active : true;
+      const activeLabel = field(
+        "Inclure les remboursements dans la prévision",
+        active,
+      );
+      activeLabel.className = "inline-choice";
+      const reuse = n("select");
+      reuse.name = "replace_recurring_id";
+      const reuseLabel = field(
+          "Remboursement déjà planifié à réutiliser",
+          reuse,
+        ),
+        existing = current.recurring.filter(
+          (r) =>
+            r.active &&
+            r.type === "transfer" &&
+            r.to_account_id === cardId &&
+            r.id !== plan?.recurring_id,
+        );
+      reuseLabel.hidden = !!plan || !existing.length;
+      reuse.required = !reuseLabel.hidden;
+      const empty = n("option", "Choisir la règle existante");
+      empty.value = "";
+      reuse.append(empty);
+      for (const r of existing) {
+        const option = n(
+          "option",
+          r.description +
+            " · " +
+            (current.accounts.find((a) => a.id === r.account_id)?.name ||
+              "Compte"),
+        );
+        option.value = r.id;
+        reuse.append(option);
+      }
+      reuse.onchange = () => {
+        const r = existing.find((r) => r.id === Number(reuse.value));
+        if (r) {
+          source.value = r.account_id;
+          frequency.value = ["weekly", "biweekly", "monthly"].includes(
+            r.frequency,
+          )
+            ? r.frequency
+            : "monthly";
+          const next = current.planning.rows.find(
+            (p) => p.recurring_id === r.id && p.date >= today,
+          );
+          start.value = next?.date || start.value;
+          if (mode.value === "fixed")
+            amount.value = (r.amount_cents / 100).toFixed(2);
+        }
+        sync();
+      };
+      const note = n("p", undefined, "quiet-copy"),
+        sourceNote = n("p", undefined, "action-preview"),
+        error = n("p", undefined, "action-error");
+      error.id = "card-payment-error";
+      error.setAttribute("role", "alert");
+      function sync() {
+        amountLabel.hidden = mode.value !== "fixed";
+        amount.required = !amountLabel.hidden;
+        note.textContent =
+          mode.value === "purchases"
+            ? "Le calcul utilise les achats réels et prévus depuis l’échéance précédente, moins les remboursements marchands. Un montant réel payé différent sera rapproché. L’ancienne dette n’est pas ajoutée automatiquement. Le montant proposé est plafonné à la dette projetée, sauf choix explicite d’un autre montant."
+            : "Le montant choisi sera proposé à chaque date, même s’il dépasse la dette projetée. Vous pouvez modifier une seule occurrence dans À confirmer.";
+        const a = current.accounts.find((a) => a.id === Number(source.value));
+        sourceNote.textContent =
+          a && !a.included
+            ? "Ce compte est exclu du disponible : ses paiements ne réduiront pas le Safe-to-Spend des comptes inclus."
+            : "";
+      }
+      mode.onchange = sync;
+      source.onchange = sync;
+      sync();
+      form.append(
+        field("Compte qui rembourse la carte", source),
+        field("Calcul du paiement", mode),
+        amountLabel,
+        field("Première date prévue", start),
+        field("Fréquence", frequency),
+        activeLabel,
+        reuseLabel,
+        note,
+        sourceNote,
+        error,
+      );
+      if (existing.length && !plan)
+        form.append(
+          n(
+            "p",
+            "Une règle de remboursement existe déjà. Elle sera réutilisée pour éviter d’ajouter un deuxième paiement. Les virements réels restent inchangés.",
+            "quiet-copy",
+          ),
+        );
+      const save = n("button", "Enregistrer le plan", "primary");
+      save.type = "submit";
+      form.append(save);
+      inner.append(form);
+      form.onsubmit = async (event) => {
+        event.preventDefault();
+        if (busy) return;
+        busy = true;
+        save.disabled = true;
+        error.textContent = "";
+        const ok = await write(
+          "/api/card-payments",
+          {
+            card_account_id: cardId,
+            from_account_id: Number(source.value),
+            mode: mode.value,
+            amount: Number(amount.value),
+            start_on: start.value,
+            frequency: frequency.value,
+            active: active.checked,
+            replace_recurring_id: reuse.value ? Number(reuse.value) : null,
+          },
+          error,
+        );
+        busy = false;
+        save.disabled = false;
+        if (ok) dialog.close();
+      };
+      if (plan)
+        inner.append(
+          button(
+            "Supprimer ce plan",
+            async () => {
+              if (
+                confirm(
+                  "Retirer les remboursements prévus de cette carte ? Les virements réels resteront dans l’historique.",
+                )
+              ) {
+                if (
+                  await write(
+                    "/api/card-payments/delete",
+                    { card_account_id: cardId },
+                    error,
+                  )
+                )
+                  dialog.close();
+              }
+            },
+            "quiet-danger",
+          ),
+        );
+      if (!dialog.open) dialog.showModal();
+    }
+    function draw() {
+      if (!current) return;
+      panel.replaceChildren();
+      const plans = current.card_payment_plans || [];
+      if (plans.length) {
+        const head = n("div", undefined, "panel-heading");
+        head.append(n("div"));
+        head.firstChild.append(
+          n("p", "DU COMPTE BANCAIRE À LA CARTE", "eyebrow"),
+          n("h3", "Vos remboursements prévus"),
+        );
+        panel.append(
+          head,
+          n(
+            "p",
+            "Chaque paiement est un virement. Les achats ne sont pas comptés une deuxième fois comme dépenses.",
+            "quiet-copy",
+          ),
+        );
+      }
+      for (const card of current.accounts.filter((a) => a.kind === "credit")) {
+        const bank = $("accounts").querySelector(
+          `[data-account-id="${card.id}"]`,
+        );
+        if (bank) {
+          bank.querySelector("[data-card-payment-ui]")?.remove();
+          const footer = n("div", undefined, "card-payment-shortcut");
+          footer.dataset.cardPaymentUi = "true";
+          footer.append(
+            button(
+              planFor(card.id)
+                ? "Régler les remboursements"
+                : "Planifier les remboursements",
+              () => show(card.id),
+              "card-link",
+            ),
+          );
+          bank.append(footer);
+        }
+        const plan = planFor(card.id);
+        if (!plan) continue;
+        const rule = ruleFor(plan),
+          rows = rowsFor(plan),
+          next =
+            rows.find(
+              (r) => r.status === "pending" || r.status === "planned",
+            ) || rows.find((r) => r.date >= current.forecast[0].date);
+        const article = n("article", undefined, "card-payment-summary");
+        article.dataset.cardAccountId = card.id;
+        const heading = n("div", undefined, "card-payment-heading"),
+          copy = n("div");
+        copy.append(
+          n("h4", card.name),
+          n(
+            "p",
+            (current.accounts.find((a) => a.id === rule.account_id)?.name ||
+              "Compte") +
+              " → " +
+              card.name,
+            "quiet-copy",
+          ),
+        );
+        heading.append(
+          copy,
+          n(
+            "strong",
+            next ? cash(next.planned_cents) : "—",
+            "card-payment-next-amount",
+          ),
+        );
+        article.append(
+          heading,
+          n(
+            "p",
+            !rule.active
+              ? "Plan en pause"
+              : next
+                ? "Prochain paiement · " +
+                  date(next.date) +
+                  (plan.mode === "purchases"
+                    ? " · selon les achats"
+                    : " · montant fixe")
+                : "Aucun paiement sur les 90 jours",
+            "quiet-copy",
+          ),
+          button("Modifier le plan", () => show(card.id)),
+        );
+        if (next?.unmatched_payment_ids?.length)
+          article.append(
+            n(
+              "p",
+              "Un virement réel est déjà saisi près de cette échéance. Associez-le pour éviter un deuxième paiement prévu.",
+              "quiet-copy",
+            ),
+            button("Voir dans À confirmer", () => {
+              window.budgetOpenPlanningQueue();
+              document.querySelector('[data-inbox-filter="all"]').click();
+            }),
+          );
+        const detail = n("details", undefined, "bridge-detail");
+        detail.append(
+          n("summary", "Voir les prochaines échéances et leur calcul"),
+        );
+        for (const row of rows
+          .filter(
+            (r) => r.date >= current.forecast[0].date || r.status === "pending",
+          )
+          .slice(0, 6)) {
+          const item = n("div", undefined, "card-payment-occurrence");
+          item.append(
+            n("strong", date(row.date) + " · " + cash(row.planned_cents)),
+            n(
+              "small",
+              row.status === "actual"
+                ? "Réel enregistré : " + cash(row.actual_cents)
+                : row.status === "skipped"
+                  ? "Aucun paiement prévu"
+                  : row.status === "pending"
+                    ? "À confirmer"
+                    : "Prévu",
+            ),
+          );
+          if (row.purchase_period_start) {
+            item.append(
+              n(
+                "p",
+                "Achats du " +
+                  date(row.purchase_period_start) +
+                  " au " +
+                  date(row.purchase_period_end) +
+                  " : " +
+                  cash(row.purchase_cents) +
+                  (row.carried_cents
+                    ? row.carried_cents < 0
+                      ? " · crédit reporté : " + cash(-row.carried_cents)
+                      : " · reste à payer reporté : " + cash(row.carried_cents)
+                    : ""),
+                "quiet-copy",
+              ),
+            );
+            const breakdown = n("details");
+            breakdown.append(
+              n("summary", "Consulter les achats pris en compte"),
+            );
+            for (const entry of row.payment_items || []) {
+              const line = n("div", undefined, "bridge-event");
+              line.append(
+                n(
+                  "span",
+                  date(entry.date) +
+                    " · " +
+                    entry.description +
+                    (entry.real ? " · réel" : " · prévu"),
+                ),
+                n("strong", cash(entry.amount_cents)),
+              );
+              breakdown.append(line);
+            }
+            item.append(breakdown);
+          }
+          detail.append(item);
+        }
+        article.append(detail);
+        panel.append(article);
+        const tile = $("rec-groups").querySelector(
+          `[data-recurring-id="${rule.id}"]`,
+        );
+        if (plan.mode === "purchases")
+          for (const selectId of [
+            "override-rule",
+            "v21-link-rule",
+            "v21-move-rule",
+          ]) {
+            const option = $(selectId)?.querySelector(
+              `option[value="${rule.id}"]`,
+            );
+            if (option)
+              option.textContent = rule.description + " · selon les achats";
+          }
+        if (tile && plan.mode === "purchases") {
+          tile.querySelector(".rule-amount").textContent = next
+            ? cash(next.planned_cents)
+            : "Selon les achats";
+          tile.querySelector(".rule-date").textContent = !rule.active
+            ? "Remboursement en pause"
+            : next
+              ? "Prochain paiement · " + date(next.date) + " · selon les achats"
+              : "Selon les achats de chaque période";
+        }
+      }
+      panel.hidden = !plans.length;
+    }
+    const edit = runtime.editRule;
+    runtime.editRule = function (id) {
+      const plan = current?.card_payment_plans.find(
+        (p) => p.recurring_id === id,
+      );
+      if (plan) show(plan.card_account_id);
+      else edit(id);
+    };
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      current = s;
+      draw();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      current = runtime.state;
+      draw();
+    }
+  })();
+}

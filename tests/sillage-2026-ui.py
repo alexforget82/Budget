@@ -14,7 +14,7 @@ try:
  for i in range(24):f.transaction(joint,-(i+1),description='Achat maison '+str(i),category_id=cid)
  f.transaction(cards[0],-25,description='Restaurant sur carte',envelope_id=eid);before=f.get('/api/backup/export')['tables'];path=f.post('/api/sharing',{'action':'create'})['path']
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1500,'height':1050});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page).to_have_title('Sillage 2026 — Votre argent, votre cap');expect(page.locator('.brand')).to_contain_text('2026');expect(page.locator('#app-version')).to_have_text('v11.0.0');assert page.locator('#s26-tools').get_attribute('open') is None
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1500,'height':1050});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page).to_have_title('Sillage 2026 — Votre argent, votre cap');expect(page.locator('.brand')).to_contain_text('2026');expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);assert page.locator('#s26-tools').get_attribute('open') is None
   money=lambda c:page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",c);expect(page.locator('#v80-safe')).to_have_text(money(f.get('/api/state')['safe_cents']))
   for theme in ['light','dark']:
    page.get_by_label('Apparence',exact=True).select_option(theme)

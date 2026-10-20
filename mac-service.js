@@ -1,3 +1,4 @@
+import {validateUpdateFolder} from './mac-update.js';
 import {preserveRollbackRelease} from './mac-rollback.js';
 // Per-user macOS service. The installed copy owns the stable data directory.
 import fs from 'node:fs';
@@ -59,6 +60,7 @@ async function main(){
  }
  if(action!=='install')throw Error('Action attendue : install, open, stop ou run.');
  const major=Number(process.versions.node.split('.')[0]);if(major<22||(major===22&&Number(process.versions.node.split('.')[1])<13))throw Error('Node.js 22.13 ou plus est requis.');
+ validateUpdateFolder(source,JSON.parse(fs.readFileSync(path.join(source,'package.json'),'utf8')).version);
  // Never stop an arbitrary Node process or a server from another budget folder.
  const loaded=command('/bin/launchctl',['print',service],true).status===0;
  const running=await status(),targetKey=createHash('sha256').update(path.join(root,'data')).digest('hex');

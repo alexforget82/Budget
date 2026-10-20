@@ -2,7 +2,7 @@
 import importlib.util,os,shutil,tempfile,datetime
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate
+from ui_navigation import navigate,detailed_dashboard
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v44-ui-'))
 try:
@@ -14,7 +14,7 @@ try:
  f.transaction(aid,-70,envelope_id=pharmacy,description='Ordonnance');f.transaction(aid,-5,description='Achat sans enveloppe')
  f.post('/api/free-budgets/create',{'name':'Maison'});free=f.get('/api/state')['free_budgets']['items'][0]['id']
  with sync_playwright() as p:
-  executable=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');browser=p.chromium.launch(**({'executable_path':executable} if executable else {}));page=browser.new_page(viewport={'width':1440,'height':1100});page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);expect(page.locator('#v44-alerts')).to_contain_text('Restaurant');expect(page.locator('#v44-alerts')).to_contain_text('budget dépassé');expect(page.locator('#v44-alerts')).to_contain_text('sans enveloppe')
+  executable=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');browser=p.chromium.launch(**({'executable_path':executable} if executable else {}));page=browser.new_page(viewport={'width':1440,'height':1100});page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);detailed_dashboard(page);expect(page.locator('#v44-alerts')).to_contain_text('Restaurant');expect(page.locator('#v44-alerts')).to_contain_text('budget dépassé');expect(page.locator('#v44-alerts')).to_contain_text('sans enveloppe')
   page.screenshot(path=str(images/'tableau-de-bord.png'),full_page=True)
   # Available amounts open the explanation, by keyboard too.
   page.locator('#sts-today').focus();page.keyboard.press('Enter');safe=page.locator('#v53-calculation');expect(safe).to_be_visible();expect(safe).to_contain_text('805,00');expect(safe).to_contain_text('800,00');safe.get_by_role('button',name='Fermer',exact=True).click()
@@ -38,7 +38,7 @@ try:
    if width==390:sheet.screenshot(path=str(images/'fiche-iphone.png'))
    sheet.get_by_role('button',name='Configurer l’usage',exact=True).click();assert guide.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width
    if width==390:guide.screenshot(path=str(images/'configuration-iphone.png'))
-   guide.get_by_role('button',name='Fermer',exact=True).click();navigate(page,'dashboard');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width;page.locator('#sts-today').click();expect(safe).to_be_visible();safe.get_by_role('button',name='Fermer',exact=True).click()
+   guide.get_by_role('button',name='Fermer',exact=True).click();navigate(page,'dashboard');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width;detailed_dashboard(page);page.locator('#v80-safe' if width<=760 else '#sts-today').click();explanation=page.locator('#v81-explanation' if width<=760 else '#v53-calculation');expect(explanation).to_be_visible();explanation.get_by_role('button',name='Fermer',exact=True).click()
   assert f.get('/api/backup/export')['tables']==before;assert not errors,errors;browser.close()
  print('PASS: v4.4 sheets and full history, bulk preview/apply, immutable ledger/reserves, stale rejection, free conversion, explicit merchant envelope suggestion/manual override, current safe explanation, overspend/low reserve/unassigned/risk alerts, negative acknowledgement, five responsive widths, no browsing writes or JS errors.')
  print('Captures fictives :',images)

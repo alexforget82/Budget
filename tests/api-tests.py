@@ -135,6 +135,15 @@ class BudgetAPI(unittest.TestCase):
   with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('INSERT INTO recurring_moves VALUES(?,?,?)',(rid,'2026-11-05','2026-10-31'));db.execute('INSERT INTO recurring_overrides(recurring_id,occurrence_on,amount_cents) VALUES(?,?,?)',(rid,'2026-11-12',0))
   self.start();row=next(r for r in self.global_state74('2026-11')['rows'] if r['id']==cid);self.assertEqual((row['calendar']['count'],row['budget_cents']),(2,20000))
   other=self.make_category('Budget enveloppe');payload={'month':'2026-10','category_id':other,'amount':230,'frequency':'weekly','start_on':'2026-10-01','repeat_monthly':True,'direction':'expense','mode':'reserve'};p=self.post('/api/budget/preview',payload);self.post('/api/budget/apply',{**payload,'token':p['token'],'allow_negative':True});self.global74(other,230,month='2026-10',frequency='weekly',calendar_rule_id=None);row=next(r for r in self.global_state74('2026-11')['rows'] if r['id']==other);self.assertEqual((row['calendar']['source'],row['calendar']['count'],row['budget_cents']),('envelope',4,92000))
+ def test_v114_http_boundaries_reject_lookalike_json_and_large_utf8_without_writes(self):
+  aid=self.account();tables=self.get('/api/backup/export')['tables']
+  self.call('/api/simulate',{'kind':'purchase','amount':1,'date':DAY,'account_id':aid},status=403,headers={'Content-Type':'application/jsonx'})
+  self.post('/api/simulate',{'kind':'purchase','amount':1,'date':DAY,'account_id':aid,'padding':'a'*19000});self.post('/api/simulate',{'kind':'purchase','amount':1,'date':DAY,'account_id':aid,'padding':'a'*21000},413)
+  path=self.post('/api/sharing',{'action':'create'})['path'];payload=json.dumps({'amount':1,'date':'é'*1100,'days':30},ensure_ascii=False).encode('utf-8');req=urllib.request.Request(self.base+path+'/simulate',data=payload,headers={'Content-Type':'application/json','Origin':self.base})
+  with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(req)
+  self.assertEqual(error.exception.code,413);self.assertEqual(self.get('/api/backup/export')['tables'],tables)
+ def test_v114_malformed_consultation_token_fails_closed_and_can_be_revoked(self):
+  self.account();path=self.post('/api/sharing',{'action':'create'})['path'];(self.dir/'data'/'shared-view.json').write_text('{"token":"bad"}');self.call(path+'/data',status=403);self.assertIsNone(self.get('/api/sharing')['path']);self.get('/api/state');path=self.post('/api/sharing',{'action':'create'})['path'];self.get(path+'/data');self.post('/api/sharing',{'action':'revoke'});self.call(path+'/data',status=403)
  def global74(self,cid,amount,month=MONTH,frequency='monthly',repeat=True,direction='expense',**extra):
   args={'month':month,'category_id':cid,'amount':amount,'frequency':frequency,'repeat':repeat,'direction':direction,**extra};
   if frequency in ['weekly','biweekly'] and 'reference_on' not in extra and 'calendar_rule_id' not in extra:args['reference_on']=month+'-01'

@@ -1,184 +1,1781 @@
-/* v4: dates first, shared forecast data, explicit separation of actual and planned. */
-(()=>{
- 'use strict';
- const $=id=>document.getElementById(id),n=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
- const b=(text,fn,cls='v4-button')=>{const e=n('button',text,cls);e.type='button';e.onclick=fn;return e;};
- const cash=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),signed=c=>(c>0?'+':'')+cash(c),date=d=>new Date(d+'T12:00:00Z'),iso=d=>d.toISOString().slice(0,10),add=(d,i)=>iso(new Date(date(d).getTime()+i*86400000));
- const label=(d,long=false)=>date(d).toLocaleDateString('fr-CA',long?{weekday:'long',day:'numeric',month:'long',year:'numeric'}:{day:'numeric',month:'short'}),monthLabel=d=>date(d).toLocaleDateString('fr-CA',{month:'long',year:'numeric'});
- const field=(text,input)=>{const e=n('label',text);e.append(input);return e;};
- const icon=type=>{const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');const p=document.createElementNS(svg.namespaceURI,'path');p.setAttribute('d',({expense:'M5 5l14 14 M8 19h11V8',income:'M5 19L19 5 M8 5h11v11',transfer:'M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4',reserve:'M12 3l9 9-9 9-9-9z'})[type]);svg.append(p);return svg;};
- const typeNames={expense:'Dépense',income:'Revenu',transfer:'Virement',reserve:'Réserve'};
- let current=null,selected=today(),calendarDate=selected,anchor=selected,view=matchMedia('(max-width:760px)').matches?'week':'month',horizon=30,metric='both',scenario=null,requestId=0,chartGeometry=null,focusAccount='';
- const forecast=$('section-prevision'),calendar=$('section-calendrier');
- // The detailed audit views remain available, without occupying the primary workspace.
- const audit=n('details',undefined,'v4-audit');audit.id='v4-forecast-audit';audit.append(n('summary','Outils détaillés et liste quotidienne complète'));
- for(const e of [...forecast.children])if(e.matches('.forecast-workspace,.forecast-source-list,#planning-notices'))audit.append(e);
- forecast.append(audit);
- const calendarAudit=n('details',undefined,'v4-audit');calendarAudit.id='v4-calendar-audit';calendarAudit.append(n('summary','Ancienne vue détaillée du calendrier'));
- for(const e of [...calendar.children])if(!e.matches('.planning-tabs,.section-head,.page-intro,.context-help'))calendarAudit.append(e);
- calendar.append(calendarAudit);
- forecast.querySelector('.section-head h2').textContent='Votre avenir, plus clair';calendar.querySelector('.section-head h2').textContent='Chaque jour compte';
- forecast.querySelector('.page-intro').textContent='Choisissez une date. Voyez ce qui vous attend et gardez une longueur d’avance.';
- calendar.querySelector('.page-intro').textContent='Vos revenus, vos factures et votre disponible, au bon moment.';
- const f=n('div',undefined,'v4-workspace');f.id='v4-forecast';forecast.querySelector('.page-intro').after(f);
- const c=n('div',undefined,'v4-workspace');c.id='v4-calendar';calendar.querySelector('.page-intro').after(c);
- f.innerHTML=`<div class="v4-topbar"><div class="v4-segment" role="group" aria-label="Horizon"><button type="button" data-days="30">30 jours</button><button type="button" data-days="60">60 jours</button><button type="button" data-days="90">90 jours</button></div><button type="button" id="v4-sim-open" class="v4-button v4-primary">Puis-je me permettre cet achat ?</button></div><div id="v4-metrics" class="v4-metrics"></div><div id="v4-alerts"></div><div class="v4-forecast-layout"><div class="v4-chart-card"><div class="v4-chart-heading"><div><p class="v4-kicker">VOTRE TRAJECTOIRE</p><h3>Un peu d’avance sur demain</h3></div><label>Afficher<select id="v4-chart-kind"><option value="both">Solde et disponible</option><option value="safe_cents">Disponible après réserves</option><option value="cash_cents">Solde bancaire prévu</option></select></label></div><div id="v4-scenario-banner" hidden></div><svg id="v4-chart" role="img" aria-label="Prévision financière"></svg><label class="v4-slider-label">Explorer une date<input id="v4-slider" type="range" min="0" max="29" value="0"></label><div class="v4-chart-legend"><span><i></i><b id="v80-primary-legend">Disponible après protections</b></span><span id="v80-bank-legend"><i class="v80-bank-mark"></i>Solde bancaire</span><span class="v4-simulation-legend" hidden><i></i>Avec la simulation</span><span>Seuil de 0 $ en pointillé</span></div><p class="v4-footnote">Point de départ : vos soldes réels. Les opérations enregistrées sont déjà incluses.</p></div><aside id="v4-forecast-day" class="v4-day-panel"></aside></div><div class="v4-lower-grid"><section class="v4-card"><div class="v4-panel-heading"><div><p class="v4-kicker">LES PROCHAINS RENDEZ-VOUS</p><h3>À garder en tête</h3></div></div><div id="v4-upcoming"></div></section><section class="v4-card"><p class="v4-kicker">DU PRÉVU AU RÉEL</p><h3>Comprendre les écarts</h3><div id="v4-comparison"></div></section></div>`;
- c.classList.add('v80-calendar-compact');c.innerHTML=`<div class="v4-calendar-toolbar"><div class="v4-calendar-paging"><button type="button" id="v4-cal-prev" aria-label="Période précédente">←</button><h3 id="v4-cal-title"></h3><button type="button" id="v4-cal-next" aria-label="Période suivante">→</button></div><div class="v4-calendar-tools"><button type="button" id="v4-cal-today" class="v4-button">Aujourd’hui</button><div class="v4-segment" role="group" aria-label="Vue du calendrier"><button type="button" data-calendar-view="month">Mois</button><button type="button" data-calendar-view="week">Semaine</button></div></div></div><div class="v4-calendar-legend"><span class="income">● Revenus</span><span class="expense">● Dépenses</span><span class="transfer">● Virements</span><span class="reserve">● Réserves</span><span>✓ Réel enregistré · ○ Prévu</span></div><div class="v4-calendar-layout"><div class="v4-calendar-main"><div id="v4-cal-grid" class="v4-month-grid" role="group" aria-label="Jours du calendrier"></div><div id="v4-week-agenda"></div><p class="v4-footnote">Les montants des jours à venir indiquent le disponible prévu après réserves. Prévisions sur 90 jours.</p></div><aside id="v4-calendar-day" class="v4-day-panel"></aside></div>`;
- const density=b('Afficher les libellés',()=>{const compact=c.classList.toggle('v80-calendar-compact');density.textContent=compact?'Afficher les libellés':'Vue épurée';density.setAttribute('aria-pressed',String(!compact));},'v4-button');density.id='v80-calendar-density';density.setAttribute('aria-pressed','false');c.querySelector('.v4-calendar-tools').append(density);
- const accountFilters=[];
- for(const host of [f.querySelector('.v4-topbar'),c.querySelector('.v4-calendar-toolbar')]){const select=n('select');select.className='v41-account-filter';select.setAttribute('aria-label','Filtrer les opérations par compte');select.onchange=()=>{focusAccount=select.value;for(const other of accountFilters)other.value=focusAccount;drawForecast();drawCalendar();};host.append(field('Opérations du compte',select));accountFilters.push(select);}
- const scopeNote='Le filtre limite les opérations affichées. Le disponible et la courbe restent globaux; le solde propre du compte est détaillé dans la journée.';
- for(const host of [f.querySelector('.v4-topbar'),c.querySelector('.v4-calendar-toolbar')])host.after(n('p',scopeNote,'v4-footnote'));
- const jump=n('input');jump.type='month';jump.id='v41-calendar-month';jump.value=today().slice(0,7);jump.onchange=()=>{if(/^\d{4}-\d{2}$/.test(jump.value)){view='month';calendarDate=anchor=jump.value+'-01';drawCalendar();}};c.querySelector('.v4-calendar-toolbar').append(field('Aller au mois',jump));
- const payday=n('div',undefined,'v41-payday');payday.id='v41-payday';f.querySelector('#v4-metrics').after(payday);
- const saved=n('details',undefined,'v41-saved-scenarios'),savedChoice=n('select'),savedError=n('p',undefined,'v4-footnote');savedChoice.id='v41-saved-scenario';saved.append(n('summary','Scénarios enregistrés'),field('Choisir un scénario d’achat',savedChoice),b('Reprendre ce scénario',()=>{const item=current.support41?.scenarios.find(s=>s.id===savedChoice.value);if(item)openSimulation('purchase',null,item.payload);},'v4-button'),b('Supprimer le scénario',async()=>{try{const response=await fetch('/api/support/scenarios/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:savedChoice.value})}),out=await response.json();if(!response.ok)throw Error(out.error);render(out);}catch(e){savedError.textContent=e.message;}},'v4-text-button'),n('p','Seuls les paramètres sont conservés. Les résultats sont recalculés avec le budget actuel.','v4-footnote'),savedError);f.querySelector('.v4-topbar').after(saved);
- function drawV41(){for(const select of accountFilters){select.replaceChildren(new Option('Tous les comptes',''),...current.accounts.map(a=>new Option(a.name,a.id)));select.value=focusAccount;if(select.value!==focusAccount)focusAccount='';}jump.value=anchor.slice(0,7);const previous=savedChoice.value;savedChoice.replaceChildren(...(current.support41?.scenarios||[]).filter(item=>item.payload.kind==='purchase').map(item=>new Option(item.name,item.id)));if([...savedChoice.options].some(o=>o.value===previous))savedChoice.value=previous;payday.replaceChildren();const w=current.spending_windows;if(w?.payday_date){payday.append(n('span','Prochain revenu · '+w.payday_names.join(', ')+' · '+label(w.payday_date)),n('strong','Minimum d’ici là : '+cash(w.payday_cents)),b('Voir cette date',()=>choose(w.payday_date),'v4-text-button'));}else payday.append(n('span','Aucun revenu prévu détecté dans les 30 prochains jours.'));}
- const accepts=e=>!focusAccount||e.account_id===Number(focusAccount)||e.to_account_id===Number(focusAccount);
- function navigate(key){document.querySelector(`.app-shell-nav [data-view="${key}"]`).click();}
- const accountName=id=>current.accounts.find(a=>a.id===id)?.name||'Compte à choisir';
- function rows(){return current?.planning?.rows||[];}
- function dayFor(d){return current?.forecast.find(x=>x.date===d);}
- function entries(d){
-  if(!current)return [];const items=[];
-  for(const t of current.calendar_actuals||[])if(t.happened_on===d)items.push({key:'transaction:'+t.id,id:t.id,real:true,type:t.amount_cents<0?'expense':'income',description:t.description,amount_cents:Math.abs(t.amount_cents),account_id:t.account_id,envelope_id:t.envelope_id});
-  for(const t of current.calendar_transfers||[])if(t.happened_on===d)items.push({key:'transfer:'+t.id,id:t.id,real:true,type:'transfer',description:t.description,amount_cents:t.amount_cents,account_id:t.from_account_id,to_account_id:t.to_account_id});
-  for(const e of dayFor(d)?.events||[])if(e.type!=='reserve'||e.amount_cents!==0)items.push({...e,real:false,row:rows().find(r=>r.key===e.key)});
-  // Late expected operations stay visible on their original date as well as in today's prudent projection.
-  for(const r of rows().filter(r=>r.date===d&&['planned','pending'].includes(r.status)&&r.remaining_cents>0))if(!items.some(e=>e.key===r.key))items.push({...r,real:false,row:r,amount_cents:r.remaining_cents});
-  return items.filter(accepts).sort((a,b)=>Number(a.real)-Number(b.real)||({income:0,expense:1,transfer:2,reserve:3}[a.type]-{income:0,expense:1,transfer:2,reserve:3}[b.type]));
- }
- function entryCard(e,withActions=true){
-  const row=n('article',undefined,'v4-event '+e.type+(e.real?' is-real':''));row.dataset.key=e.key||'';
-  const mark=n('span',undefined,'v4-event-icon');mark.append(icon(e.type));mark.setAttribute('aria-hidden','true');const copy=n('div',undefined,'v4-event-copy');
-  copy.append(n('strong',e.description),n('small',(e.real?'✓ Réel enregistré':'○ '+(e.overdue||e.row?.status==='pending'?'À confirmer':'Prévu'))+' · '+(e.type==='reserve'?'Enveloppe':accountName(e.account_id))+(e.to_account_id?' → '+accountName(e.to_account_id):'')));
-  if(e.overdue)copy.append(n('small','Échéance du '+label(e.original_on)+' · encore prise en compte'));
-  if(e.envelope_id)copy.append(n('small','Enveloppe · '+(current.envelopes.find(a=>a.id===e.envelope_id)?.name||'Budget')));
-  if(!e.real&&Number.isFinite(e.sts_impact_cents))copy.append(n('small',e.credit_charge?'Achat sur carte · remboursement distinct':e.sts_impact_cents===0?'Aucun effet sur le disponible':'Effet disponible : '+signed(e.sts_impact_cents),'v4-impact'));
-  row.append(mark,copy,n('strong',(e.type==='income'?'+':e.type==='expense'?'−':'')+cash(e.amount_cents),'v4-event-amount'));
-  if(withActions){const actions=n('div',undefined,'v4-event-actions');
-   if(e.real){if((e.type==='transfer'?current.transfers:current.transactions).some(t=>t.id===e.id))actions.append(b('Modifier',()=>window.v2Edit?.(e.type==='transfer'?'transfer':'transaction',e.id),'v4-text-button'));}
-   else if(e.row?.source==='paycheck'){actions.append(b('Gérer la répartition',()=>navigate('paie'),'v4-text-button'));}
-   else if(e.type==='reserve'){actions.append(b('Voir l’enveloppe',()=>navigate('enveloppes'),'v4-text-button'));}
-   else if(e.row&&['planned','pending'].includes(e.row.status)){
-    if(e.type!=='reserve')actions.append(b(e.type==='income'?'Reçu':e.type==='transfer'?'Effectué':'Payé',()=>window.budgetPlanningAction(e.row.key,'confirm'),'v4-text-button'));
-    actions.append(b('Montant différent',()=>window.budgetPlanningAction(e.row.key,'confirm',{focusAmount:true}),'v4-text-button'),b('Reporter',()=>window.budgetPlanningAction(e.row.key,'move'),'v4-text-button'),b('Simuler un report',()=>openMove(e.row),'v4-text-button'));
-   }
-   if(actions.childNodes.length)row.append(actions);
-  }return row;
- }
- function quickAdd(d){
-  const detail=n('details',undefined,'v4-quick-add');detail.append(n('summary','+ Ajouter à cette date'));const controls=n('div',undefined,'v4-add-options');
-  for(const [type,text] of [['expense','Dépense'],['income','Revenu'],['transfer','Virement']])controls.append(b(text,()=>draft(d,type,d<today()),'v4-button'));
-  detail.append(n('p',d<today()?'Saisir une opération réellement effectuée.':'Créer une opération prévue. Rien ne sera débité avant confirmation.','v4-footnote'),controls);
-  if(d===today())detail.append(b('Saisir plutôt une opération déjà effectuée',()=>{detail.replaceChildren(n('summary','+ Opération réelle'));for(const [type,text] of [['expense','Dépense réelle'],['income','Revenu réel'],['transfer','Virement réel']])detail.append(b(text,()=>draft(d,type,true),'v4-button'));detail.open=true;},'v4-text-button'));
-  return detail;
- }
- function draft(d,type,real){
-  if(real){window.appOpenEditor('transaction');const f=$('transaction');f.elements.amount.value='';f.elements.description.value='';$('transaction-direction').value=type;$('transaction-direction').dispatchEvent(new Event('change',{bubbles:true}));$('envelope-options').value='';if(type==='transfer'){$('transaction-transfer-timing').value='actual';$('transaction-transfer-timing').dispatchEvent(new Event('change'));}f.elements.happened_on.value=d;}
-  else{resetRec();const f=$('recurring');f.elements.type.value=type;$('rec-type').dispatchEvent(new Event('change',{bubbles:true}));f.elements.start_on.value=d;f.elements.one_time.value='true';window.appOpenEditor('recurring');}
- }
- function renderDay(host,d,forecastMode=false){
-  const day=dayFor(d);host.replaceChildren();const heading=n('div',undefined,'v4-day-heading');heading.append(n('p',forecastMode?'À LA DATE CHOISIE':d<today()?'RÉEL ENREGISTRÉ':'VOTRE JOURNÉE','v4-kicker'),n('h3',label(d,true)));host.append(heading);
-  if(forecastMode){const picker=n('input');picker.type='date';picker.id='v4-selected-date';picker.min=current.forecast[0].date;picker.max=current.forecast[Math.min(horizon,current.forecast.length)-1].date;picker.value=d;picker.onchange=()=>{if(dayFor(picker.value)&&picker.value<=picker.max)choose(picker.value);};host.append(field('Changer de date',picker));}
-  if(day){const value=n('strong',cash(day.safe_cents),'v4-day-value'+(day.safe_cents<0?' negative':''));value.dataset.value=day.safe_cents;host.append(n('span','Disponible prévu en fin de journée','v4-small-label'),value);
-   const facts=n('dl',undefined,'v4-facts');for(const [text,amount] of [['Solde bancaire prévu',day.cash_cents],['Réserves d’enveloppes',day.reserved_cents]])facts.append(n('dt',text),n('dd',cash(amount)));host.append(facts);if(focusAccount){const a=day.account_balances.find(a=>a.id===Number(focusAccount));if(a){const meta=current.accounts.find(item=>item.id===a.id);const own=n('div',undefined,'v41-own-balance');own.append(n('span',(meta?.kind==='credit'?'Montant dû · ':'Solde propre · ')+(meta?.name||'Compte')),n('strong',cash(a.balance_cents)));host.append(own);}}
-   if(scenario){const other=scenario.scenario.find(x=>x.date===d);if(other){const comparison=n('div',undefined,'v4-day-scenario');comparison.append(n('span','Avec la simulation'),n('strong',cash(other.safe_cents)));host.append(comparison);}}
-   const breakdown=n('details',undefined,'v4-breakdown');breakdown.append(n('summary','Pourquoi ce montant ?'));const calc=day.bridge;
-   for(const [text,amount] of [['Solde réel de départ',calc.opening_cash_cents],['Revenus attendus',calc.income_cents],['Factures et dépenses',calc.expense_cents],['Dépenses d’enveloppes',calc.envelope_cents],['Virements nets',calc.transfer_cents],['Réserves restantes',-calc.reserved_cents]]){const line=n('div');line.append(n('span',text),n('strong',signed(amount)));breakdown.append(line);}breakdown.append(n('p','Les opérations réelles sont déjà dans le solde de départ. Les achats d’enveloppes sur carte restent protégés; la dette sans enveloppe ne crée pas de réserve automatique.','v4-footnote'));host.append(breakdown);
-  }else host.append(n('p',d<today()?'Les opérations ci-dessous sont enregistrées. Aucun solde historique n’est reconstitué.':'Cette date dépasse les 90 jours de prévision. Vous pouvez y planifier une opération.','v4-footnote'));
-  const items=entries(d),planned=items.filter(e=>!e.real),actual=items.filter(e=>e.real);
-  for(const [title,list] of [['Prévu à cette date',planned],['Déjà enregistré',actual]])if(list.length){host.append(n('h4',title+' · '+list.length,'v4-group-title'));for(const e of list)host.append(entryCard(e));}
-  if(!items.length)host.append(n('p','Une journée tranquille. Aucun mouvement connu.','v4-empty'));
-  host.append(quickAdd(d));
- }
- function choose(d){if(!dayFor(d))return;selected=d;const index=current.forecast.findIndex(x=>x.date===d);if(index>=horizon){horizon=index<60?60:90;drawForecast();}else{renderDay($('v4-forecast-day'),d,true);drawMetrics();drawChart();}}
- function metricCard(text,value,caption,fn){const card=n('div',undefined,'v4-metric');card.append(n('span',text),n('strong',cash(value),value<0?'negative':''),n('small',caption));if(fn)card.append(b('Voir la date',fn,'v4-text-button'));return card;}
- function drawMetrics(){const days=current.forecast.slice(0,horizon),min=days.reduce((a,b)=>a.safe_cents<=b.safe_cents?a:b),target=dayFor(selected)||days[0],host=$('v4-metrics');host.replaceChildren(metricCard('Disponible réel aujourd’hui',current.safe_cents,'Après les réserves actuelles'),metricCard('Le point le plus bas',min.safe_cents,label(min.date),()=>choose(min.date)),metricCard('Disponible au '+label(target.date),target.safe_cents,'Prévu en fin de journée'));}
- function drawAlerts(){const host=$('v4-alerts');host.replaceChildren();const days=current.forecast.slice(0,horizon),negative=days.find(d=>d.safe_cents<0),pending=rows().filter(r=>r.date<=today()&&['pending','planned'].includes(r.status)&&r.type!=='reserve'&&r.remaining_cents>0),warnings=current.planning.warnings;
-  if(negative){const alert=n('div',undefined,'v4-alert risk');alert.append(n('span','Un disponible sous zéro est prévu le '+label(negative.date)+'.'),b('Voir cette journée',()=>choose(negative.date),'v4-text-button'));host.append(alert);}
-  if(pending.length||warnings.length){const alert=n('div',undefined,'v4-alert');alert.append(n('span',[pending.length?pending.length+' opération(s) à confirmer':'',warnings.length?warnings.length+' point(s) de configuration':''].filter(Boolean).join(' · ')),b('Vérifier',()=>{if(pending.length)window.budgetOpenPlanningQueue();else{audit.open=true;$('planning-notices').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});}},'v4-text-button'));host.append(alert);}
- }
- function drawUpcoming(){const host=$('v4-upcoming');host.replaceChildren();const events=current.forecast.slice(0,horizon).flatMap(d=>d.events.filter(e=>e.type!=='reserve'&&accepts(e)).map(e=>({...e,on:d.date}))).slice(0,5);for(const e of events){const row=b('',()=>{choose(e.on);$('v4-forecast-day').scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});},'v4-upcoming-row');const copy=n('span');copy.append(n('strong',e.description),n('small',label(e.on)+' · '+typeNames[e.type]));const mark=n('span',undefined,'v4-event-icon '+e.type);mark.append(icon(e.type));row.append(mark,copy,n('strong',cash(e.amount_cents)));host.append(row);}if(!events.length)host.append(n('p','Aucun mouvement prévu sur cet horizon. Ajoutez vos factures et revenus depuis le calendrier.','v4-empty'));host.append(b('Ouvrir le calendrier',()=>{calendarDate=selected;anchor=selected;drawCalendar();navigate('calendrier');},'v4-text-button'));}
- function drawComparison(){const host=$('v4-comparison');host.replaceChildren();const month=today().slice(0,7),complete=rows().filter(r=>r.type==='expense'&&r.status==='actual'&&r.date.startsWith(month)&&r.date<=today()),variance=complete.reduce((sum,r)=>sum+r.actual_cents-r.planned_cents,0);const box=n('div',undefined,'v4-variance');box.append(n('strong',complete.length?cash(Math.abs(variance)):'—'),n('span',!complete.length?'Pas encore de dépense rapprochée ce mois-ci':variance>0?'de plus que prévu':variance<0?'de moins que prévu':'d’écart sur les dépenses terminées'));host.append(box,n('p','Comparaison des dépenses prévues et réelles rapprochées de ce mois. Les opérations sans prévision restent dans vos soldes réels.','v4-footnote'));for(const r of complete.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3)){const line=n('div',undefined,'v4-comparison-row');line.append(n('span',r.description),n('span',cash(r.planned_cents)+' → '+cash(r.actual_cents)));host.append(line);}host.append(b('Consulter le prévu et le réel',()=>window.budgetOpenPlanningQueue(),'v4-text-button'));}
- function drawForecast(){if(!current?.forecast.length)return;$('v4-sim-open').disabled=!current.accounts.length;if(!dayFor(selected))selected=current.forecast[0].date;const end=current.forecast[Math.min(horizon,current.forecast.length)-1].date;if(selected>end)selected=end;f.querySelectorAll('[data-days]').forEach(e=>e.setAttribute('aria-pressed',String(+e.dataset.days===horizon)));$('v4-slider').max=Math.min(horizon,current.forecast.length)-1;drawV41();drawMetrics();drawAlerts();renderDay($('v4-forecast-day'),selected,true);drawUpcoming();drawComparison();drawChart();}
- const svg=$('v4-chart');
- function drawChart(){
-  if(!current?.forecast.length)return;svg.replaceChildren();const key=metric==='both'?'safe_cents':metric;const days=current.forecast.slice(0,horizon),index=Math.max(0,days.findIndex(d=>d.date===selected)),other=scenario?.scenario.slice(0,horizon),values=[...days.map(d=>d[key]),...(metric==='both'?days.map(d=>d.cash_cents):[]),...(other||[]).map(d=>d[key])],width=Math.max(310,Math.round(svg.getBoundingClientRect().width)||740),height=320,left=66,right=width-20,top=32,bottom=265,min=Math.min(0,...values),max=Math.max(10000,...values),range=max-min||10000,padding=range*.12,low=min-padding,high=max+padding,x=i=>left+i*(right-left)/Math.max(1,days.length-1),y=v=>bottom-(v-low)/(high-low)*(bottom-top);
-  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);const s=(tag,attrs,text)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,val] of Object.entries(attrs))e.setAttribute(key,val);if(text!==undefined)e.textContent=text;svg.append(e);return e;};
-  const rough=(high-low)/4,unit=10**Math.floor(Math.log10(rough)),step=[1,2,5,10].map(a=>a*unit).find(a=>a>=rough);
-  for(let value=Math.ceil(low/step)*step;value<=high;value+=step){s('line',{x1:left,x2:right,y1:y(value),y2:y(value),class:'v4-chart-grid'});s('text',{x:left-10,y:y(value)+4,'text-anchor':'end',class:'v4-chart-tick'},((value===0?0:value)/100).toLocaleString('fr-CA',{notation:Math.abs(value)>=100000?'compact':'standard',maximumFractionDigits:0})+' $');}
-  const points=days.map((d,i)=>[x(i),y(d[key])]);s('path',{d:'M '+points.map(p=>p.join(',')).join(' L ')+` L ${right},${bottom} L ${left},${bottom} Z`,fill:'#e8f2e9'});s('line',{x1:left,x2:right,y1:y(0),y2:y(0),class:'v4-chart-zero'});s('polyline',{points:points.map(p=>p.join(',')).join(' '),class:'v4-chart-line',fill:'none'});
-  if(metric==='both')s('polyline',{points:days.map((d,i)=>x(i)+','+y(d.cash_cents)).join(' '),class:'v80-chart-bank',fill:'none'});
-  if(other)s('polyline',{points:other.map((d,i)=>x(i)+','+y(d[key])).join(' '),class:'v4-chart-scenario',fill:'none'});
-  const lowIndex=days.reduce((best,d,i)=>d[key]<days[best][key]?i:best,0);s('circle',{cx:x(lowIndex),cy:y(days[lowIndex][key]),r:4,class:'v4-chart-min'});
-  s('line',{x1:x(index),x2:x(index),y1:top,y2:bottom,class:'v4-chart-cursor'});s('circle',{cx:x(index),cy:y(days[index][key]),r:6,fill:'#226650',stroke:'#fff','stroke-width':3});
-  for(const i of [...new Set([0,Math.floor((days.length-1)/2),days.length-1])])s('text',{x:x(i),y:300,'text-anchor':i===0?'start':i===days.length-1?'end':'middle',class:'v4-chart-tick'},i===0?'Aujourd’hui':label(days[i].date));
-  $('v80-bank-legend').hidden=metric!=='both';$('v80-primary-legend').textContent=metric==='cash_cents'?'Solde bancaire':'Disponible après protections';
-  svg.setAttribute('aria-label',(metric==='both'?'Solde bancaire et disponible après protections':metric==='cash_cents'?'Solde bancaire prévu':'Disponible après réserves')+' sur '+days.length+' jours. Minimum '+cash(Math.min(...days.map(d=>d[key])))+'. Choisissez un jour avec le curseur.');chartGeometry={width,left,right,count:days.length};$('v4-slider').value=index;$('v4-slider').setAttribute('aria-valuetext',label(selected,true)+' · '+cash(days[index][key]));
-  $('v4-scenario-banner').hidden=!scenario;const banner=$('v4-scenario-banner');banner.replaceChildren();if(scenario)banner.append(n('span','Simulation active · aucun changement enregistré'),b('Effacer',clearScenario,'v4-text-button'));f.querySelector('.v4-simulation-legend').hidden=!scenario;
- }
- function clearScenario(){requestId++;scenario=null;drawForecast();drawCalendar();}
- svg.onclick=event=>{if(!chartGeometry)return;const rect=svg.getBoundingClientRect(),g=chartGeometry,i=Math.max(0,Math.min(g.count-1,Math.round(((event.clientX-rect.left)*g.width/rect.width-g.left)/(g.right-g.left)*(g.count-1))));choose(current.forecast[i].date);};
- $('v4-slider').oninput=event=>choose(current.forecast[+event.target.value].date);$('v4-chart-kind').onchange=event=>{metric=event.target.value;drawChart();};
- f.querySelectorAll('[data-days]').forEach(e=>e.onclick=()=>{horizon=+e.dataset.days;drawForecast();});
- let lastWidth=0;new ResizeObserver(entries=>{const width=Math.round(entries[0].contentRect.width);if(width&&width!==lastWidth){lastWidth=width;requestAnimationFrame(drawChart);}}).observe(svg);
- function selectCalendar(d,focus=false){calendarDate=d;anchor=d;drawCalendar();if(focus)requestAnimationFrame(()=>c.querySelector(`[data-date="${d}"]`)?.focus());}
- function drawCalendar(){
-  if(!current)return;jump.value=anchor.slice(0,7);const grid=$('v4-cal-grid'),monthStart=anchor.slice(0,7)+'-01';grid.replaceChildren();grid.className=view==='month'?'v4-month-grid':'v4-week-grid';c.querySelectorAll('[data-calendar-view]').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.calendarView===view)));
-  let start,count;if(view==='month'){start=add(monthStart,-((date(monthStart).getUTCDay()+6)%7));const last=iso(new Date(Date.UTC(date(monthStart).getUTCFullYear(),date(monthStart).getUTCMonth()+1,0)));count=Math.ceil((((date(monthStart).getUTCDay()+6)%7)+date(last).getUTCDate())/7)*7;$('v4-cal-title').textContent=monthLabel(anchor);for(const day of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'])grid.append(n('span',day,'v4-weekday-heading'));}
-  else{start=add(anchor,-((date(anchor).getUTCDay()+6)%7));count=7;$('v4-cal-title').textContent=label(start)+' – '+label(add(start,6));}
-  for(let i=0;i<count;i++){const d=add(start,i),forecastDay=dayFor(d),items=entries(d),cell=b('',()=>selectCalendar(d),'v4-calendar-cell'+(d===today()?' is-today':'')+(d===calendarDate?' is-selected':'')+(view==='month'&&d.slice(0,7)!==anchor.slice(0,7)?' is-outside':'')+(forecastDay?.safe_cents<0?' is-low':''));cell.dataset.date=d;cell.setAttribute('aria-pressed',String(d===calendarDate));cell.setAttribute('aria-label',label(d,true)+' · '+items.length+' mouvement(s)'+(forecastDay?' · Disponible prévu '+cash(forecastDay.safe_cents):''));cell.tabIndex=d===calendarDate?0:-1;
-   const top=n('span',undefined,'v4-cell-top');if(view==='week')top.append(n('span',date(d).toLocaleDateString('fr-CA',{weekday:'short'})));top.append(n('strong',String(date(d).getUTCDate())));if(d===today())top.append(n('small','Aujourd’hui'));cell.append(top);
-   if(forecastDay){const amount=n('span',cash(forecastDay.safe_cents),'v4-cell-balance');amount.dataset.value=forecastDay.safe_cents;cell.append(amount);}else cell.append(n('span',d<today()?'Réel':'Hors horizon','v4-cell-label'));
-   const preview=n('span',undefined,'v4-cell-events');for(const e of items.slice(0,2)){const line=n('span',undefined,'v4-cell-event '+e.type);if(!e.real&&e.row&&['planned','pending'].includes(e.row.status)){line.draggable=true;line.ondragstart=event=>{event.stopPropagation();event.dataTransfer.setData('application/x-sillage-occurrence',e.row.key);event.dataTransfer.effectAllowed='move';};}line.title=e.description+' · '+cash(e.amount_cents)+' · '+(e.real?'Réel':'Prévu');line.append(n('i',e.real?'✓':'○'),n('span',e.description));preview.append(line);}if(items.length>2)preview.append(n('small','+'+(items.length-2)+' autre'+(items.length>3?'s':'')));cell.append(preview);
-   cell.ondragover=event=>{if(event.dataTransfer.types.includes('application/x-sillage-occurrence')){event.preventDefault();cell.classList.add('sillage-drag-target');}};cell.ondragleave=()=>cell.classList.remove('sillage-drag-target');cell.ondrop=event=>{cell.classList.remove('sillage-drag-target');const key=event.dataTransfer.getData('application/x-sillage-occurrence'),row=current.planning.rows.find(r=>r.key===key);if(row&&d>=today()&&d<=current.forecast.at(-1).date){event.preventDefault();openSimulation('move',row);sim.querySelector('[name=date]').value=d;}};cell.onkeydown=event=>{const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[event.key];if(step){event.preventDefault();selectCalendar(add(d,step),true);}else if(event.key==='Home'){event.preventDefault();selectCalendar(today(),true);}};grid.append(cell);
-  }
-  // A month not containing the selected date still has one keyboard entry point.
-  if(!grid.querySelector('[tabindex="0"]'))grid.querySelector('button')?.setAttribute('tabindex','0');
-  const agenda=$('v4-week-agenda');agenda.replaceChildren();agenda.hidden=view!=='week';if(view==='week')agenda.append(n('p','Sélectionnez un jour pour consulter ses mouvements et son solde prévu.','v4-footnote'));
-  renderDay($('v4-calendar-day'),calendarDate);requestAnimationFrame(centerWeek);
- }
- function centerWeek(){const grid=$('v4-cal-grid'),cell=grid.querySelector('[aria-pressed="true"]');if(view==='week'&&grid.clientWidth&&cell&&matchMedia('(max-width:760px)').matches)grid.scrollLeft+=cell.getBoundingClientRect().left-grid.getBoundingClientRect().left-(grid.clientWidth-cell.clientWidth)/2;}
- new ResizeObserver(entries=>{if(entries[0].contentRect.width>0)requestAnimationFrame(centerWeek);}).observe($('v4-cal-grid'));
- c.querySelectorAll('[data-calendar-view]').forEach(e=>e.onclick=()=>{view=e.dataset.calendarView;anchor=calendarDate;drawCalendar();});
- function shiftCalendar(direction){if(view==='week')anchor=add(anchor,7*direction);else{const d=date(anchor.slice(0,7)+'-01');d.setUTCMonth(d.getUTCMonth()+direction);anchor=iso(d);}calendarDate=anchor;drawCalendar();}
- $('v4-cal-prev').onclick=()=>shiftCalendar(-1);$('v4-cal-next').onclick=()=>shiftCalendar(1);$('v4-cal-today').onclick=()=>selectCalendar(today());
- // Simulations use the server's pure forecast engine, including calculated card payments.
- const sim=n('dialog',undefined,'v4-dialog editor-dialog');sim.id='v4-simulator';document.body.append(sim);let simBusy=false;
- function openSimulation(kind='purchase',row=null,preset=null){
-  sim.replaceChildren();const inner=n('div',undefined,'dialog-inner'),heading=n('div',undefined,'dialog-heading');heading.append(n('h2',kind==='purchase'?'Puis-je me permettre cet achat ?':'Et si je déplaçais cette échéance ?'),b('Fermer',()=>sim.close(),'secondary'));inner.append(heading,n('p',kind==='purchase'?'Achat supplémentaire, non déjà couvert par une enveloppe. Cette simulation ne crée aucune transaction.':row.description+' · échéance du '+label(row.date)+'. Comparez les prévisions avant de décider.','v4-footnote'));sim.append(inner);
-  const form=n('form',undefined,'v4-simulation-form'),amount=n('input');amount.type='number';amount.name='amount';amount.min='.01';amount.step='.01';amount.required=true;amount.placeholder='Ex. 250';
-  const account=n('select');account.name='account_id';for(const a of current.accounts)account.add(new Option(a.name,a.id));const defaultAccount=current.accounts.find(a=>a.id===current.setup70?.scope?.account_id)||current.accounts.find(a=>a.included&&a.kind!=='credit');if(defaultAccount)account.value=defaultAccount.id;
-  const when=n('input');when.type='date';when.name='date';when.required=true;when.min=current.forecast[0].date;when.max=current.forecast.at(-1).date;when.value=kind==='purchase'?when.min:(row.date<when.min?when.min:row.date);
-  if(preset){amount.value=preset.amount;account.value=preset.account_id;when.value=preset.date<when.min?when.min:preset.date>when.max?when.max:preset.date;inner.append(n('p','Scénario enregistré au '+label(preset.date)+'. Vérifiez la date proposée et relancez la comparaison.','v4-footnote'));}
-  const period=n('select');period.name='horizon';period.setAttribute('aria-label','Période de simulation');for(const days of [30,60,90])period.add(new Option(days+' jours',days));period.value=String([30,60,90].includes(preset?.horizon)?preset.horizon:30);if(preset&&when.value>current.forecast[Number(period.value)-1].date)period.value=String([30,60,90].find(days=>when.value<=current.forecast[days-1].date)||90);const advanced=n('details',undefined,'purchase-options'),advancedTitle=n('summary');advanced.append(advancedTitle);
-  const note=n('p',undefined,'v4-footnote');function accountNote(){const a=current.accounts.find(a=>a.id===+account.value);advancedTitle.textContent='Options · '+(a?.name||'Compte à choisir');note.textContent=a?.kind==='credit'?'Sur carte : le remboursement calculé est pris en compte si un plan existe. Sinon, prévoyez son remboursement séparément. Aucune réserve automatique de carte.':!a?.included?'Ce compte est exclu du disponible global. Son solde propre reste pris en compte dans la simulation.':'L’achat diminuera le solde bancaire et le disponible à cette date.';}account.onchange=accountNote;
-  if(kind==='purchase')form.append(field('Montant de l’achat ($)',amount));
-  form.append(field(kind==='purchase'?'Date de l’achat':'Nouvelle date',when));if(kind==='purchase'){form.append(field('Période de simulation',period));advanced.append(field('Compte utilisé',account),note);accountNote();form.append(advanced);const constrainDate=()=>{when.max=current.forecast[Number(period.value)-1].date;when.setCustomValidity(when.value>when.max?'Allongez la période ou choisissez une date plus proche.':'');};period.addEventListener('change',constrainDate);when.addEventListener('input',constrainDate);when.addEventListener('change',constrainDate);constrainDate();}
-  const error=n('p',undefined,'v4-error');error.setAttribute('role','alert');const result=n('div',undefined,'v4-simulation-result');result.setAttribute('role','status');const save=n('button',kind==='purchase'?'Vérifier cet achat':'Comparer les prévisions','v4-button v4-primary');save.type='submit';form.append(error,save,result);inner.append(form);
-  form.oninput=event=>{if([amount,account,when,period].includes(event.target)){requestId++;result.replaceChildren();error.textContent='';}};form.onchange=event=>{if([amount,account,when,period].includes(event.target)){requestId++;result.replaceChildren();}};
-  form.onsubmit=async event=>{event.preventDefault();if(simBusy)return;const ticket=++requestId;simBusy=true;save.disabled=true;error.textContent='';result.replaceChildren();const payload=kind==='purchase'?{kind,amount:Number(amount.value),account_id:Number(account.value),date:when.value,horizon:Number(period.value)}:{kind,key:row.key,new_on:when.value};
-   try{const response=await fetch('/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),out=await response.json();if(!response.ok)throw Error(out.error||'Simulation impossible.');if(ticket!==requestId||!sim.open)return;
-    const days=kind==='purchase'?Number(period.value):90,scenarioDays=out.scenario.slice(0,days),original=out.baseline.slice(0,days).reduce((a,b)=>a.safe_cents<=b.safe_cents?a:b),low=scenarioDays.reduce((a,b)=>a.safe_cents<=b.safe_cents?a:b),high=scenarioDays.reduce((a,b)=>a.safe_cents>=b.safe_cents?a:b),end=scenarioDays.at(-1),bank=out.scenario.find(d=>d.date===when.value)?.account_balances.find(a=>a.id===+account.value),used=current.accounts.find(a=>a.id===+account.value);
-    let extras=result;
-    if(kind==='purchase'){
-     const direct=used?.included&&used.kind!=='credit',verdict=n('h3',direct?(low.safe_cents<0?'Non, un manque est prévu':'Oui, selon vos prévisions'):'À vérifier avec le compte du disponible');verdict.id='purchase-verdict';verdict.className=direct&&low.safe_cents>=0?'purchase-yes':'purchase-no';result.append(verdict,n('p','Sur les '+days+' prochains jours, du '+label(scenarioDays[0].date)+' au '+label(end.date)+', achat inclus.','v4-footnote'));
-     if(!direct)result.append(n('p','Ce compte ne débite pas directement le Safe-to-Spend. Choisissez votre compte bancaire inclus pour obtenir une réponse; un achat supplémentaire sur carte peut nécessiter un remboursement à prévoir.','v4-footnote'));
-     if(low.safe_cents<0)result.append(n('p','Manque prévu : '+cash(-low.safe_cents)+' le '+label(low.date)+'.','purchase-no'));
-     const metrics=n('div',undefined,'purchase-extrema');for(const [id,title,point]of [['purchase-low','Le plus bas',low],['purchase-high','Le plus haut',high]]){const card=n('div');card.id=id;card.append(n('span',title),n('strong',cash(point.safe_cents)),n('small',label(point.date)));metrics.append(card);}result.append(metrics);extras=n('details',undefined,'purchase-details');extras.append(n('summary','Détails et scénario enregistré'));result.append(extras);extras.append(n('p','Minimum sans cet achat : '+cash(original.safe_cents)+'. Disponible en fin de période avec cet achat : '+cash(end.safe_cents)+'.','v4-footnote'));
-    }else result.append(n('h3',low.safe_cents<0?'Un manque est prévu dans ce scénario':'Le disponible global reste au-dessus de zéro'),n('p','Minimum sur 90 jours : '+cash(low.safe_cents)+' le '+label(low.date)+'. Sans simulation : '+cash(original.safe_cents)+'.'),n('p','Disponible en fin de période : '+cash(end.safe_cents)+'.'));
-    if(kind==='purchase'&&bank)extras.append(n('p',accountName(+account.value)+' à la date de l’achat : '+cash(bank.balance_cents)+(used?.kind==='credit'?' dûs.':'.')));
-    extras.append(n('p','Selon les montants et échéances saisis, en fin de journée. Une dépense déjà couverte par une enveloppe ne doit pas être ajoutée une deuxième fois.','v4-footnote'),b('Voir les deux courbes',()=>{scenario=out;horizon=days;selected=when.value;sim.close();navigate('prevision');drawForecast();drawCalendar();},'v4-button'));
-    if(kind==='purchase'){const name=n('input');name.id='v41-scenario-name';name.maxLength=60;name.placeholder='Ex. Achat après la paie';const saveScenario=b('Enregistrer ce scénario',async()=>{saveScenario.disabled=true;error.textContent='';try{const response=await fetch('/api/support/scenarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.value,payload})}),out=await response.json();if(!response.ok)throw Error(out.error);render(out);sim.close();}catch(e){error.textContent=e.message;}finally{saveScenario.disabled=false;}},'v4-button');extras.append(field('Nom du scénario',name),saveScenario);}
-    if(kind==='move')result.append(b('Appliquer ce report…',()=>{sim.close();window.budgetPlanningAction(row.key,'move');const input=$('planning-action-dialog').querySelector('[name="new_on"]');if(input)input.value=when.value;},'v4-button v4-primary'));
-   }catch(err){if(ticket===requestId)error.textContent=err.message;}finally{simBusy=false;save.disabled=false;}
-  };sim.showModal();requestAnimationFrame(()=>form.querySelector('input')?.focus());
- }
- function openMove(row){openSimulation('move',row);}
- $('v4-sim-open').onclick=()=>openSimulation();
- sim.addEventListener('close',()=>{requestId++;});
- document.addEventListener('budget:planning-action',event=>{if(event.detail.action==='move'&&dayFor(event.detail.new_on)){calendarDate=anchor=event.detail.new_on;drawCalendar();}});
- window.budgetExploreForecast=(date,days=30)=>{horizon=[30,60,90].includes(days)?days:30;choose(date);drawForecast();navigate('prevision');};window.budgetExploreCalendar=date=>{calendarDate=anchor=date;drawCalendar();navigate('calendrier');};
- const previous=render;render=function(s){previous(s);current=s;scenario=null;requestId++;if(sim.open)sim.close();drawForecast();drawCalendar();};
- if(typeof state!=='undefined'&&state){current=state;drawForecast();drawCalendar();}
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* v4: dates first, shared forecast data, explicit separation of actual and planned. */
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id),
+      n = (tag, text, cls) => {
+        const e = document.createElement(tag);
+        if (text !== undefined) e.textContent = text;
+        if (cls) e.className = cls;
+        return e;
+      };
+    const b = (text, fn, cls = "v4-button") => {
+      const e = n("button", text, cls);
+      e.type = "button";
+      e.onclick = fn;
+      return e;
+    };
+    const cash = (c) =>
+        (c / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      signed = (c) => (c > 0 ? "+" : "") + cash(c),
+      date = (d) => new Date(d + "T12:00:00Z"),
+      iso = (d) => d.toISOString().slice(0, 10),
+      add = (d, i) => iso(new Date(date(d).getTime() + i * 86400000));
+    const label = (d, long = false) =>
+        date(d).toLocaleDateString(
+          "fr-CA",
+          long
+            ? {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }
+            : { day: "numeric", month: "short" },
+        ),
+      monthLabel = (d) =>
+        date(d).toLocaleDateString("fr-CA", { month: "long", year: "numeric" });
+    const field = (text, input) => {
+      const e = n("label", text);
+      e.append(input);
+      return e;
+    };
+    const icon = (type) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("aria-hidden", "true");
+      const p = document.createElementNS(svg.namespaceURI, "path");
+      p.setAttribute(
+        "d",
+        {
+          expense: "M5 5l14 14 M8 19h11V8",
+          income: "M5 19L19 5 M8 5h11v11",
+          transfer: "M3 8h18 M17 4l4 4-4 4 M21 16H3 M7 12l-4 4 4 4",
+          reserve: "M12 3l9 9-9 9-9-9z",
+        }[type],
+      );
+      svg.append(p);
+      return svg;
+    };
+    const typeNames = {
+      expense: "Dépense",
+      income: "Revenu",
+      transfer: "Virement",
+      reserve: "Réserve",
+    };
+    let current = null,
+      selected = runtime.today(),
+      calendarDate = selected,
+      anchor = selected,
+      view = matchMedia("(max-width:760px)").matches ? "week" : "month",
+      horizon = 30,
+      metric = "both",
+      scenario = null,
+      requestId = 0,
+      chartGeometry = null,
+      focusAccount = "";
+    const forecast = $("section-prevision"),
+      calendar = $("section-calendrier");
+    // The detailed audit views remain available, without occupying the primary workspace.
+    const audit = n("details", undefined, "v4-audit");
+    audit.id = "v4-forecast-audit";
+    audit.append(
+      n("summary", "Outils détaillés et liste quotidienne complète"),
+    );
+    for (const e of [...forecast.children])
+      if (
+        e.matches(".forecast-workspace,.forecast-source-list,#planning-notices")
+      )
+        audit.append(e);
+    forecast.append(audit);
+    const calendarAudit = n("details", undefined, "v4-audit");
+    calendarAudit.id = "v4-calendar-audit";
+    calendarAudit.append(n("summary", "Ancienne vue détaillée du calendrier"));
+    for (const e of [...calendar.children])
+      if (!e.matches(".planning-tabs,.section-head,.page-intro,.context-help"))
+        calendarAudit.append(e);
+    calendar.append(calendarAudit);
+    forecast.querySelector(".section-head h2").textContent =
+      "Votre avenir, plus clair";
+    calendar.querySelector(".section-head h2").textContent =
+      "Chaque jour compte";
+    forecast.querySelector(".page-intro").textContent =
+      "Choisissez une date. Voyez ce qui vous attend et gardez une longueur d’avance.";
+    calendar.querySelector(".page-intro").textContent =
+      "Vos revenus, vos factures et votre disponible, au bon moment.";
+    const f = n("div", undefined, "v4-workspace");
+    f.id = "v4-forecast";
+    forecast.querySelector(".page-intro").after(f);
+    const c = n("div", undefined, "v4-workspace");
+    c.id = "v4-calendar";
+    calendar.querySelector(".page-intro").after(c);
+    f.innerHTML = `<div class="v4-topbar"><div class="v4-segment" role="group" aria-label="Horizon"><button type="button" data-days="30">30 jours</button><button type="button" data-days="60">60 jours</button><button type="button" data-days="90">90 jours</button></div><button type="button" id="v4-sim-open" class="v4-button v4-primary">Puis-je me permettre cet achat ?</button></div><div id="v4-metrics" class="v4-metrics"></div><div id="v4-alerts"></div><div class="v4-forecast-layout"><div class="v4-chart-card"><div class="v4-chart-heading"><div><p class="v4-kicker">VOTRE TRAJECTOIRE</p><h3>Un peu d’avance sur demain</h3></div><label>Afficher<select id="v4-chart-kind"><option value="both">Solde et disponible</option><option value="safe_cents">Disponible après réserves</option><option value="cash_cents">Solde bancaire prévu</option></select></label></div><div id="v4-scenario-banner" hidden></div><svg id="v4-chart" role="img" aria-label="Prévision financière"></svg><label class="v4-slider-label">Explorer une date<input id="v4-slider" type="range" min="0" max="29" value="0"></label><div class="v4-chart-legend"><span><i></i><b id="v80-primary-legend">Disponible après protections</b></span><span id="v80-bank-legend"><i class="v80-bank-mark"></i>Solde bancaire</span><span class="v4-simulation-legend" hidden><i></i>Avec la simulation</span><span>Seuil de 0 $ en pointillé</span></div><p class="v4-footnote">Point de départ : vos soldes réels. Les opérations enregistrées sont déjà incluses.</p></div><aside id="v4-forecast-day" class="v4-day-panel"></aside></div><div class="v4-lower-grid"><section class="v4-card"><div class="v4-panel-heading"><div><p class="v4-kicker">LES PROCHAINS RENDEZ-VOUS</p><h3>À garder en tête</h3></div></div><div id="v4-upcoming"></div></section><section class="v4-card"><p class="v4-kicker">DU PRÉVU AU RÉEL</p><h3>Comprendre les écarts</h3><div id="v4-comparison"></div></section></div>`;
+    c.classList.add("v80-calendar-compact");
+    c.innerHTML = `<div class="v4-calendar-toolbar"><div class="v4-calendar-paging"><button type="button" id="v4-cal-prev" aria-label="Période précédente">←</button><h3 id="v4-cal-title"></h3><button type="button" id="v4-cal-next" aria-label="Période suivante">→</button></div><div class="v4-calendar-tools"><button type="button" id="v4-cal-today" class="v4-button">Aujourd’hui</button><div class="v4-segment" role="group" aria-label="Vue du calendrier"><button type="button" data-calendar-view="month">Mois</button><button type="button" data-calendar-view="week">Semaine</button></div></div></div><div class="v4-calendar-legend"><span class="income">● Revenus</span><span class="expense">● Dépenses</span><span class="transfer">● Virements</span><span class="reserve">● Réserves</span><span>✓ Réel enregistré · ○ Prévu</span></div><div class="v4-calendar-layout"><div class="v4-calendar-main"><div id="v4-cal-grid" class="v4-month-grid" role="group" aria-label="Jours du calendrier"></div><div id="v4-week-agenda"></div><p class="v4-footnote">Les montants des jours à venir indiquent le disponible prévu après réserves. Prévisions sur 90 jours.</p></div><aside id="v4-calendar-day" class="v4-day-panel"></aside></div>`;
+    const density = b(
+      "Afficher les libellés",
+      () => {
+        const compact = c.classList.toggle("v80-calendar-compact");
+        density.textContent = compact ? "Afficher les libellés" : "Vue épurée";
+        density.setAttribute("aria-pressed", String(!compact));
+      },
+      "v4-button",
+    );
+    density.id = "v80-calendar-density";
+    density.setAttribute("aria-pressed", "false");
+    c.querySelector(".v4-calendar-tools").append(density);
+    const accountFilters = [];
+    for (const host of [
+      f.querySelector(".v4-topbar"),
+      c.querySelector(".v4-calendar-toolbar"),
+    ]) {
+      const select = n("select");
+      select.className = "v41-account-filter";
+      select.setAttribute("aria-label", "Filtrer les opérations par compte");
+      select.onchange = () => {
+        focusAccount = select.value;
+        for (const other of accountFilters) other.value = focusAccount;
+        drawForecast();
+        drawCalendar();
+      };
+      host.append(field("Opérations du compte", select));
+      accountFilters.push(select);
+    }
+    const scopeNote =
+      "Le filtre limite les opérations affichées. Le disponible et la courbe restent globaux; le solde propre du compte est détaillé dans la journée.";
+    for (const host of [
+      f.querySelector(".v4-topbar"),
+      c.querySelector(".v4-calendar-toolbar"),
+    ])
+      host.after(n("p", scopeNote, "v4-footnote"));
+    const jump = n("input");
+    jump.type = "month";
+    jump.id = "v41-calendar-month";
+    jump.value = runtime.today().slice(0, 7);
+    jump.onchange = () => {
+      if (/^\d{4}-\d{2}$/.test(jump.value)) {
+        view = "month";
+        calendarDate = anchor = jump.value + "-01";
+        drawCalendar();
+      }
+    };
+    c.querySelector(".v4-calendar-toolbar").append(
+      field("Aller au mois", jump),
+    );
+    const payday = n("div", undefined, "v41-payday");
+    payday.id = "v41-payday";
+    f.querySelector("#v4-metrics").after(payday);
+    const saved = n("details", undefined, "v41-saved-scenarios"),
+      savedChoice = n("select"),
+      savedError = n("p", undefined, "v4-footnote");
+    savedChoice.id = "v41-saved-scenario";
+    saved.append(
+      n("summary", "Scénarios enregistrés"),
+      field("Choisir un scénario d’achat", savedChoice),
+      b(
+        "Reprendre ce scénario",
+        () => {
+          const item = current.support41?.scenarios.find(
+            (s) => s.id === savedChoice.value,
+          );
+          if (item) openSimulation("purchase", null, item.payload);
+        },
+        "v4-button",
+      ),
+      b(
+        "Supprimer le scénario",
+        async () => {
+          try {
+            const response = await fetch("/api/support/scenarios/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: savedChoice.value }),
+              }),
+              out = await response.json();
+            if (!response.ok) throw Error(out.error);
+            runtime.render(out);
+          } catch (e) {
+            savedError.textContent = e.message;
+          }
+        },
+        "v4-text-button",
+      ),
+      n(
+        "p",
+        "Seuls les paramètres sont conservés. Les résultats sont recalculés avec le budget actuel.",
+        "v4-footnote",
+      ),
+      savedError,
+    );
+    f.querySelector(".v4-topbar").after(saved);
+    function drawV41() {
+      for (const select of accountFilters) {
+        select.replaceChildren(
+          new Option("Tous les comptes", ""),
+          ...current.accounts.map((a) => new Option(a.name, a.id)),
+        );
+        select.value = focusAccount;
+        if (select.value !== focusAccount) focusAccount = "";
+      }
+      jump.value = anchor.slice(0, 7);
+      const previous = savedChoice.value;
+      savedChoice.replaceChildren(
+        ...(current.support41?.scenarios || [])
+          .filter((item) => item.payload.kind === "purchase")
+          .map((item) => new Option(item.name, item.id)),
+      );
+      if ([...savedChoice.options].some((o) => o.value === previous))
+        savedChoice.value = previous;
+      payday.replaceChildren();
+      const w = current.spending_windows;
+      if (w?.payday_date) {
+        payday.append(
+          n(
+            "span",
+            "Prochain revenu · " +
+              w.payday_names.join(", ") +
+              " · " +
+              label(w.payday_date),
+          ),
+          n("strong", "Minimum d’ici là : " + cash(w.payday_cents)),
+          b("Voir cette date", () => choose(w.payday_date), "v4-text-button"),
+        );
+      } else
+        payday.append(
+          n("span", "Aucun revenu prévu détecté dans les 30 prochains jours."),
+        );
+    }
+    const accepts = (e) =>
+      !focusAccount ||
+      e.account_id === Number(focusAccount) ||
+      e.to_account_id === Number(focusAccount);
+    function navigate(key) {
+      document.querySelector(`.app-shell-nav [data-view="${key}"]`).click();
+    }
+    const accountName = (id) =>
+      current.accounts.find((a) => a.id === id)?.name || "Compte à choisir";
+    function rows() {
+      return current?.planning?.rows || [];
+    }
+    function dayFor(d) {
+      return current?.forecast.find((x) => x.date === d);
+    }
+    function entries(d) {
+      if (!current) return [];
+      const items = [];
+      for (const t of current.calendar_actuals || [])
+        if (t.happened_on === d)
+          items.push({
+            key: "transaction:" + t.id,
+            id: t.id,
+            real: true,
+            type: t.amount_cents < 0 ? "expense" : "income",
+            description: t.description,
+            amount_cents: Math.abs(t.amount_cents),
+            account_id: t.account_id,
+            envelope_id: t.envelope_id,
+          });
+      for (const t of current.calendar_transfers || [])
+        if (t.happened_on === d)
+          items.push({
+            key: "transfer:" + t.id,
+            id: t.id,
+            real: true,
+            type: "transfer",
+            description: t.description,
+            amount_cents: t.amount_cents,
+            account_id: t.from_account_id,
+            to_account_id: t.to_account_id,
+          });
+      for (const e of dayFor(d)?.events || [])
+        if (e.type !== "reserve" || e.amount_cents !== 0)
+          items.push({
+            ...e,
+            real: false,
+            row: rows().find((r) => r.key === e.key),
+          });
+      // Late expected operations stay visible on their original date as well as in today's prudent projection.
+      for (const r of rows().filter(
+        (r) =>
+          r.date === d &&
+          ["planned", "pending"].includes(r.status) &&
+          r.remaining_cents > 0,
+      ))
+        if (!items.some((e) => e.key === r.key))
+          items.push({
+            ...r,
+            real: false,
+            row: r,
+            amount_cents: r.remaining_cents,
+          });
+      return items
+        .filter(accepts)
+        .sort(
+          (a, b) =>
+            Number(a.real) - Number(b.real) ||
+            { income: 0, expense: 1, transfer: 2, reserve: 3 }[a.type] -
+              { income: 0, expense: 1, transfer: 2, reserve: 3 }[b.type],
+        );
+    }
+    function entryCard(e, withActions = true) {
+      const row = n(
+        "article",
+        undefined,
+        "v4-event " + e.type + (e.real ? " is-real" : ""),
+      );
+      row.dataset.key = e.key || "";
+      const mark = n("span", undefined, "v4-event-icon");
+      mark.append(icon(e.type));
+      mark.setAttribute("aria-hidden", "true");
+      const copy = n("div", undefined, "v4-event-copy");
+      copy.append(
+        n("strong", e.description),
+        n(
+          "small",
+          (e.real
+            ? "✓ Réel enregistré"
+            : "○ " +
+              (e.overdue || e.row?.status === "pending"
+                ? "À confirmer"
+                : "Prévu")) +
+            " · " +
+            (e.type === "reserve" ? "Enveloppe" : accountName(e.account_id)) +
+            (e.to_account_id ? " → " + accountName(e.to_account_id) : ""),
+        ),
+      );
+      if (e.overdue)
+        copy.append(
+          n(
+            "small",
+            "Échéance du " + label(e.original_on) + " · encore prise en compte",
+          ),
+        );
+      if (e.envelope_id)
+        copy.append(
+          n(
+            "small",
+            "Enveloppe · " +
+              (current.envelopes.find((a) => a.id === e.envelope_id)?.name ||
+                "Budget"),
+          ),
+        );
+      if (!e.real && Number.isFinite(e.sts_impact_cents))
+        copy.append(
+          n(
+            "small",
+            e.credit_charge
+              ? "Achat sur carte · remboursement distinct"
+              : e.sts_impact_cents === 0
+                ? "Aucun effet sur le disponible"
+                : "Effet disponible : " + signed(e.sts_impact_cents),
+            "v4-impact",
+          ),
+        );
+      row.append(
+        mark,
+        copy,
+        n(
+          "strong",
+          (e.type === "income" ? "+" : e.type === "expense" ? "−" : "") +
+            cash(e.amount_cents),
+          "v4-event-amount",
+        ),
+      );
+      if (withActions) {
+        const actions = n("div", undefined, "v4-event-actions");
+        if (e.real) {
+          if (
+            (e.type === "transfer"
+              ? current.transfers
+              : current.transactions
+            ).some((t) => t.id === e.id)
+          )
+            actions.append(
+              b(
+                "Modifier",
+                () =>
+                  window.v2Edit?.(
+                    e.type === "transfer" ? "transfer" : "transaction",
+                    e.id,
+                  ),
+                "v4-text-button",
+              ),
+            );
+        } else if (e.row?.source === "paycheck") {
+          actions.append(
+            b("Gérer la répartition", () => navigate("paie"), "v4-text-button"),
+          );
+        } else if (e.type === "reserve") {
+          actions.append(
+            b(
+              "Voir l’enveloppe",
+              () => navigate("enveloppes"),
+              "v4-text-button",
+            ),
+          );
+        } else if (e.row && ["planned", "pending"].includes(e.row.status)) {
+          if (e.type !== "reserve")
+            actions.append(
+              b(
+                e.type === "income"
+                  ? "Reçu"
+                  : e.type === "transfer"
+                    ? "Effectué"
+                    : "Payé",
+                () => window.budgetPlanningAction(e.row.key, "confirm"),
+                "v4-text-button",
+              ),
+            );
+          actions.append(
+            b(
+              "Montant différent",
+              () =>
+                window.budgetPlanningAction(e.row.key, "confirm", {
+                  focusAmount: true,
+                }),
+              "v4-text-button",
+            ),
+            b(
+              "Reporter",
+              () => window.budgetPlanningAction(e.row.key, "move"),
+              "v4-text-button",
+            ),
+            b("Simuler un report", () => openMove(e.row), "v4-text-button"),
+          );
+        }
+        if (actions.childNodes.length) row.append(actions);
+      }
+      return row;
+    }
+    function quickAdd(d) {
+      const detail = n("details", undefined, "v4-quick-add");
+      detail.append(n("summary", "+ Ajouter à cette date"));
+      const controls = n("div", undefined, "v4-add-options");
+      for (const [type, text] of [
+        ["expense", "Dépense"],
+        ["income", "Revenu"],
+        ["transfer", "Virement"],
+      ])
+        controls.append(
+          b(text, () => draft(d, type, d < runtime.today()), "v4-button"),
+        );
+      detail.append(
+        n(
+          "p",
+          d < runtime.today()
+            ? "Saisir une opération réellement effectuée."
+            : "Créer une opération prévue. Rien ne sera débité avant confirmation.",
+          "v4-footnote",
+        ),
+        controls,
+      );
+      if (d === runtime.today())
+        detail.append(
+          b(
+            "Saisir plutôt une opération déjà effectuée",
+            () => {
+              detail.replaceChildren(n("summary", "+ Opération réelle"));
+              for (const [type, text] of [
+                ["expense", "Dépense réelle"],
+                ["income", "Revenu réel"],
+                ["transfer", "Virement réel"],
+              ])
+                detail.append(b(text, () => draft(d, type, true), "v4-button"));
+              detail.open = true;
+            },
+            "v4-text-button",
+          ),
+        );
+      return detail;
+    }
+    function draft(d, type, real) {
+      if (real) {
+        window.appOpenEditor("transaction");
+        const f = $("transaction");
+        f.elements.amount.value = "";
+        f.elements.description.value = "";
+        $("transaction-direction").value = type;
+        $("transaction-direction").dispatchEvent(
+          new Event("change", { bubbles: true }),
+        );
+        $("envelope-options").value = "";
+        if (type === "transfer") {
+          $("transaction-transfer-timing").value = "actual";
+          $("transaction-transfer-timing").dispatchEvent(new Event("change"));
+        }
+        f.elements.happened_on.value = d;
+      } else {
+        runtime.resetRec();
+        const f = $("recurring");
+        f.elements.type.value = type;
+        $("rec-type").dispatchEvent(new Event("change", { bubbles: true }));
+        f.elements.start_on.value = d;
+        f.elements.one_time.value = "true";
+        window.appOpenEditor("recurring");
+      }
+    }
+    function renderDay(host, d, forecastMode = false) {
+      const day = dayFor(d);
+      host.replaceChildren();
+      const heading = n("div", undefined, "v4-day-heading");
+      heading.append(
+        n(
+          "p",
+          forecastMode
+            ? "À LA DATE CHOISIE"
+            : d < runtime.today()
+              ? "RÉEL ENREGISTRÉ"
+              : "VOTRE JOURNÉE",
+          "v4-kicker",
+        ),
+        n("h3", label(d, true)),
+      );
+      host.append(heading);
+      if (forecastMode) {
+        const picker = n("input");
+        picker.type = "date";
+        picker.id = "v4-selected-date";
+        picker.min = current.forecast[0].date;
+        picker.max =
+          current.forecast[Math.min(horizon, current.forecast.length) - 1].date;
+        picker.value = d;
+        picker.onchange = () => {
+          if (dayFor(picker.value) && picker.value <= picker.max)
+            choose(picker.value);
+        };
+        host.append(field("Changer de date", picker));
+      }
+      if (day) {
+        const value = n(
+          "strong",
+          cash(day.safe_cents),
+          "v4-day-value" + (day.safe_cents < 0 ? " negative" : ""),
+        );
+        value.dataset.value = day.safe_cents;
+        host.append(
+          n("span", "Disponible prévu en fin de journée", "v4-small-label"),
+          value,
+        );
+        const facts = n("dl", undefined, "v4-facts");
+        for (const [text, amount] of [
+          ["Solde bancaire prévu", day.cash_cents],
+          ["Réserves d’enveloppes", day.reserved_cents],
+        ])
+          facts.append(n("dt", text), n("dd", cash(amount)));
+        host.append(facts);
+        if (focusAccount) {
+          const a = day.account_balances.find(
+            (a) => a.id === Number(focusAccount),
+          );
+          if (a) {
+            const meta = current.accounts.find((item) => item.id === a.id);
+            const own = n("div", undefined, "v41-own-balance");
+            own.append(
+              n(
+                "span",
+                (meta?.kind === "credit"
+                  ? "Montant dû · "
+                  : "Solde propre · ") + (meta?.name || "Compte"),
+              ),
+              n("strong", cash(a.balance_cents)),
+            );
+            host.append(own);
+          }
+        }
+        if (scenario) {
+          const other = scenario.scenario.find((x) => x.date === d);
+          if (other) {
+            const comparison = n("div", undefined, "v4-day-scenario");
+            comparison.append(
+              n("span", "Avec la simulation"),
+              n("strong", cash(other.safe_cents)),
+            );
+            host.append(comparison);
+          }
+        }
+        const breakdown = n("details", undefined, "v4-breakdown");
+        breakdown.append(n("summary", "Pourquoi ce montant ?"));
+        const calc = day.bridge;
+        for (const [text, amount] of [
+          ["Solde réel de départ", calc.opening_cash_cents],
+          ["Revenus attendus", calc.income_cents],
+          ["Factures et dépenses", calc.expense_cents],
+          ["Dépenses d’enveloppes", calc.envelope_cents],
+          ["Virements nets", calc.transfer_cents],
+          ["Réserves restantes", -calc.reserved_cents],
+        ]) {
+          const line = n("div");
+          line.append(n("span", text), n("strong", signed(amount)));
+          breakdown.append(line);
+        }
+        breakdown.append(
+          n(
+            "p",
+            "Les opérations réelles sont déjà dans le solde de départ. Les achats d’enveloppes sur carte restent protégés; la dette sans enveloppe ne crée pas de réserve automatique.",
+            "v4-footnote",
+          ),
+        );
+        host.append(breakdown);
+      } else
+        host.append(
+          n(
+            "p",
+            d < runtime.today()
+              ? "Les opérations ci-dessous sont enregistrées. Aucun solde historique n’est reconstitué."
+              : "Cette date dépasse les 90 jours de prévision. Vous pouvez y planifier une opération.",
+            "v4-footnote",
+          ),
+        );
+      const items = entries(d),
+        planned = items.filter((e) => !e.real),
+        actual = items.filter((e) => e.real);
+      for (const [title, list] of [
+        ["Prévu à cette date", planned],
+        ["Déjà enregistré", actual],
+      ])
+        if (list.length) {
+          host.append(n("h4", title + " · " + list.length, "v4-group-title"));
+          for (const e of list) host.append(entryCard(e));
+        }
+      if (!items.length)
+        host.append(
+          n("p", "Une journée tranquille. Aucun mouvement connu.", "v4-empty"),
+        );
+      host.append(quickAdd(d));
+    }
+    function choose(d) {
+      if (!dayFor(d)) return;
+      selected = d;
+      const index = current.forecast.findIndex((x) => x.date === d);
+      if (index >= horizon) {
+        horizon = index < 60 ? 60 : 90;
+        drawForecast();
+      } else {
+        renderDay($("v4-forecast-day"), d, true);
+        drawMetrics();
+        drawChart();
+      }
+    }
+    function metricCard(text, value, caption, fn) {
+      const card = n("div", undefined, "v4-metric");
+      card.append(
+        n("span", text),
+        n("strong", cash(value), value < 0 ? "negative" : ""),
+        n("small", caption),
+      );
+      if (fn) card.append(b("Voir la date", fn, "v4-text-button"));
+      return card;
+    }
+    function drawMetrics() {
+      const days = current.forecast.slice(0, horizon),
+        min = days.reduce((a, b) => (a.safe_cents <= b.safe_cents ? a : b)),
+        target = dayFor(selected) || days[0],
+        host = $("v4-metrics");
+      host.replaceChildren(
+        metricCard(
+          "Disponible réel aujourd’hui",
+          current.safe_cents,
+          "Après les réserves actuelles",
+        ),
+        metricCard(
+          "Le point le plus bas",
+          min.safe_cents,
+          label(min.date),
+          () => choose(min.date),
+        ),
+        metricCard(
+          "Disponible au " + label(target.date),
+          target.safe_cents,
+          "Prévu en fin de journée",
+        ),
+      );
+    }
+    function drawAlerts() {
+      const host = $("v4-alerts");
+      host.replaceChildren();
+      const days = current.forecast.slice(0, horizon),
+        negative = days.find((d) => d.safe_cents < 0),
+        pending = rows().filter(
+          (r) =>
+            r.date <= runtime.today() &&
+            ["pending", "planned"].includes(r.status) &&
+            r.type !== "reserve" &&
+            r.remaining_cents > 0,
+        ),
+        warnings = current.planning.warnings;
+      if (negative) {
+        const alert = n("div", undefined, "v4-alert risk");
+        alert.append(
+          n(
+            "span",
+            "Un disponible sous zéro est prévu le " +
+              label(negative.date) +
+              ".",
+          ),
+          b(
+            "Voir cette journée",
+            () => choose(negative.date),
+            "v4-text-button",
+          ),
+        );
+        host.append(alert);
+      }
+      if (pending.length || warnings.length) {
+        const alert = n("div", undefined, "v4-alert");
+        alert.append(
+          n(
+            "span",
+            [
+              pending.length
+                ? pending.length + " opération(s) à confirmer"
+                : "",
+              warnings.length
+                ? warnings.length + " point(s) de configuration"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          ),
+          b(
+            "Vérifier",
+            () => {
+              if (pending.length) window.budgetOpenPlanningQueue();
+              else {
+                audit.open = true;
+                $("planning-notices").scrollIntoView({
+                  block: "start",
+                  behavior: matchMedia("(prefers-reduced-motion:reduce)")
+                    .matches
+                    ? "auto"
+                    : "smooth",
+                });
+              }
+            },
+            "v4-text-button",
+          ),
+        );
+        host.append(alert);
+      }
+    }
+    function drawUpcoming() {
+      const host = $("v4-upcoming");
+      host.replaceChildren();
+      const events = current.forecast
+        .slice(0, horizon)
+        .flatMap((d) =>
+          d.events
+            .filter((e) => e.type !== "reserve" && accepts(e))
+            .map((e) => ({ ...e, on: d.date })),
+        )
+        .slice(0, 5);
+      for (const e of events) {
+        const row = b(
+          "",
+          () => {
+            choose(e.on);
+            $("v4-forecast-day").scrollIntoView({
+              block: "nearest",
+              behavior: matchMedia("(prefers-reduced-motion:reduce)").matches
+                ? "auto"
+                : "smooth",
+            });
+          },
+          "v4-upcoming-row",
+        );
+        const copy = n("span");
+        copy.append(
+          n("strong", e.description),
+          n("small", label(e.on) + " · " + typeNames[e.type]),
+        );
+        const mark = n("span", undefined, "v4-event-icon " + e.type);
+        mark.append(icon(e.type));
+        row.append(mark, copy, n("strong", cash(e.amount_cents)));
+        host.append(row);
+      }
+      if (!events.length)
+        host.append(
+          n(
+            "p",
+            "Aucun mouvement prévu sur cet horizon. Ajoutez vos factures et revenus depuis le calendrier.",
+            "v4-empty",
+          ),
+        );
+      host.append(
+        b(
+          "Ouvrir le calendrier",
+          () => {
+            calendarDate = selected;
+            anchor = selected;
+            drawCalendar();
+            navigate("calendrier");
+          },
+          "v4-text-button",
+        ),
+      );
+    }
+    function drawComparison() {
+      const host = $("v4-comparison");
+      host.replaceChildren();
+      const month = runtime.today().slice(0, 7),
+        complete = rows().filter(
+          (r) =>
+            r.type === "expense" &&
+            r.status === "actual" &&
+            r.date.startsWith(month) &&
+            r.date <= runtime.today(),
+        ),
+        variance = complete.reduce(
+          (sum, r) => sum + r.actual_cents - r.planned_cents,
+          0,
+        );
+      const box = n("div", undefined, "v4-variance");
+      box.append(
+        n("strong", complete.length ? cash(Math.abs(variance)) : "—"),
+        n(
+          "span",
+          !complete.length
+            ? "Pas encore de dépense rapprochée ce mois-ci"
+            : variance > 0
+              ? "de plus que prévu"
+              : variance < 0
+                ? "de moins que prévu"
+                : "d’écart sur les dépenses terminées",
+        ),
+      );
+      host.append(
+        box,
+        n(
+          "p",
+          "Comparaison des dépenses prévues et réelles rapprochées de ce mois. Les opérations sans prévision restent dans vos soldes réels.",
+          "v4-footnote",
+        ),
+      );
+      for (const r of complete
+        .slice()
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 3)) {
+        const line = n("div", undefined, "v4-comparison-row");
+        line.append(
+          n("span", r.description),
+          n("span", cash(r.planned_cents) + " → " + cash(r.actual_cents)),
+        );
+        host.append(line);
+      }
+      host.append(
+        b(
+          "Consulter le prévu et le réel",
+          () => window.budgetOpenPlanningQueue(),
+          "v4-text-button",
+        ),
+      );
+    }
+    function drawForecast() {
+      if (!current?.forecast.length) return;
+      $("v4-sim-open").disabled = !current.accounts.length;
+      if (!dayFor(selected)) selected = current.forecast[0].date;
+      const end =
+        current.forecast[Math.min(horizon, current.forecast.length) - 1].date;
+      if (selected > end) selected = end;
+      f.querySelectorAll("[data-days]").forEach((e) =>
+        e.setAttribute("aria-pressed", String(+e.dataset.days === horizon)),
+      );
+      $("v4-slider").max = Math.min(horizon, current.forecast.length) - 1;
+      drawV41();
+      drawMetrics();
+      drawAlerts();
+      renderDay($("v4-forecast-day"), selected, true);
+      drawUpcoming();
+      drawComparison();
+      drawChart();
+    }
+    const svg = $("v4-chart");
+    function drawChart() {
+      if (!current?.forecast.length) return;
+      svg.replaceChildren();
+      const key = metric === "both" ? "safe_cents" : metric;
+      const days = current.forecast.slice(0, horizon),
+        index = Math.max(
+          0,
+          days.findIndex((d) => d.date === selected),
+        ),
+        other = scenario?.scenario.slice(0, horizon),
+        values = [
+          ...days.map((d) => d[key]),
+          ...(metric === "both" ? days.map((d) => d.cash_cents) : []),
+          ...(other || []).map((d) => d[key]),
+        ],
+        width = Math.max(
+          310,
+          Math.round(svg.getBoundingClientRect().width) || 740,
+        ),
+        height = 320,
+        left = 66,
+        right = width - 20,
+        top = 32,
+        bottom = 265,
+        min = Math.min(0, ...values),
+        max = Math.max(10000, ...values),
+        range = max - min || 10000,
+        padding = range * 0.12,
+        low = min - padding,
+        high = max + padding,
+        x = (i) => left + (i * (right - left)) / Math.max(1, days.length - 1),
+        y = (v) => bottom - ((v - low) / (high - low)) * (bottom - top);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      const s = (tag, attrs, text) => {
+        const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (const [key, val] of Object.entries(attrs))
+          e.setAttribute(key, val);
+        if (text !== undefined) e.textContent = text;
+        svg.append(e);
+        return e;
+      };
+      const rough = (high - low) / 4,
+        unit = 10 ** Math.floor(Math.log10(rough)),
+        step = [1, 2, 5, 10].map((a) => a * unit).find((a) => a >= rough);
+      for (
+        let value = Math.ceil(low / step) * step;
+        value <= high;
+        value += step
+      ) {
+        s("line", {
+          x1: left,
+          x2: right,
+          y1: y(value),
+          y2: y(value),
+          class: "v4-chart-grid",
+        });
+        s(
+          "text",
+          {
+            x: left - 10,
+            y: y(value) + 4,
+            "text-anchor": "end",
+            class: "v4-chart-tick",
+          },
+          ((value === 0 ? 0 : value) / 100).toLocaleString("fr-CA", {
+            notation: Math.abs(value) >= 100000 ? "compact" : "standard",
+            maximumFractionDigits: 0,
+          }) + " $",
+        );
+      }
+      const points = days.map((d, i) => [x(i), y(d[key])]);
+      s("path", {
+        d:
+          "M " +
+          points.map((p) => p.join(",")).join(" L ") +
+          ` L ${right},${bottom} L ${left},${bottom} Z`,
+        fill: "#e8f2e9",
+      });
+      s("line", {
+        x1: left,
+        x2: right,
+        y1: y(0),
+        y2: y(0),
+        class: "v4-chart-zero",
+      });
+      s("polyline", {
+        points: points.map((p) => p.join(",")).join(" "),
+        class: "v4-chart-line",
+        fill: "none",
+      });
+      if (metric === "both")
+        s("polyline", {
+          points: days.map((d, i) => x(i) + "," + y(d.cash_cents)).join(" "),
+          class: "v80-chart-bank",
+          fill: "none",
+        });
+      if (other)
+        s("polyline", {
+          points: other.map((d, i) => x(i) + "," + y(d[key])).join(" "),
+          class: "v4-chart-scenario",
+          fill: "none",
+        });
+      const lowIndex = days.reduce(
+        (best, d, i) => (d[key] < days[best][key] ? i : best),
+        0,
+      );
+      s("circle", {
+        cx: x(lowIndex),
+        cy: y(days[lowIndex][key]),
+        r: 4,
+        class: "v4-chart-min",
+      });
+      s("line", {
+        x1: x(index),
+        x2: x(index),
+        y1: top,
+        y2: bottom,
+        class: "v4-chart-cursor",
+      });
+      s("circle", {
+        cx: x(index),
+        cy: y(days[index][key]),
+        r: 6,
+        fill: "#226650",
+        stroke: "#fff",
+        "stroke-width": 3,
+      });
+      for (const i of [
+        ...new Set([0, Math.floor((days.length - 1) / 2), days.length - 1]),
+      ])
+        s(
+          "text",
+          {
+            x: x(i),
+            y: 300,
+            "text-anchor":
+              i === 0 ? "start" : i === days.length - 1 ? "end" : "middle",
+            class: "v4-chart-tick",
+          },
+          i === 0 ? "Aujourd’hui" : label(days[i].date),
+        );
+      $("v80-bank-legend").hidden = metric !== "both";
+      $("v80-primary-legend").textContent =
+        metric === "cash_cents"
+          ? "Solde bancaire"
+          : "Disponible après protections";
+      svg.setAttribute(
+        "aria-label",
+        (metric === "both"
+          ? "Solde bancaire et disponible après protections"
+          : metric === "cash_cents"
+            ? "Solde bancaire prévu"
+            : "Disponible après réserves") +
+          " sur " +
+          days.length +
+          " jours. Minimum " +
+          cash(Math.min(...days.map((d) => d[key]))) +
+          ". Choisissez un jour avec le curseur.",
+      );
+      chartGeometry = { width, left, right, count: days.length };
+      $("v4-slider").value = index;
+      $("v4-slider").setAttribute(
+        "aria-valuetext",
+        label(selected, true) + " · " + cash(days[index][key]),
+      );
+      $("v4-scenario-banner").hidden = !scenario;
+      const banner = $("v4-scenario-banner");
+      banner.replaceChildren();
+      if (scenario)
+        banner.append(
+          n("span", "Simulation active · aucun changement enregistré"),
+          b("Effacer", clearScenario, "v4-text-button"),
+        );
+      f.querySelector(".v4-simulation-legend").hidden = !scenario;
+    }
+    function clearScenario() {
+      requestId++;
+      scenario = null;
+      drawForecast();
+      drawCalendar();
+    }
+    svg.onclick = (event) => {
+      if (!chartGeometry) return;
+      const rect = svg.getBoundingClientRect(),
+        g = chartGeometry,
+        i = Math.max(
+          0,
+          Math.min(
+            g.count - 1,
+            Math.round(
+              ((((event.clientX - rect.left) * g.width) / rect.width - g.left) /
+                (g.right - g.left)) *
+                (g.count - 1),
+            ),
+          ),
+        );
+      choose(current.forecast[i].date);
+    };
+    $("v4-slider").oninput = (event) =>
+      choose(current.forecast[+event.target.value].date);
+    $("v4-chart-kind").onchange = (event) => {
+      metric = event.target.value;
+      drawChart();
+    };
+    f.querySelectorAll("[data-days]").forEach(
+      (e) =>
+        (e.onclick = () => {
+          horizon = +e.dataset.days;
+          drawForecast();
+        }),
+    );
+    let lastWidth = 0;
+    new ResizeObserver((entries) => {
+      const width = Math.round(entries[0].contentRect.width);
+      if (width && width !== lastWidth) {
+        lastWidth = width;
+        requestAnimationFrame(drawChart);
+      }
+    }).observe(svg);
+    function selectCalendar(d, focus = false) {
+      calendarDate = d;
+      anchor = d;
+      drawCalendar();
+      if (focus)
+        requestAnimationFrame(() =>
+          c.querySelector(`[data-date="${d}"]`)?.focus(),
+        );
+    }
+    function drawCalendar() {
+      if (!current) return;
+      jump.value = anchor.slice(0, 7);
+      const grid = $("v4-cal-grid"),
+        monthStart = anchor.slice(0, 7) + "-01";
+      grid.replaceChildren();
+      grid.className = view === "month" ? "v4-month-grid" : "v4-week-grid";
+      c.querySelectorAll("[data-calendar-view]").forEach((e) =>
+        e.setAttribute("aria-pressed", String(e.dataset.calendarView === view)),
+      );
+      let start, count;
+      if (view === "month") {
+        start = add(monthStart, -((date(monthStart).getUTCDay() + 6) % 7));
+        const last = iso(
+          new Date(
+            Date.UTC(
+              date(monthStart).getUTCFullYear(),
+              date(monthStart).getUTCMonth() + 1,
+              0,
+            ),
+          ),
+        );
+        count =
+          Math.ceil(
+            (((date(monthStart).getUTCDay() + 6) % 7) +
+              date(last).getUTCDate()) /
+              7,
+          ) * 7;
+        $("v4-cal-title").textContent = monthLabel(anchor);
+        for (const day of ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"])
+          grid.append(n("span", day, "v4-weekday-heading"));
+      } else {
+        start = add(anchor, -((date(anchor).getUTCDay() + 6) % 7));
+        count = 7;
+        $("v4-cal-title").textContent =
+          label(start) + " – " + label(add(start, 6));
+      }
+      for (let i = 0; i < count; i++) {
+        const d = add(start, i),
+          forecastDay = dayFor(d),
+          items = entries(d),
+          cell = b(
+            "",
+            () => selectCalendar(d),
+            "v4-calendar-cell" +
+              (d === runtime.today() ? " is-today" : "") +
+              (d === calendarDate ? " is-selected" : "") +
+              (view === "month" && d.slice(0, 7) !== anchor.slice(0, 7)
+                ? " is-outside"
+                : "") +
+              (forecastDay?.safe_cents < 0 ? " is-low" : ""),
+          );
+        cell.dataset.date = d;
+        cell.setAttribute("aria-pressed", String(d === calendarDate));
+        cell.setAttribute(
+          "aria-label",
+          label(d, true) +
+            " · " +
+            items.length +
+            " mouvement(s)" +
+            (forecastDay
+              ? " · Disponible prévu " + cash(forecastDay.safe_cents)
+              : ""),
+        );
+        cell.tabIndex = d === calendarDate ? 0 : -1;
+        const top = n("span", undefined, "v4-cell-top");
+        if (view === "week")
+          top.append(
+            n(
+              "span",
+              date(d).toLocaleDateString("fr-CA", { weekday: "short" }),
+            ),
+          );
+        top.append(n("strong", String(date(d).getUTCDate())));
+        if (d === runtime.today()) top.append(n("small", "Aujourd’hui"));
+        cell.append(top);
+        if (forecastDay) {
+          const amount = n(
+            "span",
+            cash(forecastDay.safe_cents),
+            "v4-cell-balance",
+          );
+          amount.dataset.value = forecastDay.safe_cents;
+          cell.append(amount);
+        } else
+          cell.append(
+            n(
+              "span",
+              d < runtime.today() ? "Réel" : "Hors horizon",
+              "v4-cell-label",
+            ),
+          );
+        const preview = n("span", undefined, "v4-cell-events");
+        for (const e of items.slice(0, 2)) {
+          const line = n("span", undefined, "v4-cell-event " + e.type);
+          if (
+            !e.real &&
+            e.row &&
+            ["planned", "pending"].includes(e.row.status)
+          ) {
+            line.draggable = true;
+            line.ondragstart = (event) => {
+              event.stopPropagation();
+              event.dataTransfer.setData(
+                "application/x-sillage-occurrence",
+                e.row.key,
+              );
+              event.dataTransfer.effectAllowed = "move";
+            };
+          }
+          line.title =
+            e.description +
+            " · " +
+            cash(e.amount_cents) +
+            " · " +
+            (e.real ? "Réel" : "Prévu");
+          line.append(n("i", e.real ? "✓" : "○"), n("span", e.description));
+          preview.append(line);
+        }
+        if (items.length > 2)
+          preview.append(
+            n(
+              "small",
+              "+" +
+                (items.length - 2) +
+                " autre" +
+                (items.length > 3 ? "s" : ""),
+            ),
+          );
+        cell.append(preview);
+        cell.ondragover = (event) => {
+          if (
+            event.dataTransfer.types.includes(
+              "application/x-sillage-occurrence",
+            )
+          ) {
+            event.preventDefault();
+            cell.classList.add("sillage-drag-target");
+          }
+        };
+        cell.ondragleave = () => cell.classList.remove("sillage-drag-target");
+        cell.ondrop = (event) => {
+          cell.classList.remove("sillage-drag-target");
+          const key = event.dataTransfer.getData(
+              "application/x-sillage-occurrence",
+            ),
+            row = current.planning.rows.find((r) => r.key === key);
+          if (
+            row &&
+            d >= runtime.today() &&
+            d <= current.forecast.at(-1).date
+          ) {
+            event.preventDefault();
+            openSimulation("move", row);
+            sim.querySelector("[name=date]").value = d;
+          }
+        };
+        cell.onkeydown = (event) => {
+          const step = {
+            ArrowLeft: -1,
+            ArrowRight: 1,
+            ArrowUp: -7,
+            ArrowDown: 7,
+          }[event.key];
+          if (step) {
+            event.preventDefault();
+            selectCalendar(add(d, step), true);
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            selectCalendar(runtime.today(), true);
+          }
+        };
+        grid.append(cell);
+      }
+      // A month not containing the selected date still has one keyboard entry point.
+      if (!grid.querySelector('[tabindex="0"]'))
+        grid.querySelector("button")?.setAttribute("tabindex", "0");
+      const agenda = $("v4-week-agenda");
+      agenda.replaceChildren();
+      agenda.hidden = view !== "week";
+      if (view === "week")
+        agenda.append(
+          n(
+            "p",
+            "Sélectionnez un jour pour consulter ses mouvements et son solde prévu.",
+            "v4-footnote",
+          ),
+        );
+      renderDay($("v4-calendar-day"), calendarDate);
+      requestAnimationFrame(centerWeek);
+    }
+    function centerWeek() {
+      const grid = $("v4-cal-grid"),
+        cell = grid.querySelector('[aria-pressed="true"]');
+      if (
+        view === "week" &&
+        grid.clientWidth &&
+        cell &&
+        matchMedia("(max-width:760px)").matches
+      )
+        grid.scrollLeft +=
+          cell.getBoundingClientRect().left -
+          grid.getBoundingClientRect().left -
+          (grid.clientWidth - cell.clientWidth) / 2;
+    }
+    new ResizeObserver((entries) => {
+      if (entries[0].contentRect.width > 0) requestAnimationFrame(centerWeek);
+    }).observe($("v4-cal-grid"));
+    c.querySelectorAll("[data-calendar-view]").forEach(
+      (e) =>
+        (e.onclick = () => {
+          view = e.dataset.calendarView;
+          anchor = calendarDate;
+          drawCalendar();
+        }),
+    );
+    function shiftCalendar(direction) {
+      if (view === "week") anchor = add(anchor, 7 * direction);
+      else {
+        const d = date(anchor.slice(0, 7) + "-01");
+        d.setUTCMonth(d.getUTCMonth() + direction);
+        anchor = iso(d);
+      }
+      calendarDate = anchor;
+      drawCalendar();
+    }
+    $("v4-cal-prev").onclick = () => shiftCalendar(-1);
+    $("v4-cal-next").onclick = () => shiftCalendar(1);
+    $("v4-cal-today").onclick = () => selectCalendar(runtime.today());
+    // Simulations use the server's pure forecast engine, including calculated card payments.
+    const sim = n("dialog", undefined, "v4-dialog editor-dialog");
+    sim.id = "v4-simulator";
+    document.body.append(sim);
+    let simBusy = false;
+    function openSimulation(kind = "purchase", row = null, preset = null) {
+      sim.replaceChildren();
+      const inner = n("div", undefined, "dialog-inner"),
+        heading = n("div", undefined, "dialog-heading");
+      heading.append(
+        n(
+          "h2",
+          kind === "purchase"
+            ? "Puis-je me permettre cet achat ?"
+            : "Et si je déplaçais cette échéance ?",
+        ),
+        b("Fermer", () => sim.close(), "secondary"),
+      );
+      inner.append(
+        heading,
+        n(
+          "p",
+          kind === "purchase"
+            ? "Achat supplémentaire, non déjà couvert par une enveloppe. Cette simulation ne crée aucune transaction."
+            : row.description +
+                " · échéance du " +
+                label(row.date) +
+                ". Comparez les prévisions avant de décider.",
+          "v4-footnote",
+        ),
+      );
+      sim.append(inner);
+      const form = n("form", undefined, "v4-simulation-form"),
+        amount = n("input");
+      amount.type = "number";
+      amount.name = "amount";
+      amount.min = ".01";
+      amount.step = ".01";
+      amount.required = true;
+      amount.placeholder = "Ex. 250";
+      const account = n("select");
+      account.name = "account_id";
+      for (const a of current.accounts) account.add(new Option(a.name, a.id));
+      const defaultAccount =
+        current.accounts.find(
+          (a) => a.id === current.setup70?.scope?.account_id,
+        ) || current.accounts.find((a) => a.included && a.kind !== "credit");
+      if (defaultAccount) account.value = defaultAccount.id;
+      const when = n("input");
+      when.type = "date";
+      when.name = "date";
+      when.required = true;
+      when.min = current.forecast[0].date;
+      when.max = current.forecast.at(-1).date;
+      when.value =
+        kind === "purchase"
+          ? when.min
+          : row.date < when.min
+            ? when.min
+            : row.date;
+      if (preset) {
+        amount.value = preset.amount;
+        account.value = preset.account_id;
+        when.value =
+          preset.date < when.min
+            ? when.min
+            : preset.date > when.max
+              ? when.max
+              : preset.date;
+        inner.append(
+          n(
+            "p",
+            "Scénario enregistré au " +
+              label(preset.date) +
+              ". Vérifiez la date proposée et relancez la comparaison.",
+            "v4-footnote",
+          ),
+        );
+      }
+      const period = n("select");
+      period.name = "horizon";
+      period.setAttribute("aria-label", "Période de simulation");
+      for (const days of [30, 60, 90])
+        period.add(new Option(days + " jours", days));
+      period.value = String(
+        [30, 60, 90].includes(preset?.horizon) ? preset.horizon : 30,
+      );
+      if (
+        preset &&
+        when.value > current.forecast[Number(period.value) - 1].date
+      )
+        period.value = String(
+          [30, 60, 90].find(
+            (days) => when.value <= current.forecast[days - 1].date,
+          ) || 90,
+        );
+      const advanced = n("details", undefined, "purchase-options"),
+        advancedTitle = n("summary");
+      advanced.append(advancedTitle);
+      const note = n("p", undefined, "v4-footnote");
+      function accountNote() {
+        const a = current.accounts.find((a) => a.id === +account.value);
+        advancedTitle.textContent =
+          "Options · " + (a?.name || "Compte à choisir");
+        note.textContent =
+          a?.kind === "credit"
+            ? "Sur carte : le remboursement calculé est pris en compte si un plan existe. Sinon, prévoyez son remboursement séparément. Aucune réserve automatique de carte."
+            : !a?.included
+              ? "Ce compte est exclu du disponible global. Son solde propre reste pris en compte dans la simulation."
+              : "L’achat diminuera le solde bancaire et le disponible à cette date.";
+      }
+      account.onchange = accountNote;
+      if (kind === "purchase")
+        form.append(field("Montant de l’achat ($)", amount));
+      form.append(
+        field(kind === "purchase" ? "Date de l’achat" : "Nouvelle date", when),
+      );
+      if (kind === "purchase") {
+        form.append(field("Période de simulation", period));
+        advanced.append(field("Compte utilisé", account), note);
+        accountNote();
+        form.append(advanced);
+        const constrainDate = () => {
+          when.max = current.forecast[Number(period.value) - 1].date;
+          when.setCustomValidity(
+            when.value > when.max
+              ? "Allongez la période ou choisissez une date plus proche."
+              : "",
+          );
+        };
+        period.addEventListener("change", constrainDate);
+        when.addEventListener("input", constrainDate);
+        when.addEventListener("change", constrainDate);
+        constrainDate();
+      }
+      const error = n("p", undefined, "v4-error");
+      error.setAttribute("role", "alert");
+      const result = n("div", undefined, "v4-simulation-result");
+      result.setAttribute("role", "status");
+      const save = n(
+        "button",
+        kind === "purchase" ? "Vérifier cet achat" : "Comparer les prévisions",
+        "v4-button v4-primary",
+      );
+      save.type = "submit";
+      form.append(error, save, result);
+      inner.append(form);
+      form.oninput = (event) => {
+        if ([amount, account, when, period].includes(event.target)) {
+          requestId++;
+          result.replaceChildren();
+          error.textContent = "";
+        }
+      };
+      form.onchange = (event) => {
+        if ([amount, account, when, period].includes(event.target)) {
+          requestId++;
+          result.replaceChildren();
+        }
+      };
+      form.onsubmit = async (event) => {
+        event.preventDefault();
+        if (simBusy) return;
+        const ticket = ++requestId;
+        simBusy = true;
+        save.disabled = true;
+        error.textContent = "";
+        result.replaceChildren();
+        const payload =
+          kind === "purchase"
+            ? {
+                kind,
+                amount: Number(amount.value),
+                account_id: Number(account.value),
+                date: when.value,
+                horizon: Number(period.value),
+              }
+            : { kind, key: row.key, new_on: when.value };
+        try {
+          const response = await fetch("/api/simulate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            }),
+            out = await response.json();
+          if (!response.ok) throw Error(out.error || "Simulation impossible.");
+          if (ticket !== requestId || !sim.open) return;
+          const days = kind === "purchase" ? Number(period.value) : 90,
+            scenarioDays = out.scenario.slice(0, days),
+            original = out.baseline
+              .slice(0, days)
+              .reduce((a, b) => (a.safe_cents <= b.safe_cents ? a : b)),
+            low = scenarioDays.reduce((a, b) =>
+              a.safe_cents <= b.safe_cents ? a : b,
+            ),
+            high = scenarioDays.reduce((a, b) =>
+              a.safe_cents >= b.safe_cents ? a : b,
+            ),
+            end = scenarioDays.at(-1),
+            bank = out.scenario
+              .find((d) => d.date === when.value)
+              ?.account_balances.find((a) => a.id === +account.value),
+            used = current.accounts.find((a) => a.id === +account.value);
+          let extras = result;
+          if (kind === "purchase") {
+            const direct = used?.included && used.kind !== "credit",
+              verdict = n(
+                "h3",
+                direct
+                  ? low.safe_cents < 0
+                    ? "Non, un manque est prévu"
+                    : "Oui, selon vos prévisions"
+                  : "À vérifier avec le compte du disponible",
+              );
+            verdict.id = "purchase-verdict";
+            verdict.className =
+              direct && low.safe_cents >= 0 ? "purchase-yes" : "purchase-no";
+            result.append(
+              verdict,
+              n(
+                "p",
+                "Sur les " +
+                  days +
+                  " prochains jours, du " +
+                  label(scenarioDays[0].date) +
+                  " au " +
+                  label(end.date) +
+                  ", achat inclus.",
+                "v4-footnote",
+              ),
+            );
+            if (!direct)
+              result.append(
+                n(
+                  "p",
+                  "Ce compte ne débite pas directement le Safe-to-Spend. Choisissez votre compte bancaire inclus pour obtenir une réponse; un achat supplémentaire sur carte peut nécessiter un remboursement à prévoir.",
+                  "v4-footnote",
+                ),
+              );
+            if (low.safe_cents < 0)
+              result.append(
+                n(
+                  "p",
+                  "Manque prévu : " +
+                    cash(-low.safe_cents) +
+                    " le " +
+                    label(low.date) +
+                    ".",
+                  "purchase-no",
+                ),
+              );
+            const metrics = n("div", undefined, "purchase-extrema");
+            for (const [id, title, point] of [
+              ["purchase-low", "Le plus bas", low],
+              ["purchase-high", "Le plus haut", high],
+            ]) {
+              const card = n("div");
+              card.id = id;
+              card.append(
+                n("span", title),
+                n("strong", cash(point.safe_cents)),
+                n("small", label(point.date)),
+              );
+              metrics.append(card);
+            }
+            result.append(metrics);
+            extras = n("details", undefined, "purchase-details");
+            extras.append(n("summary", "Détails et scénario enregistré"));
+            result.append(extras);
+            extras.append(
+              n(
+                "p",
+                "Minimum sans cet achat : " +
+                  cash(original.safe_cents) +
+                  ". Disponible en fin de période avec cet achat : " +
+                  cash(end.safe_cents) +
+                  ".",
+                "v4-footnote",
+              ),
+            );
+          } else
+            result.append(
+              n(
+                "h3",
+                low.safe_cents < 0
+                  ? "Un manque est prévu dans ce scénario"
+                  : "Le disponible global reste au-dessus de zéro",
+              ),
+              n(
+                "p",
+                "Minimum sur 90 jours : " +
+                  cash(low.safe_cents) +
+                  " le " +
+                  label(low.date) +
+                  ". Sans simulation : " +
+                  cash(original.safe_cents) +
+                  ".",
+              ),
+              n(
+                "p",
+                "Disponible en fin de période : " + cash(end.safe_cents) + ".",
+              ),
+            );
+          if (kind === "purchase" && bank)
+            extras.append(
+              n(
+                "p",
+                accountName(+account.value) +
+                  " à la date de l’achat : " +
+                  cash(bank.balance_cents) +
+                  (used?.kind === "credit" ? " dûs." : "."),
+              ),
+            );
+          extras.append(
+            n(
+              "p",
+              "Selon les montants et échéances saisis, en fin de journée. Une dépense déjà couverte par une enveloppe ne doit pas être ajoutée une deuxième fois.",
+              "v4-footnote",
+            ),
+            b(
+              "Voir les deux courbes",
+              () => {
+                scenario = out;
+                horizon = days;
+                selected = when.value;
+                sim.close();
+                navigate("prevision");
+                drawForecast();
+                drawCalendar();
+              },
+              "v4-button",
+            ),
+          );
+          if (kind === "purchase") {
+            const name = n("input");
+            name.id = "v41-scenario-name";
+            name.maxLength = 60;
+            name.placeholder = "Ex. Achat après la paie";
+            const saveScenario = b(
+              "Enregistrer ce scénario",
+              async () => {
+                saveScenario.disabled = true;
+                error.textContent = "";
+                try {
+                  const response = await fetch("/api/support/scenarios", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ name: name.value, payload }),
+                    }),
+                    out = await response.json();
+                  if (!response.ok) throw Error(out.error);
+                  runtime.render(out);
+                  sim.close();
+                } catch (e) {
+                  error.textContent = e.message;
+                } finally {
+                  saveScenario.disabled = false;
+                }
+              },
+              "v4-button",
+            );
+            extras.append(field("Nom du scénario", name), saveScenario);
+          }
+          if (kind === "move")
+            result.append(
+              b(
+                "Appliquer ce report…",
+                () => {
+                  sim.close();
+                  window.budgetPlanningAction(row.key, "move");
+                  const input = $("planning-action-dialog").querySelector(
+                    '[name="new_on"]',
+                  );
+                  if (input) input.value = when.value;
+                },
+                "v4-button v4-primary",
+              ),
+            );
+        } catch (err) {
+          if (ticket === requestId) error.textContent = err.message;
+        } finally {
+          simBusy = false;
+          save.disabled = false;
+        }
+      };
+      sim.showModal();
+      requestAnimationFrame(() => form.querySelector("input")?.focus());
+    }
+    function openMove(row) {
+      openSimulation("move", row);
+    }
+    $("v4-sim-open").onclick = () => openSimulation();
+    sim.addEventListener("close", () => {
+      requestId++;
+    });
+    document.addEventListener("budget:planning-action", (event) => {
+      if (event.detail.action === "move" && dayFor(event.detail.new_on)) {
+        calendarDate = anchor = event.detail.new_on;
+        drawCalendar();
+      }
+    });
+    window.budgetExploreForecast = (date, days = 30) => {
+      horizon = [30, 60, 90].includes(days) ? days : 30;
+      choose(date);
+      drawForecast();
+      navigate("prevision");
+    };
+    window.budgetExploreCalendar = (date) => {
+      calendarDate = anchor = date;
+      drawCalendar();
+      navigate("calendrier");
+    };
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      current = s;
+      scenario = null;
+      requestId++;
+      if (sim.open) sim.close();
+      drawForecast();
+      drawCalendar();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      current = runtime.state;
+      drawForecast();
+      drawCalendar();
+    }
+  })();
+}

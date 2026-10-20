@@ -20,7 +20,8 @@ try:
    page.set_viewport_size({'width':width,'height':1000});navigate(page,'enveloppes');card.get_by_role('button',name='Ajuster l’enveloppe',exact=True).click();expect(envelope.locator('[name="forecast_spend"]')).to_have_value('false');assert dialog.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width
    if width==390:dialog.screenshot(path=str(images/'budget-reserve-iphone.png'))
    envelope.locator('[name="forecast_spend"]').select_option('true');expect(envelope.locator('[name="forecast_account_id"]')).to_be_enabled();envelope.locator('[name="forecast_spend"]').select_option('false');dialog.get_by_role('button',name='Fermer',exact=True).click()
-   navigate(page,'transactions');page.get_by_role('button',name='Gérer les catégories',exact=True).click();expect(form).to_be_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
+   navigate(page,'transactions');page.get_by_role('button',name='Gérer les catégories',exact=True).click();page.get_by_role('button',name='+ Catégorie',exact=True).click();page.locator('#category-manager').evaluate('(e)=>e.open=true');expect(form).to_be_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
+   if width!=1440:page.locator('#category-tools-dialog').get_by_role('button',name='Fermer',exact=True).click()
   page.set_viewport_size({'width':390,'height':844});form.scroll_into_view_if_needed();page.screenshot(path=str(images/'categories-iphone.png'));assert f.get('/api/backup/export')['tables']==before;assert not errors,errors;browser.close()
  print('PASS: v4.3, category renaming from transactions, historic labels and balances preserved; monthly reserved budget preset, projected reservation without bank payment, current reserve and actual spending counted once; five responsive widths, both modes, no browsing mutations or JavaScript errors.')
  print('Captures fictives :',images)

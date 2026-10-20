@@ -1,23 +1,307 @@
-/* Conjoint spending, credit cards and personal transfers. No bank ledger migration. */
-(()=>{
- const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;},button=(label,fn,cls='secondary')=>{const b=node('button',label,cls);b.type='button';b.onclick=fn;return b;};
- let latest;
- async function request(url,data){const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),s=await response.json();if(!response.ok)throw Error(s.error||'Action impossible.');return s;}
- const panel=node('article',undefined,'v70-card');panel.id='banking-settings';panel.append(node('h3','Conjoint, cartes et virements personnels'),node('p','Payez vos dépenses depuis Conjoint, CIBC MasterCard, Capital One MasterCard ou VISA Desjardins. Les autres comptes restent accessibles pour vos virements personnels.'),button('Configurer mes comptes de dépenses',open,'primary'));$('section-comptes').prepend(panel);
- const dialog=node('dialog',undefined,'editor-dialog v70-reset-dialog');dialog.id='v71-banking-dialog';dialog.setAttribute('aria-label','Configurer les comptes de dépenses');const body=node('div',undefined,'dialog-inner');dialog.append(body);document.body.append(dialog);
- window.budgetOpenBankingSetup=open;
- function open(){if(!latest)return;body.replaceChildren();const header=node('div',undefined,'dialog-heading');header.append(node('h2','Vos comptes de dépenses'),button('Fermer',()=>dialog.close()));body.append(header,node('p','Choisissez Conjoint et vos cartes existantes. Ajoutez d’abord les comptes manquants dans Comptes, avec leur solde actuel. Aucun compte ni frais bancaire n’est créé automatiquement.'));
- const form=node('form',undefined,'v70-form'),joint=node('select');joint.required=true;joint.setAttribute('aria-label','Compte conjoint');joint.add(new Option('Choisir Conjoint',''));for(const a of latest.accounts.filter(a=>a.kind!=='credit'))joint.add(new Option(a.name,a.id));joint.value=latest.banking71.account_id||latest.setup70.scope?.account_id||latest.setup70.suggested_account_id||'';const label=node('label','Compte conjoint');label.append(joint);form.append(label);const cards=node('fieldset');cards.append(node('legend','Cartes utilisées pour les dépenses'));for(const a of latest.accounts.filter(a=>a.kind==='credit')){const input=node('input');input.type='checkbox';input.value=a.id;input.name='credit';input.checked=latest.banking71.enabled?latest.banking71.expense_account_ids.includes(a.id):/cibc|capital\s*one|desjardins/i.test(a.name);const l=node('label',a.name);l.prepend(input);cards.append(l);}if(!cards.querySelector('input'))cards.append(node('p','Aucune carte enregistrée. Vous pouvez commencer avec Conjoint et ajouter vos cartes ensuite.'));form.append(cards);
- const preview=node('div'),error=node('p',undefined,'v70-error');error.setAttribute('role','alert');const next=node('button','Voir les changements','primary');next.type='submit';form.append(next,error,preview);body.append(form);if(!dialog.open)dialog.showModal();let ticket=0;form.addEventListener('change',e=>{if(e.target!==joint&&!cards.contains(e.target))return;ticket++;preview.replaceChildren();error.textContent='';});
- form.onsubmit=async e=>{e.preventDefault();next.disabled=true;error.textContent='';preview.replaceChildren();const stamp=++ticket,payload={account_id:Number(joint.value),credit_ids:[...cards.querySelectorAll('input:checked')].map(i=>Number(i.value)),suspend_transfer_ids:[]};try{const p=await request('/api/banking/preview',payload);if(stamp!==ticket)return;preview.append(node('h3','Vérifiez avant d’appliquer'),node('p',p.rules.length+' facture(s) récurrente(s) et '+p.envelopes.length+' enveloppe(s) à paiement daté seront affectées à '+p.joint+'. Les montants, les dates, les soldes et les opérations réelles restent inchangés. Les anciens frais bancaires distincts ne sont pas fusionnés : suspendez les frais personnels devenus inutiles dans Récurrences pour ne conserver que le forfait Conjoint.'));for(const r of [...p.rules,...p.envelopes])preview.append(node('p',(r.description||r.name)+' : '+(p.accounts.find(a=>a.id===(r.account_id??r.forecast_account_id))?.name||'Non attribué')+' → '+p.joint));
- const stop=node('fieldset');if(p.transfers.length){stop.append(node('legend','Anciens virements réguliers vers les comptes personnels'),node('p','Ils restent actifs si vous ne les cochez pas. Cochez uniquement ceux qui servaient aux anciennes factures personnelles. Vous pourrez toujours créer de nouveaux virements personnels.'));for(const r of p.transfers){const input=node('input');input.type='checkbox';input.value=r.id;const l=node('label',r.description+' · '+(r.amount_cents/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}));l.prepend(input);stop.append(l);}preview.append(stop);}
- if(p.blocked_links.length){preview.append(node('p','Certaines factures à déplacer ont encore un lien de financement v7.0. Retirez ces liens dans Bien démarrer, étape 7, puis recommencez. Les écritures bancaires sont conservées.'));return;}
- preview.append(node('p','Les virements vers un compte personnel réduisent le disponible du Conjoint. Les achats sur carte augmentent la dette; le remboursement depuis Conjoint réduit le disponible. Aucun montant de remboursement n’est gelé automatiquement.'),node('p','Le paiement Interac de la marge se saisit comme une dépense de Conjoint, catégorie Marge de crédit, si la marge n’est pas suivie comme compte dans le logiciel. Si elle est suivie, utilisez un virement de remboursement pour actualiser les deux soldes.'));
- const apply=button('Appliquer cette configuration',async()=>{apply.disabled=true;error.textContent='';try{const choices={...payload,suspend_transfer_ids:[...stop.querySelectorAll('input:checked')].map(i=>Number(i.value))};let token=p.token;if(choices.suspend_transfer_ids.length){const reviewed=await request('/api/banking/preview',choices);if(reviewed.fingerprint!==p.fingerprint||reviewed.rules.map(r=>r.id).join()!==p.rules.map(r=>r.id).join()||reviewed.envelopes.map(r=>r.id).join()!==p.envelopes.map(r=>r.id).join())throw Error('Les changements ont évolué. Relancez l’aperçu.');token=reviewed.token;}render(await request('/api/banking/apply',{...choices,token,confirm:true}));dialog.close();}catch(err){error.textContent=err.message;}finally{apply.disabled=false;}},'primary');preview.append(apply);
- }catch(err){error.textContent=err.message;}finally{next.disabled=false;}};
- }
- function filters(){if(!latest)return;const config=latest.banking71;for(const [id,type] of [['account-options','transaction-direction'],['rec-account','rec-type']]){const select=$(id),expense=$(type).value==='expense';let changed=false;for(const o of select.options){const disabled=config.enabled&&expense&&!config.expense_account_ids.includes(Number(o.value));o.hidden=o.disabled=disabled;}if(config.enabled&&expense&&(!select.selectedOptions.length||select.selectedOptions[0].disabled)){select.value=String(config.account_id);changed=true;}if(changed)select.dispatchEvent(new Event('change',{bubbles:true}));}}
- for(const id of ['transaction-direction','rec-type'])$(id).addEventListener('change',filters);for(const id of ['transaction','recurring'])$(id).addEventListener('reset',()=>queueMicrotask(filters));
- const oldOpen=window.appOpenEditor;window.appOpenEditor=function(key){oldOpen(key);filters();};
- const oldRender=render;render=function(s){oldRender(s);latest=s;filters();};if(typeof state!=='undefined'&&state){latest=state;filters();}
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* Conjoint spending, credit cards and personal transfers. No bank ledger migration. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      node = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      },
+      button = (label, fn, cls = "secondary") => {
+        const b = node("button", label, cls);
+        b.type = "button";
+        b.onclick = fn;
+        return b;
+      };
+    let latest;
+    async function request(url, data) {
+      const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }),
+        s = await response.json();
+      if (!response.ok) throw Error(s.error || "Action impossible.");
+      return s;
+    }
+    const panel = node("article", undefined, "v70-card");
+    panel.id = "banking-settings";
+    panel.append(
+      node("h3", "Conjoint, cartes et virements personnels"),
+      node(
+        "p",
+        "Payez vos dépenses depuis Conjoint, CIBC MasterCard, Capital One MasterCard ou VISA Desjardins. Les autres comptes restent accessibles pour vos virements personnels.",
+      ),
+      button("Configurer mes comptes de dépenses", open, "primary"),
+    );
+    $("section-comptes").prepend(panel);
+    const dialog = node("dialog", undefined, "editor-dialog v70-reset-dialog");
+    dialog.id = "v71-banking-dialog";
+    dialog.setAttribute("aria-label", "Configurer les comptes de dépenses");
+    const body = node("div", undefined, "dialog-inner");
+    dialog.append(body);
+    document.body.append(dialog);
+    window.budgetOpenBankingSetup = open;
+    function open() {
+      if (!latest) return;
+      body.replaceChildren();
+      const header = node("div", undefined, "dialog-heading");
+      header.append(
+        node("h2", "Vos comptes de dépenses"),
+        button("Fermer", () => dialog.close()),
+      );
+      body.append(
+        header,
+        node(
+          "p",
+          "Choisissez Conjoint et vos cartes existantes. Ajoutez d’abord les comptes manquants dans Comptes, avec leur solde actuel. Aucun compte ni frais bancaire n’est créé automatiquement.",
+        ),
+      );
+      const form = node("form", undefined, "v70-form"),
+        joint = node("select");
+      joint.required = true;
+      joint.setAttribute("aria-label", "Compte conjoint");
+      joint.add(new Option("Choisir Conjoint", ""));
+      for (const a of latest.accounts.filter((a) => a.kind !== "credit"))
+        joint.add(new Option(a.name, a.id));
+      joint.value =
+        latest.banking71.account_id ||
+        latest.setup70.scope?.account_id ||
+        latest.setup70.suggested_account_id ||
+        "";
+      const label = node("label", "Compte conjoint");
+      label.append(joint);
+      form.append(label);
+      const cards = node("fieldset");
+      cards.append(node("legend", "Cartes utilisées pour les dépenses"));
+      for (const a of latest.accounts.filter((a) => a.kind === "credit")) {
+        const input = node("input");
+        input.type = "checkbox";
+        input.value = a.id;
+        input.name = "credit";
+        input.checked = latest.banking71.enabled
+          ? latest.banking71.expense_account_ids.includes(a.id)
+          : /cibc|capital\s*one|desjardins/i.test(a.name);
+        const l = node("label", a.name);
+        l.prepend(input);
+        cards.append(l);
+      }
+      if (!cards.querySelector("input"))
+        cards.append(
+          node(
+            "p",
+            "Aucune carte enregistrée. Vous pouvez commencer avec Conjoint et ajouter vos cartes ensuite.",
+          ),
+        );
+      form.append(cards);
+      const preview = node("div"),
+        error = node("p", undefined, "v70-error");
+      error.setAttribute("role", "alert");
+      const next = node("button", "Voir les changements", "primary");
+      next.type = "submit";
+      form.append(next, error, preview);
+      body.append(form);
+      if (!dialog.open) dialog.showModal();
+      let ticket = 0;
+      form.addEventListener("change", (e) => {
+        if (e.target !== joint && !cards.contains(e.target)) return;
+        ticket++;
+        preview.replaceChildren();
+        error.textContent = "";
+      });
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        next.disabled = true;
+        error.textContent = "";
+        preview.replaceChildren();
+        const stamp = ++ticket,
+          payload = {
+            account_id: Number(joint.value),
+            credit_ids: [...cards.querySelectorAll("input:checked")].map((i) =>
+              Number(i.value),
+            ),
+            suspend_transfer_ids: [],
+          };
+        try {
+          const p = await request("/api/banking/preview", payload);
+          if (stamp !== ticket) return;
+          preview.append(
+            node("h3", "Vérifiez avant d’appliquer"),
+            node(
+              "p",
+              p.rules.length +
+                " facture(s) récurrente(s) et " +
+                p.envelopes.length +
+                " enveloppe(s) à paiement daté seront affectées à " +
+                p.joint +
+                ". Les montants, les dates, les soldes et les opérations réelles restent inchangés. Les anciens frais bancaires distincts ne sont pas fusionnés : suspendez les frais personnels devenus inutiles dans Récurrences pour ne conserver que le forfait Conjoint.",
+            ),
+          );
+          for (const r of [...p.rules, ...p.envelopes])
+            preview.append(
+              node(
+                "p",
+                (r.description || r.name) +
+                  " : " +
+                  (p.accounts.find(
+                    (a) => a.id === (r.account_id ?? r.forecast_account_id),
+                  )?.name || "Non attribué") +
+                  " → " +
+                  p.joint,
+              ),
+            );
+          const stop = node("fieldset");
+          if (p.transfers.length) {
+            stop.append(
+              node(
+                "legend",
+                "Anciens virements réguliers vers les comptes personnels",
+              ),
+              node(
+                "p",
+                "Ils restent actifs si vous ne les cochez pas. Cochez uniquement ceux qui servaient aux anciennes factures personnelles. Vous pourrez toujours créer de nouveaux virements personnels.",
+              ),
+            );
+            for (const r of p.transfers) {
+              const input = node("input");
+              input.type = "checkbox";
+              input.value = r.id;
+              const l = node(
+                "label",
+                r.description +
+                  " · " +
+                  (r.amount_cents / 100).toLocaleString("fr-CA", {
+                    style: "currency",
+                    currency: "CAD",
+                  }),
+              );
+              l.prepend(input);
+              stop.append(l);
+            }
+            preview.append(stop);
+          }
+          if (p.blocked_links.length) {
+            preview.append(
+              node(
+                "p",
+                "Certaines factures à déplacer ont encore un lien de financement v7.0. Retirez ces liens dans Bien démarrer, étape 7, puis recommencez. Les écritures bancaires sont conservées.",
+              ),
+            );
+            return;
+          }
+          preview.append(
+            node(
+              "p",
+              "Les virements vers un compte personnel réduisent le disponible du Conjoint. Les achats sur carte augmentent la dette; le remboursement depuis Conjoint réduit le disponible. Aucun montant de remboursement n’est gelé automatiquement.",
+            ),
+            node(
+              "p",
+              "Le paiement Interac de la marge se saisit comme une dépense de Conjoint, catégorie Marge de crédit, si la marge n’est pas suivie comme compte dans le logiciel. Si elle est suivie, utilisez un virement de remboursement pour actualiser les deux soldes.",
+            ),
+          );
+          const apply = button(
+            "Appliquer cette configuration",
+            async () => {
+              apply.disabled = true;
+              error.textContent = "";
+              try {
+                const choices = {
+                  ...payload,
+                  suspend_transfer_ids: [
+                    ...stop.querySelectorAll("input:checked"),
+                  ].map((i) => Number(i.value)),
+                };
+                let token = p.token;
+                if (choices.suspend_transfer_ids.length) {
+                  const reviewed = await request(
+                    "/api/banking/preview",
+                    choices,
+                  );
+                  if (
+                    reviewed.fingerprint !== p.fingerprint ||
+                    reviewed.rules.map((r) => r.id).join() !==
+                      p.rules.map((r) => r.id).join() ||
+                    reviewed.envelopes.map((r) => r.id).join() !==
+                      p.envelopes.map((r) => r.id).join()
+                  )
+                    throw Error(
+                      "Les changements ont évolué. Relancez l’aperçu.",
+                    );
+                  token = reviewed.token;
+                }
+                runtime.render(
+                  await request("/api/banking/apply", {
+                    ...choices,
+                    token,
+                    confirm: true,
+                  }),
+                );
+                dialog.close();
+              } catch (err) {
+                error.textContent = err.message;
+              } finally {
+                apply.disabled = false;
+              }
+            },
+            "primary",
+          );
+          preview.append(apply);
+        } catch (err) {
+          error.textContent = err.message;
+        } finally {
+          next.disabled = false;
+        }
+      };
+    }
+    function filters() {
+      if (!latest) return;
+      const config = latest.banking71;
+      for (const [id, type] of [
+        ["account-options", "transaction-direction"],
+        ["rec-account", "rec-type"],
+      ]) {
+        const select = $(id),
+          expense = $(type).value === "expense";
+        let changed = false;
+        for (const o of select.options) {
+          const disabled =
+            config.enabled &&
+            expense &&
+            !config.expense_account_ids.includes(Number(o.value));
+          o.hidden = o.disabled = disabled;
+        }
+        if (
+          config.enabled &&
+          expense &&
+          (!select.selectedOptions.length || select.selectedOptions[0].disabled)
+        ) {
+          select.value = String(config.account_id);
+          changed = true;
+        }
+        if (changed)
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+    for (const id of ["transaction-direction", "rec-type"])
+      $(id).addEventListener("change", filters);
+    for (const id of ["transaction", "recurring"])
+      $(id).addEventListener("reset", () => queueMicrotask(filters));
+    const oldOpen = window.appOpenEditor;
+    window.appOpenEditor = function (key) {
+      oldOpen(key);
+      filters();
+    };
+    const oldRender = runtime.render;
+    runtime.render = function (s) {
+      oldRender(s);
+      latest = s;
+      filters();
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      latest = runtime.state;
+      filters();
+    }
+  })();
+}

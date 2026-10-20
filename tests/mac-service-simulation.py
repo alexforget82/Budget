@@ -11,7 +11,7 @@ workspace=Path(tempfile.mkdtemp(prefix='budget-service-sim-'));home=workspace/'A
 with socket.socket() as sock:sock.bind(('127.0.0.1',0));private_port=sock.getsockname()[1]
 try:
  for p in api.ROOT.iterdir():
-  if p.suffix in ['.js','.html','.css'] or p.name in ['package.json','Acces prive iPhone.command']:shutil.copy2(p,incoming/p.name)
+  if p.suffix in ['.js','.html','.css','.svg','.png','.webmanifest'] or p.name in ['package.json','Acces prive iPhone.command']:shutil.copy2(p,incoming/p.name)
  shutil.copytree(f.dir/'data',incoming/'data')
  # The fixture redirects only platform-specific dependencies and fixed ports.
  script=(incoming/'mac-service.js').read_text().replace("process.platform!=='darwin'","false").replace('home=os.homedir()','home='+json.dumps(str(home))).replace("'/bin/launchctl'",json.dumps(str(control))).replace("'/usr/bin/open'","'/usr/bin/true'").replace("'/usr/bin/caffeinate'","'/usr/bin/true'").replace('127.0.0.1:3030','127.0.0.1:'+str(port)).replace("PORT:'3030'","PORT:'"+str(port)+"'")

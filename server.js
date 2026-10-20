@@ -1,7 +1,7 @@
 import { readJson, isJsonRequest } from "./http-body.js";
 import { securityHeaders, authorizeRequest } from "./http-security.js";
 import { createReadRoutes } from "./routes-read.js";
-import { staticFiles, mime } from "./http-assets.js";
+import { assetName, mime } from "./http-assets.js";
 import {
   lastWeekday,
   easter,
@@ -690,18 +690,16 @@ function snapshot() {
       .filter((e) => e.reserved_cents > 0)
       .map((e) => ({ name: e.name, reserved_cents: e.reserved_cents })),
     windows: { week_end: windows.week_end, payday_date: windows.payday_date },
-    events: projected
-      .slice(0, 30)
-      .flatMap((d) =>
-        d.events
-          .filter((ev) => ev.sts_impact_cents)
-          .map((ev) => ({
-            date: d.date,
-            description: ev.description,
-            impact_cents: ev.sts_impact_cents,
-            type: ev.type,
-          })),
-      ),
+    events: projected.slice(0, 30).flatMap((d) =>
+      d.events
+        .filter((ev) => ev.sts_impact_cents)
+        .map((ev) => ({
+          date: d.date,
+          description: ev.description,
+          impact_cents: ev.sts_impact_cents,
+          type: ev.type,
+        })),
+    ),
   };
   return {
     ...features.state(),
@@ -1649,8 +1647,8 @@ const handleRequest = async (req, res) => {
       return await demonstration.proxy(req, res);
     }
 
-    if (req.method === "GET" && staticFiles.has(req.url)) {
-      const name = staticFiles.get(req.url);
+    if (req.method === "GET" && assetName(req.url)) {
+      const name = assetName(req.url);
       let body;
       try {
         body = fs.readFileSync(new URL("./" + name, import.meta.url));
@@ -2107,7 +2105,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.3.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (11.4.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

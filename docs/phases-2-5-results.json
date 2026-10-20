@@ -1,0 +1,325 @@
+{
+  "version": "11.4.0",
+  "date": "2026-10-20",
+  "environment": {
+    "node": "24.19.0",
+    "python": "3.12.14",
+    "browser": "Chromium",
+    "platform": "Linux; Mac service simulated"
+  },
+  "financial_reference_commit": "731a58b68532e67ac9f63e6765752db34ee32d9c",
+  "sqlite_user_version": 1,
+  "node": {
+    "passed": 80,
+    "failed": 0,
+    "skipped": 0
+  },
+  "api": {
+    "passed": 183,
+    "failed": 0
+  },
+  "additional_python": {
+    "passed": 55,
+    "failed": 0,
+    "scripts": [
+      {
+        "test": "benchmark-v10.py",
+        "code": 0,
+        "seconds": 4.1
+      },
+      {
+        "test": "budget-v41-ui.py",
+        "code": 0,
+        "seconds": 9.6
+      },
+      {
+        "test": "budget-v43-ui.py",
+        "code": 0,
+        "seconds": 6.7
+      },
+      {
+        "test": "budget-v44-ui.py",
+        "code": 0,
+        "seconds": 20.7
+      },
+      {
+        "test": "budget-v50-ui.py",
+        "code": 0,
+        "seconds": 6.1
+      },
+      {
+        "test": "budget-v51-ui.py",
+        "code": 0,
+        "seconds": 2.7
+      },
+      {
+        "test": "budget-v53-ui.py",
+        "code": 0,
+        "seconds": 5.0
+      },
+      {
+        "test": "budget-v60-ui.py",
+        "code": 0,
+        "seconds": 5.9
+      },
+      {
+        "test": "budget-v61-ui.py",
+        "code": 0,
+        "seconds": 9.5
+      },
+      {
+        "test": "budget-v70-ui.py",
+        "code": 0,
+        "seconds": 5.0
+      },
+      {
+        "test": "budget-v71-ui.py",
+        "code": 0,
+        "seconds": 3.9
+      },
+      {
+        "test": "budget-v73-ui.py",
+        "code": 0,
+        "seconds": 3.8
+      },
+      {
+        "test": "budget-v74-ui.py",
+        "code": 0,
+        "seconds": 11.3
+      },
+      {
+        "test": "budget-v80-ui.py",
+        "code": 0,
+        "seconds": 14.4
+      },
+      {
+        "test": "budget-v81-ui.py",
+        "code": 0,
+        "seconds": 5.4
+      },
+      {
+        "test": "calendar-budget-v113-ui.py",
+        "code": 0,
+        "seconds": 4.4
+      },
+      {
+        "test": "card-envelope-protection-ui.py",
+        "code": 0,
+        "seconds": 14.8
+      },
+      {
+        "test": "card-payments-ui.py",
+        "code": 0,
+        "seconds": 16.0
+      },
+      {
+        "test": "categories-v45-ui.py",
+        "code": 0,
+        "seconds": 4.4
+      },
+      {
+        "test": "categories-v46-ui.py",
+        "code": 0,
+        "seconds": 11.8
+      },
+      {
+        "test": "categories-v512-ui.py",
+        "code": 0,
+        "seconds": 2.8
+      },
+      {
+        "test": "categories-v513-ui.py",
+        "code": 0,
+        "seconds": 2.9
+      },
+      {
+        "test": "categories-v52-ui.py",
+        "code": 0,
+        "seconds": 4.5
+      },
+      {
+        "test": "compact-register-ui.py",
+        "code": 0,
+        "seconds": 4.7
+      },
+      {
+        "test": "dashboard-daily-ui.py",
+        "code": 0,
+        "seconds": 1.9
+      },
+      {
+        "test": "dashboard-v47-ui.py",
+        "code": 0,
+        "seconds": 11.8
+      },
+      {
+        "test": "envelope-transfers-ui.py",
+        "code": 0,
+        "seconds": 11.9
+      },
+      {
+        "test": "essential-home-ui.py",
+        "code": 0,
+        "seconds": 5.2
+      },
+      {
+        "test": "forecast-ui.py",
+        "code": 0,
+        "seconds": 9.2
+      },
+      {
+        "test": "free-budgets-ui.py",
+        "code": 0,
+        "seconds": 11.0
+      },
+      {
+        "test": "installed-assets-ui.py",
+        "code": 0,
+        "seconds": 1.2
+      },
+      {
+        "test": "lunch-categories-ui.py",
+        "code": 0,
+        "seconds": 3.0
+      },
+      {
+        "test": "mac-service-simulation.py",
+        "code": 0,
+        "seconds": 1.4
+      },
+      {
+        "test": "migration-rollback-ui.py",
+        "code": 0,
+        "seconds": 2.4
+      },
+      {
+        "test": "planning-ui.py",
+        "code": 0,
+        "seconds": 19.8
+      },
+      {
+        "test": "planning-v4-ui.py",
+        "code": 0,
+        "seconds": 8.1
+      },
+      {
+        "test": "planning-workflow-ui.py",
+        "code": 0,
+        "seconds": 15.9
+      },
+      {
+        "test": "refactor-parity-ui.py",
+        "code": 0,
+        "seconds": 18.9
+      },
+      {
+        "test": "release-v92-ui.py",
+        "code": 0,
+        "seconds": 4.1
+      },
+      {
+        "test": "responsive-v501-ui.py",
+        "code": 0,
+        "seconds": 21.5
+      },
+      {
+        "test": "security-view-ui.py",
+        "code": 0,
+        "seconds": 1.3
+      },
+      {
+        "test": "setup-completion-ui.py",
+        "code": 0,
+        "seconds": 2.4
+      },
+      {
+        "test": "shared-owner-match-ui.py",
+        "code": 0,
+        "seconds": 1.7
+      },
+      {
+        "test": "shared-periods-ui.py",
+        "code": 0,
+        "seconds": 1.4
+      },
+      {
+        "test": "shared-tools-ui.py",
+        "code": 0,
+        "seconds": 2.1
+      },
+      {
+        "test": "sillage-2026-ui.py",
+        "code": 0,
+        "seconds": 13.2
+      },
+      {
+        "test": "sillage-ui.py",
+        "code": 0,
+        "seconds": 8.3
+      },
+      {
+        "test": "sillage-v10-ui.py",
+        "code": 0,
+        "seconds": 4.2
+      },
+      {
+        "test": "simple-purchase-ui.py",
+        "code": 0,
+        "seconds": 5.6
+      },
+      {
+        "test": "start-budget-ui.py",
+        "code": 0,
+        "seconds": 4.2
+      },
+      {
+        "test": "transaction-match-v111-ui.py",
+        "code": 0,
+        "seconds": 4.2
+      },
+      {
+        "test": "transaction-transfers-ui.py",
+        "code": 0,
+        "seconds": 3.8
+      },
+      {
+        "test": "transactions-ui.py",
+        "code": 0,
+        "seconds": 11.9
+      },
+      {
+        "test": "ui-smoke.py",
+        "code": 0,
+        "seconds": 7.1
+      },
+      {
+        "test": "workflows-ui.py",
+        "code": 0,
+        "seconds": 11.2
+      }
+    ]
+  },
+  "parity": {
+    "combinations": 40,
+    "visible_styles_identical": true,
+    "canonical_90_day_forecast_identical": true
+  },
+  "limits": [
+    "Fictitious temporary data only; no access to the Mac financial database.",
+    "Safari/iOS, Gatekeeper, real launchd and Tailscale Serve require Mac verification."
+  ],
+  "earlier_runs": [
+    {
+      "passed": 54,
+      "failed": 1,
+      "test": "categories-v46-ui.py",
+      "resolution": "Wait for the full async submission handler in the test."
+    },
+    {
+      "passed": 54,
+      "failed": 1,
+      "test": "setup-completion-ui.py",
+      "resolution": "Open mobile tools based on the requested responsive layout before clicking a relocated action."
+    }
+  ]
+}

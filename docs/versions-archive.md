@@ -1,0 +1,911 @@
+# Archives des notes et guides de versions
+
+Conservées depuis la documentation v11.3; certains numéros et parcours décrivent les anciennes versions.
+
+# Sillage 2026 — Votre argent, votre cap
+
+Application de budget locale, en français canadien, pour Mac. Vos données restent dans une base SQLite sur votre ordinateur. Node.js **22.13 ou plus** est requis; Node.js 24 LTS est recommandé. Aucun CDN, aucune compilation et aucune dépendance npm externe.
+
+```sh
+npm start
+```
+
+Ouvrez `http://127.0.0.1:3030`. Le serveur écoute uniquement sur l’interface locale. Il crée `data/` dans le dossier depuis lequel il est lancé. Les fichiers de l’application doivent rester ensemble.
+
+## v11.3.0 — Budget selon les occurrences du mois
+
+Les objectifs à la semaine et aux deux semaines utilisent maintenant les dates du mois : **4 ou 5 occurrences** à la semaine, **2 ou 3** aux deux semaines. Le montant saisi reste un montant par occurrence; il n’est plus multiplié par 52/12 ou 26/12. Par exemple, 1 168,05 $ donne 2 336,10 $ pour deux paies et 3 504,15 $ pour trois.
+
+Le calendrier vient automatiquement d’une récurrence compatible liée à la catégorie, ou d’une enveloppe liée. Dans **Budget → montant de la catégorie**, le choix **Calendrier des occurrences** permet de sélectionner explicitement une récurrence ou de saisir une seule date de référence. Les dates de la récurrence respectent les reports et les annulations d’occurrence; le montant unitaire du budget reste celui choisi. Les catégories et sous-catégories affichent le nombre retenu, et l’aperçu détaille les dates.
+
+Si un ancien objectif n’a pas de calendrier exploitable, il affiche **Calendrier à choisir** et le total est signalé incomplet. Aucune moyenne ni date arbitraire ne la remplace. Une date de référence est le début de la série : aucune occurrence n’est inventée avant cette date. La reconduction et la copie conservent cette référence et recalculent le nombre pour chaque mois. Les exceptions du mois de démarrage restent prioritaires.
+
+Cette correction concerne les fréquences à la semaine et aux deux semaines. Les budgets mensuels fixes et les conversions des autres fréquences conservent leur fonctionnement. Elle ne modifie pas les soldes, les réserves, les récurrences ou le Safe-to-Spend et ne crée aucune transaction. Les budgets suivant un calendrier ne sont pas fusionnés en un montant mensuel fixe qui ferait perdre les mois à occurrence supplémentaire.
+
+Installez le dossier complet avec **Mettre a jour Sillage.command**, puis rechargez entièrement Safari. Le nouveau module serveur `budget-calendar.js` est inclus et vérifié à l’installation. Les sécurités de la v11.2 sont conservées; les phases techniques suivantes ne sont pas engagées. Le retour à la v11.1 reste disponible, mais cette ancienne version retrouve aussi son ancien calcul en moyenne dans Budget.
+
+## v11.2.0 — étapes 0 et 1 uniquement
+
+Cette livraison centralise et numérote les migrations SQLite (`PRAGMA user_version`). Elle conserve les fonctions, les calculs et l’apparence de la v11.1. Une base existante est sauvegardée avec `VACUUM INTO` avant sa première prise en charge; les changements de schéma sont transactionnels. Une base inconnue ou plus récente est refusée plutôt que modifiée au hasard.
+
+Pour mettre à jour : **Applications → Sillage → Mettre a jour Sillage.command**, choisissez le dossier complet du nouveau ZIP, puis rechargez complètement Safari.
+
+**Retour à la v11.1 : Applications → Sillage → Revenir a Sillage 11.1.command.** Lors d’une mise à jour depuis la v11.1 officielle, son code complet est conservé et ses empreintes vérifiées avant l’arrêt du service. Le retour conserve les transactions actuelles et fait une sauvegarde SQLite supplémentaire. Ce n’est pas une restauration d’une ancienne copie de vos finances. Le raccourci est préparé avant le redémarrage du nouveau serveur, pour rester accessible si ce redémarrage échoue.
+
+[Procédure de retour et archive v11.1 figée](RETOUR-11.1.md) · [Résultats complets des étapes 0 et 1](phases-0-1-validation.md).
+
+## Sillage 2026 — v11.1.0
+
+À l’enregistrement manuel d’une dépense ou d’un revenu, Sillage propose les échéances compatibles à ±7 jours : même compte et sens, avec une enveloppe, une catégorie ou un libellé correspondant. Les opérations déjà rapprochées ne sont pas proposées. Le montant peut être différent.
+
+Choisissez **Associer** pour utiliser la transaction déjà enregistrée sans débiter le compte à nouveau, ou **Garder séparée**. Pour une échéance d’enveloppe, cochez **Aucun autre achat prévu pour cette période** seulement si les achats sont terminés; sinon, le reste reste prévu. Fermer la proposition conserve la transaction et laisse l’association manuelle disponible. Les imports et les modifications ne déclenchent pas cette proposition.
+
+Mise à jour : lancez **Mettre a jour Sillage.command**, puis rechargez complètement Safari pour charger le nouveau code. Les données et le lien iPhone existant sont conservés.
+
+## Sillage 2026 — v11.0.0
+
+[Aperçu du tableau de bord](sillage-2026-dashboard.png) · [Aperçu sur iPhone](sillage-2026-iphone.png) — données fictives.
+
+Une présentation harmonisée pour le tableau de bord, les transactions, le budget, les comptes, les enveloppes, la prévision, le calendrier et les fenêtres de saisie : palette bleu ardoise et sarcelle, cartes plus sobres, tableaux compacts, contrôles cohérents et contrastes vérifiés dans les thèmes clair et sombre.
+
+La barre latérale regroupe **Centre de vérification, Catégories, Virements, Importer CSV, Exceptions et Sauvegardes** dans **Outils et réglages**. Le menu s’ouvre aussi lorsque l’un des raccourcis existants mène à ces écrans. Sur iPhone, ouvrez d’abord **Choisir un écran**, puis le groupe d’outils. La recherche globale, l’annulation et l’état des données y sont également regroupés pour alléger l’en-tête. Les boutons, routes et calculs existants sont conservés. La barre du Budget sépare ses filtres et ses actions pour préserver une recherche lisible.
+
+Le nom **Sillage 2026** apparaît dans l’application et la vue iPhone simplifiée; la version technique **v11.0.0** reste en bas à gauche. Les raccourcis Mac existants et les dossiers internes conservent leur emplacement pour retrouver vos données et sauvegardes.
+
+Installez la mise à jour complète puis rechargez entièrement Safari. Les nouveaux fichiers `sillage-2026.css` et `sillage-2026.js` font partie de la version vérifiée par l’installateur. Aucun service externe ni police téléchargée n’est nécessaire.
+
+## V10 — traiter, prévoir et comprendre
+
+- **Transactions → Centre de transactions à traiter** : import CSV, filtres À vérifier et Sans catégorie, accès aux doublons possibles. Dans le menu « … » d’une transaction, **Associer au prévu** propose les échéances compatibles à ±7 jours. La validation réutilise la transaction existante; aucun second débit n’est créé. Le classement groupé et la sélection restent dans le registre compact.
+- **Enveloppes → Mes enveloppes en un coup d’œil** : objectif, achats, reste sur l’objectif et montant réellement protégé. **Achat réel** et **Prévoir un achat** préparent les formulaires existants avec l’enveloppe sélectionnée. Un financement d’un compte personnel conserve le type virement. Vérifiez toujours le montant, le compte et la date avant d’enregistrer.
+- **Tableau de bord → Scénarios** (aussi dans Prévision) : composez jusqu’à dix changements, achats imprévus et reports de dépenses ou revenus. Comparez le budget actuel avec votre brouillon et jusqu’à deux scénarios enregistrés sur 30/60/90 jours. Minimum, date, écart au minimum actuel et fin de période sont affichés. Les paramètres sont mémorisables, puis recalculés avec les données actuelles. Une simulation ne crée aucune transaction et les résultats s’effacent quand ses paramètres ou le budget changent.
+- **Bilan mensuel → Ce mois-ci : variations et abonnements à revoir** : variations par catégorie, paiements récurrents dont le libellé évoque un abonnement (à vérifier manuellement) et analyse à la demande des dépassements sur les trois derniers mois terminés. Les tendances budgétaires portent sur tous les comptes et les objectifs définis; une catégorie est signalée à partir de deux mois dépassés. Le mois en cours reste une comparaison provisoire.
+
+**Fluidité** : un état identique conserve les éléments affichés; une vraie modification déclenche toujours les mises à jour. La correction des contrastes parcourt les éléments visibles et la configuration Budget est lue une fois par calcul de synthèse, plutôt qu’une fois par occurrence. Aucun cache des soldes bancaires n’est ajouté côté serveur. Le gain mesuré concerne surtout les rafraîchissements inchangés et le travail du mode sombre, pas une garantie de temps pour tous les appareils.
+
+Mettez à jour le Mac puis rechargez complètement Safari pour charger le nouveau module. Les données et les liens privés existants sont conservés.
+
+## Disponible jour par jour — 9.3.1
+
+Le bouton **Disponible jour par jour**, en haut du tableau de bord, ouvre directement une liste défilante du Safe-to-Spend prévu en fin de journée, après les enveloppes et protections. Disponible en mode essentiel comme en mode détaillé. La liste reprend d’abord la période sélectionnée sur le tableau de bord; choisissez ensuite **30, 60 ou 90 jours** dans la fenêtre. Le disponible actuel reste indiqué séparément des montants de fin de journée. **Actualiser les montants** recharge les données; **Fermer** ou Échap revient au tableau de bord.
+
+## Accueil essentiel et alertes — 9.3.0
+
+L’accueil présente trois repères : **Disponible maintenant**, **Minimum prévu** et **Prochaine rentrée**. Les périodes 30/60/90 utilisent les mêmes calculs que les autres vues. Touchez un repère pour ouvrir son explication ou sa date. **Voir tous les tableaux** retrouve les graphiques, le maximum et votre disposition personnalisée; **Revenir à l’essentiel** simplifie à nouveau l’accueil. Ce choix est mémorisé sur l’appareil et ne modifie pas la disposition enregistrée. La personnalisation permet toujours d’accéder à tous les blocs.
+
+La section **À surveiller** affiche une alerte pour le premier solde négatif prévu, ou à défaut le premier passage sous 100 $, et les opérations dues aujourd’hui ou avant encore à confirmer. Le seuil est un repère visuel, sans réservation supplémentaire. Les points de configuration sont également accessibles. Chaque alerte ouvre la date concernée, la file de confirmation ou les réglages à vérifier. Les avertissements sont recalculés avec les données chargées et la période sélectionnée, sans notification externe ni modification bancaire. **Actualiser le tableau de bord** recharge les chiffres.
+
+Chaque ligne de transaction affiche maintenant sa **date réelle**, à côté du compte, dans les vues compacte et aérée et quel que soit le tri.
+
+## Transactions compactes — 9.2.1
+
+La liste est prioritaire : vue compacte par défaut, lignes resserrées, colonnes alignées, initiales décoratives retirées et résumé réduit à trois indicateurs. Recherche, compte, période et tri restent accessibles. Les vues enregistrées sont rangées dans **Filtres avancés**. Le bouton **Vue aérée / Vue compacte** mémorise la densité sur cet appareil.
+
+La pagination conserve 50 transactions par page; 80 opérations occupent deux pages. Les filtres, totaux et tris restent calculés sur l’ensemble des résultats. Les téléphones et petites tablettes conservent une disposition lisible avec des actions tactiles. Aucun calcul ni aucune donnée financière n’est modifié.
+
+## Disponible, banque et calendrier — 9.2.0
+
+Le numéro **v9.2.0** est visible en bas à gauche, sous **+ Transaction**.
+
+- **Comprendre le disponible** : cliquez sur le montant du tableau de bord (ou « Pourquoi ce montant ? »). La fiche indique le minimum sur la période sélectionnée et sa date. « Voir le calcul de ce minimum » explique les soldes, revenus, paiements, virements et protections à cette date, puis permet de suivre chaque variation quotidienne.
+- **Rapprocher avec ma banque** : accès direct depuis le tableau de bord. Choisissez le compte, entrez le solde bancaire actuel et comparez. Le guide explique le sens de l’écart, affiche les opérations du même montant à examiner et permet une recherche et un filtre sur les transactions non vérifiées. Les indices ne déclenchent aucune suppression ni correction automatique. Le parcours existant conserve la saisie d’une opération manquante, la correction explicite et la validation du rapprochement quand les soldes concordent.
+- **Du calendrier au réel** : sélectionnez une date puis **Payé**, **Reçu** ou **Effectué**. **Montant différent** ouvre directement la saisie du montant réel. Vérifiez le compte, la date et si l’opération est déjà enregistrée, puis validez. Une association remplace la prévision sans débiter de nouveau le compte; une nouvelle opération est enregistrée une seule fois. **Reporter** déplace une seule occurrence; **Simuler un report** reste disponible pour comparer avant d’appliquer. Les enveloppes en mode protection ne sont pas traitées comme des factures.
+
+Ces améliorations utilisent les calculs et actions existants. Les réserves d’enveloppes, le Budget global et l’accès simplifié restent compatibles. Après la mise à jour du Mac, rechargez complètement les pages Safari ouvertes.
+
+## Deux outils dans la vue iPhone simplifiée — 9.1.5
+
+**Puis-je me permettre cet achat ?** : entrez le montant et la date, puis touchez **Vérifier cet achat**. La réponse est simplement **Oui** ou **Non**, selon le Safe-to-Spend projeté sur la période sélectionnée (30, 60 ou 90 jours). Il s’agit d’un achat supplémentaire, non déjà couvert par une enveloppe. Le simulateur utilise le moteur de la vue complète et ne crée aucune transaction. Modifier un champ, la période ou les données financières efface l’ancienne réponse.
+
+**Disponible jour par jour** : ouvrez la liste repliable puis faites défiler les dates. Chaque ligne indique le Safe-to-Spend prévu en fin de journée, après les protections, pour la période sélectionnée. Aucun détail de compte ou de transaction n’est exposé. Le lien partagé reste limité à ces agrégats et à une simulation sans écriture.
+
+Après la mise à jour du Mac, rechargez entièrement la page Safari sur l’iPhone. Le lien reste le même.
+
+## Mêmes chiffres sur les deux vues — 9.1.4
+
+La vue simplifiée affiche désormais **Disponible maintenant**, puis **Safe-to-Spend le plus haut** et **Safe-to-Spend le plus bas** sur **30, 60 ou 90 jours**. Tous ces montants sont après protections des enveloppes et achats sur carte. Le tableau de bord complet affiche aussi **Maximum prévu** pour permettre une comparaison directe, en plus de son disponible et de son minimum.
+
+Les deux extrema et leurs dates suivent la période sélectionnée, à partir d’aujourd’hui. Le minimum peut rester identique alors que le maximum augmente : cela ne signifie pas que les boutons ne fonctionnent pas. Le disponible actuel, lui, ne dépend pas de l’horizon. Les données restent des agrégats de consultation, sans comptes nominatifs ni transactions dans l’accès simplifié. Les anciens champs bancaires sur 30 jours restent dans l’API pour compatibilité, mais ne sont plus utilisés par les nouvelles cartes.
+
+Après la mise à jour du Mac, **rechargez entièrement les deux pages Safari**. Le bouton Actualiser dans une ancienne page recharge ses chiffres, mais pas le nouveau code de présentation. Le lien de consultation reste le même.
+
+## Vue iPhone simplifiée — 9.1.3
+
+Le titre précise **Safe-to-Spend · minimum prévu** et indique la période sélectionnée. Comparez ce chiffre à **Minimum prévu sur 30/60/90 jours** du tableau de bord complet, plutôt qu’au **Disponible maintenant**. Un message explique lorsque plusieurs périodes retiennent le même minimum : changer d’horizon ne force pas le montant à changer.
+
+La sélection d’une période demande maintenant des chiffres frais au serveur. L’actualisation au retour dans Safari, au retour d’un onglet et chaque minute reste active; une réponse ancienne ne peut pas remplacer une réponse plus récente. Une erreur ou un lien révoqué efface aussi les dates et l’heure des anciennes valeurs. Les deux cartes bancaires haut/bas restent sur 30 jours, comme prévu initialement. Le lien et les trois seuls indicateurs autorisés restent inchangés.
+
+## Puis-je me permettre cet achat ? — 9.1.2
+
+Saisissez **montant et date**, puis cliquez **Vérifier cet achat**. Le compte bancaire du Safe-to-Spend est choisi par défaut, indépendamment de son nom. La réponse indique **Oui, selon vos prévisions** lorsque le minimum reste positif ou nul, ou **Non, un manque est prévu** avec la somme manquante et sa date.
+
+Les cartes **Le plus bas / Le plus haut** présentent le disponible prévu avec cet achat et leurs dates sur **30, 60 ou 90 prochains jours**. La période commence aujourd’hui; elle peut donc inclure des journées précédant la date de l’achat. Une date hors de la période choisie est refusée : allongez la période ou rapprochez la date. Le calcul utilise les soldes de fin de journée du moteur existant et ne garantit pas l’ordre des opérations dans la journée.
+
+L’achat doit être supplémentaire, **non déjà couvert par une enveloppe**. La simulation ne crée aucune transaction et ne réserve aucun montant. Le volet **Options** permet de consulter ou changer le compte; une carte ou un compte exclu ne reçoit pas un « oui » trompeur. **Détails et scénario enregistré** conserve l’accès aux courbes et à l’enregistrement facultatif du scénario, avec sa période. Les anciens scénarios restent utilisables. Les simulations de report d’échéance conservent leur parcours de confirmation existant.
+
+## Configuration terminée — 9.1.1
+
+Après **Terminer la configuration**, l’entrée **Bien démarrer** disparaît du menu, y compris après rechargement et sur iPhone. Pour retrouver le guide, ouvrez **État des données → Revoir la configuration**. Consulter ses étapes ne remet pas la configuration à zéro. Une remise à zéro du budget fait réapparaître le guide et son entrée de menu.
+
+## Budget du mois de démarrage — 9.1.0
+
+Dans **Budget**, sélectionnez octobre puis **Mois de démarrage** et indiquez le **18 octobre 2026**. Après confirmation, le réel de ce mois comprend uniquement les transactions du 18 à la fin du mois, sans suppression de l’historique. Le Bilan mensuel conserve sa vue sur le mois complet.
+
+Cliquez **Exception** dans les catégories ou sous-catégories concernées : saisissez un montant par paiement/paie et le nombre restant (ex. 175,53 $ × 1 pour Alex; 100 $ × 2 pour Jenny). Le choix **Total exceptionnel** permet un montant unique. Zéro occurrence est accepté. Les objectifs non ajustés conservent leur montant habituel; aucun prorata n’est imposé.
+
+Les sous-catégories s’additionnent sans ajouter un second budget parent. Les lignes indiquent l’exception et le montant habituel conservé. En novembre, vos fréquences et objectifs habituels s’appliquent automatiquement; une exception ne se reconduit pas. La copie du mois précédent reprend les objectifs habituels, jamais les exceptions de démarrage. Aucune transaction, réserve, récurrence ni déduction du Safe-to-Spend n’est créée.
+
+Rouvrez une exception pour la modifier ou la retirer. **Mois de démarrage → Retirer le mois de démarrage** rétablit le mois complet et retire toutes ses exceptions après confirmation. Les réglages sont sauvegardés, restaurables et annulables. Une fusion de catégories portant des exceptions demande de les retirer d’abord afin d’éviter une combinaison ambiguë.
+
+Aperçus : [exceptions d’octobre](demarrage-octobre-exceptions.png), [sur iPhone](demarrage-octobre-dark-iphone.png).
+
+## Correctif d’installation Sillage 2 — 9.0.1
+
+L’installateur copie désormais aussi les SVG, PNG et le manifeste de l’application. Un logo manquant ne peut plus arrêter le serveur : il reçoit une réponse 404 propre. Le dossier de mise à jour est contrôlé pour les ressources référencées par la page. Le correctif est vérifié sur une copie installée, y compris dans le navigateur, avec conservation du registre.
+
+Si la première installation de Sillage affiche une page sans styles, téléchargez à nouveau le ZIP puis utilisez votre raccourci permanent de mise à jour. Choisissez le nouveau dossier et actualisez Safari sur votre adresse Tailscale habituelle. Il n’est pas nécessaire de déplacer ou de supprimer vos données.
+
+## Deuxième génération : Sillage 2
+
+Sillage reprend votre budget existant dans une nouvelle identité : boussole originale, palette ardoise et menthe, icône iPhone et présentation harmonisée. Il reste local et privé. Aucun abonnement, aucune connexion bancaire ni compte externe supplémentaire n’est ajouté.
+
+- **Centre de vérification** : opérations à réviser, transactions sans catégorie, doublons possibles, échéances à confirmer, rapprochements et état des sauvegardes. Les compteurs portent sur tout le registre; les deux premières listes affichent les 20 plus récentes avec accès aux filtres complets. Les doublons sont limités aux 50 groupes les plus récents et ne sont jamais supprimés automatiquement.
+- **Registre** : tri sur tout l’historique par date, montant, description, compte ou catégorie; en-tête fixe sur grand écran, filtres combinés et vues mémorisées incluant le tri. Cliquez une description pour consulter le panneau latéral; le bouton Modifier conserve l’édition complète.
+- **Classement rapide** : catégorie, sous-catégorie et révision dans le panneau, avec aperçu et confirmation protégée contre les changements concurrents. Aucun montant, compte ou lien d’enveloppe n’est modifié par ce classement.
+- **Remboursement** : « Préparer un remboursement » crée un brouillon d’entrée sur le compte de l’achat. Vérifiez le compte, le montant et la date réels avant enregistrement. Il n’y a pas d’association automatique achat/remboursement ni de remise automatique dans une enveloppe. Le traitement des crédits sur carte reste celui du moteur existant.
+- **Bilan** : six mois d’entrées, sorties et écart, avec les catégories dont les achats changent le plus depuis le mois précédent. Les crédits incluent les remboursements et les sorties représentent les achats bruts; les virements sont exclus. Le mois en cours est signalé comme incomplet. La comparaison respecte le compte choisi; le centre de vérification reste global.
+- **Calendrier** : glissez un indicateur d’échéance prévue vers un jour futur de l’horizon pour ouvrir une simulation. Comparez les résultats puis confirmez le report dans le formulaire existant. Aucune écriture au dépôt. Le bouton Déplacer reste utilisable au clavier et sur iPhone; les opérations réelles ne se déplacent pas ainsi.
+- **Finition** : focus visible, raccourci `/` pour rechercher les transactions, messages de confirmation avec accès à l’annulation, mouvements réduits selon le système, lien vers l’état des données et icônes pour l’écran d’accueil. Le manifeste n’ajoute pas de fonctionnement hors ligne.
+
+Le Safe-to-Spend, les protections d’enveloppes, les achats sur carte et la vue iPhone simplifiée sont conservés. Le nouveau nom ne constitue pas une certification de sécurité ou une garantie de disponibilité bancaire.
+
+### Passer à Sillage
+
+1. Téléchargez et décompressez le ZIP du dépôt.
+2. Utilisez votre raccourci permanent **Mettre a jour Mon Budget.command** et choisissez le nouveau dossier.
+3. Actualisez Safari. Le bas du menu indique **Sillage 2**.
+4. Les nouveaux raccourcis se trouvent dans **~/Applications/Sillage**. Vos anciens raccourcis restent utilisables.
+
+Ne déplacez pas la base active. Les noms techniques des dossiers de données, du service et du paquet sont conservés pour assurer cette continuité. La version technique **9.0.0** permet la mise à jour depuis 8.1 sans être refusée comme une ancienne version; la nouvelle identité à l’écran est **Sillage 2**. Les fichiers JSON existants restent restaurables. Pour une nouvelle installation, utilisez **Installer Sillage.command**; pour une installation existante, utilisez la mise à jour ci-dessus. Une icône iPhone déjà ajoutée peut nécessiter d’être recréée depuis Safari pour reprendre le nouveau logo et le nom.
+
+Aperçus avec données fictives : [tableau de bord](sillage-dashboard-sombre.png), [centre de vérification](sillage-verification.png), [détail d’une opération](sillage-detail-operation.png), [comparaison mensuelle](sillage-comparaison.png), [iPhone](sillage-verification-iphone.png).
+
+## Nouveautés 8.1 : comprendre votre disponible
+
+Le tableau de bord met en avant **le disponible maintenant**, **le minimum prévu sur 30, 60 ou 90 jours** et **la prochaine rentrée**. Le disponible actuel n’est pas une garantie pour les semaines à venir : consultez le minimum avant un achat. Les anciennes cartes restent accessibles dans des sections repliées; vos dispositions personnalisées sont conservées.
+
+**Pourquoi ce montant ?** explique le disponible actuel : comptes inclus, réserve inutilisée des enveloppes et achats sur carte encore protégés. **Comprendre le minimum prévu** ouvre sa date. Le sélecteur permet de consulter chaque journée des 90 prochains jours, avec la formule solde bancaire moins protections, la variation depuis maintenant et le parcours jour par jour. Les mouvements à effet nul restent visibles. Ces consultations ne créent aucune écriture.
+
+Les enveloppes distinguent **objectif par période**, **protégé maintenant** (réserve inutilisée + achats sur carte encore protégés), **achats enregistrés** et **objectif moins achats**. Ce dernier repère peut être négatif et ne représente pas une réserve disponible. Sans période commencée, les achats mensuels sont explicitement indiqués. Les virements restent consultables dans la fiche. Dépliez « Comprendre cette enveloppe » pour voir la décomposition et la prochaine échéance.
+
+Mise à jour : utilisez votre raccourci permanent **Mettre a jour Mon Budget.command**, sélectionnez le dossier décompressé, puis actualisez Safari. Vos données sont conservées. Le badge affiche **v8.1**.
+
+Aperçus 8.1 : [tableau de bord](v81-dashboard-dark.png), [explication du disponible](v81-explication.png), [enveloppes](v81-enveloppes.png).
+
+## Nouveautés 8.0 : un espace de budget plus lisible
+
+Une présentation ardoise en mode sombre, des cartes plus cohérentes et une interface adaptée aux petits écrans. Vos dispositions personnalisées du tableau de bord sont conservées; une nouvelle disposition place le Safe-to-Spend en premier.
+
+- **Tableau de bord** : choisissez 30, 60 ou 90 jours, consultez le minimum prudent, sa date et la prochaine rentrée. La répartition des achats et les barres de progression complètent la vue mensuelle.
+- **Prévisions** : affichez ensemble le solde bancaire prévu et le disponible après protections, ou choisissez une seule courbe. Cliquez un jour pour consulter ses mouvements.
+- **Calendrier** : des indicateurs colorés allègent les cases. « Afficher les libellés » rétablit les descriptions; le détail du jour reste accessible.
+- **Transactions** : cochez plusieurs lignes pour modifier leur catégorie ou leur statut de vérification après aperçu. Les soldes et associations aux enveloppes restent identiques. Mémorisez vos recherches et filtres dans ce navigateur.
+- **Diviser un achat** : ouvrez le menu d’une dépense, choisissez « Diviser cette dépense », répartissez le montant entre catégories, sous-catégories et enveloppes, puis examinez l’effet sur le disponible avant confirmation. Le total, la date et le solde du compte sont conservés. Une dépense explicitement rapprochée avec une échéance demande d’abord de retirer cette association. Les revenus ne sont pas divisibles.
+- **Rapprochement bancaire** : comparez votre solde, examinez les opérations et les éventuels doublons, puis validez. Aucun doublon n’est supprimé automatiquement.
+- **CSV** : les raccourcis CIBC, Capital One et Desjardins préparent un profil à vérifier avec votre fichier. Ils ne devinent pas ses colonnes et ne connectent pas votre banque. Vos profils existants et la détection des doublons sont conservés, y compris l’identité d’origine d’un achat divisé dont les lignes restent intactes.
+
+Le diagramme représente les **achats bruts** du mois, hors virements; les remboursements sont pris en compte dans le réel net du Budget. Les repères de rythme sont informatifs. Le moteur financier existant reste la source des soldes, réserves, protections des achats sur carte et prévisions : aucun remboursement global de carte n’est réservé automatiquement. Les objectifs Budget restent sans date et ne réservent pas d’argent.
+
+**Mise à jour sur Mac** : décompressez le ZIP, ouvrez votre raccourci permanent **Mettre a jour Mon Budget.command**, sélectionnez le nouveau dossier, puis actualisez votre onglet Safari existant. Le badge en bas du menu affiche **v8.0**. Ne remplacez pas votre dossier de données par un ancien dossier `data`.
+
+Aperçus avec des données de démonstration : [clair](v80-dashboard-clair.png), [sombre](v80-dashboard-sombre.png), [iPhone](v80-dashboard-iphone.png), [prévisions](v80-previsions-deux-courbes.png) et [division d’un achat](v80-division-achat.png).
+
+## Nouveautés 7.4 : Budget devient votre vue globale
+
+**Budget compare vos revenus et vos dépenses; il ne réserve pas d’argent.** Pour une catégorie comme Abonnements numériques, saisissez le total des quatre abonnements, choisissez **Au mois** et indiquez si le montant doit être reconduit. Aucune date de paiement n’est demandée. Les quatre abonnements restent dans **Récurrences**, avec leurs montants et dates réels; les sommes protégées restent dans **Enveloppes**.
+
+La page présente les revenus prévus, les dépenses prévues et la différence, avec leurs équivalents réels. Les catégories sont regroupées et repliables, avec les colonnes **Prévu / mois**, **Réel** et **Écart favorable**. Un écart positif représente des revenus au-dessus du prévu ou des dépenses en dessous. Le mois en cours est encore incomplet. Le détail des sous-catégories reste disponible.
+
+**Budgets par sous-catégorie** : dépliez les sous-catégories et cliquez sur **Définir** à côté d’Alex ou de Jenny. Chacune possède son montant, sa fréquence et sa reconduction. Pour Paiement auto, Alex 200 $ et Jenny 300 $ donnent automatiquement **500 $ au parent**; un ancien objectif global n’est pas ajouté une seconde fois. Le réel et l’écart apparaissent à chaque niveau. Une activité sans sous-catégorie reste comprise dans le réel du parent et est signalée.
+
+Dès qu’un objectif détaillé est défini, le total affiché du parent est la somme des sous-objectifs actifs; les autres sous-catégories restent à définir. Les dépassements d’une sous-catégorie restent repérables même si le parent est globalement sous son budget. La recherche trouve aussi les noms des sous-catégories. Les objectifs détaillés sont copiés avec leur fréquence et sont conservés dans les sauvegardes et annulations. Pour revenir à un objectif global, ouvrez le parent : la confirmation indique explicitement que les objectifs détaillés sont remplacés à partir du mois choisi, sans effacer leurs transactions. Les objectifs futurs saisis séparément restent prioritaires. Une fusion de catégories ayant encore des objectifs détaillés actifs demande d’abord ce passage au global pour préserver les montants.
+
+Toutes les fréquences sont conservées, mais comparées sans calendrier obligatoire : semaine × 52 ÷ 12, deux semaines × 26 ÷ 12, mois × 1, trois mois ÷ 3, six mois ÷ 6, année ÷ 12. Par exemple, **230 $ par semaine = 996,67 $ par mois** en moyenne. Ces objectifs globaux ne prétendent pas représenter les quatre ou cinq paiements d’un mois réel : les échéances exactes restent dans Récurrences et dans les prévisions.
+
+Trois filtres aident à repérer les dépenses supérieures au budget, l’activité sans objectif et les échéances programmées supérieures au budget. Quatre abonnements de 10 $, 20 $, 30 $ et 20 $ face à un objectif de 60 $ produisent un avertissement de **20 $**. Ce rapprochement utilise les récurrences liées à la catégorie; les récurrences non classées ne peuvent pas être attribuées automatiquement.
+
+Les transactions non catégorisées sont incluses dans les totaux réels, avec un rappel pour les classer. Les achats sur carte et les remboursements de marchandises sont comptés dans leur catégorie; les virements internes et remboursements de carte saisis comme virements ne sont pas des dépenses supplémentaires. Le Bilan mensuel reprend aussi les objectifs globaux.
+
+**Reconduire Oui** reprend le même montant et la même fréquence dans les mois suivants. Les objectifs futurs déjà saisis séparément restent prioritaires. **Non** limite l’objectif au mois choisi. **Retirer cet objectif** le retire à partir du mois sélectionné sans effacer les transactions; un montant de zéro reste un objectif valide, distinct d’un objectif absent. Reprendre le mois précédent copie seulement les objectifs manquants, sans remplacer ceux qui existent ou sont déjà reconduits.
+
+Les anciennes réserves, leurs liens de catégories et leurs programmations sont conservés. Les anciens objectifs restent lisibles; lorsqu’ils avaient une fréquence, ils sont affichés en moyenne mensuelle. Un ancien objectif limité à un mois ne réapparaît pas dans les suivants. Modifier un nouvel objectif global ne change ni les soldes, ni les enveloppes, ni les récurrences, ni les prévisions ou le Safe-to-Spend. Les anciennes API de programmation restent compatibles avec l’historique; le formulaire Budget n’offre plus de création ou d’ajustement de réserve.
+
+Mettez à jour normalement, puis actualisez Safari : **v7.4**. Aucune remise à zéro. Le fichier `global-budget.js` doit accompagner tous les fichiers de l’application. La vue iPhone simplifiée de la v7.3 reste disponible et inchangée.
+
+**Validation : 214 tests** (63 Node et 151 API), plus les parcours Chromium du nouveau Budget, des six fréquences, de la compatibilité des anciennes réserves et de la vue iPhone partagée. Captures : [Budget clair](v74-budget-clair.png), [Budget sombre](v74-budget-sombre.png), [iPhone](v74-budget-iphone.png), [Formulaire sans date](v74-objectif-sans-date.png), [Sous-catégories](v74-sous-categories.png).
+
+## Nouveautés 7.3 : avances d’enveloppes et vue iPhone simplifiée
+
+**Une alimentation est une avance sur la prochaine échéance.** Pour Épicerie, 230 $ prévus jeudi : sans action, les 230 $ sont protégés jeudi; si vous réservez 230 $ mercredi, ils sont protégés mercredi sans autre déduction jeudi. Une avance de 100 $ protège 100 $ immédiatement et seulement les 130 $ restants à l’échéance. Aucun mouvement bancaire n’est créé par l’alimentation.
+
+Dans **Enveloppes → Voir la fiche**, utilisez **Réserver maintenant**. L’augmentation manuelle du montant réservé dans le formulaire suit la même règle. Elle fonctionne sur les enveloppes existantes et nouvelles, pour les six fréquences et avec ou sans report. Les achats associés, les remboursements sur carte, les libérations de réserve et les changements de date ne doivent pas compter l’avance deux fois. Après l’échéance, le renouvellement suivant redevient complet. Les anciennes réserves sont conservées : faute d’historique d’alimentation, les montants présents avant la mise à jour ne sont pas réinterprétés comme des avances. Les nouvelles alimentations sont suivies dès la v7.3.
+
+**Une vue dédiée à l’iPhone de votre conjointe** affiche uniquement :
+
+- Le Safe-to-Spend prudent sur **30, 60 ou 90 jours**, au choix : le minimum entre le disponible actuel et les disponibles prévus sur la période.
+- Le **solde bancaire le plus haut** et le **plus bas** sur les 30 prochains jours, avec les dates. Ces deux indicateurs portent sur les comptes bancaires inclus, normalement Conjoint, avant les réserves d’enveloppes.
+
+Ouvrez **Sauvegardes → Vue iPhone simplifiée → Créer un nouveau lien**. Copiez ce lien sur son iPhone. Pour un accès distant privé, utilisez **son propre compte Tailscale**, partagez le Mac avec elle depuis l’administration Tailscale et assurez-vous que les règles réseau lui permettent de joindre le service HTTPS du Mac. Le lien ne publie pas le budget sur Internet. Le Mac doit rester allumé, connecté, avec Mon Budget et Tailscale actifs. Dans Safari, **Partager → Sur l’écran d’accueil** permet de retrouver cette vue comme une application. Les chiffres s’actualisent à l’ouverture, au retour dans la page et chaque minute tant qu’elle est visible; le bouton Actualiser est aussi disponible. La présentation suit le mode clair ou sombre de l’iPhone.
+
+Le lien est une autorisation limitée, à garder privée : toute personne qui le possède **et peut joindre le Mac** peut consulter ces seuls indicateurs. Il ne permet pas de consulter les comptes détaillés, transactions, sauvegardes ou réglages, ni d’effectuer des modifications. Les accès propriétaires restent soumis à l’identité Tailscale habituelle. Si vous utilisez le même compte Tailscale propriétaire sur les deux téléphones, cette identité conserve naturellement ses droits propriétaires; préférez donc deux comptes distincts pour limiter réellement l’accès.
+
+**Révoquer le lien** coupe immédiatement son accès. Créer un nouveau lien invalide le précédent. Le jeton est conservé dans `data/shared-view.json`, avec permissions restreintes, séparément des exports de budget; une ancienne sauvegarde financière ne réactive pas un lien révoqué. Aucun lien n’est créé automatiquement à la mise à jour.
+
+Mettez à jour normalement puis actualisez votre onglet Safari : badge **v7.3**. Aucune remise à zéro. Tous les fichiers de la version doivent rester ensemble, y compris `budget-v73.js` et `shared-view.html`.
+
+## Nouveautés 7.2 : un disponible protégé avant et après les achats
+
+La même somme reste protégée pendant tout le parcours : **enveloppe → achat → remboursement**. Pour Épicerie, 230 $ prévus dans une enveloppe réduisent le Safe-to-Spend dès la date de la période, avant toute transaction. Un achat sur CIBC MasterCard déplace la protection de l’enveloppe vers ses achats sur carte non remboursés; il ne rend plus cet argent disponible. Le remboursement depuis Conjoint réduit le solde bancaire et libère la protection correspondante : le même achat n’est pas déduit deux fois.
+
+Exemple : Conjoint 1 000 $, enveloppe 230 $ → disponible **770 $**. Achat CIBC de 100 $ → banque toujours 1 000 $, enveloppe inutilisée 130 $, achats sur carte protégés 100 $, disponible toujours **770 $**. Remboursement de 100 $ → banque 900 $, enveloppe 130 $, protection carte 0 $, disponible toujours **770 $**.
+
+**Nouvelles enveloppes simplifiées** : le formulaire propose par défaut **Budget protégé — achats aux dates réelles**, avec **Conserver le restant et ajouter le prochain budget**. Choisissez le montant, la fréquence et la date; aucune dépense fictive n’est créée. Chaque nouvelle période ajoute son budget complet à la protection, même sans achat : 230 $ par semaine donnent 230 $, puis 460 $ protégés après deux dates sans dépense. L’option Remplacer le restant reste disponible si vous souhaitez seulement ramener l’enveloppe à son plafond. Les choix des enveloppes existantes sont conservés.
+
+Pour chaque achat réel, choisissez son enveloppe et le compte effectivement utilisé, Conjoint ou une carte. Un achat bancaire consomme sa réserve au débit; un achat sur carte reste protégé jusqu’à un remboursement enregistré ou programmé. Les enveloppes existantes en mode paiement daté sur carte bénéficient aussi du correctif dans leurs prévisions. Les remboursements partiels et les remboursements regroupant plusieurs enveloppes sont gérés par carte, en utilisant d’abord les achats protégés les plus anciens; aucun choix d’enveloppe n’est nécessaire au remboursement. Les corrections, suppressions et annulations recalculent le résultat.
+
+**Comprendre mon disponible** sépare désormais le solde bancaire, les montants encore utilisables dans les enveloppes et les achats d’enveloppes sur carte encore protégés. La fiche de l’enveloppe indique la carte et le montant à rembourser. Les aperçus de budgets, les répartitions, Ma prochaine paie et les prévisions utilisent la même protection. Une avance sur une période future ne réserve pas son montant une deuxième fois au renouvellement; les reports de solde conservent les allocations complètes.
+
+La dette de carte sans achat lié à une enveloppe ne crée pas de réserve automatique. Les anciens soldes déclarés et les imports en historique ne sont pas transformés en nouveaux budgets. Un achat sans enveloppe n’ajoute pas de protection : associez les achats aux bonnes enveloppes et saisissez les remboursements pour garder un calcul juste. Les allocations personnelles comme Anaïs restent protégées à leur sortie de Conjoint; leurs achats ne sont pas protégés une deuxième fois dans le budget commun.
+
+Vos données sont conservées, sans nouvelle base ni remise à zéro. Mettez à jour normalement, puis actualisez Safari : le badge indique **v7.2**. Les protections sont calculées à partir des soldes et opérations enregistrés; les montants ou paiements absents du logiciel ne peuvent pas être devinés.
+
+**Validation : 187 tests Node/API** (60 Node, 127 API), avec bases temporaires uniquement. Ils couvrent les dates hebdomadaires, les achats partiels, plusieurs cartes et enveloppes, les remboursements, les retours, les corrections, la restauration, les avances et les calculs des autres écrans. Les parcours Chromium vérifient aussi le nouveau formulaire, le détail du disponible, l’iPhone et le mode sombre.
+
+Aperçus fictifs : [avant le remboursement](v72-disponible-protege.png) · [après le remboursement sur iPhone](v72-disponible-iphone.png).
+
+## Correctif 7.1.1 : enveloppes vers un compte personnel
+
+Une enveloppe programmée à destination d’un **compte personnel bancaire exclu du disponible** représente désormais un **virement depuis le seul compte bancaire inclus**, normalement Conjoint. Le renouvellement ne libère plus artificiellement le montant dans le Safe-to-Spend lors du paiement simulé depuis le compte personnel. La prévision inclut la sortie à sa date même si la réserve actuelle vaut zéro. Les soldes réels ne changent qu’à confirmation.
+
+**Exemple vérifié** : 3 075,56 $ avant le 31 octobre, 445 $ de réserves de taxes et un virement Anaïs de 283 $ donnent un **disponible prévu de 2 347,56 $**. Le solde bancaire prévu de Conjoint est 2 792,56 $, avec 445 $ encore réservés aux taxes.
+
+Pour une allocation comme Anaïs, dans Enveloppes choisissez **Paiement ou virement prévu à date précise**, le budget de **283 $**, la fréquence mensuelle, la date du **31 octobre** et le **compte personnel destinataire**. Conjoint doit être le seul compte inclus dans le disponible. L’explication du formulaire indique les deux comptes. Ce fonctionnement s’applique à toutes les enveloppes programmées de cette façon, avec les six fréquences.
+
+Dans **Prévu / Réel**, confirmez le virement à son passage, ou choisissez **Déjà saisie — associer l’opération** s’il est déjà enregistré. Dans une nouvelle transaction de type Virement, **Utiliser une enveloppe** permet aussi de lier directement la sortie à Anaïs. La fiche de l’enveloppe affiche ses virements associés et propose de saisir le virement. Les achats effectués ensuite depuis le compte personnel ne débitent pas Conjoint une deuxième fois et ne libèrent pas sa prochaine allocation.
+
+Si vous avez déjà une **récurrence de virement** pour la même allocation, modifiez-la pour sélectionner son enveloppe : cette récurrence remplace le paiement automatique de l’enveloppe pour sa période. Ne créez pas une deuxième programmation indépendante du même virement. Les virements partiels, anticipés, modifiés et supprimés sont pris en compte; un paiement anticipé ne réserve pas à nouveau sa portion au renouvellement.
+
+Les enveloppes **Budget réservé (achats variables)** continuent de geler le montant au renouvellement sans inventer de paiement. Les paiements directs depuis Conjoint gardent leur fonctionnement. Les achats sur carte et les remboursements programmés conservent leur logique; aucune dette de carte existante n’est réservée automatiquement.
+
+Les anciens virements restent intacts à la migration. Le lien à une enveloppe est facultatif et les anciennes sauvegardes restent restaurables. La configuration des comptes de dépenses conserve désormais les destinations personnelles des enveloppes, plutôt que de les remplacer par Conjoint. Actualisez Safari après la mise à jour habituelle et vérifiez **v7.1.1**.
+
+**Validation : 169 tests Node/API** (52 Node, 117 API). Le cas exact d’Anaïs, les six fréquences, la confirmation, l’association d’un virement existant, les paiements partiels/anticipés, le renouvellement réel, les corrections, l’annulation et la compatibilité des sauvegardes sont vérifiés avec des bases temporaires.
+
+Aperçus fictifs : [calcul d’Anaïs au 31 octobre](v711-anais-prevision.png) · [sur iPhone](v711-enveloppe-virement-iphone.png).
+
+## Nouveautés 7.1 : Conjoint, trois cartes et virements personnels
+
+Les **virements entre comptes restent disponibles**, déjà effectués ou programmés. Une sortie de Conjoint vers un compte personnel réduit son disponible; le solde du compte personnel ne finance pas le Safe-to-Spend commun. Aucun lien à une facture n’est nécessaire dans la nouvelle configuration.
+
+Dans **Comptes → Configurer mes comptes de dépenses** (également accessible dans Bien démarrer, étape 3), choisissez Conjoint et vos cartes existantes : **CIBC MasterCard**, **Capital One MasterCard**, **VISA Desjardins**. Si elles manquent, ajoutez-les d’abord avec leur solde réel, puis revenez à la configuration. Les formulaires de nouvelles dépenses et de factures proposent ensuite ces comptes; tous les comptes restent accessibles pour les virements et les revenus. Les opérations historiques et imports restent consultables.
+
+**Voir les changements** affiche les factures actives des autres comptes qui seront réaffectées à Conjoint, ainsi que les enveloppes à paiement daté. Les montants et calendriers sont conservés. Les transactions déjà enregistrées et les soldes ne sont pas réécrits; les factures déjà rapprochées restent réglées. Les anciens virements réguliers vers les comptes personnels sont proposés séparément : cochez uniquement ceux à suspendre. Les autres restent actifs et continuent d’influencer la prévision. L’application ne suppose pas qu’un virement personnel est devenu inutile.
+
+Cliquez sur **Appliquer cette configuration** après vérification. Un aperçu périmé est refusé. Les anciens liens de financement v7.0 d’une facture à déplacer doivent d’abord être retirés dans Bien démarrer, étape 7; leurs écritures bancaires restent conservées. La configuration peut être annulée avec l’annulation de la dernière modification et elle est incluse dans les sauvegardes.
+
+**Cartes** : un achat augmente la dette sans créer de réserve automatique de remboursement. Un remboursement depuis Conjoint se saisit comme un virement vers la carte et diminue le disponible. Exemple : 1 000 $ dans Conjoint, virement personnel de 75 $ → 925 $; achat CIBC de 100 $ → dette de 100 $, disponible toujours 925 $; remboursement CIBC de 100 $ → disponible de 825 $. Les réserves de budgets existantes conservent leur fonctionnement.
+
+**Interac pour la marge** : si la marge n’est pas suivie comme compte dans le logiciel, saisissez le paiement comme une dépense de Conjoint, catégorie Marge de crédit. Si son solde est suivi comme compte, utilisez un virement de remboursement pour ajuster les deux soldes. Saisissez chaque paiement une seule fois.
+
+**Frais CIBC** : conservez une seule facture mensuelle de frais bancaires sur Conjoint au montant réel du forfait. Suspendez les anciens frais personnels devenus inutiles dans Récurrences. Aucun frais n’est créé ou fusionné automatiquement.
+
+La démonstration neuve reprend Conjoint et les trois cartes. La mise à jour conserve votre budget; la réaffectation demande l’application de l’aperçu dans l’interface. Après la mise à jour habituelle, actualisez Safari et vérifiez le badge **v7.1**.
+
+**Validation : 159 tests Node/API** (52 Node, 107 API). Les parcours Chromium vérifient la transition, les choix de comptes, les virements personnels, les cartes sans réserve automatique, le guide, le mode sombre et cinq largeurs. L’installation native macOS reste à vérifier sur votre Mac.
+
+Aperçus fictifs : [configuration du Conjoint](v71-configuration-conjoint.png) · [configuration sur iPhone](v71-configuration-iphone.png) · [guide des virements sur iPhone](v71-virements-personnels-iphone.png).
+
+## Nouveautés 7.0 : configuration guidée et disponible du Conjoint
+
+**Bien démarrer** propose sept étapes : comptes, choix du compte disponible, catégories, récurrences, budgets/réserves et virements. Votre budget existant est conservé à la mise à jour. Choisissez explicitement **Conjoint** dans le guide pour que le Safe-to-Spend utilise uniquement ce compte. Les nouveaux comptes restent ensuite exclus de ce calcul.
+
+Un virement demande s’il finance une autre dépense. Si oui, associez l’échéance dans le compte destination : le départ de Conjoint réduit son disponible, et le paiement de la facture depuis l’autre compte ne le réduit pas une seconde fois. Une réserve liée est libérée pour la portion financée au départ du virement, sans double utilisation lors du paiement. Exemple : Conjoint 1 000 $, virement de 100 $ vers Jenny, puis facture de 100 $ payée par Jenny : Conjoint reste à 900 $. Même avec la réponse Non, une sortie du Conjoint réduit son solde.
+
+L’association concerne **une échéance précise**, pas toutes les occurrences futures. Le guide permet aussi d’associer un virement déjà enregistré ou programmé, ou de retirer un lien sans refaire les écritures bancaires. Les factures doivent indiquer leur véritable compte payeur. Un virement entrant en retard ne finance plus le disponible tant qu’il n’est pas confirmé. Aucun remboursement de carte n’est réservé automatiquement.
+
+**Démonstration** ouvre des comptes et opérations fictifs dans une base séparée, avec un bandeau visible et un lien de retour au budget personnel. Les modifications et remises à zéro de la démonstration ne modifient pas les données personnelles. L’accès privé Tailscale protège également la démonstration.
+
+**Remettre à zéro**, dans le guide ou Sauvegardes, affiche d’abord les éléments concernés. Il faut cocher la confirmation et saisir **EFFACER**. Une sauvegarde de récupération est proposée avant l’effacement. Le budget actif reste vide après redémarrage; les anciens fichiers de sauvegarde et la configuration d’accès privé sont conservés. Aucune remise à zéro n’est exécutée lors de la mise à jour.
+
+**Installation sur Mac** : décompressez le ZIP, ouvrez votre raccourci permanent `~/Applications/Mon Budget/Mettre a jour Mon Budget.command`, sélectionnez le nouveau dossier et actualisez votre onglet Safari. Le badge doit afficher **v7.0**. Ouvrez ensuite **Bien démarrer** et choisissez Conjoint. Ne recopiez pas un ancien dossier `data`.
+
+**Validation : 152 tests Node/API** (52 Node, 100 API), avec bases temporaires uniquement. Les parcours Chromium couvrent le guide, le financement lié, la démonstration isolée, la remise à zéro, le mode sombre et cinq largeurs. L’installation native macOS reste à vérifier sur votre Mac.
+
+Aperçus fictifs : [guide sur iPhone](v70-guide-iphone.png) · [virement lié](v70-virement-lie.png) · [confirmation d’effacement](v70-remise-a-zero.png).
+
+## Nouveautés 6.1 : budgets périodiques et reconduction automatique
+
+Dans **Budget**, ouvrez une catégorie et indiquez le **montant par période**, la **fréquence** et la **date de départ** : à la semaine, aux 2 semaines, au mois, aux 3 mois, aux 6 mois ou à l’année. Les totaux de la vue mensuelle utilisent les dates réelles, sans moyenne : 230 $ chaque jeudi à partir du 1er octobre 2026 donne 1 150 $ en octobre (5 dates), puis 920 $ en novembre (4 dates). Un budget trimestriel ou annuel apparaît au complet dans le mois de son échéance; il n’est pas divisé artificiellement entre les mois.
+
+La question **« Le montant est-il identique les mois suivants ? »** exige une réponse :
+
+- **Oui** : le montant par période est reconduit automatiquement selon le même calendrier, sans devoir reprendre manuellement chaque mois. Une semaine conserve son jour et une échéance annuelle conserve sa date anniversaire. Le total d’un mois peut varier avec son nombre de dates.
+- **Non** : ce budget est limité au mois choisi. Il peut aussi arrêter une reconduction précédente à partir de ce mois. Les objectifs explicitement enregistrés pour un autre mois restent prioritaires et l’historique n’est pas réécrit.
+
+La reconduction est conservée comme un calendrier durable et apparaît automatiquement dans les mois futurs; elle ne crée pas une infinité de copies dans la base. Une modification prend effet au mois choisi. Les dates de fin de mois et les années bissextiles utilisent le moteur partagé.
+
+**Réserves** : avec **Créer/Ajuster la réserve selon ce budget**, le montant gelé correspond au restant de la période active et les renouvellements suivent les dates choisies. Par exemple, une réserve hebdomadaire de 230 $, après un achat de 100 $, conserve 130 $ jusqu’au prochain renouvellement à 230 $. Aucune dépense bancaire n’est inventée. Avec Non, aucun renouvellement de cette programmation n’est ajouté après le mois choisi; le restant déjà réservé est conservé. Les aperçus et le Safe-to-Spend utilisent le même calendrier que les renouvellements réels, y compris annuels après plusieurs années d’utilisation.
+
+**Objectif seul** et **Lier une réserve existante** conservent les montants et la programmation des enveloppes existantes. Pour changer aussi une réserve gérée par Budget, choisissez explicitement son ajustement dans Budget. Une réserve avec ce nouveau calendrier doit être programmée depuis Budget; son montant actuel peut toujours être ajusté dans Enveloppes. Les anciens budgets et enveloppes v6.0 restent inchangés tant que vous ne les modifiez pas. Les catégories avec un calendrier reconduit restent séparées lors d’une fusion pour préserver leurs programmations.
+
+**Validation : 141 tests Node/API** (52 Node, 89 API). `python3 tests/budget-v61-ui.py` vérifie les six choix, la réponse obligatoire Oui/Non, les totaux hebdomadaires exacts, la reconduction après rechargement, les montants par période dans l’éditeur, le mode sombre et cinq largeurs. Le parcours v6.0 et le suivi Prévu / Réel restent vérifiés.
+
+Aperçus fictifs : [fréquence et reconduction](v61-frequence-reconduction.png) · [mois suivant](v61-budget-reconduit.png) · [sur iPhone](v61-frequence-iphone.png).
+
+## Nouveautés 6.0 : Budget et Récurrences, deux espaces reliés
+
+**Budget** possède son entrée dans le menu. Choisissez le mois et retrouvez les catégories regroupées, avec **Budgété · Réel · Restant**, les sous-catégories en détail, la recherche et les groupes repliables. Les revenus et dépenses sont distincts; les catégories du groupe Transfert et les virements du registre ne sont pas additionnés aux dépenses. Les opérations non catégorisées apparaissent dans un avertissement chiffré. Le restant est un objectif moins l’activité nette de la catégorie, pas un solde bancaire ni une réserve.
+
+Cliquez sur le nom ou le montant d’une catégorie pour définir son budget du mois :
+
+- **Objectif du mois** : enregistre le montant pour ce mois sans changer les soldes ni les réserves. Les plafonds antérieurs restent utilisés lorsqu’aucun objectif mensuel n’est saisi. La comparaison des budgets dans Bilan mensuel reprend également ces objectifs.
+- **Lier une réserve existante** : associe la catégorie à une enveloppe sans toucher à son argent ni à sa programmation. Les enveloppes actuelles ne sont pas migrées automatiquement. Un rappel indique les réserves qui ne sont pas encore liées. Une réserve ne peut pas être liée à deux catégories.
+- **Créer une réserve mensuelle** : après aperçu, gèle le restant du budget du mois actuel, ou programme le gel au premier jour d’un mois futur. Une réserve n’est pas une dépense bancaire. Les renouvellements suivants utilisent le montant initial; les ajustements d’une période utilisent une exception sans modifier les autres mois. L’aperçu montre le disponible actuel et le minimum prévu sur 90 jours; une dégradation en négatif demande une confirmation explicite. Une enveloppe portant déjà le nom de la catégorie doit être réutilisée, plutôt que dupliquée.
+
+Une **nouvelle dépense** classée dans une catégorie liée utilise sa réserve si aucune autre enveloppe n’a été choisie. Les transactions existantes restent intactes. Le montant actuel d’une réserve existante est conservé lors du lien; il peut être ajusté dans Enveloppes. Les imports historiques gardent leur fonctionnement sans effet sur les soldes et les réserves.
+
+**Reprendre le mois précédent** affiche un aperçu des objectifs à copier. Les montants déjà saisis pour le mois destination sont conservés. Cette reprise ne déplace ni ne gèle d’argent et ne modifie pas les récurrences. Ajustez les réserves séparément si nécessaire.
+
+**Récurrences** possède également une entrée visible dans le menu. L’agenda du mois regroupe les occurrences par fréquence : semaine, deux semaines, mois, trois mois, six mois et année, avec les opérations uniques et les derniers jours ouvrables. Chaque ligne affiche date, compte, catégorie, montant et statut. **Classer** lie une règle à une catégorie; les nouvelles confirmations reprennent ce classement. **Confirmer** conserve le parcours existant permettant de saisir le réel ou d’associer une opération déjà enregistrée. **Modifier la règle** et **+ Récurrence** réutilisent les formulaires existants. Les dates et montants suivent le moteur partagé, y compris les reports et exceptions. Les anciennes dates hors suivi sont signalées; les règles actuelles ne reconstituent pas un ancien historique de prévisions.
+
+Les **Prévisions** réunissent toujours les mêmes comptes, revenus, réserves et paiements. Une dépense récurrente liée à une réserve utilise cette réserve; elle n’est pas ajoutée une deuxième fois comme dépense automatique d’enveloppe. Aucun remboursement de carte n’est réservé automatiquement.
+
+**Première utilisation après mise à jour** : ouvrez Budget, liez vos enveloppes existantes aux catégories concernées, puis classez les règles dans Récurrences. Vos données restent disponibles pendant ce réglage. Pour les factures déjà récurrentes, utilisez un objectif ou une réserve existante plutôt que de créer une seconde réserve.
+
+**Validation : 131 tests Node/API** (52 Node, 79 API), ainsi que `tests/budget-v60-ui.py`, `tests/planning-workflow-ui.py`, `tests/categories-v52-ui.py` et `tests/budget-v53-ui.py`. Vérifications sur données fictives : budgets par mois, réserves actuelles/futures, calcul sans double déduction, confirmation classée, reprise d’un mois, conservation après redémarrage/restauration, fusion/suppression des liens, mode sombre et cinq largeurs dont iPhone.
+
+Aperçus fictifs : [budget clair](v60-budget-clair.png) · [budget sombre](v60-budget-sombre.png) · [récurrences](v60-recurrences.png) · [budget sur iPhone](v60-budget-iphone.png).
+
+## Nouveautés 5.3 : vérifier, confirmer et comprendre
+
+- **Tableau de bord → Votre budget, à jour** : opérations prévues à confirmer, transactions non vérifiées et comptes à rapprocher, avec accès direct à chaque suivi.
+- **Comptes → Vérifier ce compte** : comparez le solde bancaire actuel (pour une carte, le montant dû positif), examinez transactions et virements, marquez individuellement les transactions vérifiées. Lorsque les soldes concordent, **Valider ce rapprochement** conserve une vérification datée sans modifier les soldes. Toute modification du compte ou de ses opérations invalide ce statut, même si le solde net reste identique. Une comparaison devenue périmée doit être refaite avant validation. Ce statut porte sur votre comparaison manuelle, pas sur une synchronisation bancaire ni un verrouillage du relevé.
+- **Planifier → Prévu / Réel** : un récapitulatif distingue les échéances à confirmer, les réels rapprochés et les prochaines opérations. **Confirmer cette opération** permet d’enregistrer le montant réellement payé, ou d’associer une opération déjà saisie. Le traitement existant conserve un seul mouvement bancaire et remplace la prévision. Les réserves d’enveloppes restent distinctes des dépenses.
+- **Disponible → cliquez sur le montant**, ou **Comprendre mon disponible** : choisissez Maintenant, Cette semaine, Jusqu’à la paie, 30 ou 90 jours. Consultez soldes inclus, réserves gelées, minimum prudent et sa date, puis l’équation et les mouvements détaillés. Le jour de paie est exclu du calcul avant la paie. Sans prochaine paie admissible, aucun montant n’est inventé.
+- Aucun service bancaire payant et aucune réserve automatique pour rembourser les cartes. Seuls les paiements que vous programmez ou saisissez influencent les comptes concernés.
+
+Les **121 tests Node/API** passent (52 Node, 69 API). `python3 tests/budget-v53-ui.py` vérifie les cinq périodes, la paie exclue, la navigation sans écriture, la vérification d’une transaction, la validation et l’invalidation d’un rapprochement, la confirmation au montant réel, le mode sombre et cinq largeurs. Les tests de support v4.1 et du parcours Prévu / Réel restent disponibles.
+
+Aperçus avec données fictives : [rapprochement des comptes](v53-comptes-verifies.png) · [calcul du disponible](v53-calcul-disponible.png) · [sur iPhone](v53-comptes-iphone.png).
+
+## Nouveautés 5.2 : un répertoire de catégories compact
+
+La liste occupe toute la largeur. Les grandes fiches sont remplacées par des lignes compactes d’environ 46 pixels; les groupes sont repliés au premier affichage. Cliquez sur un groupe pour consulter ses catégories, puis sur le nom d’une catégorie pour ouvrir ses actions et ses sous-catégories.
+
+- **Tout déplier / Tout replier** agit sur les groupes. Les actions restent à la demande pour garder la lecture légère. Les groupes ouverts sont mémorisés dans ce navigateur, indépendamment du budget et de l’autre appareil.
+- La **recherche** et le **filtre par groupe** ouvrent les résultats concernés. Une recherche dans les sous-catégories affiche leur catégorie et ses détails. Vous pouvez refermer une ligne même pendant une recherche.
+- **+ Catégorie** ouvre la création dans une petite fenêtre intégrée. **Renommer**, dans les détails d’une ligne, ouvre le formulaire correspondant. Une nouvelle catégorie est révélée automatiquement après sa création.
+- **Reprendre ma liste Lunch Money** reste directement accessible dans la barre d’outils. Les fonctions de sous-catégorie, archivage, groupe, fusion et suppression restent disponibles. Non-catégorisé reste visible dans un bandeau compact.
+- Aucun solde, calcul, transaction ou classement n’est modifié par ce nouvel affichage.
+
+Les 119 tests Node/API passent. `python3 tests/categories-v52-ui.py` vérifie les groupes repliés, leur mémorisation, la largeur de la liste, la hauteur des lignes, les détails à la demande, la recherche, la création, le renommage et les sous-catégories, sans écriture financière pendant la navigation. L’affichage est aussi vérifié en sombre et sur cinq largeurs, dont iPhone.
+
+Aperçus avec données fictives : [vue compacte](v52-categories-compactes.png) · [groupe ouvert](v52-groupe-ouvert.png) · [sur iPhone](v52-categories-iphone.png).
+
+## Nouveautés 5.1.3 : supprimer toutes les catégories
+
+Dans **Catégories → Supprimer toutes les catégories**, consultez le récapitulatif puis **Confirmer la suppression de toutes les catégories**. **Fermer** annule sans modification. La suppression inclut les catégories fournies au départ, les catégories ajoutées, les catégories archivées et leurs sous-catégories. Les regroupements sont également vidés.
+
+**Non-catégorisé reste toujours disponible.** Les transactions existantes y sont reclassées sans modifier leurs montants, comptes, dates ou enveloppes. Les règles de classement concernées sont désactivées et les plafonds mensuels de suivi retirés. Les comptes, soldes, réserves, enveloppes, virements et prévisions sont conservés. Le récapitulatif indique les nombres concernés avant la confirmation.
+
+L’opération est atomique et refuse un aperçu devenu périmé. **Annuler la dernière modification** permet de restaurer l’ensemble juste après la suppression. La liste reste vide après redémarrage; vous pouvez créer de nouvelles catégories ou reprendre volontairement votre liste Lunch Money. Le bouton est désactivé quand il ne reste aucune catégorie à supprimer.
+
+`npm test` vérifie 52 tests Node et 67 tests API. `python3 tests/categories-v513-ui.py` vérifie l’aperçu sans écriture, la fermeture sans suppression, la confirmation, l’état vide utilisable, une nouvelle dépense dans Non-catégorisé, la création d’une catégorie, une nouvelle suppression, l’annulation, le mode sombre et cinq largeurs de fenêtre.
+
+Aperçus fictifs : [bouton de suppression globale](v513-suppression-toutes.png) · [confirmation](v513-confirmation.png).
+
+## Nouveautés 5.1.2 : supprimer des catégories et garder Non-catégorisé
+
+Dans **Catégories**, chaque catégorie possède un bouton **Supprimer**, y compris les catégories fournies à l’installation et les catégories archivées. Choisissez la destination des transactions, consultez **Voir l’effet de la suppression**, puis **Confirmer la suppression**.
+
+**Non-catégorisé** est le choix par défaut, permanent et protégé. Les transactions déjà sans catégorie y apparaissent automatiquement; les nouveaux achats sans classement l’utilisent également. Le bouton **Voir ces transactions** ouvre l’historique avec le filtre correspondant. Le même libellé apparaît dans les sélecteurs, rapports et exports.
+
+- Vers **Non-catégorisé** : les transactions conservent leurs montants, comptes, dates et enveloppes. Leurs catégories et sous-catégories sont retirées. Les règles de classement de la catégorie deviennent inactives, à modifier dans Ma prochaine paie → Règles. Le plafond mensuel de suivi est retiré; aucune réserve d’enveloppe n’est libérée.
+- Vers une **autre catégorie active** : les transactions et règles sont réaffectées, les sous-catégories reprises sans doublon et les plafonds mensuels de suivi additionnés. La catégorie source est ensuite supprimée, contrairement à Fusionner qui conserve une source archivée.
+- L’aperçu indique les transactions, sous-catégories, règles et plafonds concernés. Une confirmation manquante ou un aperçu devenu périmé est refusé. L’opération est atomique et peut être annulée par Annuler la dernière modification.
+- Une catégorie supprimée ne réapparaît pas au redémarrage ou à la mise à jour. **Reprendre ma liste Lunch Money** est une action explicite qui peut recréer les catégories manquantes de cette liste.
+
+Les soldes, réserves, virements et prévisions restent identiques lors d’une suppression de catégorie. Le classement Non-catégorisé utilise les opérations déjà sans catégorie; aucune migration des montants ni des identifiants de transactions n’est nécessaire.
+
+`npm test` vérifie 52 tests Node et 65 tests API. `python3 tests/categories-v512-ui.py` vérifie la suppression réelle, la conservation des opérations et des calculs, le classement par défaut et son filtre après une nouvelle transaction, le mode sombre, le mobile et la persistance. Les tests API vérifient aussi la destination alternative, les sous-catégories, les règles, les plafonds, l’annulation et le redémarrage.
+
+Aperçus fictifs : [catégories et classement par défaut](v512-non-categorise.png) · [sur iPhone](v512-non-categorise-iphone.png).
+
+## Nouveautés 5.1.1 : votre liste Lunch Money
+
+Dans **Catégories → Reprendre ma liste Lunch Money**, vérifiez l’aperçu puis choisissez **Ajouter ces catégories et groupes**. Cette étape s’effectue dans votre budget local après la mise à jour; télécharger le ZIP seul ne modifie pas les catégories.
+
+La liste reprend vos **49 catégories** dans cinq groupes : Revenus, Dépenses fixes, Dépenses variables, Dépenses non mensuelles et Transfert. Les groupes sont des titres d’organisation : ils ne prennent pas le niveau des sous-catégories. Sous **Frais bancaires**, **Conjoint**, **Jenny** et **Alex** sont ajoutées comme sous-catégories. Vous pouvez ensuite créer autant de sous-catégories que nécessaire sous chaque catégorie, avec un seul niveau.
+
+- Les catégories déjà présentes sont réutilisées, y compris les différences d’accents et de casse. Restaurant réutilise Restaurants, et Essentiel pour la maison réutilise Essentiels pour la maison si ces noms existent déjà. Les noms et identifiants existants sont conservés.
+- Les catégories absentes de votre liste restent disponibles dans Autres catégories conservées. Les catégories archivées correspondantes à réactiver sont signalées dans l’aperçu.
+- Une nouvelle application de la liste ne crée pas de doublons. Un aperçu devenu périmé est refusé; l’ajout est atomique et compatible avec l’annulation et les sauvegardes.
+- **Filtrer par groupe** et la recherche permettent de retrouver une catégorie. Le choix **Groupe** sur chaque fiche permet de la déplacer. Les sélecteurs de catégories des transactions et imports reprennent aussi ces regroupements.
+- Les libellés du groupe Transfert ne changent pas le type d’une opération : utilisez **Virements** pour déplacer de l’argent ou payer une carte, et **Comptes → Vérifier avec votre banque** pour un ajustement. L’ajout ne crée aucun revenu, aucune dépense ni réserve automatique.
+
+Les transactions, comptes, plafonds et réserves existants restent identiques lors de l’ajout. Les nouveaux noms ne créent pas de budgets ou d’échéances dans la prévision.
+
+`npm test` vérifie 52 tests Node et 62 tests API. Le parcours `python3 tests/lunch-categories-ui.py` vérifie l’aperçu, les catégories conservées, les groupes, les sous-catégories et leur utilisation dans une transaction réelle, ainsi que l’affichage sombre et mobile.
+
+Aperçus avec données fictives : [Frais bancaires et ses sous-catégories](v511-frais-bancaires.png) · [sur iPhone](v511-frais-bancaires-iphone.png).
+
+## Nouveautés 5.1 : lisibilité et mises à jour discrètes
+
+- Le numéro de version est déplacé tout en bas du menu gauche, sous **+ Transaction**. Il reste visible sous les commandes du menu compact sur téléphone.
+- Le mode sombre vérifie aussi le contraste des anciens libellés et boutons sur leur fond effectif. Les couleurs de texte sont corrigées au besoin, en conservant les repères de couleur quand ils restent lisibles. Les textes d’aide dans les champs et les commandes désactivées sont plus lisibles. Le retour au mode clair restaure les couleurs d’origine, même pour les anciens styles intégrés dans les éléments.
+- Une mise à jour d’une installation existante ne lance plus de nouvelle fenêtre Safari ni de fenêtre Finder. Le service redémarre en arrière-plan : **actualisez votre onglet déjà ouvert**. Cela fonctionne aussi si la v5.1 est lancée par un ancien raccourci de mise à jour. Le raccourci **Ouvrir Mon Budget.command** continue d’ouvrir le budget à la demande; une première installation peut toujours ouvrir l’adresse automatiquement.
+- Les catégories et les transactions existantes sont conservées. La reprise de votre liste Lunch Money est disponible à partir de la v5.1.1, avec un aperçu avant ajout.
+
+`npm test` vérifie 52 tests Node et 60 tests API. `python3 tests/budget-v51-ui.py` vérifie l’emplacement du numéro de version, le contraste des catégories et des fenêtres de saisie, les changements clair/sombre, la restauration des anciens styles et l’affichage mobile. Les tests du service Mac vérifient qu’une mise à jour ne demande aucune ouverture de Safari ou Finder; l’exécution réelle du service reste à faire sur macOS.
+
+Aperçus avec données fictives : [catégories en mode sombre](v51-categories-sombre.png) · [sur iPhone](v51-categories-iphone.png).
+
+## Nouveautés 5.0.1 : toute la largeur du navigateur
+
+La limite fixe de 1 600 pixels est retirée. L’application utilise la largeur disponible, avec des marges de confort, et le menu reste ancré à gauche sur ordinateur. L’en-tête, les actions et les cartes se réorganisent lorsque la fenêtre rétrécit ou que le zoom augmente. Le menu compact reste accessible sur les petites fenêtres et les écrans de téléphone. Le zoom choisi dans le navigateur est respecté, sans compensation artificielle de la taille du texte.
+
+Le fond sombre couvre aussi les grands écrans. Les boutons Planifier, Rechercher et Annuler utilisent des couleurs sombres explicites, y compris au survol, au clavier et lorsqu’Annuler est désactivé.
+
+Le parcours `python3 tests/responsive-v501-ui.py` vérifie six écrans en clair et en sombre sur des largeurs de 320 à 3 440 pixels CSS, dont les largeurs correspondant à une fenêtre de 1 440 pixels à 50 %, 67 %, 75 %, 85 %, 100 %, 125 %, 150 % et 200 %. Il vérifie la largeur réellement occupée, l’absence de débordement de la page, le menu compact et un contraste texte/fond d’au moins 4,5 pour les boutons corrigés. Ce sont des vérifications des largeurs disponibles après zoom; elles ne pilotent pas le réglage natif de Safari.
+
+La mise à jour utilise le même raccourci permanent et conserve les données. Après rechargement, le badge indique **v5.0.1**.
+
+Aperçus avec données fictives : [pleine largeur en sombre](v501-pleine-largeur-sombre.png) · [pleine largeur en clair](v501-pleine-largeur-clair.png).
+
+## Nouveautés 5.0 : préparer la paie et choisir son apparence
+
+- **Clair, Sombre ou Automatique** dans l’en-tête. Automatique suit le réglage du Mac ou de l’iPhone. La préférence est enregistrée dans le budget et les sauvegardes; elle est conservée lors d’une annulation financière.
+- **Ma prochaine paie** rassemble les revenus récurrents des comptes inclus, les engagements du cycle et les minima prévus. Le feu vert/orange/rouge indique la marge avant la paie : négatif, moins de 100 $, ou au moins 100 $. Ce seuil est un repère visuel, pas une réserve supplémentaire.
+- **Répartition d’une paie** vers les budgets libres : aperçu, minimum prévu et confirmation avant de planifier. Les enveloppes avec renouvellement automatique sont déjà prises en compte et ne sont pas proposées une seconde fois. Une répartition prévue diminue le disponible projeté à sa date, sans toucher aux soldes actuels. Après réception des revenus et confirmation dans Prévu / Réel, Appliquer réserve réellement les montants sans créer de dépense ni de transaction bancaire. Une application répétée est refusée. Annuler un plan n’annule pas les achats ni les montants déjà réservés.
+- **Règles de classement** : texte reconnu, catégorie, sous-catégorie, compte, priorité et période facultative. La première règle correspondante propose le classement à la saisie; un choix manuel reste prioritaire. Une enveloppe peut être proposée pour les nouvelles dépenses. Pour l’historique, l’aperçu puis l’application ne changent que les catégories, jamais les comptes, montants ou réserves. Les règles peuvent être modifiées, suspendues ou supprimées.
+- **Projets** : objectif indicatif, période et enveloppe existante ou nouveau budget libre. Les achats liés à l’enveloppe dans la période sont totalisés. L’objectif ne réserve aucun argent automatiquement. Retirer un projet garde son enveloppe et ses achats.
+- **Prévu et réel** : comparaison mensuelle des revenus et dépenses, écarts des opérations rapprochées et détail des enveloppes. Les périodes de prévision incomplètes sont signalées; les anciens plans ne sont pas inventés. Les enveloppes restent détaillées séparément pour éviter de les ajouter deux fois aux dépenses.
+- **Comprendre** : choisissez une date des 90 jours pour voir le solde bancaire, les réserves, le disponible et les mouvements utilisés dans le calcul.
+
+Aucune connexion bancaire ni IA externe n’est ajoutée. Les soldes restent saisis ou rapprochés manuellement. Aucun remboursement de carte n’entraîne de réserve automatique : seuls vos virements explicitement prévus ou enregistrés diminuent les fonds bancaires.
+
+**Installation** : décompressez [le ZIP de la dernière version](https://github.com/alexforget82/Budget/archive/refs/heads/main.zip), ouvrez `~/Applications/Mon Budget/Mettre a jour Mon Budget.command` et choisissez le nouveau dossier. Ne recopiez pas votre ancien dossier `data`. Rechargez Safari sur Mac et iPhone; le badge doit indiquer **v6.1**.
+
+Aperçus avec données fictives : [mode sombre](v50-paie-sombre.png) · [mode clair](v50-paie-clair.png) · [sur iPhone](v50-iphone.png).
+
+## Nouveautés 4.7 : tableau de bord personnalisable
+
+Dans **Tableau de bord → Personnaliser**, organisez six blocs : Soldes et disponible, Disponible par période, Points à surveiller, Prévision sur 30 jours, Vos enveloppes et Prochains mouvements.
+
+- **Déplacer** : sur ordinateur, glissez la poignée d’un bloc vers un autre. La page défile près du bord pendant un déplacement. Les boutons **Monter / Descendre** permettent aussi de changer l’ordre, au clavier ou sur téléphone.
+- **Afficher / masquer** : décochez Afficher. Pendant la personnalisation, la barre du bloc reste accessible même si son contenu est masqué. Si tous les blocs sont masqués, le bouton Personnaliser reste disponible.
+- **Largeur** : choisissez Largeur normale ou Pleine largeur sur ordinateur. Sur les petits écrans, les blocs s’empilent pour rester lisibles; le téléphone n’affiche pas de réglage de largeur.
+- **Deux dispositions** : téléphone (largeur de fenêtre jusqu’à 760 px) et ordinateur. Chacune a son ordre, ses blocs visibles et ses largeurs. Passer d’un format à l’autre ne remplace pas la disposition de l’autre format.
+- **Enregistrement automatique** : les choix sont sauvegardés dans les données de l’application. Le statut précise l’enregistrement en cours ou terminé. Ils sont conservés après une mise à jour et inclus dans les sauvegardes JSON.
+- **Connexion interrompue** : le brouillon reste affiché et Réessayer l’enregistrement permet de le sauvegarder. Ne quittez pas la page avant confirmation d’enregistrement. Si cette disposition a été modifiée dans une autre fenêtre, choisissez Charger la version enregistrée ou Conserver mes choix; aucun écrasement silencieux.
+- **Rétablir la disposition par défaut** restaure uniquement le format actuellement affiché. Terminer quitte le mode personnalisation.
+
+Ces réglages déplacent les blocs existants : pas de copie de chiffres ni de nouveau calcul financier. Les soldes, réserves, transactions, prévisions et règles du Safe-to-Spend restent identiques. Personnaliser ne remplace pas l’annulation de la dernière opération financière; une annulation financière conserve les dispositions actuelles.
+
+Aperçus avec données fictives : [mode Personnaliser](v47-personnalisation.png) · [tableau de bord](v47-dashboard.png) · [sur iPhone](v47-iphone.png).
+
+## Nouveautés 4.6 : sous-catégories, archivage et fusion
+
+Dans **Catégories**, le bouton **+ Sous-catégorie** d’une catégorie ajoute un niveau facultatif de classement : Maison → Entretien, Meubles, Essentiels; Auto → Essence, Entretien et pièces. Plusieurs sous-catégories sont possibles, sans troisième niveau. Un même nom peut exister dans deux catégories différentes; les doublons normalisés sont refusés dans une même catégorie. La recherche retrouve aussi les parents à partir du nom d’une sous-catégorie.
+
+- **Transactions** : choisissez la catégorie puis une sous-catégorie facultative. La modification d’un achat, la copie d’une opération et les suggestions par commerce conservent ce classement. Un choix manuel reste prioritaire. Le filtre avancé permet de sélectionner une sous-catégorie et l’export CSV comprend les deux noms.
+- **Bilan** : les totaux restent groupés par catégorie. **Voir le détail** affiche les montants de chaque sous-catégorie et les achats restés sans sous-catégorie, sans double comptage. Les plafonds mensuels restent ceux des catégories principales.
+- **Import CSV** : sous-catégorie par défaut ou colonne « Sous-catégorie » facultative, liée à la catégorie de chaque ligne. Une sous-catégorie inconnue ou incompatible signale une erreur à vérifier avant import. Le classement est visible dans l’aperçu. Les profils CSV peuvent mémoriser la nouvelle colonne; les anciens profils restent utilisables.
+- **Archiver / Réactiver** une catégorie ou une sous-catégorie allège les choix pour les nouveaux achats, sans réécrire l’historique. **Afficher les catégories archivées** permet de les retrouver. Archiver un parent masque ses enfants dans les nouveaux choix; sa réactivation respecte l’état archivé individuel de chacun. Les anciennes transactions restent consultables et modifiables avec leur classement archivé.
+- **Fusionner deux catégories** présente un aperçu sans écritures : transactions à réaffecter, sous-catégories regroupées par nom normalisé ou créées sous la destination et plafonds mensuels additionnés. La destination doit être active. La source est archivée après confirmation; ses anciens noms sont conservés. Une sous-catégorie de destination déjà archivée conserve son état. Tout changement du budget entre l’aperçu et la confirmation impose de recalculer. L’annulation protégée de la dernière modification peut rétablir la fusion.
+
+La migration est additive : les anciens achats gardent leur catégorie et commencent **sans sous-catégorie**. Une copie SQLite cohérente `data/backups/budget-before-v4.6.sqlite` est créée avant la migration d’un budget existant. Les sauvegardes JSON antérieures sont normalisées lors de leur restauration; les nouvelles incluent les sous-catégories et l’archivage, avec contrôle des liens parent/enfant.
+
+Ces actions de classement ne modifient ni les soldes, ni les réserves, ni les règles du Safe-to-Spend. Les enveloppes restent responsables de l’argent réservé. Aucune réserve automatique pour rembourser les cartes n’est ajoutée.
+
+Aperçus fictifs : [catégories et sous-catégories](v46-categories.png) · [saisie sur iPhone](v46-transaction-iphone.png).
+
+## Nouveautés 4.5 : un onglet pour vos catégories
+
+Le menu principal propose désormais **Catégories**, accessible aussi sur iPhone. Entrez le nom de votre catégorie dans **Nouvelle catégorie**, puis cliquez sur **Créer**. Elle apparaît immédiatement dans les choix des transactions, des imports CSV, des filtres et des plafonds du bilan.
+
+La liste **Mes catégories** permet de rechercher un nom sans tenir compte des accents ou des majuscules. **Modifier** ouvre le formulaire de renommage de la catégorie choisie. Les noms en double sont refusés; renommer conserve l’identifiant, les transactions et les plafonds existants. Les catégories servent à classer les achats : elles ne créent aucune réserve ou dépense.
+
+Les boutons **Gérer les catégories** de Transactions et **Gérer mes catégories** du Bilan ouvrent ce nouvel onglet. Les plafonds mensuels restent dans Bilan. Vos catégories et votre budget actuels sont conservés; aucune migration de données supplémentaire n’est requise.
+
+Aperçus fictifs : [Catégories sur ordinateur](v45-categories.png) · [sur iPhone](v45-categories-iphone.png).
+
+## Nouveautés 4.4 : vos enveloppes, expliquées et plus faciles à utiliser
+
+Le badge indique désormais **v5.0**. Vos enveloppes existantes gardent leur mode, leur réserve et leurs transactions.
+
+- **Voir la fiche**, dans Enveloppes et Budgets libres : réserve restante, achats du mois, budget effectif de la période (y compris une exception), prochain renouvellement non encore effectué et opérations associées. Les dix dernières opérations sont affichées; **Afficher tout l’historique** donne accès aux autres par pages de 50, avec accès à leur éditeur existant. Les opérations importées sans effet sur les soldes sont identifiées.
+- **Configurer l’usage**, depuis la fiche : achats au fil de la période, paiement à date fixe ou budget libre. Pour plusieurs enveloppes, cochez **Sélectionner**, puis **Configurer la sélection**. L’aperçu indique les réserves conservées, le mode et le budget choisis, les éventuels paiements distincts conservés et le minimum prévu sur 90 jours. Rien ne change avant confirmation. Un changement intervenu ailleurs invalide l’aperçu; un minimum négatif exige une confirmation explicite. L’annulation protégée reste disponible après l’application.
+- La configuration groupée conserve les calendriers et budgets individuels. Une enveloppe non programmée doit d’abord être configurée séparément pour devenir un budget périodique. Une nouvelle programmation ou un changement de budget/fréquence/date commence à une **date future**, pour éviter les renouvellements rétroactifs. La réserve actuelle se modifie toujours via les outils existants.
+- Le passage en **Budget libre** retire le budget fixe et le renouvellement, sans libérer sa réserve ni supprimer son historique. Il est refusé tant qu’une récurrence de réserve ou de dépense régulière reste active. Un achat ponctuel déjà programmé reste visible dans l’aperçu et la prévision. Les budgets exceptionnels et liens historiques sont conservés.
+- **À surveiller**, sur le tableau de bord : réserve à 20 % ou moins du budget de la période, dépassement, premier disponible négatif prévu avant le prochain revenu admissible (30 jours si aucun revenu n’est trouvé dans l’horizon), et achats du mois sans enveloppe. L’association étant facultative, ces derniers sont des éléments à examiner, jamais des erreurs ni des associations automatiques. Les budgets en pause ne déclenchent pas d’alerte de consommation.
+- Les montants du **Safe-to-Spend sont cliquables**, aussi au clavier. Le détail commence par l’équation des soldes inclus moins toutes les réserves, puis indique le point le plus bas sur 90 jours et conserve le détail des mouvements existant.
+- Dans la saisie d’un achat, un commerce reconnu peut proposer sa dernière enveloppe active via **Utiliser cette enveloppe**. Vous devez accepter la suggestion; une enveloppe déjà choisie n’est jamais remplacée. Les suggestions de catégories et les choix manuels existants sont conservés.
+
+Aucun virement ou achat réel n’est créé par une configuration. Les réserves restent dans leur compte bancaire; les achats bancaires associés consomment la réserve sans deuxième déduction du montant couvert. **Aucune réserve automatique pour les dettes de cartes** n’est ajoutée. Le mode Budget réservé continue de protéger le disponible sans inventer une date de dépense pour les achats variables.
+
+Aperçus avec données fictives : [tableau de bord](v44-tableau-de-bord.png) · [fiche sur iPhone](v44-fiche-iphone.png) · [configuration guidée](v44-configuration-iphone.png).
+
+## Nouveautés 4.3 : catégories et budgets mensuels réservés
+
+**Transactions → Gérer les catégories**, ou **Catégories → Modifier les catégories** : renommez une catégorie existante. Son identifiant, les anciennes transactions et son plafond mensuel sont conservés. Les doublons de noms (y compris accents/casse/espaces) et les formulaires devenus périmés sont refusés. L’annulation protégée permet de revenir au nom précédent.
+
+**Planifier → Enveloppes → + Budget mensuel réservé** prépare une enveloppe mensuelle en mode **Budget réservé (achats variables)**, avec le premier du mois prochain proposé comme début. Modifiez la date si nécessaire. Ce mode existait sous le libellé « Réserve seulement (épargne) »; la 4.3 le rend explicite pour Restaurant, Pharmacie, Médicaments ou Couches et lait. Aucun changement de mode n’est imposé aux enveloppes existantes.
+
+Exemple Restaurant, 125 $ le 1er novembre :
+
+- La prévision réserve 125 $ à cette date, sans sortie bancaire prévue ni transaction réelle créée. Ce gel est une affectation comptable, pas un virement.
+- Pour protéger un montant **dès aujourd’hui**, renseignez aussi **Réservé actuellement**. Avec 1 000 $ en banque et 125 $ réservés, le Safe-to-Spend est 875 $.
+- Un achat de 30 $ sur le compte bancaire inclus, associé à Restaurant, fait passer la banque à 970 $ et la réserve à 95 $. Le Safe-to-Spend reste à 875 $ : la réserve n’est pas déduite deux fois. Au-delà de la réserve, les achats diminuent de nouveau le disponible libre.
+- Sans report, le renouvellement ramène la réserve à 125 $ (un éventuel excédent redevient disponible); avec report, il ajoute 125 $ au restant. Une réserve non consommée n’est pas supposée dépensée.
+
+Le **solde bancaire prévu** n’invente pas de dates pour ces achats variables : seuls les achats saisis ou explicitement programmés diminuent ce solde. Les factures et virements programmés séparément restent actifs. Pour une dépense à date connue, gardez le mode **Paiement prévu à une date précise**. Les achats sur carte conservent leur fonctionnement existant : dette suivie séparément, aucune réserve automatique pour rembourser la carte, remboursement bancaire via un virement daté.
+
+Pour modifier une enveloppe existante, utilisez **Ajuster l’enveloppe**, choisissez le mode Budget réservé puis enregistrez. Sa réserve actuelle et ses transactions sont conservées.
+
+Aperçus avec données fictives : [budget réservé sur iPhone](v43-budget-reserve-iphone.png) · [modification des catégories](v43-categories-iphone.png).
+
+## Nouveautés 4.2 : Budgets libres
+
+Dans **Planifier → Budgets libres**, réservez de l’argent quand vous le souhaitez pour vos achats non réguliers, sans montant fixe ni renouvellement automatique. Le badge de l’interface indique maintenant **v5.0**.
+
+- **Préparer mes neuf postes** présente Piscine et terrassement, Outils, Meubles et fournitures, Électroniques, Vêtements, Jeux et jouets, Essentiels pour la maison, Auto : Entretien et pièces, Maison : Entretien et amélioration. Après confirmation, seuls les noms manquants sont créés, à **0 $**. Une enveloppe de même nom normalisé (accents, casse, ponctuation et espaces) est conservée, jamais doublée ou modifiée silencieusement. Vous pouvez répéter cette action sans recréer les postes existants.
+- **Ajouter de l’argent** montre la réserve, le disponible libre actuel et le minimum prévu sur 90 jours avant/après, en utilisant le moteur complet de prévision. Aucune dépense ni aucun virement bancaire n’est créé. Un disponible négatif actuel ou prévu demande un acquittement explicite. Si des données ont changé depuis l’aperçu, la confirmation est refusée et il faut recalculer.
+- **Libérer** remet une partie de la réserve dans le disponible libre, dans la limite du montant restant. Les soldes bancaires restent inchangés.
+- **Saisir un achat** ouvre une dépense réelle déjà associée au bon budget, sans l’enregistrer. Les achats associés du mois, le total historique et les cinq derniers achats sont consultables sur chaque carte. Les achats datés dans le futur ne font pas partie de ces statistiques historiques.
+- **Modifier** permet de renommer ou mettre en pause un budget. Une pause conserve sa réserve et son historique; réactivez-le pour ajouter ou libérer de l’argent. Un budget sans transaction ni récurrence associée peut être supprimé avec confirmation du montant libéré; un budget avec historique doit être mis en pause. La dernière modification reste annulable via la protection 4.1.
+- Une **recherche locale** retrouve rapidement un budget parmi les cartes. La recherche globale ouvre aussi directement un budget libre.
+
+### Reprendre vos enveloppes actuelles
+
+Une enveloppe **sans renouvellement**, avec **budget par période à 0 $** et **Réserve seulement**, apparaît automatiquement dans Budgets libres au lieu d’Enveloppes. Aucun montant, identifiant ou achat n’est modifié : il s’agit de la même enveloppe, pas d’un deuxième budget. Les budgets en pause restent comptabilisés dans les réserves.
+
+Pour une autre enveloppe sans programmation récurrente, utilisez **Reprendre une enveloppe**. L’aperçu explique la reprise : budget théorique remis à 0, Réserve seulement activée, montant réservé et historique conservés. Une programmation récurrente active empêche cette reprise; les enveloppes régulières restent dans leur sous-onglet. Un achat ponctuel prévu lié à un budget libre peut continuer à être suivi par le moteur existant, sans introduire un renouvellement du budget.
+
+### Effet sur le Safe-to-Spend
+
+Réserver 50 $ diminue de 50 $ le disponible libre, sans changer vos comptes. Un achat couvert de 30 $ **depuis un compte inclus** diminue à la fois le solde bancaire et la réserve de 30 $ : le disponible libre ne baisse pas une deuxième fois. La part d’un achat qui dépasse la réserve reste une dépense sur le disponible.
+
+Sur **carte de crédit**, le fonctionnement existant est conservé : l’achat augmente le montant dû et consomme la réserve; le remboursement est un virement distinct qui affecte le compte bancaire à sa date. Aucune réserve automatique pour les dettes de cartes n’est ajoutée. Vérifiez les prévisions et programmez les remboursements que vous souhaitez prendre en compte. Les opérations importées en mode historique gardent leur absence d’effet sur les soldes et les réserves.
+
+Les catégories restent indépendantes pour le classement et les rapports; aucun nouveau compte bancaire ni aucune catégorie n’est créé automatiquement par ces budgets. Le format de sauvegarde reste identique, sans nouvelle table : les budgets et leurs achats utilisent les enveloppes et liens existants.
+
+[Aperçu Budgets libres](v42-budgets-libres.png) · [Aperçu de réservation sur iPhone](v42-reservation-iphone.png) · [Écran iPhone](v42-iphone.png) — données fictives.
+
+**Mise à jour** : décompressez le ZIP, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command** dans `~/Applications/Mon Budget`, puis choisissez le nouveau dossier. Ne recopiez pas une ancienne base : les données actives sont conservées et sauvegardées. Rechargez Safari et vérifiez le badge **v4.2**. Conservez tous les fichiers du ZIP, notamment `free-budgets.js`, `free-budgets-ui.js` et `free-budgets.css`.
+
+## Nouveautés 4.1 : savoir où vous en êtes
+
+Le badge **v4.1** apparaît dans l’en-tête sur Mac et iPhone. Sa valeur vient du serveur réellement consulté; son infobulle indique la version complète. Actualisez la page après une mise à jour.
+
+- **Rapprochement guidé** dans Comptes → « Rapprocher avec ma banque ». Saisissez le solde bancaire actuel et la date de début des opérations à examiner. La comparaison ne modifie rien. Examinez transactions et virements, ouvrez leur éditeur, préparez une opération manquante, ou corrigez explicitement le solde avec une note. Une piste du même montant n’est pas un doublon confirmé. Pour les cartes, saisissez le montant dû positif; une vérification de solde ne se transforme jamais en revenu/dépense.
+- **Profils CSV** dans Importer CSV. Mémorisez titres des colonnes, séparateur, compte, format de date et signe sous un nom de banque. Un profil exact et unique est réappliqué au prochain fichier; si plusieurs profils correspondent, choisissez celui du bon compte. Aucun fichier bancaire ni identifiant de connexion n’est enregistré dans le profil. La réutilisation remet le mode **historique sans effet sur les soldes**; l’aperçu, les doublons et la confirmation restent obligatoires avant import.
+- **Recherche globale** dans l’en-tête, ou Cmd + K sur Mac / Ctrl + K. Recherche sans distinction d’accents dans comptes, enveloppes, récurrences, transactions, virements et objectifs, y compris les opérations hors pagination. Jusqu’à 15 résultats par type. Un résultat d’opération ouvre son éditeur sans l’enregistrer.
+- **Annuler la dernière modification** dans l’en-tête. Après confirmation, l’ensemble du budget revient à l’état précédant cette dernière écriture, soldes et associations compris. Une copie de sécurité est créée. Il s’agit d’une seule annulation, sans rétablissement en chaîne. Si une autre modification est intervenue, même sur l’autre appareil, la demande ancienne est refusée. Certaines modifications de préférences rendent aussi une ancienne annulation indisponible. Le point temporaire est conservé dans `data/last-change.json`, hors des sauvegardes exportées.
+- **Copies quotidiennes** dans Sauvegardes. Une copie JSON est créée au démarrage du serveur puis au changement de journée vérifié chaque minute pendant son exécution. Jusqu’à 30 dates sont conservées dans `data/backups/daily-AAAA-MM-JJ.json`. La date/heure de la dernière copie réussie et les erreurs éventuelles sont affichées. Téléchargez une copie datée pour la restaurer avec le parcours existant. « Actualiser la copie d’aujourd’hui » remplace seulement le point de la journée actuelle. Les autres fichiers de sauvegarde ne sont pas supprimés. Ces copies restent sur le même Mac : conservez aussi une copie ailleurs.
+
+### Mieux explorer les prévisions
+
+Les **filtres de comptes** du calendrier et des prévisions limitent les opérations affichées. La courbe et les grands montants restent le disponible global; le panneau de journée ajoute séparément le solde propre du compte sélectionné, ou le montant dû pour une carte. Aucun compte n’est exclu du calcul par ce filtre visuel.
+
+Le repère de **prochain revenu** indique la date, sa description et le minimum avant sa réception, sans dépenser le revenu à l’avance. La détection porte sur le premier revenu prévu dans un compte inclus au cours des 30 prochains jours; elle ne suppose pas qu’un revenu est forcément un salaire.
+
+Les **scénarios d’achat enregistrés** conservent uniquement nom, montant, compte et date. Leur reprise prépare le simulateur; comparez à nouveau pour recalculer avec les données courantes. Si la date sort de l’horizon, la date proposée est ajustée et doit être vérifiée. Ils ne créent aucune transaction. Limite : 20 profils et 20 scénarios, dans la limite de taille des préférences.
+
+Le calendrier permet aussi d’**aller directement à un mois**, sans multiplier les clics sur les flèches. Les prévisions restent limitées à 90 jours; les dates plus éloignées n’affichent aucun solde inventé.
+
+Aucune réserve automatique pour les dettes de cartes n’est ajoutée. Aucune connexion bancaire payante ou synchronisation bancaire automatique n’est nécessaire. Le format des sauvegardes est conservé : profils et scénarios utilisent les paramètres existants, sans nouvelle table.
+
+[Aperçu version et prévisions](v41-prevision.png) · [Rapprochement bancaire](v41-rapprochement.png) · [Version sur iPhone](v41-iphone.png) — données fictives.
+
+Pour installer : décompressez le ZIP, ouvrez le raccourci permanent **Mettre a jour Mon Budget.command** dans `~/Applications/Mon Budget`, puis choisissez le nouveau dossier. Les données actives restent dans le dossier fixe et sont sauvegardées avant remplacement. Ne recopiez pas une ancienne base par-dessus. Rechargez Safari et vérifiez le badge **v4.1**. Gardez tous les fichiers ensemble, notamment `budget-support.js`, `budget-v41.js` et `budget-v41.css`.
+
+## Ouverture Mac simplifiée — v4.0.1
+
+L’installateur crée des raccourcis permanents dans **`~/Applications/Mon Budget`** : **Ouvrir Mon Budget.command**, **Mettre a jour Mon Budget.command** et **Desactiver Mon Budget.command**. Pour les mises à jour suivantes, utilisez le raccourci permanent et choisissez le dossier du nouveau ZIP; vous n’avez plus à ouvrir un nouveau fichier `.command` téléchargé à chaque version. Les données actives du service sont conservées.
+
+Si macOS bloque le premier installateur, ouvrez Terminal, tapez **`bash` suivi d’un espace**, glissez **Installer acces automatique.command** depuis le nouveau dossier dans Terminal, puis appuyez sur Entrée. Faites-le uniquement pour la version obtenue depuis votre dépôt GitHub. Le service installé doit déjà avoir ses données, ou une première installation doit contenir votre dossier `data`.
+
+Cette version ne signe pas l’application auprès d’Apple, ne désactive pas Gatekeeper et ne retire aucun attribut de quarantaine. Le cycle du service est testé en simulation; le comportement réel de Finder/Gatekeeper reste à vérifier sur le Mac. [Instructions détaillées](../ACCES-IPHONE.md#ouverture-bloquée-par-macos--v401).
+
+## La version 4.0 : planifier par date
+
+**Calendrier** : vrai mois avec le disponible prévu en fin de journée et deux événements principaux, vue semaine adaptée au toucher sur iPhone, navigation au clavier (flèches et Début), distinction des opérations réelles et prévues. Un panneau de journée présente les comptes, les enveloppes, les virements et leur effet sur le disponible. Les mouvements sans effet de renouvellement à 0 $ restent dans l’audit plutôt que dans les cases.
+
+**Prévision** : horizons 30, 60 et 90 jours, disponible réel actuel, point le plus bas et disponible à la date choisie. Le graphique propose le disponible après réserves ou le solde bancaire prévu. Sélectionnez une date au clavier, avec le curseur, sur la courbe ou dans le champ date. « Pourquoi ce montant ? » explique le solde de départ, les revenus, les dépenses, les enveloppes, les virements et les réserves. Des alertes indiquent le premier passage sous zéro, les opérations à confirmer et les comptes d’enveloppes manquants.
+
+**Simulateur d’achat** : choisissez le montant, la date et le compte pour comparer les deux trajectoires. Le moteur complet recalcule les enveloppes et les paiements de cartes calculés. L’achat simulé est un achat **supplémentaire hors enveloppe**; il ne remplace pas un achat déjà prévu. Une carte sans plan de remboursement ne produit aucune sortie bancaire automatique. Un compte exclu peut devenir négatif sans faire baisser le disponible global; son solde propre est affiché. La simulation ne crée aucune transaction, aucune réserve et aucune règle dans la base. Elle est effacée à la prochaine actualisation des données.
+
+**Déplacer une échéance** : « Déplacer » ouvre d’abord une comparaison sans écriture. « Appliquer ce report… » ouvre ensuite le formulaire de report existant, avec sa validation des données actuelles, avant tout enregistrement. Les soldes réels restent inchangés. Le calendrier sélectionne la nouvelle date après application.
+
+**Ajout à une date** : préparez une dépense, un revenu ou un virement unique depuis le panneau de journée. Dans le futur, l’ajout crée un brouillon de récurrence unique, à enregistrer explicitement. Pour aujourd’hui, vous pouvez aussi choisir de saisir une opération déjà effectuée. Dans le passé, l’ajout prépare une opération réelle.
+
+**Prévu contre réel** : le résumé porte sur les dépenses terminées et rapprochées du mois actuel. Le passé du calendrier affiche les opérations réelles, sans inventer un ancien solde ni une courbe historique. Les calculs antérieurs dépendent des règles actuelles; aucun historique immuable des anciennes prévisions n’est ajouté. Le suivi complet et les anciennes vues détaillées restent disponibles.
+
+La règle financière reste identique : aucune réserve automatique pour les dettes de cartes; leurs remboursements datés influencent le solde bancaire. Les opérations rapprochées ne sont pas déduites une deuxième fois. Le format des sauvegardes JSON est inchangé; aucune nouvelle migration de base n’est nécessaire pour la 4.0.
+
+[Aperçu calendrier](v4-calendrier.png) · [Aperçu prévision](v4-prevision.png) · [Calendrier iPhone](v4-calendrier-iphone.png) · [Prévision iPhone](v4-prevision-iphone.png) — données fictives.
+
+### Installer la 4.0
+
+Si le mode automatique est installé, téléchargez le ZIP, décompressez-le puis lancez **Installer acces automatique.command**. La base active du dossier fixe est sauvegardée et conservée; ne recopiez pas une ancienne base par-dessus. Si vous êtes encore en mode manuel, arrêtez le serveur et suivez les instructions de copie du dossier `data` ci-dessous. Gardez tous les fichiers ensemble, y compris **planning-v4.js** et **planning-v4.css**, puis rechargez Safari sur Mac et iPhone.
+
+## Sans fenêtre Terminal — v3.7
+
+**Installer acces automatique.command** installe le budget en arrière-plan et le démarre à chaque ouverture de session Mac. À la première installation seulement, arrêtez l’ancien serveur avec Control + C et placez votre dossier `data` à côté du nouvel installateur. Vous pourrez fermer Terminal une fois le service prêt.
+
+L’application et les données actives résident ensuite dans `~/Library/Application Support/Mon Budget`. Pour les mises à jour suivantes, décompressez le nouveau ZIP et relancez son installateur : il sauvegarde la base active, remplace l’application et la redémarre, sans recopier les données. Le téléchargement ou la copie de fichiers ne déclenche pas l’installation. **Desactiver acces automatique.command** arrête le service et supprime son démarrage automatique sans effacer les données.
+
+Tailscale doit rester connecté, le Mac allumé et son couvercle ouvert. Le démarrage se fait après ouverture de session, pas avant la connexion au Mac. [Installation et fonctionnement détaillés](../ACCES-IPHONE.md#recommandé--fonctionner-sans-fenêtre-terminal--v37). L’intégration macOS/Tailscale réelle reste à vérifier sur le Mac; les essais de cycle du service utilisent un environnement simulé.
+
+## Virements dans Transactions — v3.6
+
+La fenêtre **Nouvelle transaction** propose maintenant **Dépense**, **Revenu** et **Virement**. Pour un virement, choisissez le compte source, le compte destination, le montant et la date, puis **Déjà effectué** ou **Prévu à une date précise**. Un virement prévu peut être unique ou se répéter chaque semaine, aux 2 semaines, chaque mois, aux 3 mois, aux 6 mois ou chaque année.
+
+Un virement effectué modifie les deux soldes sans créer de revenu ni de dépense. Un virement prévu utilise le calendrier et le moteur de prévision existants; les soldes réels changent seulement lors de sa confirmation dans **À confirmer**. Si le virement réel est déjà saisi, associez-le pour éviter un double débit. L’application ne fait aucun paiement auprès des banques.
+
+Les dernières opérations de virement sont consultables dans Transactions, sous **Virements entre comptes — dernières opérations**. Le lien **Voir tous les virements** ouvre l’historique dédié; les filtres et totaux du registre de dépenses/revenus restent propres à ces transactions. Un remboursement de carte ne crée toujours aucune réserve automatique.
+
+[Aperçu de la saisie d’un virement](saisie-virement.png) — données fictives.
+
+## Fréquences de factures — v3.5
+
+Dans **Planifier → Récurrences**, une facture peut revenir chaque semaine, aux 2 semaines, chaque mois, aux 3 mois, aux 6 mois ou chaque année. Les mêmes choix sont disponibles lors de sa modification. Les prévisions, le calendrier et les exceptions utilisent ces dates. Une échéance au 31 est ramenée au dernier jour des mois plus courts, puis retrouve son jour d’origine; le 29 février annuel revient au 28 février hors année bissextile. Les ajustements de jours ouvrables continuent de s’appliquer.
+
+La migration conserve les identifiants des règles et leurs associations et crée préalablement `data/backups/budget-before-extended-recurrences.sqlite`. Ces nouvelles fréquences concernent les récurrences de factures; les fréquences des enveloppes et des plans de remboursement de cartes restent les mêmes.
+
+## Nouveau : remboursements de cartes prévus
+
+Dans **Comptes → CIBC → Planifier les remboursements**, choisissez **Conjoint**, la première date et la fréquence. Deux modes sont disponibles : **selon les achats** de la période ou **montant fixe**. Si un virement récurrent existe déjà, sélectionnez-le pour le réutiliser.
+
+Un achat d’épicerie de 230 $ sur CIBC le jeudi augmente le solde de la carte; son remboursement prévu le vendredi diminue Conjoint à cette date. Le calendrier distingue les deux. Le détail du plan explique les achats, remboursements marchands et reports qui composent chaque proposition. Le mode calculé ne rembourse pas automatiquement l’ancien solde total de la carte et ne crée **aucune réserve automatique pour les cartes**.
+
+Le calcul inclut les achats réels et prévus de chaque période, les remboursements marchands et les achats non remboursés après un paiement partiel. Une carte déjà créditrice limite le montant proposé. Vous pouvez ajuster une échéance dans le suivi. L’application ne fait aucun virement bancaire : confirmez uniquement les paiements réellement effectués. Si un virement est déjà saisi, associez-le dans **À confirmer**; un paiement distinct demande une confirmation explicite pour éviter un double débit.
+
+La configuration du plan ne modifie pas vos soldes réels. Une copie SQLite est créée avant la migration dans `data/backups/budget-before-card-payments.sqlite`. Les anciennes sauvegardes JSON restent importables. Les prévisions historiques utilisent les règles actuelles; elles ne constituent pas un historique immuable des anciennes règles.
+
+[Aperçu du plan de remboursement](remboursement-carte.png) · [Aperçu mobile](mobile-remboursement.png) — données fictives.
+
+## Mettre à jour sur Mac
+
+Si vous avez installé le mode automatique, relancez uniquement **Installer acces automatique.command** depuis le nouveau ZIP. Les étapes suivantes concernent le mode manuel.
+
+**La v3 modifie aussi le serveur. La mise à jour des trois fichiers visuels ne suffit plus.**
+
+1. Arrêtez le serveur avec Control + C.
+2. Faites une copie **complète** du dossier actuel, avec `data/`, `budget.sqlite` et les éventuels fichiers `-wal` et `-shm`.
+3. Décompressez le nouveau ZIP dans un **nouveau dossier distinct**, par exemple `Mon-Budget-3`. Gardez tous ses fichiers ensemble.
+4. **Copiez** votre ancien dossier `data/` dans ce nouveau dossier, au même niveau que `server.js`. Gardez l’original intact; le ZIP ne contient aucun dossier de données.
+5. Depuis le nouveau dossier, ouvrez `Lancer Mon Budget.command` ou, pour conserver l’accès iPhone, `Acces prive iPhone.command`. Vous pouvez aussi lancer `npm start`. Puis rechargez Safari avec Cmd + Option + R.
+
+Les fichiers `budget-features.js`, `features.js`, `planner.js`, `transactions.js`, `forecast-engine.js`, `forecast-ui.js`, `planning-actions.js` et `planning-workflow.js`, `card-payments.js`, `card-payments-engine.js` et `card-payments-ui.js` sont indispensables. Ne mélangez pas l’ancien serveur avec les nouveaux fichiers visuels.
+La migration v3 est additive. Avant ses ajouts, une copie SQLite cohérente est créée dans `data/backups/budget-before-v3.sqlite`. Vos transactions existantes restent sans catégorie jusqu’à leur classement; les soldes et réserves sont conservés. Une modification de catégorie ou de description seule ne recalcule pas les réserves historiques.
+
+Instructions détaillées et procédure de retour à la version précédente : [INSTALLATION-MAC.txt](../INSTALLATION-MAC.txt).
+
+## Un lancement plus simple sur Mac
+
+Le fichier exécutable **Lancer Mon Budget.command** lance le serveur et ouvre le navigateur. Il détecte une instance v3 déjà ouverte sur le port 3030. Gardez sa fenêtre Terminal ouverte; Control + C arrête le serveur qu’il a lancé. Vérifiez que vous utilisez le bon dossier de données si une autre instance est déjà ouverte.
+
+Ce lanceur nécessite Node.js et n’est pas une application `.app` signée et autonome. Le démarrage réel dans Finder/Safari reste à vérifier sur Mac; la syntaxe du script est vérifiée dans l’environnement de développement.
+
+## Tableau de bord et prévisions
+
+- Disponible actuel, enveloppes réservées et minimum prévu sur 90 jours.
+- Montant prudent aujourd’hui, cette semaine et jusqu’à la prochaine paie détectée.
+- Graphique interactif sur 30 jours avec graduations, dates, minimum et avertissement sous zéro.
+- Survol, toucher ou navigation clavier : Tab atteint le point sélectionné, les flèches changent de jour, Début/Fin atteignent les extrémités.
+- Tableau des montants et mouvements quotidiens accessible sous le graphique.
+- Enveloppes et cinq prochains mouvements à côté du graphique sur ordinateur; disposition adaptée au mobile.
+
+Les règles récurrentes servent à la prévision. Elles ne déclenchent aucun virement bancaire. Les soldes bancaires et les transactions sont saisis ou importés manuellement. Sans paie prévue sur 30 jours, aucun montant « jusqu’à la paie » n’est inventé.
+
+![Tableau de bord avec données fictives](tableau-de-bord.png)
+
+## Accès privé depuis l’iPhone (3.3)
+
+Vous pouvez conserver les données sur votre Mac et consulter le même budget depuis l’iPhone, y compris hors de la maison, grâce à **Tailscale sur les deux appareils**. Le Mac doit rester allumé et connecté.
+
+Le nouveau lanceur **Acces prive iPhone.command** prépare une adresse HTTPS privée et réserve l’accès distant au compte propriétaire fourni par Tailscale Serve. L’accès local reste disponible; aucun port n’est ouvert sur le routeur et aucun Funnel n’est activé. Le fichier `private-access.js` doit rester avec le serveur. La configuration personnelle est enregistrée dans `data/private-access.json`, hors du dépôt.
+
+Consultez [le guide Mac + iPhone](../ACCES-IPHONE.md) pour l’installation, la mise à jour, le lancement, l’ajout à l’écran d’accueil et les limites. L’installation effective de Tailscale sur vos appareils reste nécessaire; elle n’est pas réalisée depuis cet environnement. Aucun mode hors ligne ni hébergement permanent n’est ajouté.
+
+## À confirmer et explication du solde (3.2)
+
+**Planifier → Prévu / Réel → À confirmer** est le point de départ quotidien. La liste distingue les opérations en retard, celles d’aujourd’hui et les prochaines échéances. Les filtres donnent accès aux opérations à traiter, aux sept prochains jours ou aux 90 jours disponibles. Les réservations internes n’apparaissent pas comme des paiements bancaires à confirmer. Les éléments sans configuration complète restent signalés.
+
+- **Confirmer le réel** : indiquez le montant effectivement passé et sa date. Si la transaction est déjà saisie, choisissez **Déjà saisie — associer l’opération** pour ne pas la débiter à nouveau. La confirmation crée, au besoin, une seule transaction ou un seul virement, puis le rattache à son échéance.
+- **Enveloppe avec plusieurs achats** : décochez **Aucun autre achat prévu pour cette période**. Seul le budget restant reste projeté; une confirmation ultérieure termine la période. Le total réel peut différer du budget initial.
+- **Modifier le prévu** : change le budget de cette occurrence, sans modifier les autres dates ni les soldes réels.
+- **Reporter** : déplace une seule sortie ou un seul revenu, dans la limite des 90 jours autorisés. Pour une enveloppe, le renouvellement de la réserve conserve sa date habituelle; seule la dépense est déplacée.
+- **Annuler** : retire l’occurrence de la simulation sans créer de transaction. L’**Historique complet** permet de la retrouver et de la rétablir.
+
+Une confirmation d’enveloppe conserve le lien avec sa période d’origine même si l’achat est enregistré plus tard. La suppression de cet achat rétablit la prévision correspondante. Deux validations de la même fiche ne créent pas deux opérations; une fiche devenue obsolète affiche une erreur et propose d’actualiser la liste. Les montants réels doivent être datés d’aujourd’hui ou d’un jour passé.
+
+Dans **Planifier → Prévision**, choisissez une date. Le panneau **Pourquoi ce solde ?** explique :
+
+**Solde réel de départ + revenus prévus − factures − dépenses d’enveloppes + virements nets = solde bancaire prévu.** Les réserves d’enveloppes restantes sont ensuite déduites pour obtenir le disponible prévu.
+
+Chaque groupe se déplie pour voir les mouvements et leur effet bancaire exact. Un virement entre deux comptes inclus est visible avec un effet net nul; un paiement de carte ou un virement vers un compte exclu apparaît comme une sortie. Les revenus en retard non confirmés ne sont pas ajoutés au solde. Les opérations réelles déjà enregistrées sont comprises dans le solde de départ. Les chiffres se mettent à jour avec la date, le curseur ou l’horizon.
+
+**Aucune réserve automatique n’est créée pour les cartes**, conformément au fonctionnement choisi. Cette mise à jour ne change pas cette règle.
+
+La migration est additive et crée une copie cohérente dans `data/backups/budget-before-planning-actions.sqlite`. Les anciens exports JSON v3 et v3.1 restent restaurables. Le suivi est recalculé à partir des règles actuelles; il ne constitue pas une archive immuable des anciennes prévisions.
+
+![À confirmer — données fictives](a-confirmer.png)
+
+![Explication d’un solde — données fictives](explication-solde.png)
+
+## Prévision complète et suivi réel (3.1)
+
+Dans **Planifier → Prévision**, choisissez une date (jusqu’à 90 jours) et consultez séparément le **solde bancaire prévu**, les **réserves d’enveloppes**, le **disponible prévu**. Le sélecteur de courbe permet de passer du disponible au solde bancaire. Le disponible réel d’aujourd’hui reste distinct de la simulation des mouvements attendus aujourd’hui.
+
+- Enveloppe en **Dépense prévue** : son budget est une sortie bancaire à chaque date programmée. Exemple : 230 $ les 22 et 29 octobre et le 5 novembre = 690 $ de dépenses projetées au 5 novembre.
+- Choisissez le compte de chaque enveloppe. Sans compte attribué, la dépense est tout de même déduite du total des comptes inclus, avec un avertissement; elle n’est pas attribuée arbitrairement à un compte.
+- Enveloppe **Réserve seulement** : adaptée à l’épargne, sans sortie bancaire automatique. Ses renouvellements continuent de réserver l’argent.
+- Revenus, dépenses, virements, budgets exceptionnels, annulations et dates déplacées sont intégrés. Une règle peut maintenant être **ponctuelle**. Une dépense récurrente peut être liée à une enveloppe : elle remplace la dépense automatique de cette enveloppe pour la période correspondante, sans masquer les autres périodes.
+- Les soldes dus sur les cartes ne créent **aucune réserve automatique** et ne sont pas déduits du Safe-to-Spend. Les achats sur crédit augmentent la dette suivie séparément. Seuls les virements de remboursement prévus ou enregistrés réduisent le solde bancaire et le disponible.
+
+Dans **Planifier → Prévu / Réel**, les cartes présentent **Prévu / Réel / Écart**, avec des filtres de mois et de statut. Les transactions réelles sans prévision associée sont également visibles et sont déjà incluses dans les soldes.
+
+**Enveloppes :** associez vos achats réels à l’enveloppe. Les dépenses entre une date programmée et la veille de la suivante sont additionnées. Par défaut, dès qu’un achat est enregistré, ce total réel remplace le budget de la période. Pour prévoir d’autres achats, cliquez **Encore des achats** : seul le budget restant sera projeté. **Terminer la période**, **Annuler la dépense prévue** et **Calcul automatique** permettent de corriger ce suivi. Le reste réellement réservé demeure dans l’enveloppe jusqu’à son ajustement ou son renouvellement, selon son mode de report; il n’est pas libéré silencieusement.
+
+**Récurrences :** un rapprochement automatique exige compte, montant, description et date compatibles, sans ambiguïté. Si le montant réel diffère, utilisez **Associer un réel**. L’association ne modifie pas les soldes. Les achats sur carte se saisissent comme dépenses; les remboursements comme virements.
+
+Les dépenses et virements passés non confirmés restent déduits prudemment à partir d’aujourd’hui. Les revenus en retard ne financent pas le disponible avant leur rapprochement. Le calendrier conserve la date prévue d’origine et affiche les dépenses d’enveloppes et les opérations réelles, y compris au-delà des 50 dernières transactions.
+
+Le suivi commence à l’activation de cette version : les prévisions historiques antérieures ne sont pas inventées. Les prévisions sont recalculées à partir des règles actuelles; ce n’est pas un archivage figé des anciennes versions du budget. Une date, une fréquence ou un budget manquant est signalé. Les opérations futures déjà saisies comme réelles sont signalées : leurs montants sont déjà dans les soldes; utilisez plutôt une opération prévue pour les prochains paiements. Vérifiez les transactions ambiguës et les affectations d’enveloppes avant de vous fier aux chiffres.
+
+La migration ajoute des champs et une table de suivi, sans réécrire les opérations existantes. Une copie SQLite est conservée dans `data/backups/budget-before-planning-v4.sqlite`. Les sauvegardes JSON v3 antérieures restent restaurables.
+
+![Prévu et réel — données fictives](prevu-reel.png)
+
+## Transactions et catégories
+
+Choisissez **Dépense** ou **Revenu**, puis entrez un montant positif. Les descriptions récentes sont suggérées. Chaque transaction peut avoir une catégorie et, pour une dépense, une enveloppe.
+
+Les **catégories** servent à analyser les dépenses; les **enveloppes** réservent de l’argent dans le disponible. Les deux fonctions sont indépendantes.
+
+L’historique propose recherche, filtres de compte, de catégorie, de type, de révision et de dates. L’export CSV inclut **tous les résultats filtrés**, au-delà de la page affichée. Les descriptions susceptibles d’être interprétées comme des formules par un tableur sont neutralisées dans cet export.
+
+Une dépense sur crédit augmente la dette. Un paiement de carte doit être enregistré comme un **virement** depuis le compte bancaire vers la carte, pour éviter une deuxième dépense.
+
+## Bilan mensuel
+
+Le bilan utilise toutes les transactions du mois sélectionné, avec un filtre facultatif par compte : revenus, dépenses, différence et répartition des dépenses par catégorie. Les virements et corrections de solde sont exclus.
+
+Les transactions positives figurent dans les revenus et les négatives dans les dépenses; cela inclut les remboursements saisis comme montants positifs. Ce bilan décrit les opérations, sans calcul comptable du revenu imposable.
+
+Vous pouvez créer des catégories et définir un plafond mensuel pour chacune. Ce plafond récurrent s’applique à chaque mois consulté, sans historique de versions; il ne réserve pas d’argent. Le montant non classé reste visible.
+
+![Bilan avec données fictives](bilan-mensuel.png)
+
+## Import bancaire CSV
+
+L’import comporte trois étapes : fichier/compte, association des colonnes et aperçu avec sélection des opérations.
+
+- CSV **UTF-8** avec ligne de titres; virgule, point-virgule ou tabulation.
+- Guillemets, séparateurs dans les descriptions et cellules multilignes pris en charge.
+- Dates ISO `AAAA-MM-JJ`, ou choix explicite jour/mois/année et mois/jour/année.
+- Montant signé ou colonnes débit/crédit séparées. Option d’inversion du signe pour certains relevés de carte.
+- Montants localisés tels que `1 234,56`, `1,234.56` et montants entre parenthèses.
+- Catégorie par défaut, ou colonne catégorie si son nom correspond à une catégorie existante; sinon la catégorie par défaut s’applique.
+- Maximum 2 Mo et 2 000 opérations par fichier. Les lignes invalides ne sont pas importables.
+
+Le mode par défaut **historique seulement** conserve les soldes et les réserves actuels. Ces opérations sont marquées dans l’historique; leur modification ou suppression ultérieure ne recalcule pas les soldes. Le mode **appliquer aux soldes** sert aux opérations qui ne sont pas déjà comprises dans les soldes saisis. Aucun mode d’import ne consomme d’enveloppe.
+
+Un doublon possible correspond au même compte, à la même date, au même montant et à la même description, sans distinction de casse et après suppression des espaces aux extrémités. Ils sont décochés par défaut. Vous pouvez autoriser leur sélection après vérification. Des achats légitimement identiques peuvent être signalés; les descriptions bancaires différentes peuvent ne pas être reconnues.
+
+Les virements et remboursements de carte ne sont pas automatiquement identifiés : décochez-les dans l’aperçu et saisissez-les comme virements. Le serveur revérifie les doublons au moment de confirmer et importe la sélection en une seule transaction SQLite.
+
+![Aperçu CSV avec données fictives](import-csv.png)
+
+## Comparer les soldes
+
+Dans **Comptes**, entrez le solde bancaire actuel et une note. L’application affiche le solde enregistré et l’écart, puis demande confirmation de la correction. Elle conserve l’ancien et le nouveau solde dans un historique, sans créer de revenu ni de dépense.
+
+Il s’agit d’une comparaison et d’une correction du **solde actuel**, pas d’un rapprochement exhaustif des lignes d’un relevé à une date passée. Si le compte a changé depuis l’aperçu, la correction est refusée : comparez de nouveau.
+
+## Objectifs d’épargne
+
+Définissez un montant cible, le montant déjà épargné et une date facultative. La progression et un repère mensuel sont affichés. Il s’agit d’un **suivi manuel** : créer ou modifier un objectif ne déplace pas d’argent et ne crée aucune réserve dans le disponible. Le repère mensuel ne simule pas d’intérêts.
+
+## Sauvegardes et restauration
+
+Depuis **Sauvegardes**, téléchargez une copie JSON complète : comptes, transactions, catégories, enveloppes, règles, exceptions, rapprochements, plafonds, imports et objectifs. Le format de sauvegarde est identifié par `format: "mon-budget"` et `version: 1`.
+
+La restauration accepte un export JSON v3 complet, jusqu’à 8 Mo et 100 000 lignes au total. Elle vérifie d’abord les tables, types, contraintes, dates et liens dans une base temporaire. Vous devez ensuite taper `REMPLACER`. Juste avant le remplacement atomique, une copie JSON du budget actuel est conservée dans `data/backups/`.
+
+Les copies SQLite automatiques ne sont pas des fichiers JSON à téléverser dans cet écran. Conservez ces fichiers et une copie du dossier complet pour la récupération manuelle. Une sauvegarde contient des données financières personnelles : gardez-la dans un endroit privé.
+
+## Règles et limites conservées
+
+- Prévisions sur 90 jours et graphique sur 30 jours; pas de prévisions rétrospectives.
+- Le calendrier utilise les 50 dernières transactions réelles de `/api/state`; l’historique paginé reste complet.
+- Récurrences, rapprochement automatique conservateur et liens manuels, déplacements d’occurrences et budgets exceptionnels d’enveloppes restent disponibles.
+- Les règles mensuelles du dernier jour ouvrable excluent les week-ends; vérifiez les jours fériés et conventions de l’organisme payeur.
+- Pour les nouvelles dépenses v3, la réserve effectivement consommée est mémorisée pour les corrections/suppressions. L’effet exact d’anciennes dépenses plafonnées n’est pas reconstructible : vérifiez l’enveloppe après une modification de montant sur une ancienne opération.
+- Ne lancez pas deux serveurs sur la même base.
+- Pas de connexion automatique à votre banque ni d’application Mac autonome signée.
+- Vérifiez les soldes et les prévisions sur une copie de vos données avant utilisation quotidienne.
+
+## Développement et vérifications
+
+Aucune dépendance d’exécution externe. Les tests API nécessitent Python 3; les tests navigateur nécessitent en plus Playwright pour Python et Chromium.
+
+```sh
+node --test tests/csv.test.js
+python3 tests/api-tests.py
+```
+
+Les tests n’utilisent que des bases temporaires et des données fictives. Ils vérifient notamment les signes des opérations sur crédit, les enveloppes plafonnées, le classement des anciennes transactions, la migration, les bilans complets, les imports invalides et doublons, les corrections concurrentes, les restaurations refusées et les copies de sécurité.
+
+```sh
+python3 -m venv /tmp/budget-ui-venv
+/tmp/budget-ui-venv/bin/python -m pip install playwright
+/tmp/budget-ui-venv/bin/python -m playwright install chromium
+/tmp/budget-ui-venv/bin/python tests/ui-smoke.py
+/tmp/budget-ui-venv/bin/python tests/workflows-ui.py
+```
+
+`CHROMIUM_PATH` permet de choisir un exécutable existant. Les captures sont enregistrées dans un dossier temporaire indiqué à la fin. Voir [TESTS.md](../TESTS.md) pour les résultats et leurs limites. Safari et Finder réels restent à vérifier sur Mac.
+
+
+## Comptes et Planifier — interface repensée
+
+Une seule entrée **Planifier** dans le menu principal ouvre un espace avec onglets : Vue d’ensemble, Récurrences, Enveloppes, Objectifs et Calendrier. Sur mobile, le menu des écrans se déplie; le bouton d’ajout de transaction reste visible.
+
+- **Comptes** : synthèse des soldes bancaires, fonds inclus et cartes; cartes individuelles, interrupteurs d’inclusion et modification. La comparaison de solde s’ouvre à la demande.
+- **Prévision** : horizons de 30, 60 et 90 jours, courbe du disponible, début/minimum/fin, avertissement sous zéro et détail d’une journée. Un curseur accessible au clavier, les dates et les cartes de semaines permettent de parcourir la période. Quatre semaines sont présentées à la fois; les autres sont accessibles par les flèches. La liste quotidienne complète sur 90 jours reste disponible dans un volet fermé par défaut.
+- **Enveloppes** : réserves, budgets, renouvellements et dépenses par période dans des cartes. Le budget exceptionnel est rangé dans un volet.
+- **Récurrences** : cartes filtrables par type; prochaine occurrence visible dans la prévision, modification, pause et suppression. Le rapprochement manuel s’ouvre au besoin.
+- **Objectifs** : cartes de progression et formulaire dans une fenêtre dédiée.
+- **Calendrier** : grille mensuelle sur ordinateur et mobile, repères sur les jours avec mouvements et détail au clic.
+
+Ces vues lisent les prévisions du serveur; elles ne modifient pas les règles financières. Les cartes de semaine correspondent à des blocs de sept jours à partir du premier jour de la prévision, pas nécessairement du lundi au dimanche. Le minimum affiché correspond à l’horizon sélectionné.
+
+![Comptes avec données fictives](comptes.png)
+
+![Prévision 90 jours avec données fictives](prevision-90-jours.png)
+
+[Aperçu des enveloppes](enveloppes.png) · [Aperçu des récurrences](recurrences.png) · [Prévision mobile](mobile-prevision.png)
+
+Test supplémentaire : `python3 tests/planning-ui.py` (mêmes prérequis Playwright que les autres tests navigateur).
+
+
+## Transactions au quotidien
+
+L’historique regroupe les opérations par journée, avec catégorie, compte, montant et état de révision. Un clic sur **À vérifier / Révisée** change l’état sans toucher au montant. **Modifier** ouvre l’éditeur; le menu `•••` propose la suppression et la préparation d’une nouvelle opération similaire.
+
+- Recherche sans distinction de casse ou d’accents : `cafe` retrouve `CAFÉ`. Les caractères `%`, `_` et `\` sont recherchés littéralement.
+- Filtres rapides Tout / Dépenses / Revenus / À vérifier, compte et périodes prédéfinies. Catégorie, dates personnalisées et état de révision restent dans les filtres avancés.
+- Totaux des dépenses, revenus et opérations à vérifier calculés sur **tous les résultats filtrés**, au-delà de la page de 50 lignes. Ils décrivent les transactions, pas votre solde bancaire.
+- Une requête de recherche plus ancienne ne remplace pas les résultats d’une recherche plus récente. En cas d’erreur de lecture, les totaux sont retirés et un bouton de nouvelle tentative apparaît.
+- Après suppression de la dernière opération d’une page, l’historique revient à une page existante.
+
+L’ajout commence par Dépense/Revenu, le montant et la description. Les commerces récents proposent la catégorie de leur dernière opération lorsqu’elle est du même type. La proposition reste modifiable et ne remplace pas une catégorie choisie manuellement. Le compte et le montant ne sont pas copiés par ces suggestions. Un changement Dépense/Revenu efface la catégorie précédente avant une éventuelle nouvelle proposition.
+
+**Enregistrer et continuer** conserve l’éditeur ouvert et efface le montant et la description après succès. **Refaire cette opération** prépare une copie à la date du jour, avec compte, catégorie et enveloppe; elle n’est enregistrée qu’après confirmation dans le formulaire et modifie alors les soldes comme une nouvelle opération réelle. Fermer la fenêtre conserve le brouillon dans la page en cours.
+
+![Historique avec données fictives](transactions.png)
+
+![Saisie avec données fictives](saisie-transaction.png)
+
+[Aperçu mobile de l’historique](mobile-transactions.png)
+
+Vérification supplémentaire : `python3 tests/transactions-ui.py` (Playwright/Chromium comme les autres parcours).
+
+## Vérifier la v5.0
+
+`npm test` vérifie 52 tests Node et 60 tests d’intégration API avec des bases temporaires.
+`python3 tests/budget-v50-ui.py` vérifie la répartition de paie, les projets, les règles et la priorité du choix manuel, le bilan, les chiffres expliqués, la persistance Clair/Sombre/Automatique et cinq largeurs de fenêtre. Les parcours `ui-smoke.py`, `dashboard-v47-ui.py` et `planning-v4-ui.py` couvrent aussi la navigation, les fenêtres de saisie, la personnalisation, le calendrier et les prévisions. Ces parcours utilisent Playwright et Chromium. Le service macOS est couvert par les tests de génération et de validation de l’installateur; l’installation réelle doit être exécutée sur votre Mac.

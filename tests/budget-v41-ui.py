@@ -2,7 +2,7 @@
 import importlib.util,os,shutil,sys,tempfile,datetime
 from pathlib import Path
 sys.dont_write_bytecode=True
-from ui_navigation import navigate
+from ui_navigation import navigate,header_action
 from playwright.sync_api import sync_playwright,expect
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v41-ui-'))
@@ -32,7 +32,7 @@ try:
    page.set_viewport_size({'width':width,'height':1000})
    for view in ['comptes','prevision','calendrier','importer','sauvegardes']:
     navigate(page,view);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,view)
-   page.locator('.v41-header-tools').get_by_role('button',name='Rechercher…',exact=True).click();assert search.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width;search.get_by_role('button',name='Fermer',exact=True).click()
+   header_action(page,'Rechercher…');assert search.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width;search.get_by_role('button',name='Fermer',exact=True).click()
    navigate(page,'comptes');page.get_by_role('button',name='Rapprocher avec ma banque',exact=True).click();assert bank.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),width;bank.get_by_role('button',name='Fermer',exact=True).click()
   page.set_viewport_size({'width':1440,'height':1100});navigate(page,'prevision');page.locator('.v41-saved-scenarios').evaluate('(e)=>e.open=false');page.screenshot(path=str(images/'version-et-prevision.png'),full_page=True);page.set_viewport_size({'width':390,'height':844});page.screenshot(path=str(images/'iphone-version.png'),full_page=True);assert f.get('/api/backup/export')['tables']==before;assert not errors,errors;browser.close()
  print('PASS: live v4.1 badge, accent search/edit draft, read-only bank comparison then correction and protected undo, remembered CSV account/columns/sign with history default, daily backup download, saved scenario resumption, payday marker, shared account filter and own card balance, month jump, five widths and no browsing writes.')

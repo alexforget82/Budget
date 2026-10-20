@@ -1,105 +1,1220 @@
-/* Local planning tools. Suggestions never submit a transaction. */
-(()=>{
- const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;},root=document.getElementById('life-workspace');let latest,tab='cycle';
- const request=async(path,data)=>{const r=await fetch('/api/life/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),s=await r.json();if(!r.ok)throw Error(s.error||'Action impossible.');return s;};
- const action=(text,fn)=>{const b=el('button',text,'secondary');b.type='button';b.onclick=async()=>{b.disabled=true;try{await fn();}catch(e){message.textContent=e.message;}finally{b.disabled=false;}};return b;};
- const message=el('p','','life-message');message.setAttribute('role','status');
- const appearance=el('label','Apparence ','life-appearance'),theme=el('select');theme.setAttribute('aria-label','Apparence');for(const [v,t] of [['system','Automatique'],['light','Clair'],['dark','Sombre']])theme.add(new Option(t,v));appearance.append(theme);document.querySelector('.workspace-header').append(appearance);
- const mq=matchMedia('(prefers-color-scheme: dark)');let mode='system',saving=false;
- function applyTheme(value){mode=value;document.documentElement.dataset.theme=value==='system'?(mq.matches?'dark':'light'):value;theme.value=value;try{localStorage.setItem('mon-budget-theme',value);}catch{}document.querySelector('meta[name="theme-color"]').content=document.documentElement.dataset.theme==='dark'?'#111d18':'#1b6048';}
- try{applyTheme(localStorage.getItem('mon-budget-theme')||'system');}catch{applyTheme('system');}mq.addEventListener('change',()=>applyTheme(mode));theme.onchange=async()=>{const value=theme.value;saving=true;applyTheme(value);try{await request('theme',{mode:value});message.textContent='Apparence enregistrée.';}catch(e){message.textContent='Apparence non enregistrée : '+e.message;root.prepend(message);}finally{saving=false;}};
- function field(form,name,label,type='text',required=false){const l=el('label',label),i=el('input');i.type=type;i.name=name;i.required=required;if(type==='number'){i.min='0';i.step='.01';}l.append(i);form.append(l);return i;}
- function select(form,name,label,items,empty='Aucun'){const l=el('label',label),s=el('select');s.name=name;if(empty!==null)s.add(new Option(empty,''));for(const a of items)s.add(new Option(a.name,a.id));l.append(s);form.append(l);return s;}
- function panel(title,copy){const p=el('article',undefined,'life-panel');p.append(el('h3',title));if(copy)p.append(el('p',copy,'sub'));root.append(p);return p;}
- function metrics(p,items){const grid=el('div',undefined,'life-metrics');for(const [label,value] of items){const d=el('div');d.append(el('span',label),el('strong',value));grid.append(d);}p.append(grid);}
- async function mutate(route,data){const s=await request(route,data);if(s.accounts)render(s);message.textContent='Enregistré.';}
- function draw(){if(!latest)return;root.replaceChildren();const tabs=el('div',undefined,'life-tabs');for(const [id,name] of [['cycle','Ma prochaine paie'],['rules','Règles de classement'],['projects','Projets'],['review','Prévu et réel'],['explain','Comprendre']]){const b=action(name,()=>{tab=id;draw();});b.setAttribute('aria-pressed',String(tab===id));tabs.append(b);}root.append(tabs,message);message.textContent='';({cycle:cycleView,rules:rulesView,projects:projectsView,review:reviewView,explain:explainView})[tab]();}
- function cycleView(){const life=latest.life,c=life.cycle,p=panel('D’ici la prochaine paie',life.traffic.explanation),badge=el('span',({red:'Attention',orange:'Marge serrée',green:'Marge disponible'})[life.traffic.level],'life-signal '+life.traffic.level);p.prepend(badge);metrics(p,[['Disponible maintenant',money(latest.safe_cents)],['Minimum avant la paie',money(life.traffic.minimum_cents)],['Paie prévue',c.pay?c.pay.date:'Aucune dans la prévision']]);p.append(el('p','Le seuil de couleur de 100 $ est un repère : il ne réserve aucun argent. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.','sub'));if(!c.pay){p.append(el('p','Ajoutez votre revenu récurrent dans Planifier pour préparer une paie.'));return;}
- const commitments=panel('Votre cycle du '+c.pay.date+' au '+c.end,'Revenus, dépenses, virements et réserves sont inclus dans la prévision. Les montants restent prévus jusqu’à confirmation.');metrics(commitments,[['Revenus de cette paie',money(c.pay.amount_cents)],['Plus bas disponible du cycle',c.min_cents===null?'—':money(c.min_cents)]]);const list=el('div',undefined,'life-list');for(const e of c.engagements){const row=el('div');row.append(el('span',e.date+' · '+(e.description||e.type)),el('strong',money(e.amount_cents??e.planned_cents??0)));list.append(row);}if(!list.children.length)list.append(el('p','Aucun engagement prévu pour ce cycle.'));commitments.append(list);
- const funding=panel('Donner une place à votre prochaine paie','Les renouvellements automatiques sont déjà comptés. Ici, réservez seulement pour vos budgets libres. La planification ne modifie aucun solde réel.');const form=el('form',undefined,'life-form'),date=select(form,'date','Paie',c.paychecks.filter(p=>p.date>=today()).map(p=>({id:p.date,name:p.date+' · '+money(p.amount_cents)})),null),free=latest.envelopes.filter(e=>e.active&&e.frequency==='none'&&!e.budget_cents&&!e.forecast_spend);for(const e of free)field(form,'env_'+e.id,e.name+' ($)','number');const out=el('div',undefined,'life-preview');form.append(action('Voir l’effet avant de réserver',async()=>{const allocations=free.map(e=>({envelope_id:e.id,amount:Number(form.elements['env_'+e.id].value)})).filter(a=>a.amount>0),data={date:date.value,allocations},preview=await request('funding-preview',data);out.replaceChildren(el('p',money(preview.total_cents)+' à réserver · Minimum prévu : '+money(preview.min_after_cents)+' le '+preview.min_on));const l=el('label'),ack=el('input');ack.type='checkbox';l.append(ack,document.createTextNode(' Je comprends le disponible négatif prévu.'));if(preview.needs_ack)out.append(l);out.append(action('Planifier cette répartition',()=>mutate('funding',{...data,token:preview.token,allow_negative:ack.checked})));}));form.onsubmit=e=>e.preventDefault();funding.append(form,out);if(!free.length)funding.append(el('p','Créez un budget libre pour préparer une répartition.'));
- const plans=panel('Mes répartitions','Le jour de la paie, confirmez les revenus reçus dans Prévu / Réel, puis appliquez la répartition. Cela réserve l’argent sans créer une dépense.');for(const plan of life.plans.filter(p=>p.status!=='cancelled')){const row=el('div',undefined,'life-row');row.append(el('strong',plan.date+' · '+money(plan.allocations.reduce((n,a)=>n+a.amount_cents,0))),el('span',plan.status==='funded'?'Réservé':'Planifié'));if(plan.status==='planned'){row.append(action('Annuler le plan',()=>mutate('cancel-funding',{id:plan.id})));if(plan.date<=today()){const ack=el('input');ack.type='checkbox';const negative=latest.safe_cents-plan.allocations.reduce((n,a)=>n+a.amount_cents,0)<0;if(negative){const label=el('label');label.append(ack,document.createTextNode(' Confirmer le disponible négatif'));row.append(label);}row.append(action('Appliquer après réception',()=>mutate('fund-now',{id:plan.id,confirm:true,allow_negative:ack.checked})));}}plans.append(row);}}
- function rulesView(){const p=panel('Un classement qui vous ressemble','Les règles proposent une catégorie lors de la saisie. Votre choix manuel reste prioritaire. Le plus petit numéro de priorité gagne.');const f=el('form',undefined,'life-form');field(f,'name','Nom de la règle','text',true);field(f,'contains','La description contient','text',true);const direction=select(f,'direction','Type',[{id:'expense',name:'Dépense'},{id:'income',name:'Revenu'}],null),cat=select(f,'category_id','Catégorie',latest.categories.filter(c=>!c.archived)),child=select(f,'subcategory_id','Sous-catégorie',[]);cat.onchange=()=>{child.replaceChildren(new Option('Aucune',''));for(const s of latest.subcategories.filter(s=>!s.archived&&String(s.category_id)===cat.value))child.add(new Option(s.name,s.id));};select(f,'envelope_id','Proposer une enveloppe (dépense)',latest.envelopes.filter(e=>e.active));select(f,'account_id','Compte',latest.accounts,'Tous les comptes');field(f,'start_on','À partir du','date');field(f,'end_on','Jusqu’au','date');const priority=field(f,'priority','Priorité','number');priority.value='10';priority.step='1';priority.min='1';let editing=null;const save=el('button','Créer la règle');f.append(save,action('Effacer le formulaire',()=>{editing=null;f.reset();cat.onchange();save.textContent='Créer la règle';}));f.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{await mutate('rules',{...Object.fromEntries(new FormData(f)),...(editing?{id:editing,active:latest.life.rules.find(r=>r.id===editing)?.active!==false}:{} )});}catch(err){message.textContent=err.message;}finally{save.disabled=false;}};p.append(f);
- const list=panel('Vos règles','L’application aux opérations existantes change uniquement leur catégorie et leur sous-catégorie. Les comptes, montants et réserves restent identiques.');for(const r of latest.life.rules){const row=el('div',undefined,'life-row');row.append(el('strong',r.name+' · priorité '+r.priority),el('span',r.contains+' · '+(r.active?'Active':'Suspendue')),action(r.active?'Suspendre':'Activer',()=>mutate('rules',{...r,active:!r.active})),action('Modifier',()=>{editing=r.id;for(const [key,value] of Object.entries(r))if(f.elements[key])f.elements[key].value=value??'';cat.onchange();child.value=String(r.subcategory_id||'');save.textContent='Enregistrer les modifications';f.scrollIntoView({block:'center'});}),action('Supprimer',()=>mutate('rules-delete',{id:r.id})),action('Aperçu : opérations non classées',async()=>{const preview=await request('rule-preview',{id:r.id,only_unclassified:true}),box=el('div',undefined,'life-preview');box.append(el('p',preview.count+' opération(s) à classer'));for(const t of preview.sample)box.append(el('p',t.happened_on+' · '+t.description+' · '+money(t.amount_cents)));box.append(action('Appliquer ce classement',()=>mutate('rule-apply',{id:r.id,only_unclassified:true,token:preview.token})));row.append(box);}));list.append(row);}}
- function projectsView(){const p=panel('Vos projets, dans leur période','Vacances, cadeaux ou travaux : regroupez les achats d’une enveloppe entre deux dates. L’objectif est indicatif; réservez séparément dans Budgets libres.');const f=el('form',undefined,'life-form');field(f,'name','Nom','text',true);field(f,'start_on','Début','date',true);field(f,'end_on','Fin','date',true);field(f,'goal','Objectif ($)','number');select(f,'envelope_id','Enveloppe',latest.envelopes,'Créer un nouveau budget libre');f.append(el('button','Créer le projet'));f.onsubmit=async e=>{e.preventDefault();try{const data=Object.fromEntries(new FormData(f));data.goal=Number(data.goal||0);await mutate('projects',data);}catch(err){message.textContent=err.message;}};p.append(f);for(const x of latest.life.projects){const card=panel(x.name,x.start_on+' → '+x.end_on);metrics(card,[['Objectif indicatif',money(x.goal_cents)],['Achats réels sur la période',money(x.spent_cents)],['Réserve actuelle de l’enveloppe',money(x.reserved_cents)]]);card.append(action('Retirer le projet (garder l’enveloppe)',()=>mutate('projects-delete',{id:x.id})));}}
- function reviewView(){const p=panel('Prévu et réel, mois par mois','Les dépenses des enveloppes sont détaillées séparément pour éviter de les additionner une deuxième fois aux dépenses.');const month=el('input');month.type='month';month.value=today().slice(0,7);month.setAttribute('aria-label','Mois du bilan');const out=el('div');p.append(month,action('Comparer',async()=>{const r=await request('review',{month:month.value});out.replaceChildren();if(r.coverage_partial)out.append(el('p','Prévision partielle : les anciennes prévisions ne sont pas reconstituées. Le réel comprend toutes les opérations du mois.','life-preview'));metrics(out,[['Revenus prévus',money(r.planned_income_cents)],['Revenus réels',money(r.actual_income_cents)],['Dépenses prévues',money(r.planned_expense_cents)],['Dépenses réelles',money(r.actual_expense_cents)]]);for(const e of r.envelopes)out.append(el('p',e.name+' · Budget périodique '+money(e.budget_cents)+' · Dépensé '+money(e.spent_cents)));for(const v of r.variances)out.append(el('p',v.description+' · Écart '+money(v.variance_cents)));}),out);}
- function explainView(){const p=panel('Combien restera-t-il à cette date ?','Le disponible correspond au solde bancaire inclus moins les réserves. Les virements internes et achats sur crédit suivent leurs effets réels sur les comptes inclus.');const date=el('input');date.type='date';date.value=today();date.min=today();date.max=latest.forecast.at(-1)?.date||today();date.setAttribute('aria-label','Date à comprendre');const out=el('div');p.append(date,action('Voir mes chiffres',()=>{const d=latest.forecast.find(d=>d.date===date.value);out.replaceChildren();if(!d){out.append(el('p','Date hors de la prévision.'));return;}metrics(out,[['Disponible prévu',money(d.safe_cents)],['Réserves prévues',money(d.reserved_cents)],['Solde bancaire prévu',money(d.cash_cents)]]);for(const e of d.events)out.append(el('p',e.description+' · '+money(e.amount_cents??0)));}),out);}
- let suggestionTimer,ticket=0;const tx=document.getElementById('transaction');for(const name of ['happened_on','account_id','direction'])tx.elements[name].addEventListener('change',()=>window.budgetClearRuleSuggestion?.(),true);for(const name of ['description','happened_on','account_id','direction'])tx.elements[name].addEventListener(name==='description'?'input':'change',()=>{clearTimeout(suggestionTimer);const t=++ticket;suggestionTimer=setTimeout(async()=>{try{const r=await request('suggest',{description:tx.elements.description.value,date:tx.elements.happened_on.value,account_id:Number(tx.elements.account_id.value),direction:tx.elements.direction.value});if(t===ticket&&r.rule)window.budgetApplyRuleSuggestion?.(r.rule);}catch{}},250);});
- const old=render;render=function(s){old(s);latest=s;if(s.life){if(!saving)applyTheme(s.life.theme);draw();}};if(typeof state!=='undefined'&&state){latest=state;if(state.life){applyTheme(state.life.theme);draw();}}
-})();
-/* Adapt legacy surfaces and measure text contrast against their actual background. */
-(()=>{
- let pending=false;const audited=new Set(),inlineColors=new WeakMap(),flags=['data-night-surface','data-night-ink','data-night-border'];
- const color=s=>{const m=s.match(/[\d.]+/g);return m&&m.length>=3?m.map(Number):null;};
- const luminance=c=>c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
- const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
- const blend=(a,b)=>a.slice(0,3).map((v,i)=>v*(a[3]??1)+b[i]*(1-(a[3]??1)));
- const palette={neutral:[213,231,217],green:[158,225,179],red:[255,179,175],orange:[255,211,139],blue:[166,200,255],purple:[220,192,255],dark:[16,37,26]};
- function tone([r,g,b]){if(r-g>8&&r-b>8)return g-b>12?'orange':'red';if(b-r>7&&b-g>4)return r-g>5?'purple':'blue';return g-r>5?'green':'neutral';}
- function audit(){
-  pending=false;document.documentElement.classList.add('contrast-checking');const finish=()=>requestAnimationFrame(()=>document.documentElement.classList.remove('contrast-checking'));const dark=document.documentElement.dataset.theme==='dark',nodes=dark?[...document.body.querySelectorAll('*')].filter(n=>n.namespaceURI==='http://www.w3.org/1999/xhtml'&&!/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(n.tagName)&&n.getClientRects().length):[];
-  for(const n of new Set([...audited,...nodes])){for(const a of flags)n.removeAttribute(a);const saved=inlineColors.get(n);if(saved){if(saved.value)n.style.setProperty('color',saved.value,saved.priority);else n.style.removeProperty('color');inlineColors.delete(n);}}
-  audited.clear();if(!dark){finish();return;}for(const n of nodes)audited.add(n);
-  const backgrounds=new WeakMap();function background(n){if(!n)return [17,29,24];if(backgrounds.has(n))return backgrounds.get(n);const bg=color(getComputedStyle(n).backgroundColor)||[0,0,0,0],out=bg[3]===1||bg.length===3?bg.slice(0,3):blend(bg,background(n.parentElement));backgrounds.set(n,out);return out;}
-  for(const n of nodes){
-   let c=getComputedStyle(n);const bg=color(c.backgroundColor),border=color(c.borderTopColor);
-   if(bg&&(bg.length<4||bg[3]>.8)&&Math.min(...bg.slice(0,3))>155)n.setAttribute('data-night-surface',tone(bg));
-   if(border&&Math.min(...border.slice(0,3))>155)n.setAttribute('data-night-border','');
-   if(![...n.childNodes].some(t=>t.nodeType===Node.TEXT_NODE&&t.textContent.trim())&&!/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName))continue;
-   c=getComputedStyle(n);const ink=color(c.color),surface=background(n);if(!ink)continue;
-   const large=parseFloat(c.fontSize)>=24||(parseFloat(c.fontSize)>=18.66&&parseInt(c.fontWeight)>=700),minimum=large?3:4.5;
-   if(ratio(blend(ink,surface),surface)>=minimum)continue;
-   let key=tone(ink);if(ratio(palette[key],surface)<minimum)key=ratio(palette.dark,surface)>ratio(palette.neutral,surface)?'dark':'neutral';n.setAttribute('data-night-ink',key);
-   // A few older ID selectors use !important; restore any original inline color in light mode.
-   const actual=color(getComputedStyle(n).color);if(actual&&ratio(blend(actual,surface),surface)<minimum){inlineColors.set(n,{value:n.style.getPropertyValue('color'),priority:n.style.getPropertyPriority('color')});n.style.setProperty('color','rgb('+palette[key].join(',')+')','important');}
-  }
-  finish();
- }
- function schedule(){if(!pending){pending=true;requestAnimationFrame(audit);}}
- new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','disabled']});
- new MutationObserver(()=>{document.documentElement.classList.add('theme-changing');schedule();requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('theme-changing')));}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});schedule();
-})();
+// Domain initializer. Shared state and rendering hooks are explicit dependencies.
+export function initialize(runtime) {
+  /* Local planning tools. Suggestions never submit a transaction. */
+  (() => {
+    const el = (tag, text, cls) => {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      },
+      root = document.getElementById("life-workspace");
+    let latest,
+      tab = "cycle";
+    const request = async (path, data) => {
+      const r = await fetch("/api/life/" + path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }),
+        s = await r.json();
+      if (!r.ok) throw Error(s.error || "Action impossible.");
+      return s;
+    };
+    const action = (text, fn) => {
+      const b = el("button", text, "secondary");
+      b.type = "button";
+      b.onclick = async () => {
+        b.disabled = true;
+        try {
+          await fn();
+        } catch (e) {
+          message.textContent = e.message;
+        } finally {
+          b.disabled = false;
+        }
+      };
+      return b;
+    };
+    const message = el("p", "", "life-message");
+    message.setAttribute("role", "status");
+    const appearance = el("label", "Apparence ", "life-appearance"),
+      theme = el("select");
+    theme.setAttribute("aria-label", "Apparence");
+    for (const [v, t] of [
+      ["system", "Automatique"],
+      ["light", "Clair"],
+      ["dark", "Sombre"],
+    ])
+      theme.add(new Option(t, v));
+    appearance.append(theme);
+    document.querySelector(".workspace-header").append(appearance);
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    let mode = "system",
+      saving = false;
+    function applyTheme(value) {
+      mode = value;
+      document.documentElement.dataset.theme =
+        value === "system" ? (mq.matches ? "dark" : "light") : value;
+      theme.value = value;
+      try {
+        localStorage.setItem("mon-budget-theme", value);
+      } catch {}
+      document.querySelector('meta[name="theme-color"]').content =
+        document.documentElement.dataset.theme === "dark"
+          ? "#111d18"
+          : "#1b6048";
+    }
+    try {
+      applyTheme(localStorage.getItem("mon-budget-theme") || "system");
+    } catch {
+      applyTheme("system");
+    }
+    mq.addEventListener("change", () => applyTheme(mode));
+    theme.onchange = async () => {
+      const value = theme.value;
+      saving = true;
+      applyTheme(value);
+      try {
+        await request("theme", { mode: value });
+        message.textContent = "Apparence enregistrée.";
+      } catch (e) {
+        message.textContent = "Apparence non enregistrée : " + e.message;
+        root.prepend(message);
+      } finally {
+        saving = false;
+      }
+    };
+    function field(form, name, label, type = "text", required = false) {
+      const l = el("label", label),
+        i = el("input");
+      i.type = type;
+      i.name = name;
+      i.required = required;
+      if (type === "number") {
+        i.min = "0";
+        i.step = ".01";
+      }
+      l.append(i);
+      form.append(l);
+      return i;
+    }
+    function select(form, name, label, items, empty = "Aucun") {
+      const l = el("label", label),
+        s = el("select");
+      s.name = name;
+      if (empty !== null) s.add(new Option(empty, ""));
+      for (const a of items) s.add(new Option(a.name, a.id));
+      l.append(s);
+      form.append(l);
+      return s;
+    }
+    function panel(title, copy) {
+      const p = el("article", undefined, "life-panel");
+      p.append(el("h3", title));
+      if (copy) p.append(el("p", copy, "sub"));
+      root.append(p);
+      return p;
+    }
+    function metrics(p, items) {
+      const grid = el("div", undefined, "life-metrics");
+      for (const [label, value] of items) {
+        const d = el("div");
+        d.append(el("span", label), el("strong", value));
+        grid.append(d);
+      }
+      p.append(grid);
+    }
+    async function mutate(route, data) {
+      const s = await request(route, data);
+      if (s.accounts) runtime.render(s);
+      message.textContent = "Enregistré.";
+    }
+    function draw() {
+      if (!latest) return;
+      root.replaceChildren();
+      const tabs = el("div", undefined, "life-tabs");
+      for (const [id, name] of [
+        ["cycle", "Ma prochaine paie"],
+        ["rules", "Règles de classement"],
+        ["projects", "Projets"],
+        ["review", "Prévu et réel"],
+        ["explain", "Comprendre"],
+      ]) {
+        const b = action(name, () => {
+          tab = id;
+          draw();
+        });
+        b.setAttribute("aria-pressed", String(tab === id));
+        tabs.append(b);
+      }
+      root.append(tabs, message);
+      message.textContent = "";
+      ({
+        cycle: cycleView,
+        rules: rulesView,
+        projects: projectsView,
+        review: reviewView,
+        explain: explainView,
+      })[tab]();
+    }
+    function cycleView() {
+      const life = latest.life,
+        c = life.cycle,
+        p = panel("D’ici la prochaine paie", life.traffic.explanation),
+        badge = el(
+          "span",
+          {
+            red: "Attention",
+            orange: "Marge serrée",
+            green: "Marge disponible",
+          }[life.traffic.level],
+          "life-signal " + life.traffic.level,
+        );
+      p.prepend(badge);
+      metrics(p, [
+        ["Disponible maintenant", runtime.money(latest.safe_cents)],
+        ["Minimum avant la paie", runtime.money(life.traffic.minimum_cents)],
+        ["Paie prévue", c.pay ? c.pay.date : "Aucune dans la prévision"],
+      ]);
+      p.append(
+        el(
+          "p",
+          "Le seuil de couleur de 100 $ est un repère : il ne réserve aucun argent. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.",
+          "sub",
+        ),
+      );
+      if (!c.pay) {
+        p.append(
+          el(
+            "p",
+            "Ajoutez votre revenu récurrent dans Planifier pour préparer une paie.",
+          ),
+        );
+        return;
+      }
+      const commitments = panel(
+        "Votre cycle du " + c.pay.date + " au " + c.end,
+        "Revenus, dépenses, virements et réserves sont inclus dans la prévision. Les montants restent prévus jusqu’à confirmation.",
+      );
+      metrics(commitments, [
+        ["Revenus de cette paie", runtime.money(c.pay.amount_cents)],
+        [
+          "Plus bas disponible du cycle",
+          c.min_cents === null ? "—" : runtime.money(c.min_cents),
+        ],
+      ]);
+      const list = el("div", undefined, "life-list");
+      for (const e of c.engagements) {
+        const row = el("div");
+        row.append(
+          el("span", e.date + " · " + (e.description || e.type)),
+          el("strong", runtime.money(e.amount_cents ?? e.planned_cents ?? 0)),
+        );
+        list.append(row);
+      }
+      if (!list.children.length)
+        list.append(el("p", "Aucun engagement prévu pour ce cycle."));
+      commitments.append(list);
+      const funding = panel(
+        "Donner une place à votre prochaine paie",
+        "Les renouvellements automatiques sont déjà comptés. Ici, réservez seulement pour vos budgets libres. La planification ne modifie aucun solde réel.",
+      );
+      const form = el("form", undefined, "life-form"),
+        date = select(
+          form,
+          "date",
+          "Paie",
+          c.paychecks
+            .filter((p) => p.date >= runtime.today())
+            .map((p) => ({
+              id: p.date,
+              name: p.date + " · " + runtime.money(p.amount_cents),
+            })),
+          null,
+        ),
+        free = latest.envelopes.filter(
+          (e) =>
+            e.active &&
+            e.frequency === "none" &&
+            !e.budget_cents &&
+            !e.forecast_spend,
+        );
+      for (const e of free)
+        field(form, "env_" + e.id, e.name + " ($)", "number");
+      const out = el("div", undefined, "life-preview");
+      form.append(
+        action("Voir l’effet avant de réserver", async () => {
+          const allocations = free
+              .map((e) => ({
+                envelope_id: e.id,
+                amount: Number(form.elements["env_" + e.id].value),
+              }))
+              .filter((a) => a.amount > 0),
+            data = { date: date.value, allocations },
+            preview = await request("funding-preview", data);
+          out.replaceChildren(
+            el(
+              "p",
+              runtime.money(preview.total_cents) +
+                " à réserver · Minimum prévu : " +
+                runtime.money(preview.min_after_cents) +
+                " le " +
+                preview.min_on,
+            ),
+          );
+          const l = el("label"),
+            ack = el("input");
+          ack.type = "checkbox";
+          l.append(
+            ack,
+            document.createTextNode(
+              " Je comprends le disponible négatif prévu.",
+            ),
+          );
+          if (preview.needs_ack) out.append(l);
+          out.append(
+            action("Planifier cette répartition", () =>
+              mutate("funding", {
+                ...data,
+                token: preview.token,
+                allow_negative: ack.checked,
+              }),
+            ),
+          );
+        }),
+      );
+      form.onsubmit = (e) => e.preventDefault();
+      funding.append(form, out);
+      if (!free.length)
+        funding.append(
+          el("p", "Créez un budget libre pour préparer une répartition."),
+        );
+      const plans = panel(
+        "Mes répartitions",
+        "Le jour de la paie, confirmez les revenus reçus dans Prévu / Réel, puis appliquez la répartition. Cela réserve l’argent sans créer une dépense.",
+      );
+      for (const plan of life.plans.filter((p) => p.status !== "cancelled")) {
+        const row = el("div", undefined, "life-row");
+        row.append(
+          el(
+            "strong",
+            plan.date +
+              " · " +
+              runtime.money(
+                plan.allocations.reduce((n, a) => n + a.amount_cents, 0),
+              ),
+          ),
+          el("span", plan.status === "funded" ? "Réservé" : "Planifié"),
+        );
+        if (plan.status === "planned") {
+          row.append(
+            action("Annuler le plan", () =>
+              mutate("cancel-funding", { id: plan.id }),
+            ),
+          );
+          if (plan.date <= runtime.today()) {
+            const ack = el("input");
+            ack.type = "checkbox";
+            const negative =
+              latest.safe_cents -
+                plan.allocations.reduce((n, a) => n + a.amount_cents, 0) <
+              0;
+            if (negative) {
+              const label = el("label");
+              label.append(
+                ack,
+                document.createTextNode(" Confirmer le disponible négatif"),
+              );
+              row.append(label);
+            }
+            row.append(
+              action("Appliquer après réception", () =>
+                mutate("fund-now", {
+                  id: plan.id,
+                  confirm: true,
+                  allow_negative: ack.checked,
+                }),
+              ),
+            );
+          }
+        }
+        plans.append(row);
+      }
+    }
+    function rulesView() {
+      const p = panel(
+        "Un classement qui vous ressemble",
+        "Les règles proposent une catégorie lors de la saisie. Votre choix manuel reste prioritaire. Le plus petit numéro de priorité gagne.",
+      );
+      const f = el("form", undefined, "life-form");
+      field(f, "name", "Nom de la règle", "text", true);
+      field(f, "contains", "La description contient", "text", true);
+      const direction = select(
+          f,
+          "direction",
+          "Type",
+          [
+            { id: "expense", name: "Dépense" },
+            { id: "income", name: "Revenu" },
+          ],
+          null,
+        ),
+        cat = select(
+          f,
+          "category_id",
+          "Catégorie",
+          latest.categories.filter((c) => !c.archived),
+        ),
+        child = select(f, "subcategory_id", "Sous-catégorie", []);
+      cat.onchange = () => {
+        child.replaceChildren(new Option("Aucune", ""));
+        for (const s of latest.subcategories.filter(
+          (s) => !s.archived && String(s.category_id) === cat.value,
+        ))
+          child.add(new Option(s.name, s.id));
+      };
+      select(
+        f,
+        "envelope_id",
+        "Proposer une enveloppe (dépense)",
+        latest.envelopes.filter((e) => e.active),
+      );
+      select(f, "account_id", "Compte", latest.accounts, "Tous les comptes");
+      field(f, "start_on", "À partir du", "date");
+      field(f, "end_on", "Jusqu’au", "date");
+      const priority = field(f, "priority", "Priorité", "number");
+      priority.value = "10";
+      priority.step = "1";
+      priority.min = "1";
+      let editing = null;
+      const save = el("button", "Créer la règle");
+      f.append(
+        save,
+        action("Effacer le formulaire", () => {
+          editing = null;
+          f.reset();
+          cat.onchange();
+          save.textContent = "Créer la règle";
+        }),
+      );
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        save.disabled = true;
+        try {
+          await mutate("rules", {
+            ...Object.fromEntries(new FormData(f)),
+            ...(editing
+              ? {
+                  id: editing,
+                  active:
+                    latest.life.rules.find((r) => r.id === editing)?.active !==
+                    false,
+                }
+              : {}),
+          });
+        } catch (err) {
+          message.textContent = err.message;
+        } finally {
+          save.disabled = false;
+        }
+      };
+      p.append(f);
+      const list = panel(
+        "Vos règles",
+        "L’application aux opérations existantes change uniquement leur catégorie et leur sous-catégorie. Les comptes, montants et réserves restent identiques.",
+      );
+      for (const r of latest.life.rules) {
+        const row = el("div", undefined, "life-row");
+        row.append(
+          el("strong", r.name + " · priorité " + r.priority),
+          el("span", r.contains + " · " + (r.active ? "Active" : "Suspendue")),
+          action(r.active ? "Suspendre" : "Activer", () =>
+            mutate("rules", { ...r, active: !r.active }),
+          ),
+          action("Modifier", () => {
+            editing = r.id;
+            for (const [key, value] of Object.entries(r))
+              if (f.elements[key]) f.elements[key].value = value ?? "";
+            cat.onchange();
+            child.value = String(r.subcategory_id || "");
+            save.textContent = "Enregistrer les modifications";
+            f.scrollIntoView({ block: "center" });
+          }),
+          action("Supprimer", () => mutate("rules-delete", { id: r.id })),
+          action("Aperçu : opérations non classées", async () => {
+            const preview = await request("rule-preview", {
+                id: r.id,
+                only_unclassified: true,
+              }),
+              box = el("div", undefined, "life-preview");
+            box.append(el("p", preview.count + " opération(s) à classer"));
+            for (const t of preview.sample)
+              box.append(
+                el(
+                  "p",
+                  t.happened_on +
+                    " · " +
+                    t.description +
+                    " · " +
+                    runtime.money(t.amount_cents),
+                ),
+              );
+            box.append(
+              action("Appliquer ce classement", () =>
+                mutate("rule-apply", {
+                  id: r.id,
+                  only_unclassified: true,
+                  token: preview.token,
+                }),
+              ),
+            );
+            row.append(box);
+          }),
+        );
+        list.append(row);
+      }
+    }
+    function projectsView() {
+      const p = panel(
+        "Vos projets, dans leur période",
+        "Vacances, cadeaux ou travaux : regroupez les achats d’une enveloppe entre deux dates. L’objectif est indicatif; réservez séparément dans Budgets libres.",
+      );
+      const f = el("form", undefined, "life-form");
+      field(f, "name", "Nom", "text", true);
+      field(f, "start_on", "Début", "date", true);
+      field(f, "end_on", "Fin", "date", true);
+      field(f, "goal", "Objectif ($)", "number");
+      select(
+        f,
+        "envelope_id",
+        "Enveloppe",
+        latest.envelopes,
+        "Créer un nouveau budget libre",
+      );
+      f.append(el("button", "Créer le projet"));
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const data = Object.fromEntries(new FormData(f));
+          data.goal = Number(data.goal || 0);
+          await mutate("projects", data);
+        } catch (err) {
+          message.textContent = err.message;
+        }
+      };
+      p.append(f);
+      for (const x of latest.life.projects) {
+        const card = panel(x.name, x.start_on + " → " + x.end_on);
+        metrics(card, [
+          ["Objectif indicatif", runtime.money(x.goal_cents)],
+          ["Achats réels sur la période", runtime.money(x.spent_cents)],
+          ["Réserve actuelle de l’enveloppe", runtime.money(x.reserved_cents)],
+        ]);
+        card.append(
+          action("Retirer le projet (garder l’enveloppe)", () =>
+            mutate("projects-delete", { id: x.id }),
+          ),
+        );
+      }
+    }
+    function reviewView() {
+      const p = panel(
+        "Prévu et réel, mois par mois",
+        "Les dépenses des enveloppes sont détaillées séparément pour éviter de les additionner une deuxième fois aux dépenses.",
+      );
+      const month = el("input");
+      month.type = "month";
+      month.value = runtime.today().slice(0, 7);
+      month.setAttribute("aria-label", "Mois du bilan");
+      const out = el("div");
+      p.append(
+        month,
+        action("Comparer", async () => {
+          const r = await request("review", { month: month.value });
+          out.replaceChildren();
+          if (r.coverage_partial)
+            out.append(
+              el(
+                "p",
+                "Prévision partielle : les anciennes prévisions ne sont pas reconstituées. Le réel comprend toutes les opérations du mois.",
+                "life-preview",
+              ),
+            );
+          metrics(out, [
+            ["Revenus prévus", runtime.money(r.planned_income_cents)],
+            ["Revenus réels", runtime.money(r.actual_income_cents)],
+            ["Dépenses prévues", runtime.money(r.planned_expense_cents)],
+            ["Dépenses réelles", runtime.money(r.actual_expense_cents)],
+          ]);
+          for (const e of r.envelopes)
+            out.append(
+              el(
+                "p",
+                e.name +
+                  " · Budget périodique " +
+                  runtime.money(e.budget_cents) +
+                  " · Dépensé " +
+                  runtime.money(e.spent_cents),
+              ),
+            );
+          for (const v of r.variances)
+            out.append(
+              el(
+                "p",
+                v.description + " · Écart " + runtime.money(v.variance_cents),
+              ),
+            );
+        }),
+        out,
+      );
+    }
+    function explainView() {
+      const p = panel(
+        "Combien restera-t-il à cette date ?",
+        "Le disponible correspond au solde bancaire inclus moins les réserves. Les virements internes et achats sur crédit suivent leurs effets réels sur les comptes inclus.",
+      );
+      const date = el("input");
+      date.type = "date";
+      date.value = runtime.today();
+      date.min = runtime.today();
+      date.max = latest.forecast.at(-1)?.date || runtime.today();
+      date.setAttribute("aria-label", "Date à comprendre");
+      const out = el("div");
+      p.append(
+        date,
+        action("Voir mes chiffres", () => {
+          const d = latest.forecast.find((d) => d.date === date.value);
+          out.replaceChildren();
+          if (!d) {
+            out.append(el("p", "Date hors de la prévision."));
+            return;
+          }
+          metrics(out, [
+            ["Disponible prévu", runtime.money(d.safe_cents)],
+            ["Réserves prévues", runtime.money(d.reserved_cents)],
+            ["Solde bancaire prévu", runtime.money(d.cash_cents)],
+          ]);
+          for (const e of d.events)
+            out.append(
+              el(
+                "p",
+                e.description + " · " + runtime.money(e.amount_cents ?? 0),
+              ),
+            );
+        }),
+        out,
+      );
+    }
+    let suggestionTimer,
+      ticket = 0;
+    const tx = document.getElementById("transaction");
+    for (const name of ["happened_on", "account_id", "direction"])
+      tx.elements[name].addEventListener(
+        "change",
+        () => window.budgetClearRuleSuggestion?.(),
+        true,
+      );
+    for (const name of [
+      "description",
+      "happened_on",
+      "account_id",
+      "direction",
+    ])
+      tx.elements[name].addEventListener(
+        name === "description" ? "input" : "change",
+        () => {
+          clearTimeout(suggestionTimer);
+          const t = ++ticket;
+          suggestionTimer = setTimeout(async () => {
+            try {
+              const r = await request("suggest", {
+                description: tx.elements.description.value,
+                date: tx.elements.happened_on.value,
+                account_id: Number(tx.elements.account_id.value),
+                direction: tx.elements.direction.value,
+              });
+              if (t === ticket && r.rule)
+                window.budgetApplyRuleSuggestion?.(r.rule);
+            } catch {}
+          }, 250);
+        },
+      );
+    const old = runtime.render;
+    runtime.render = function (s) {
+      old(s);
+      latest = s;
+      if (s.life) {
+        if (!saving) applyTheme(s.life.theme);
+        draw();
+      }
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state) {
+      latest = runtime.state;
+      if (runtime.state.life) {
+        applyTheme(runtime.state.life.theme);
+        draw();
+      }
+    }
+  })();
+  /* Adapt legacy surfaces and measure text contrast against their actual background. */
+  (() => {
+    let pending = false;
+    const audited = new Set(),
+      inlineColors = new WeakMap(),
+      flags = ["data-night-surface", "data-night-ink", "data-night-border"];
+    const color = (s) => {
+      const m = s.match(/[\d.]+/g);
+      return m && m.length >= 3 ? m.map(Number) : null;
+    };
+    const luminance = (c) =>
+      c
+        .slice(0, 3)
+        .map((v) => {
+          v /= 255;
+          return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        })
+        .reduce((n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const ratio = (a, b) => {
+      const x = luminance(a),
+        y = luminance(b);
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    };
+    const blend = (a, b) =>
+      a.slice(0, 3).map((v, i) => v * (a[3] ?? 1) + b[i] * (1 - (a[3] ?? 1)));
+    const palette = {
+      neutral: [213, 231, 217],
+      green: [158, 225, 179],
+      red: [255, 179, 175],
+      orange: [255, 211, 139],
+      blue: [166, 200, 255],
+      purple: [220, 192, 255],
+      dark: [16, 37, 26],
+    };
+    function tone([r, g, b]) {
+      if (r - g > 8 && r - b > 8) return g - b > 12 ? "orange" : "red";
+      if (b - r > 7 && b - g > 4) return r - g > 5 ? "purple" : "blue";
+      return g - r > 5 ? "green" : "neutral";
+    }
+    function audit() {
+      pending = false;
+      document.documentElement.classList.add("contrast-checking");
+      const finish = () =>
+        requestAnimationFrame(() =>
+          document.documentElement.classList.remove("contrast-checking"),
+        );
+      const dark = document.documentElement.dataset.theme === "dark",
+        nodes = dark
+          ? [...document.body.querySelectorAll("*")].filter(
+              (n) =>
+                n.namespaceURI === "http://www.w3.org/1999/xhtml" &&
+                !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(n.tagName) &&
+                n.getClientRects().length,
+            )
+          : [];
+      for (const n of new Set([...audited, ...nodes])) {
+        for (const a of flags) n.removeAttribute(a);
+        const saved = inlineColors.get(n);
+        if (saved) {
+          if (saved.value)
+            n.style.setProperty("color", saved.value, saved.priority);
+          else n.style.removeProperty("color");
+          inlineColors.delete(n);
+        }
+      }
+      audited.clear();
+      if (!dark) {
+        finish();
+        return;
+      }
+      for (const n of nodes) audited.add(n);
+      const backgrounds = new WeakMap();
+      function background(n) {
+        if (!n) return [17, 29, 24];
+        if (backgrounds.has(n)) return backgrounds.get(n);
+        const bg = color(getComputedStyle(n).backgroundColor) || [0, 0, 0, 0],
+          out =
+            bg[3] === 1 || bg.length === 3
+              ? bg.slice(0, 3)
+              : blend(bg, background(n.parentElement));
+        backgrounds.set(n, out);
+        return out;
+      }
+      for (const n of nodes) {
+        let c = getComputedStyle(n);
+        const bg = color(c.backgroundColor),
+          border = color(c.borderTopColor);
+        if (
+          bg &&
+          (bg.length < 4 || bg[3] > 0.8) &&
+          Math.min(...bg.slice(0, 3)) > 155
+        )
+          n.setAttribute("data-night-surface", tone(bg));
+        if (border && Math.min(...border.slice(0, 3)) > 155)
+          n.setAttribute("data-night-border", "");
+        if (
+          ![...n.childNodes].some(
+            (t) => t.nodeType === Node.TEXT_NODE && t.textContent.trim(),
+          ) &&
+          !/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)
+        )
+          continue;
+        c = getComputedStyle(n);
+        const ink = color(c.color),
+          surface = background(n);
+        if (!ink) continue;
+        const large =
+            parseFloat(c.fontSize) >= 24 ||
+            (parseFloat(c.fontSize) >= 18.66 && parseInt(c.fontWeight) >= 700),
+          minimum = large ? 3 : 4.5;
+        if (ratio(blend(ink, surface), surface) >= minimum) continue;
+        let key = tone(ink);
+        if (ratio(palette[key], surface) < minimum)
+          key =
+            ratio(palette.dark, surface) > ratio(palette.neutral, surface)
+              ? "dark"
+              : "neutral";
+        n.setAttribute("data-night-ink", key);
+        // A few older ID selectors use !important; restore any original inline color in light mode.
+        const actual = color(getComputedStyle(n).color);
+        if (actual && ratio(blend(actual, surface), surface) < minimum) {
+          inlineColors.set(n, {
+            value: n.style.getPropertyValue("color"),
+            priority: n.style.getPropertyPriority("color"),
+          });
+          n.style.setProperty(
+            "color",
+            "rgb(" + palette[key].join(",") + ")",
+            "important",
+          );
+        }
+      }
+      finish();
+    }
+    function schedule() {
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(audit);
+      }
+    }
+    new MutationObserver(schedule).observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "hidden", "open", "disabled"],
+    });
+    new MutationObserver(() => {
+      document.documentElement.classList.add("theme-changing");
+      schedule();
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() =>
+          document.documentElement.classList.remove("theme-changing"),
+        ),
+      );
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    schedule();
+  })();
 
-/* v5.3: one daily workflow, backed by the existing ledger and forecast. */
-(()=>{
- const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;},money=c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'}),date=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'}),button=(text,fn)=>{const b=el('button',text,'secondary');b.type='button';b.onclick=fn;return b;};
- let latest,period='week';
- const checks=el('div',undefined,'v53-checks');checks.id='v53-account-checks';$('accounts').before(checks);
- const daily=el('section',undefined,'life-panel v53-daily');daily.id='v53-daily';$('app-dashboard').prepend(daily);
- const follow=el('div',undefined,'life-panel v53-follow');follow.id='v53-follow';$('planning-review').prepend(follow);
- const dialog=el('dialog',undefined,'editor-dialog v53-calculation');dialog.id='v53-calculation';dialog.setAttribute('aria-label','Calcul du disponible');const inner=el('div',undefined,'dialog-inner');dialog.append(inner);document.body.append(dialog);
- const head=el('div',undefined,'dialog-heading');head.append(el('h2','D’où vient mon disponible ?'),button('Fermer',()=>dialog.close()));
- const select=el('select');select.setAttribute('aria-label','Période du disponible');for(const [value,label] of [['now','Maintenant'],['week','Cette semaine'],['pay','Jusqu’à la paie'],['30','30 jours'],['90','90 jours']])select.add(new Option(label,value));select.value=period;
- const content=el('div');inner.append(head,select,content);select.onchange=()=>{period=select.value;explain();};
- function openCalculation(value='week'){period=value;select.value=value;explain();dialog.showModal();}
- function line(host,label,value){const row=el('div',undefined,'v53-equation');row.append(el('span',label),el('strong',money(value)));host.append(row);}
- function explain(){
-  if(!latest)return;const s=latest,w=s.spending_windows;content.replaceChildren();
-  const end=period==='now'?null:period==='week'?w.week_end:period==='pay'?w.payday_date:s.forecast[Math.min(s.forecast.length-1,Number(period)-1)]?.date;
-  content.append(el('p','Les comptes inclus et les réserves actuelles donnent votre disponible de départ. Les périodes futures retiennent son point le plus bas, même si le solde remonte ensuite.','quiet-copy'));
-  line(content,'Soldes bancaires inclus',s.cash_cents);line(content,'Enveloppes encore disponibles pour des achats',-(s.envelope_reserved_cents??s.reserved_cents));if(s.card_envelope_reserved_cents)line(content,'Achats d’enveloppes sur carte — argent protégé',-s.card_envelope_reserved_cents);line(content,'Disponible maintenant',s.safe_cents);
-  const accounts=el('details');accounts.append(el('summary','Voir les comptes et les enveloppes du calcul'));for(const a of s.accounts)line(accounts,a.name+(a.kind==='credit'?' · crédit exclu':a.included?' · inclus':' · exclu'),a.balance_cents);for(const e of s.envelopes.filter(e=>e.reserved_cents>0))line(accounts,e.name+' · réserve',-e.reserved_cents);for(const f of s.sts_breakdown.card_envelopes||[])line(accounts,f.name+' · '+f.card_name+' · à rembourser',-f.amount_cents);content.append(accounts);
-  if(period==='pay'&&!end){content.append(el('p','Aucune prochaine paie admissible n’est prévue dans les 30 jours. Ajoutez un revenu récurrent sur un compte inclus pour utiliser cette période.'));return;}
-  const days=end?s.forecast.filter(d=>period==='pay'?d.date<end:d.date<=end):[];let low={date:s.forecast[0].date,safe_cents:s.safe_cents,cash_cents:s.cash_cents,reserved_cents:s.reserved_cents};for(const d of days)if(d.safe_cents<low.safe_cents)low=d;
-  const result=el('div',undefined,'life-preview');result.id='v53-calculation-result';result.append(el('span',period==='now'?'Disponible maintenant':(period==='pay'?'Montant prudent avant la paie du ':'Montant prudent jusqu’au ')+date(end)),el('strong',money(low.safe_cents)));if(end)result.append(el('small','Point le plus bas : '+date(low.date)));content.append(result);
-  if(end){
-   if(period==='pay')content.append(el('p','Le jour de la paie est exclu : son revenu ne devient pas disponible avant sa réception.','quiet-copy'));content.append(el('h3','Du disponible actuel au point le plus bas'));line(content,'Disponible de départ',s.safe_cents);line(content,'Variation du solde bancaire prévu',low.cash_cents-s.cash_cents);line(content,'Effet de la variation des réserves',s.reserved_cents-low.reserved_cents);line(content,'Disponible au minimum',low.safe_cents);
-   const movements=el('details');movements.append(el('summary','Examiner les mouvements jusqu’au '+date(end)));for(const d of days){if(!d.events.length)continue;const day=el('details',undefined,'v53-day');day.append(el('summary',date(d.date)+' · disponible prévu '+money(d.safe_cents)));for(const e of d.events){const row=el('div',undefined,'v53-event');row.append(el('span',e.description||e.type),el('strong',money(e.sts_impact_cents||0)));day.append(row);}movements.append(day);}if(movements.children.length===1)movements.append(el('p','Aucun mouvement prévu sur cette période.'));content.append(movements);
-  }
-  content.append(el('p','Une réserve gèle de l’argent : elle n’est pas une dépense bancaire. Une dépense associée utilise cette réserve. Les virements entre comptes inclus ont un effet net nul. Les achats liés à une enveloppe restent protégés jusqu’au remboursement de la carte. Le remboursement utilise cette protection sans deuxième déduction. Une ancienne dette sans achat lié à une enveloppe ne crée aucune réserve automatique.','quiet-copy'));
-  if(s.planning.warnings.length)content.append(el('p',s.planning.warnings.length+' point(s) de configuration à vérifier dans Prévision. Le calcul dépend des comptes, des montants et des dates saisis.','life-preview'));
- }
- function draw(s){
-  latest=s;checks.replaceChildren(el('h3','Vérification de vos comptes'),el('p','Comparez vos soldes à ceux de votre banque, examinez les opérations, puis validez le rapprochement. Toute modification d’un compte ou de ses opérations demande une nouvelle vérification.','quiet-copy'));
-  for(const a of s.accounts){const check=s.support41.bank_checks?.find(c=>c.account_id===a.id),row=el('div',undefined,'v53-check-row'),copy=el('div');copy.append(el('strong',a.name),el('small',check?.current?'Rapprochement à jour · '+new Date(check.checked_at).toLocaleDateString('fr-CA'):check?.checked_at?'À vérifier depuis le dernier rapprochement':'Pas encore rapproché'));row.append(copy,el('strong',money(a.balance_cents)),button('Vérifier ce compte',()=>window.budgetOpenBankCheck(a.id)));checks.append(row);}if(!s.accounts.length)checks.append(el('p','Ajoutez un compte pour commencer.'));
-  const today=s.forecast[0].date,rows=s.planning.rows,waiting=rows.filter(r=>['planned','pending'].includes(r.status)&&r.type!=='reserve'&&r.remaining_cents>0),due=waiting.filter(r=>r.date<=today),done=rows.filter(r=>r.status==='actual'),pending=(s.calendar_actuals||[]).filter(t=>!t.reviewed&&t.happened_on<=today),unchecked=s.accounts.filter(a=>!s.support41.bank_checks?.find(c=>c.account_id===a.id)?.current);
-  daily.replaceChildren(el('p','VOTRE SUIVI QUOTIDIEN','eyebrow'),el('h3','Votre budget, à jour'),el('p',due.length+' opération(s) prévue(s) à confirmer · '+pending.length+' transaction(s) à vérifier · '+unchecked.length+' compte(s) à rapprocher','quiet-copy'));
-  const actions=el('div',undefined,'v53-actions');actions.append(button('Confirmer mes opérations',()=>window.budgetOpenPlanningQueue()),button('Vérifier mes comptes',()=>document.querySelector('.app-shell-nav [data-view="comptes"]').click()),button('Comprendre mon disponible',()=>openCalculation()));daily.append(actions);const protectedCopy=el('p',money(s.reserved_cents)+' protégés : '+money(s.envelope_reserved_cents??s.reserved_cents)+' encore dans les enveloppes et '+money(s.card_envelope_reserved_cents||0)+' pour leurs achats sur carte non remboursés.','quiet-copy');protectedCopy.id='v72-protected-summary';daily.append(protectedCopy);
-  follow.replaceChildren(el('h3','Du prévu au réellement payé'),el('p','Une confirmation remplace le prévu par le réel. Si la transaction est déjà saisie, associez-la pour conserver un seul mouvement bancaire. Les réserves restent distinctes des dépenses.','quiet-copy'));const metrics=el('div',undefined,'life-metrics');for(const [label,value] of [['À confirmer aujourd’hui ou avant',due.length],['Réels rapprochés sur la période suivie',done.length],['Échéances encore prévues',waiting.length]]){const box=el('div');box.append(el('span',label),el('strong',value));metrics.append(box);}follow.append(metrics);
-  for(const r of due.slice(0,3)){const row=el('div',undefined,'v53-check-row');row.append(el('span',date(r.date)+' · '+r.description),el('strong',money(r.remaining_cents)),button('Confirmer cette opération',()=>window.budgetConfirmPlanned(r.key)));follow.append(row);}
-  if(!due.length)follow.append(el('p','Aucune échéance passée à confirmer. Vous pouvez consulter les prochaines dates ou l’historique ci-dessous.'));
-  for(const [id,value] of [['sts-today','now'],['sts-week','week'],['sts-pay','pay']]){const target=$(id);target.setAttribute('role','button');target.tabIndex=0;target.setAttribute('aria-label',target.textContent+' · voir le calcul');target.onclick=()=>openCalculation(value);target.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCalculation(value);}};}
-  if(dialog.open)explain();
- }
- const previous=render;render=function(s){previous(s);draw(s);};if(typeof state!=='undefined'&&state)draw(state);
- $('v21-sts-detail').onclick=()=>openCalculation();
-})();
+  /* v5.3: one daily workflow, backed by the existing ledger and forecast. */
+  (() => {
+    const $ = (id) => document.getElementById(id),
+      el = (tag, text, cls) => {
+        const e = document.createElement(tag);
+        if (text !== undefined) e.textContent = text;
+        if (cls) e.className = cls;
+        return e;
+      },
+      money = (c) =>
+        (c / 100).toLocaleString("fr-CA", {
+          style: "currency",
+          currency: "CAD",
+        }),
+      date = (d) =>
+        new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      button = (text, fn) => {
+        const b = el("button", text, "secondary");
+        b.type = "button";
+        b.onclick = fn;
+        return b;
+      };
+    let latest,
+      period = "week";
+    const checks = el("div", undefined, "v53-checks");
+    checks.id = "v53-account-checks";
+    $("accounts").before(checks);
+    const daily = el("section", undefined, "life-panel v53-daily");
+    daily.id = "v53-daily";
+    $("app-dashboard").prepend(daily);
+    const follow = el("div", undefined, "life-panel v53-follow");
+    follow.id = "v53-follow";
+    $("planning-review").prepend(follow);
+    const dialog = el("dialog", undefined, "editor-dialog v53-calculation");
+    dialog.id = "v53-calculation";
+    dialog.setAttribute("aria-label", "Calcul du disponible");
+    const inner = el("div", undefined, "dialog-inner");
+    dialog.append(inner);
+    document.body.append(dialog);
+    const head = el("div", undefined, "dialog-heading");
+    head.append(
+      el("h2", "D’où vient mon disponible ?"),
+      button("Fermer", () => dialog.close()),
+    );
+    const select = el("select");
+    select.setAttribute("aria-label", "Période du disponible");
+    for (const [value, label] of [
+      ["now", "Maintenant"],
+      ["week", "Cette semaine"],
+      ["pay", "Jusqu’à la paie"],
+      ["30", "30 jours"],
+      ["90", "90 jours"],
+    ])
+      select.add(new Option(label, value));
+    select.value = period;
+    const content = el("div");
+    inner.append(head, select, content);
+    select.onchange = () => {
+      period = select.value;
+      explain();
+    };
+    function openCalculation(value = "week") {
+      period = value;
+      select.value = value;
+      explain();
+      dialog.showModal();
+    }
+    function line(host, label, value) {
+      const row = el("div", undefined, "v53-equation");
+      row.append(el("span", label), el("strong", money(value)));
+      host.append(row);
+    }
+    function explain() {
+      if (!latest) return;
+      const s = latest,
+        w = s.spending_windows;
+      content.replaceChildren();
+      const end =
+        period === "now"
+          ? null
+          : period === "week"
+            ? w.week_end
+            : period === "pay"
+              ? w.payday_date
+              : s.forecast[Math.min(s.forecast.length - 1, Number(period) - 1)]
+                  ?.date;
+      content.append(
+        el(
+          "p",
+          "Les comptes inclus et les réserves actuelles donnent votre disponible de départ. Les périodes futures retiennent son point le plus bas, même si le solde remonte ensuite.",
+          "quiet-copy",
+        ),
+      );
+      line(content, "Soldes bancaires inclus", s.cash_cents);
+      line(
+        content,
+        "Enveloppes encore disponibles pour des achats",
+        -(s.envelope_reserved_cents ?? s.reserved_cents),
+      );
+      if (s.card_envelope_reserved_cents)
+        line(
+          content,
+          "Achats d’enveloppes sur carte — argent protégé",
+          -s.card_envelope_reserved_cents,
+        );
+      line(content, "Disponible maintenant", s.safe_cents);
+      const accounts = el("details");
+      accounts.append(
+        el("summary", "Voir les comptes et les enveloppes du calcul"),
+      );
+      for (const a of s.accounts)
+        line(
+          accounts,
+          a.name +
+            (a.kind === "credit"
+              ? " · crédit exclu"
+              : a.included
+                ? " · inclus"
+                : " · exclu"),
+          a.balance_cents,
+        );
+      for (const e of s.envelopes.filter((e) => e.reserved_cents > 0))
+        line(accounts, e.name + " · réserve", -e.reserved_cents);
+      for (const f of s.sts_breakdown.card_envelopes || [])
+        line(
+          accounts,
+          f.name + " · " + f.card_name + " · à rembourser",
+          -f.amount_cents,
+        );
+      content.append(accounts);
+      if (period === "pay" && !end) {
+        content.append(
+          el(
+            "p",
+            "Aucune prochaine paie admissible n’est prévue dans les 30 jours. Ajoutez un revenu récurrent sur un compte inclus pour utiliser cette période.",
+          ),
+        );
+        return;
+      }
+      const days = end
+        ? s.forecast.filter((d) =>
+            period === "pay" ? d.date < end : d.date <= end,
+          )
+        : [];
+      let low = {
+        date: s.forecast[0].date,
+        safe_cents: s.safe_cents,
+        cash_cents: s.cash_cents,
+        reserved_cents: s.reserved_cents,
+      };
+      for (const d of days) if (d.safe_cents < low.safe_cents) low = d;
+      const result = el("div", undefined, "life-preview");
+      result.id = "v53-calculation-result";
+      result.append(
+        el(
+          "span",
+          period === "now"
+            ? "Disponible maintenant"
+            : (period === "pay"
+                ? "Montant prudent avant la paie du "
+                : "Montant prudent jusqu’au ") + date(end),
+        ),
+        el("strong", money(low.safe_cents)),
+      );
+      if (end)
+        result.append(el("small", "Point le plus bas : " + date(low.date)));
+      content.append(result);
+      if (end) {
+        if (period === "pay")
+          content.append(
+            el(
+              "p",
+              "Le jour de la paie est exclu : son revenu ne devient pas disponible avant sa réception.",
+              "quiet-copy",
+            ),
+          );
+        content.append(el("h3", "Du disponible actuel au point le plus bas"));
+        line(content, "Disponible de départ", s.safe_cents);
+        line(
+          content,
+          "Variation du solde bancaire prévu",
+          low.cash_cents - s.cash_cents,
+        );
+        line(
+          content,
+          "Effet de la variation des réserves",
+          s.reserved_cents - low.reserved_cents,
+        );
+        line(content, "Disponible au minimum", low.safe_cents);
+        const movements = el("details");
+        movements.append(
+          el("summary", "Examiner les mouvements jusqu’au " + date(end)),
+        );
+        for (const d of days) {
+          if (!d.events.length) continue;
+          const day = el("details", undefined, "v53-day");
+          day.append(
+            el(
+              "summary",
+              date(d.date) + " · disponible prévu " + money(d.safe_cents),
+            ),
+          );
+          for (const e of d.events) {
+            const row = el("div", undefined, "v53-event");
+            row.append(
+              el("span", e.description || e.type),
+              el("strong", money(e.sts_impact_cents || 0)),
+            );
+            day.append(row);
+          }
+          movements.append(day);
+        }
+        if (movements.children.length === 1)
+          movements.append(el("p", "Aucun mouvement prévu sur cette période."));
+        content.append(movements);
+      }
+      content.append(
+        el(
+          "p",
+          "Une réserve gèle de l’argent : elle n’est pas une dépense bancaire. Une dépense associée utilise cette réserve. Les virements entre comptes inclus ont un effet net nul. Les achats liés à une enveloppe restent protégés jusqu’au remboursement de la carte. Le remboursement utilise cette protection sans deuxième déduction. Une ancienne dette sans achat lié à une enveloppe ne crée aucune réserve automatique.",
+          "quiet-copy",
+        ),
+      );
+      if (s.planning.warnings.length)
+        content.append(
+          el(
+            "p",
+            s.planning.warnings.length +
+              " point(s) de configuration à vérifier dans Prévision. Le calcul dépend des comptes, des montants et des dates saisis.",
+            "life-preview",
+          ),
+        );
+    }
+    function draw(s) {
+      latest = s;
+      checks.replaceChildren(
+        el("h3", "Vérification de vos comptes"),
+        el(
+          "p",
+          "Comparez vos soldes à ceux de votre banque, examinez les opérations, puis validez le rapprochement. Toute modification d’un compte ou de ses opérations demande une nouvelle vérification.",
+          "quiet-copy",
+        ),
+      );
+      for (const a of s.accounts) {
+        const check = s.support41.bank_checks?.find(
+            (c) => c.account_id === a.id,
+          ),
+          row = el("div", undefined, "v53-check-row"),
+          copy = el("div");
+        copy.append(
+          el("strong", a.name),
+          el(
+            "small",
+            check?.current
+              ? "Rapprochement à jour · " +
+                  new Date(check.checked_at).toLocaleDateString("fr-CA")
+              : check?.checked_at
+                ? "À vérifier depuis le dernier rapprochement"
+                : "Pas encore rapproché",
+          ),
+        );
+        row.append(
+          copy,
+          el("strong", money(a.balance_cents)),
+          button("Vérifier ce compte", () => window.budgetOpenBankCheck(a.id)),
+        );
+        checks.append(row);
+      }
+      if (!s.accounts.length)
+        checks.append(el("p", "Ajoutez un compte pour commencer."));
+      const today = s.forecast[0].date,
+        rows = s.planning.rows,
+        waiting = rows.filter(
+          (r) =>
+            ["planned", "pending"].includes(r.status) &&
+            r.type !== "reserve" &&
+            r.remaining_cents > 0,
+        ),
+        due = waiting.filter((r) => r.date <= today),
+        done = rows.filter((r) => r.status === "actual"),
+        pending = (s.calendar_actuals || []).filter(
+          (t) => !t.reviewed && t.happened_on <= today,
+        ),
+        unchecked = s.accounts.filter(
+          (a) =>
+            !s.support41.bank_checks?.find((c) => c.account_id === a.id)
+              ?.current,
+        );
+      daily.replaceChildren(
+        el("p", "VOTRE SUIVI QUOTIDIEN", "eyebrow"),
+        el("h3", "Votre budget, à jour"),
+        el(
+          "p",
+          due.length +
+            " opération(s) prévue(s) à confirmer · " +
+            pending.length +
+            " transaction(s) à vérifier · " +
+            unchecked.length +
+            " compte(s) à rapprocher",
+          "quiet-copy",
+        ),
+      );
+      const actions = el("div", undefined, "v53-actions");
+      actions.append(
+        button("Confirmer mes opérations", () =>
+          window.budgetOpenPlanningQueue(),
+        ),
+        button("Vérifier mes comptes", () =>
+          document
+            .querySelector('.app-shell-nav [data-view="comptes"]')
+            .click(),
+        ),
+        button("Comprendre mon disponible", () => openCalculation()),
+      );
+      daily.append(actions);
+      const protectedCopy = el(
+        "p",
+        money(s.reserved_cents) +
+          " protégés : " +
+          money(s.envelope_reserved_cents ?? s.reserved_cents) +
+          " encore dans les enveloppes et " +
+          money(s.card_envelope_reserved_cents || 0) +
+          " pour leurs achats sur carte non remboursés.",
+        "quiet-copy",
+      );
+      protectedCopy.id = "v72-protected-summary";
+      daily.append(protectedCopy);
+      follow.replaceChildren(
+        el("h3", "Du prévu au réellement payé"),
+        el(
+          "p",
+          "Une confirmation remplace le prévu par le réel. Si la transaction est déjà saisie, associez-la pour conserver un seul mouvement bancaire. Les réserves restent distinctes des dépenses.",
+          "quiet-copy",
+        ),
+      );
+      const metrics = el("div", undefined, "life-metrics");
+      for (const [label, value] of [
+        ["À confirmer aujourd’hui ou avant", due.length],
+        ["Réels rapprochés sur la période suivie", done.length],
+        ["Échéances encore prévues", waiting.length],
+      ]) {
+        const box = el("div");
+        box.append(el("span", label), el("strong", value));
+        metrics.append(box);
+      }
+      follow.append(metrics);
+      for (const r of due.slice(0, 3)) {
+        const row = el("div", undefined, "v53-check-row");
+        row.append(
+          el("span", date(r.date) + " · " + r.description),
+          el("strong", money(r.remaining_cents)),
+          button("Confirmer cette opération", () =>
+            window.budgetConfirmPlanned(r.key),
+          ),
+        );
+        follow.append(row);
+      }
+      if (!due.length)
+        follow.append(
+          el(
+            "p",
+            "Aucune échéance passée à confirmer. Vous pouvez consulter les prochaines dates ou l’historique ci-dessous.",
+          ),
+        );
+      for (const [id, value] of [
+        ["sts-today", "now"],
+        ["sts-week", "week"],
+        ["sts-pay", "pay"],
+      ]) {
+        const target = $(id);
+        target.setAttribute("role", "button");
+        target.tabIndex = 0;
+        target.setAttribute(
+          "aria-label",
+          target.textContent + " · voir le calcul",
+        );
+        target.onclick = () => openCalculation(value);
+        target.onkeydown = (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openCalculation(value);
+          }
+        };
+      }
+      if (dialog.open) explain();
+    }
+    const previous = runtime.render;
+    runtime.render = function (s) {
+      previous(s);
+      draw(s);
+    };
+    if (typeof runtime.state !== "undefined" && runtime.state)
+      draw(runtime.state);
+    $("v21-sts-detail").onclick = () => openCalculation();
+  })();
+}

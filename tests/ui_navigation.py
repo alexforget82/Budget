@@ -30,3 +30,20 @@ def manage_category(page,category_id):
   toggle=row.locator('.v52-row-toggle')
   if toggle.count() and toggle.get_attribute('aria-expanded')!='true':toggle.click()
  return row
+
+def header_action(page,name):
+ """Header actions move into the tools menu on small screens."""
+ action=page.get_by_role('button',name=name,exact=True)
+ if page.evaluate('matchMedia("(max-width:760px)").matches') or not action.is_visible():
+  trigger=page.locator('.mobile-navigation-trigger')
+  if trigger.is_visible() and not page.locator('.app-shell-nav').evaluate('(n)=>n.classList.contains("mobile-menu-open")'):trigger.click()
+  tools=page.locator('#s26-tools')
+  if tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
+ action.click()
+
+def detailed_dashboard(page):
+ """Open the retained detailed widgets explicitly instead of the essential home."""
+ button=page.locator('#home-mode')
+ if button.get_attribute('aria-expanded')!='true':button.click()
+ detail=page.locator('#v81-dashboard-details')
+ if detail.count() and detail.is_visible() and detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
