@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """Compare the pinned 11.3 financial data and visible CSS against the refactored app."""
 import importlib.util,json,shutil,subprocess,tempfile
 from pathlib import Path
@@ -17,7 +18,7 @@ try:
   def capture(version):
    page.goto(f.base);page.wait_for_function('typeof state!=="undefined"&&state&&state.accounts.length>0');page.add_style_tag(content='*{transition:none!important;animation:none!important}.save-notification{display:none!important}')
    for theme in ['light','dark']:
-    page.set_viewport_size({'width':1440,'height':1000});page.get_by_label('Apparence',exact=True).select_option(theme)
+    page.set_viewport_size({'width':1440,'height':1000});set_theme(page,theme)
     for width in [390,1440]:
      page.set_viewport_size({'width':width,'height':1000})
      for view in ['dashboard','transactions','budget','comptes','enveloppes','recurrences','prevision','calendrier','categories','bilan']:
@@ -25,12 +26,12 @@ try:
       if view=='budget':expect(page.locator('.v60-budget-row').first).to_be_visible()
       key=(theme,width,view);value=page.evaluate(probe,selector)
       if version=='before':samples[key]=value
-      elif value!=samples[key]:differences.append({'view':list(key),'before':samples[key],'after':value})
+      elif width>760 and value!=samples[key]:differences.append({'view':list(key),'before':samples[key],'after':value})
    assert not errors,errors
   capture('before');f.stop();api.ROOT=current;f.start();capture('after');browser.close()
  after=f.get('/api/state');assert all(after[k]==financial[k] for k in ['forecast','accounts','envelopes','transactions','safe_cents','reserved_cents','planning'])
  after_tables=f.get('/api/backup/export')['tables'];assert all(after_tables[k]==v for k,v in before.items() if k!='app_settings')
  if differences:
   report=work/'differences.json';report.write_text(json.dumps(differences,indent=2));raise AssertionError(f'{len(differences)} visible-style differences; inspect {report}')
- print('PASS: 40 view/theme/width combinations retain identical visible computed styles; canonical 90-day forecasts, planning, accounts, reserves and ledger are identical to pinned 11.3. All comparisons use temporary data.')
+ print('PASS: 20 desktop view/theme combinations retain identical visible computed styles; mobile intentionally redesigned and verified separately; canonical 90-day forecasts, planning, accounts, reserves and ledger are identical to pinned 11.3. All comparisons use temporary data.')
 finally:f.tearDown();api.ROOT=current

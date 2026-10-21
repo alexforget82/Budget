@@ -1,3 +1,4 @@
+from ui_navigation import transaction_action,set_theme
 """Sillage 2026 identity and visual system across owner and restricted mobile views."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
@@ -17,7 +18,7 @@ try:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1500,'height':1050});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page).to_have_title('Sillage 2026 — Votre argent, votre cap');expect(page.locator('.brand')).to_contain_text('2026');expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);assert page.locator('#s26-tools').get_attribute('open') is None
   money=lambda c:page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",c);expect(page.locator('#v80-safe')).to_have_text(money(f.get('/api/state')['safe_cents']))
   for theme in ['light','dark']:
-   page.get_by_label('Apparence',exact=True).select_option(theme)
+   set_theme(page,theme)
    if page.locator('#s26-tools').get_attribute('open') is not None:page.locator('#s26-tools>summary').click()
    for view in ['dashboard','transactions','budget','enveloppes','comptes','prevision','calendrier','categories','bilan']:
     navigate(page,view);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(theme,view);page.screenshot(path=str(images/(view+'-'+theme+'.png')),full_page=True)
@@ -29,7 +30,7 @@ try:
       page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(images/('iphone-'+theme+'.png')))
    page.set_viewport_size({'width':1500,'height':1050})
   # Existing forms retain their exact account/envelope behavior under the new presentation.
-  navigate(page,'transactions');page.get_by_role('button',name='+ Nouvelle transaction',exact=True).click();expect(page.locator('#transaction')).to_be_visible();page.locator('#transaction-dialog').get_by_role('button',name='Fermer',exact=True).click();navigate(page,'dashboard');page.locator('#home-daily-open').click();expect(page.locator('#home-daily-dialog .home-daily-row')).to_have_count(30);page.locator('#home-daily-dialog').get_by_role('button',name='Fermer',exact=True).click()
+  navigate(page,'transactions');transaction_action(page,'+ Nouvelle transaction');expect(page.locator('#transaction')).to_be_visible();page.locator('#transaction-dialog').get_by_role('button',name='Fermer',exact=True).click();navigate(page,'dashboard');page.locator('#home-daily-open').click();expect(page.locator('#home-daily-dialog .home-daily-row')).to_have_count(30);page.locator('#home-daily-dialog').get_by_role('button',name='Fermer',exact=True).click()
   page.set_viewport_size({'width':390,'height':700});navigate(page,'categories');page.locator('.mobile-navigation-trigger').click();page.locator('#s26-tools .v41-header-tools').get_by_role('button',name='Rechercher…',exact=True).click();expect(page.locator('#v41-search')).to_be_visible();page.locator('#v41-search').get_by_role('button',name='Fermer',exact=True).click();navigate(page,'dashboard');page.set_viewport_size({'width':1500,'height':1050})
   after=f.get('/api/backup/export')['tables'];after['app_settings']=[r for r in after['app_settings'] if r['key']!='appearance_theme_v50'];before['app_settings']=[r for r in before['app_settings'] if r['key']!='appearance_theme_v50'];assert after==before
   viewer=browser.new_page(viewport={'width':390,'height':844});viewer.goto(f.base+path);expect(viewer.locator('h1')).to_have_text('Sillage 2026');expect(viewer.locator('#safe')).to_have_text(money(f.get('/api/state')['safe_cents']));assert viewer.evaluate('document.documentElement.scrollWidth<=innerWidth');assert not errors,errors;browser.close()

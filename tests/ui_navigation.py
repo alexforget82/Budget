@@ -47,3 +47,30 @@ def detailed_dashboard(page):
  if button.get_attribute('aria-expanded')!='true':button.click()
  detail=page.locator('#v81-dashboard-details')
  if detail.count() and detail.is_visible() and detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
+
+def transaction_action(page,name):
+ """Secondary transaction actions live in the phone options panel."""
+ action=page.get_by_role('button',name=name,exact=True)
+ options=page.locator('#mobile-transaction-options')
+ if not action.is_visible() and options.count() and options.is_visible() and options.get_attribute('open') is None:options.locator(':scope>summary').click()
+ action.click()
+
+def set_theme(page,theme):
+ """Appearance is in the full menu on a phone and the header on desktop."""
+ select=page.get_by_label('Apparence',exact=True)
+ if page.evaluate('matchMedia("(max-width:760px)").matches'):
+  trigger=page.locator('.mobile-navigation-trigger')
+  if trigger.get_attribute('aria-expanded')!='true':trigger.click()
+  tools=page.locator('#s26-tools')
+  if tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
+ select.select_option(theme)
+ if page.evaluate('matchMedia("(max-width:760px)").matches') and page.locator('.mobile-navigation-trigger').get_attribute('aria-expanded')=='true':page.locator('.mobile-navigation-trigger').click()
+
+def open_mobile_options(page,identifier):
+ panel=page.locator('#'+identifier)
+ if panel.count() and panel.is_visible() and panel.get_attribute('open') is None:panel.locator(':scope>summary').click()
+
+def budget_action(page,name):
+ action=page.get_by_role('button',name=name,exact=True)
+ if not action.is_visible():open_mobile_options(page,'mobile-budget-options')
+ action.click()

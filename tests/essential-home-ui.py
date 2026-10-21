@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """Essential home and actionable, canonical forecast alerts; date visible on every row."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
@@ -18,7 +19,7 @@ try:
   page.locator('#home-mode').click();expect(page.locator('#v81-maximum')).to_be_visible();page.reload();expect(page.locator('#home-mode')).to_have_text('Revenir à l’essentiel');page.locator('#home-mode').click();page.locator('#dashboard-customize').click();assert 'v47-editing' in page.locator('#app-dashboard').get_attribute('class');expect(page.locator('[data-widget=summary]')).to_be_visible();page.locator('#dashboard-customize').click()
   navigate(page,'transactions');when=page.locator('.ledger-row time.sillage-row-date');expect(when).to_have_count(1);expect(when).to_be_visible();expect(when).to_have_attribute('datetime',api.DAY);page.locator('#sillage-sort').select_option('amount:asc');expect(when).to_be_visible();page.locator('#register-density').click();expect(when).to_be_visible();page.locator('#register-density').click()
   for theme in ['light','dark']:
-   page.get_by_label('Apparence',exact=True).select_option(theme)
+   set_theme(page,theme)
    for width in [320,390,768,1100,1500]:
     page.set_viewport_size({'width':width,'height':1000});navigate(page,'dashboard');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,theme);expect(page.locator('#v80-safe')).to_be_visible();navigate(page,'transactions');expect(when).to_be_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,theme)
    navigate(page,'dashboard');page.screenshot(path=str(images/(theme+'.png')))

@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """Calendar-based weekly/biweekly budget totals in owner UI, including mobile."""
 import importlib.util,json,shutil,sqlite3,tempfile
 from pathlib import Path
@@ -21,7 +22,7 @@ try:
   manualrow=page.locator(f'.v60-budget-row[data-category-id="{manual}"]');manualrow.get_by_role('button',name='Budget de Essence sans récurrence',exact=True).click();d.get_by_label('Montant budgété ($)',exact=True).fill('60');d.get_by_label('Fréquence du budget',exact=True).select_option('weekly');d.get_by_label('Reconduire le même montant ?',exact=True).select_option('true');d.get_by_role('button',name='Vérifier l’objectif',exact=True).click();expect(d.locator('[role=alert]')).to_contain_text('choisissez la récurrence');d.get_by_label('Calendrier des occurrences',exact=True).select_option('reference');d.get_by_label('Date de référence du budget',exact=True).fill('2026-10-01');d.get_by_role('button',name='Vérifier l’objectif',exact=True).click();expect(d).to_contain_text('5 occurrences');expect(d).to_contain_text('Prévu pour ce mois : 300,00')
   for theme in ['light','dark']:
    # Preference changes use the existing control while the modal is closed.
-   d.get_by_role('button',name='Fermer',exact=True).click();page.get_by_label('Apparence',exact=True).select_option(theme);manualrow.get_by_role('button',name='Budget de Essence sans récurrence',exact=True).click();d.get_by_label('Montant budgété ($)',exact=True).fill('60');d.get_by_label('Fréquence du budget',exact=True).select_option('weekly');d.get_by_label('Reconduire le même montant ?',exact=True).select_option('true');d.get_by_label('Calendrier des occurrences',exact=True).select_option('reference');d.get_by_label('Date de référence du budget',exact=True).fill('2026-10-01');d.get_by_role('button',name='Vérifier l’objectif',exact=True).click();expect(d).to_contain_text('300,00')
+   d.get_by_role('button',name='Fermer',exact=True).click();set_theme(page,theme);manualrow.get_by_role('button',name='Budget de Essence sans récurrence',exact=True).click();d.get_by_label('Montant budgété ($)',exact=True).fill('60');d.get_by_label('Fréquence du budget',exact=True).select_option('weekly');d.get_by_label('Reconduire le même montant ?',exact=True).select_option('true');d.get_by_label('Calendrier des occurrences',exact=True).select_option('reference');d.get_by_label('Date de référence du budget',exact=True).fill('2026-10-01');d.get_by_role('button',name='Vérifier l’objectif',exact=True).click();expect(d).to_contain_text('300,00')
    for width in [320,390,768,1440]:
     page.set_viewport_size({'width':width,'height':1000});assert d.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),(theme,width)
    page.screenshot(path=str(images/('calendar-'+theme+'.png')))

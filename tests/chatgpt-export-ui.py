@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """Owner explicitly downloads a reviewed snapshot; no automatic external request."""
 import importlib.util,json,shutil
 from pathlib import Path
@@ -12,7 +13,7 @@ try:
   page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version'])
   for width,theme in [(1440,"light"),(390,"light"),(1440,"dark"),(390,"dark")]:
    page.set_viewport_size({'width':width,'height':1000})
-   if width==1440:page.get_by_label('Apparence',exact=True).select_option(theme)
+   if width==1440:set_theme(page,theme)
    header_action(page,'Poser une question à ChatGPT');dialog=page.locator('#s26-chatgpt-dialog');expect(dialog).to_be_visible();expect(dialog.get_by_role('status')).to_contain_text('Fichier prêt');expect(dialog).to_contain_text('Rien n’est envoyé automatiquement');assert not external
 
    if dialog.locator('details').get_attribute('open') is None:dialog.locator('summary').click()

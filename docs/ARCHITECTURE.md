@@ -35,13 +35,14 @@ Les hooks `render` et `send` restent composés dans le même ordre. Cette couche
 - `styles-foundation.css` : fondations et premières structures;
 - `styles-domains.css` : composants et écrans par domaine;
 - `styles-sillage.css` : présentation Sillage et ajustements existants;
+- `styles-mobile.css` : disposition téléphone, navigation, formulaires et zones de sécurité;
 - `styles-tokens.css` : palette et correspondance des variables de thème.
 
 Les composants conservent leur ordre dans la couche `application`. Les variables du thème sont isolées dans la couche `tokens`. Répartir immédiatement chaque ancienne version dans une couche différente inverserait certaines priorités `!important`; cela modifierait l’apparence. La compatibilité est donc conservée et documentée. Les anciennes feuilles ne contiennent plus les règles : elles redirigent vers l’entrée actuelle. Modifier uniquement les fichiers faisant autorité.
 
 Trois priorités redondantes ont été retirées et vérifiées; les autres ne sont pas déclarées inutiles. Leur retrait futur nécessite des comparaisons supplémentaires, notamment pour les styles intégrés utilisés par l’outil de contraste.
 
-`refactor-parity-ui.py` compare 40 combinaisons de vue/thème/largeur au code v11.3 : propriétés CSS visibles identiques et données financières identiques. Les URL d’entrée, modules et styles portent une version; le serveur n’accepte ces variantes que pour sa liste fermée de fichiers publics.
+`refactor-parity-ui.py` compare 20 combinaisons de vue/thème sur ordinateur au code v11.3 : propriétés CSS visibles identiques et données financières identiques. Depuis la v11.5, le téléphone est volontairement remanié et vérifié séparément par `mobile-v115-ui.py`. `mobile-ui.js`, initialisé en dernier, déplace les contrôles existants dans des sections repliables et restaure leurs positions sur ordinateur; il ne modifie aucun calcul. Les URL d’entrée, modules et styles portent une version; le serveur n’accepte ces variantes que pour sa liste fermée de fichiers publics.
 
 ## Installation et développement
 

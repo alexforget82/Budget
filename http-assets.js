@@ -87,6 +87,8 @@ export const mime = {
 
 // Only release-version query strings are accepted, against the fixed asset allowlist.
 staticFiles.set("/ui-entry.js", "ui-entry.js");
+staticFiles.set("/mobile-ui.js", "mobile-ui.js");
+mime["mobile-ui.js"] = "text/javascript; charset=utf-8";
 mime["ui-entry.js"] = "text/javascript; charset=utf-8";
 export function assetName(url) {
   if (!/^\/(?:[A-Za-z0-9][A-Za-z0-9._-]*)?(?:\?v=\d+\.\d+\.\d+)?$/.test(url))
@@ -100,6 +102,7 @@ for (const file of [
   "styles-domains.css",
   "styles-sillage.css",
   "styles-tokens.css",
+  "styles-mobile.css",
 ]) {
   staticFiles.set("/" + file, file);
   mime[file] = "text/css; charset=utf-8";

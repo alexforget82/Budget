@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """First partial month: remaining payments, preserved normal November, dates and responsive UI."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
@@ -13,7 +14,7 @@ try:
    row.get_by_role('button',name='Exception',exact=True).click();dialog.get_by_label('Montant ($)',exact=True).fill(amount);dialog.get_by_label('Nombre de paiements ou paies restants',exact=True).fill(count);dialog.get_by_role('button',name='Vérifier l’exception',exact=True).click();expect(dialog).to_contain_text('Total exceptionnel : '+total);dialog.get_by_role('button',name='Confirmer',exact=True).click();expect(dialog).not_to_be_visible();expect(row.locator('.v60-money-button')).to_contain_text(total)
   row=page.locator(f'.v60-budget-row[data-category-id="{pay}"]');row.get_by_role('button',name='Exception',exact=True).click();dialog.get_by_label('Méthode de calcul',exact=True).select_option('total');dialog.get_by_label('Montant ($)',exact=True).fill('1200');expect(dialog.get_by_label('Nombre de paiements ou paies restants',exact=True)).not_to_be_visible();dialog.get_by_role('button',name='Vérifier l’exception',exact=True).click();dialog.get_by_role('button',name='Confirmer',exact=True).click();expect(dialog).not_to_be_visible();expect(row).to_contain_text('Exception :');page.screenshot(path=str(images/'octobre-exceptions.png'),full_page=True)
   for theme in ['dark','light']:
-   page.get_by_label('Apparence',exact=True).select_option(theme)
+   set_theme(page,theme)
    for width in [320,390,768,1500]:
     page.set_viewport_size({'width':width,'height':950});assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(theme,width);a.get_by_role('button',name='Modifier l’exception',exact=True).click();expect(dialog).to_be_visible();assert dialog.evaluate('d=>d.scrollWidth<=d.clientWidth+1'),(theme,width);dialog.get_by_role('button',name='Fermer',exact=True).click()
     if width==390:page.screenshot(path=str(images/f'octobre-{theme}-iphone.png'),full_page=True)

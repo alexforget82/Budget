@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """Fluid layout across CSS viewports, including widths equivalent to browser zoom."""
 import importlib.util,math,shutil,tempfile
 from pathlib import Path
@@ -11,7 +12,7 @@ try:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1920,'height':1080});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version'])
   widths=sorted(set([320,375,390,760,761,1024,1920,2560,3440]+[math.floor(1440/z) for z in [.5,.67,.75,.85,1,1.25,1.5,2]]))
   for theme in ['light','dark']:
-   page.get_by_label('Apparence',exact=True).select_option(theme)
+   set_theme(page,theme)
    for width in widths:
     page.set_viewport_size({'width':width,'height':950})
     for view in ['dashboard','paie','comptes','transactions','calendrier','prevision']:
@@ -21,12 +22,12 @@ try:
      if width>760:assert page.locator('.app-shell-nav').evaluate('(e)=>Math.abs(e.getBoundingClientRect().left)<1'),(width,'sidebar')
      if view=='paie' and width>=1600:
       gap=page.locator('#section-paie').evaluate('(e)=>innerWidth-e.getBoundingClientRect().right');assert 0<=gap<=45,(width,gap)
-  page.set_viewport_size({'width':1920,'height':1080});navigate(page,'paie');page.get_by_label('Apparence',exact=True).select_option('dark');page.wait_for_timeout(100)
+  page.set_viewport_size({'width':1920,'height':1080});navigate(page,'paie');set_theme(page,'dark');page.wait_for_timeout(100)
   page.locator('#v41-undo').evaluate('(e)=>e.disabled=true')
   # Explicit dark theme rules must beat the legacy white !important button styles.
   for selector in ['.app-shell-nav [data-view=prevision]','.v41-header-action','.v41-header-action:disabled']:
    ratios=page.locator(selector).evaluate_all('''els=>els.map(e=>{const rgb=s=>(s.match(/[\\d.]+/g)||[]).slice(0,3).map(Number),lum=a=>a.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0),c=getComputedStyle(e),a=lum(rgb(c.color)),b=lum(rgb(c.backgroundColor));return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)})''');assert ratios and min(ratios)>=4.5,(selector,ratios)
-  page.screenshot(path=str(images/'pleine-largeur-sombre.png'),full_page=True);page.get_by_label('Apparence',exact=True).select_option('light');page.screenshot(path=str(images/'pleine-largeur-clair.png'),full_page=True)
+  page.screenshot(path=str(images/'pleine-largeur-sombre.png'),full_page=True);set_theme(page,'light');page.screenshot(path=str(images/'pleine-largeur-clair.png'),full_page=True)
   page.set_viewport_size({'width':720,'height':700});navigate(page,'paie');page.locator('.mobile-navigation-trigger').click();page.locator('#s26-tools>summary').click();expect(page.locator('.app-shell-nav [data-view=sauvegardes]')).to_be_visible();page.locator('.app-shell-nav [data-view=sauvegardes]').click();expect(page.locator('#section-sauvegardes')).to_be_visible()
   assert not errors,errors;browser.close()
  after=f.get('/api/backup/export')['tables'];assert all(before[k]==after[k] for k in before if k!='app_settings')

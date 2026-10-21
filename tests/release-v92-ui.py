@@ -1,3 +1,4 @@
+from ui_navigation import set_theme
 """9.2 end-to-end: explain canonical funds, investigate bank gap, confirm once and reschedule."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
@@ -19,6 +20,6 @@ try:
   page.locator('#v4-calendar [data-calendar-view=month]').click();page.locator(f'#v4-cal-grid [data-date="{f.future73(1)}"]').click();page.locator('#v4-calendar-day .v4-event').filter(has_text='Facture a reporter').get_by_role('button',name='Reporter',exact=True).click();action.locator('[name=new_on]').fill(f.future73(3));action.get_by_role('button',name='Enregistrer le report',exact=True).click();expect(action).not_to_be_visible();updated=f.get('/api/state');assert updated['cash_cents']==94500;assert next(r for r in updated['planning']['rows'] if r['description']=='Facture a reporter')['date']==f.future73(3)
   for width in [320,390,768,1440]:
    page.set_viewport_size({'width':width,'height':1000});navigate(page,'dashboard');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.get_by_role('button',name='Pourquoi ce montant ?',exact=True).click();assert d.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1');d.get_by_role('button',name='Fermer',exact=True).click()
-  page.get_by_label('Apparence',exact=True).select_option('dark');page.get_by_role('button',name='Pourquoi ce montant ?',exact=True).click();d.screenshot(path=str(images/'disponible-sombre.png'));assert not errors,errors;browser.close()
+  set_theme(page,'dark');page.get_by_role('button',name='Pourquoi ce montant ?',exact=True).click();d.screenshot(path=str(images/'disponible-sombre.png'));assert not errors,errors;browser.close()
  print('PASS: v9.2.0 footer, canonical minimum explanation, bank gap hints/filter without writes, actual amount replaces planned once, replay blocked, direct reschedule, responsive and dark. Captures:',images)
 finally:f.tearDown()

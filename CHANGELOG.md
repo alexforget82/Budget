@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.5.0 — interface iPhone
+
+Navigation rapide en bas, en-tête compact, version en bas à gauche, options secondaires repliées sur téléphone. Budget : mois lisible et montants sans coupure. Transactions : filtres regroupés pour laisser voir les opérations. Prévision : compte et scénarios regroupés, résumé compact. Calendrier mobile initial en semaine avec choix du mois conservé. Formulaires adaptés au toucher, fenêtres en bas d’écran et prise en compte des zones de sécurité. Vue simplifiée plus compacte. Contrôles et gestionnaires existants réutilisés, calculs conservés; disposition ordinateur restaurée au changement de largeur.
+
 ## 11.4.3 — fichier pour poser des questions dans ChatGPT
 
 Ajout dans Outils et réglages : préparer et vérifier un instantané financier, le télécharger puis ouvrir ChatGPT pour le joindre à une question. Historique au choix (90 jours, un an, tout), comptes, budgets, enveloppes, récurrences et prévisions canoniques. Aucun envoi automatique ni clé API. Export propriétaire distinct des sauvegardes, sans configuration ni jeton d’accès. Calculs financiers conservés.

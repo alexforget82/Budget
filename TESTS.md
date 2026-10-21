@@ -31,13 +31,17 @@ python3 tests/run-python-checks.py --results /tmp/sillage-checks --jobs 2
 
 Le premier lance les tests Node puis les tests API. Le second exécute chaque script Python supplémentaire, conserve chaque journal et renvoie un échec si un script échoue. Aucun test n’est ignoré automatiquement. `CHROMIUM_PATH` permet d’utiliser un Chromium installé sur la machine.
 
+## Vérification de la v11.5.0
+
+**97 tests Node, 188 tests API et 58 scripts Python réussis** sur données temporaires. La dernière exécution complète termine sans échec; ses [résultats détaillés](docs/iphone-115-results.json) sont conservés. Le parcours `mobile-v115-ui.py` vérifie cinq largeurs de téléphone en clair et sombre, neuf écrans, le retour sur ordinateur et une transaction enregistrée exactement une fois. Les tables financières et les prévisions restent identiques pendant la consultation. Le [guide mobile](docs/iphone-11.5.md) présente les captures et les limites des essais sur émulateur.
+
 ## Résultat final de la v11.4
 
 **80 tests Node, 183 tests API et 55 scripts Python réussis.** La dernière exécution complète termine sans échec. Le [rapport de validation](docs/phases-2-5-validation.md) et les [résultats détaillés](docs/phases-2-5-results.json) conservent les preuves et les corrections apportées aux attentes des tests.
 
 ## Comparaison avant/après
 
-`tests/refactor-parity-ui.py` extrait la référence v11.3 figée au commit `731a58b68532e67ac9f63e6765752db34ee32d9c`. La même base fictive est utilisée pour comparer les tables financières, les réserves et les prévisions de 90 jours. Il compare aussi les styles visibles de dix écrans, en clair et sombre, aux largeurs 390 et 1440 pixels : 40 combinaisons.
+`tests/refactor-parity-ui.py` extrait la référence v11.3 figée au commit `731a58b68532e67ac9f63e6765752db34ee32d9c`. La même base fictive est utilisée pour comparer les tables financières, les réserves et les prévisions de 90 jours. Il compare aussi les styles visibles de dix écrans, en clair et sombre, sur ordinateur à 1440 pixels : 20 combinaisons. La présentation téléphone, volontairement remaniée en v11.5, possède son propre parcours `mobile-v115-ui.py` : cinq largeurs, neuf écrans, deux thèmes, navigation, filtres, sélection multiple, saisie, clavier simulé et retour à la disposition ordinateur.
 
 Les tests d’interface historiques ont été adaptés aux menus, dialogues et sections repliées de l’interface actuelle. Leurs assertions de montants, de persistance et d’absence d’écritures pendant la consultation sont conservées.
 

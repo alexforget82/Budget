@@ -1,3 +1,4 @@
+from ui_navigation import open_mobile_options
 """Weekly renewals remain visible when their incremental reservation is zero."""
 import importlib.util, shutil
 from pathlib import Path
@@ -20,7 +21,7 @@ try:
   for width in [1440,390]:
    page.set_viewport_size({'width':width,'height':1000})
    for date in dates:
-    page.locator('#v41-calendar-month').fill(date[:7]);page.locator('#v41-calendar-month').dispatch_event('change')
+    open_mobile_options(page,'mobile-calendar-options');page.locator('#v41-calendar-month').fill(date[:7]);page.locator('#v41-calendar-month').dispatch_event('change')
     cell=page.locator(f'#v4-cal-grid [data-date="{date}"]');expect(cell).to_contain_text('Essence Alex');cell.click();panel=page.locator('#v4-calendar-day');expect(panel).to_contain_text('Essence Alex')
     if date==dates[0]:expect(panel).to_contain_text('Réserve inchangée');expect(panel).to_contain_text('Aucun montant supplémentaire à réserver')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
