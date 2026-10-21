@@ -1,0 +1,17 @@
+SILLAGE — MAQUETTE VISUELLE v13
+
+1. Décompressez l’archive.
+2. Ouvrez le fichier index.html dans Safari ou votre navigateur.
+3. Essayez Tableau de bord / Enveloppes, les horizons 30/60/90 jours,
+   les filtres d’enveloppes et le bouton soleil pour changer de thème.
+
+Sur un petit écran, la navigation est en bas.
+
+Tous les montants sont fictifs. Aucun budget réel n’est connecté.
+Cette maquette ne remplace pas votre application v12 et ne doit pas être
+installée avec l’installateur de Sillage. Les actions d’ajout sont des
+explications de prototype, pas des formulaires de transaction réels.
+Aucune donnée n’est envoyée et aucune dépendance externe n’est nécessaire.
+
+But : valider la présentation du tableau de bord et des enveloppes avant
+son intégration dans l’application existante, sans changer les calculs.
