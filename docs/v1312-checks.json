@@ -1,0 +1,22 @@
+{
+  "version": "13.1.2",
+  "node": {
+    "passed": 114,
+    "failed": 0
+  },
+  "api": {
+    "passed": 201,
+    "failed": 0
+  },
+  "targeted_ui_passed": [
+    "reserved-period-match-ui.py",
+    "transaction-match-v111-ui.py",
+    "budget-v44-ui.py",
+    "shared-grocery-ui.py"
+  ],
+  "notes": [
+    "New scenario checks bank and card purchases; no ledger/account/date rewrite on association.",
+    "New scenario rerun after passing enriched calendar budgets to envelope insight presentation.",
+    "Full Python suite not rerun. Chromium only; no physical iPhone."
+  ]
+}

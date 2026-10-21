@@ -1,5 +1,11 @@
 # Vérifications de Sillage
 
+## v13.1.2 — association aux périodes de budget protégé
+
+114 tests Node et 201 tests API réussis. Nouveau parcours `reserved-period-match-ui.py` : achat bancaire de 71,69 $ associé au budget du lendemain, menus et fiche sur format iPhone, restant de 158,31 $ dans la vue partagée, date/transaction/comptes inchangés, période toujours ouverte, semaines suivantes intactes, absence de double association et refus de données périmées ou dates non proposées. Le même parcours vérifie l’achat sur carte : protection conservée jusqu’au remboursement, sans seconde charge ni modification de solde lors de l’association.
+
+Les parcours `transaction-match-v111-ui.py`, `budget-v44-ui.py` et `shared-grocery-ui.py` passent également. La suite Python complète n’a pas été relancée pour ce correctif. Essais avec données fictives sous Chromium; aucun accès aux finances de l’utilisateur ni validation sur appareil iOS physique. [Guide](docs/CORRECTIF-13.1.2.md).
+
 ## v13.1.1 — première période d’enveloppe
 
 114 tests Node réussis, dont le cas du 20/27 octobre sur compte bancaire et carte, en budget protégé et en paiement daté. Les tests historiques d’achats anticipés expriment maintenant explicitement l’association à la période future lorsqu’ils la supposent. Un nouveau parcours API vérifie la première période, les semaines suivantes, le redémarrage, l’absence de changements au grand livre, l’association volontaire et le renouvellement réel dû aujourd’hui. Le parcours API de paiement de carte et les parcours UI calendrier/épicerie sont également vérifiés. Les 201 tests de la suite API historique complète passent après clarification des cas d’achat anticipé volontaire. La suite Python complète n’est pas relancée pour ce correctif ciblé.

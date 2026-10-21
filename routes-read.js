@@ -67,7 +67,7 @@ export function createReadRoutes({
       });
     if (req.method === "GET" && req.url === "/api/private/status")
       return reply(res, 200, {
-        version: "13.1.1",
+        version: "13.1.2",
         data_key: createHash("sha256").update(path.resolve(dir)).digest("hex"),
         enabled: !!privateAccess,
         origin: privateAccess?.origin || null,

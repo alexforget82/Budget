@@ -130,7 +130,9 @@ export function initialize(runtime) {
       );
     }
     const match = dialog("v10-match", "Associer au prévu");
-    function openMatch(t) {
+    let periodRequest = 0;
+    async function openMatch(t) {
+      const ticket = ++periodRequest;
       while (match.inside.children.length > 1) match.inside.lastChild.remove();
       const used = new Set(current.planning.rows.flatMap((r) => r.actual_ids)),
         claimed =
@@ -181,6 +183,55 @@ export function initialize(runtime) {
           ),
         );
       match.d.showModal();
+      if (!claimed && t.envelope_id && t.amount_cents < 0) {
+        const options = el("div");
+        match.inside.append(options);
+        try {
+          const result = await request("/api/envelopes/period-preview", {
+            transaction_id: t.id,
+          });
+          if (ticket !== periodRequest || !match.d.open) return;
+          if (result.choices.length) {
+            if (!rows.length)
+              match.inside.querySelectorAll("p").forEach((p) => {
+                if (p.textContent.startsWith("Aucune échéance compatible"))
+                  p.remove();
+              });
+            options.append(
+              el(
+                "p",
+                "Cet achat peut utiliser une période de budget réservée, sans créer de dépense supplémentaire. La période restera ouverte pour les autres achats.",
+                "quiet-copy",
+              ),
+            );
+            for (const choice of result.choices) {
+              const action = button(
+                choice.date + " · " + choice.name + " · Budget réservé",
+                async () => {
+                  action.disabled = true;
+                  try {
+                    const state = await request("/api/envelopes/link-period", {
+                      transaction_id: t.id,
+                      envelope_id: choice.envelope_id,
+                      occurrence_on: choice.date,
+                      signature: choice.signature,
+                    });
+                    runtime.render(state);
+                    match.d.close();
+                  } catch (e) {
+                    options.append(el("p", e.message, "warning"));
+                    action.disabled = false;
+                  }
+                },
+              );
+              options.append(action);
+            }
+          }
+        } catch (e) {
+          if (ticket === periodRequest && match.d.open)
+            options.append(el("p", e.message, "warning"));
+        }
+      }
     }
     // Propose a match only after a successful manual creation, never on import/edit/refresh.
     const suggestion = dialog(

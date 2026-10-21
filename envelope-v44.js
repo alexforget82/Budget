@@ -184,6 +184,16 @@ export function initialize(runtime) {
             : cash(insight.period_budget_cents),
         ),
       );
+      if (
+        insight.next_renewal &&
+        (!insight.period_start || insight.next_period_spent_cents > 0)
+      )
+        metrics.append(
+          metric(
+            "Restant du budget du " + date(insight.next_renewal),
+            cash(insight.next_period_remaining_cents),
+          ),
+        );
       sheet.inner.append(metrics);
       if (insight.period_budget_cents !== e.budget_cents)
         sheet.inner.append(row("Budget habituel", cash(e.budget_cents)));

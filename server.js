@@ -790,7 +790,7 @@ function snapshot() {
     dashboard_layout: dashboardLayout.state(),
     free_budgets: freeBudgets.state(),
     envelope_insights: envelopeTools.insights(
-      envelopes,
+      envelopes.map(monthlyBudget.enrichEnvelope),
       envelopeDetails,
       simulation,
     ),
@@ -1660,6 +1660,52 @@ const transfersRoutes = createTransfersRoutes({
   validateTransfer,
   validateTransferEnvelope,
 });
+// Explicitly associate an existing purchase with a protected budget period.
+function protectedPeriodOptions(x) {
+  const args = forecastInput(),
+    t = args.transactions.find((t) => t.id === Number(x.transaction_id)),
+    e = args.envelopes.find((e) => e.id === t?.envelope_id),
+    account = args.accounts.find((a) => a.id === t?.account_id);
+  if (
+    !t ||
+    t.amount_cents >= 0 ||
+    t.affects_balance === 0 ||
+    !e ||
+    !e.active ||
+    e.forecast_spend !== 0 ||
+    !(account?.kind === "credit" || account?.included)
+  )
+    return { choices: [] };
+  const projection = buildForecast(args);
+  if (
+    args.envelopeLinks.some((l) => l.transaction_id === t.id) ||
+    projection.rows.some((r) =>
+      (r.actual_ids || []).includes("transaction:" + t.id),
+    )
+  )
+    return { choices: [] };
+  const signature = createHash("sha256")
+    .update(JSON.stringify(args))
+    .digest("hex");
+  return {
+    choices: projection.days
+      .filter(
+        (d) =>
+          d.date >= args.today &&
+          d.date > t.happened_on &&
+          Math.abs(Date.parse(d.date) - Date.parse(t.happened_on)) <=
+            7 * 86400000 &&
+          d.events.some((v) => v.envelope_renewal && v.envelope_id === e.id),
+      )
+      .map((d) => ({
+        envelope_id: e.id,
+        date: d.date,
+        name: e.name,
+        signature,
+        amount_cents: -t.amount_cents,
+      })),
+  };
+}
 const actualCardPayments = createCardPaymentActions({
   forecastInput,
   validateTransfer,
@@ -1847,6 +1893,8 @@ const handleRequest = async (req, res) => {
       req.method !== "POST" ||
       (!featureRoutes.has(req.url) &&
         ![
+          "/api/envelopes/period-preview",
+          "/api/envelopes/link-period",
           "/api/card-payments/actual-confirm",
           "/api/card-payments/actual-preview",
           "/api/budget/start-preview",
@@ -1962,6 +2010,7 @@ const handleRequest = async (req, res) => {
         q(`SELECT id FROM ${table} WHERE id=?`, id).length > 0;
     if (
       ![
+        "/api/envelopes/period-preview",
         "/api/card-payments/actual-preview",
         "/api/budget/start-preview",
         "/api/workspace/bulk-preview",
@@ -2004,6 +2053,29 @@ const handleRequest = async (req, res) => {
       applyEnvelopeRenewals();
       res.budgetBefore = features.exportBackup();
       res.budgetRoute = req.url;
+    }
+    if (req.url === "/api/envelopes/period-preview")
+      return reply(res, 200, protectedPeriodOptions(x));
+    if (req.url === "/api/envelopes/link-period") {
+      const choice = protectedPeriodOptions(x).choices.find(
+        (c) =>
+          c.envelope_id === Number(x.envelope_id) &&
+          c.date === x.occurrence_on &&
+          c.signature === x.signature,
+      );
+      if (!choice)
+        throw Error(
+          "Cette association a changé ou est déjà utilisée. Actualisez les choix.",
+        );
+      atomic(() =>
+        run(
+          "INSERT INTO envelope_actual_links(transaction_id,envelope_id,occurrence_on) VALUES(?,?,?)",
+          Number(x.transaction_id),
+          choice.envelope_id,
+          choice.date,
+        ),
+      );
+      return reply(res, 200, snapshot());
     }
     if (req.url === "/api/card-payments/actual-preview")
       return reply(res, 200, actualCardPayments.preview(x));
@@ -2323,7 +2395,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (13.1.1) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (13.1.2) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

@@ -1,5 +1,11 @@
 # Versions de Sillage
 
+## 13.1.2 — associer un achat anticipé à un budget réservé
+
+Le menu « Associer au prévu » propose maintenant les périodes futures des enveloppes en mode budget protégé, distinctes des dépenses programmées. L’association volontaire d’une transaction déjà affectée à cette enveloppe conserve la date et les soldes réels, réduit seulement le budget futur restant et ne termine pas la période. Les associations répétées, les dates incompatibles et les données devenues périmées sont refusées.
+
+La fiche précise le restant du prochain budget, même avant sa date de début. Exemple : 71,69 $ d’épicerie le 21 associé au budget de 230 $ du 22 laisse 158,31 $, également dans la vue simplifiée. Sans association volontaire, la correction 13.1.1 reste en vigueur. L’en-tête des fiches est opaque sur téléphone pour éviter la superposition des textes pendant le défilement.
+
 ## 13.1.1 — une ancienne dépense ne consomme plus automatiquement la première période
 
 Correction de l’attribution implicite des achats antérieurs au début d’une enveloppe. Sélectionner une enveloppe dans une transaction passée ne suffit plus à remplacer son premier budget futur. Un achat explicitement associé à cette occurrence continue de la consommer; les avances de financement conservent leurs règles. Le même calcul sert aux prévisions et aux renouvellements réels. Aucun achat ni solde bancaire existant n’est modifié.

@@ -803,3 +803,19 @@ html[data-theme] body.sillage-v13 #actual-payment-confirm {
   border: 0 !important;
   min-height: 48px;
 }
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 .editor-dialog .dialog-heading {
+    background: var(--v80-surface) !important;
+    z-index: 3;
+    min-height: 54px;
+    padding: 10px 0;
+    gap: 12px;
+  }
+  html[data-theme] body.sillage-v13 .editor-dialog .dialog-heading h2 {
+    margin: 0 !important;
+    line-height: 1.25;
+  }
+  html[data-theme] body.sillage-v13 .editor-dialog .dialog-heading button {
+    flex-shrink: 0;
+  }
+}
