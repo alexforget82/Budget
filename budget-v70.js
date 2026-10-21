@@ -386,7 +386,7 @@ export function initialize(runtime) {
       );
       card(
         "Prévu puis réel",
-        "La programmation prépare les prévisions. Lorsque le paiement passe, utilisez Confirmer dans Prévu / Réel. Si la transaction est déjà saisie, associez-la au lieu de l’enregistrer à nouveau. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.",
+        "La programmation prépare les prévisions. Lorsque le paiement passe, utilisez Confirmer dans Prévu / Réel. Si la transaction est déjà saisie, associez-la au lieu de l’enregistrer à nouveau. Les achats liés à une enveloppe et les achats récurrents sur carte restent protégés jusqu’au remboursement; la dette ancienne ne crée pas de réserve automatique.",
       );
     }
     function budgets() {

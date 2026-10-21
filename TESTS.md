@@ -31,6 +31,14 @@ python3 tests/run-python-checks.py --results /tmp/sillage-checks --jobs 2
 
 Le premier lance les tests Node puis les tests API. Le second exécute chaque script Python supplémentaire, conserve chaque journal et renvoie un échec si un script échoue. Aucun test n’est ignoré automatiquement. `CHROMIUM_PATH` permet d’utiliser un Chromium installé sur la machine.
 
+## Vérification de la v12.0.0
+
+**110 tests Node, 201 tests API et 61 parcours Python validés.** La suite Python initiale donne 59/61 : le test de migration attendait une base sans le nouveau réglage d’activation; le test de budget libre pouvait modifier le budget avant réception de son aperçu. Après adaptations ciblées, les deux repassent, en conservant les assertions financières et la protection contre les aperçus périmés. Six parcours concernés ont été recontrôlés, ainsi que le chargement d’une interface dont la version diffère du serveur. Les [résultats](docs/v12-results.json) conservent l’exécution initiale et les recontrôles.
+
+Les nouveaux tests couvrent Apple One à 53,98 $, achats réels/anticipés, association explicite de montant différent, annulation d’une occurrence, remboursements partiels/complets, absence de double réserve avec une enveloppe, dette ancienne exclue, changement/suppression de règle, modification/suppression de transaction, réutilisation d’identifiant, restauration, annulation et métadonnées de sauvegarde invalides. L’ancienne assertion qui laissait un achat récurrent sur carte sans protection est remplacée par la baisse du disponible à la date d’achat, avec solde bancaire inchangé et effet nul du remboursement sur la somme déjà protégée.
+
+La lecture publique des versions est testée avec réponses contrôlées (nouvelle version, pas de mise à jour, manifeste invalide, erreur, taille excessive). La requête GitHub réelle n’a pas abouti dans cet environnement; elle renvoie une erreur sans interrompre le budget. Les essais d’iPhone restent des émulations Chromium; le [guide sur appareil](docs/IPHONE-12.md) décrit les vérifications Safari/iOS à faire après installation.
+
 ## Vérification de la v11.6.0
 
 97 tests Node et 195 tests API réussis. La suite complète donne 59/60 scripts Python; le seul échec compare l’ancien tableau de bord avec le nouveau panneau de vérification ajouté. Après exclusion ciblée de ce nouveau panneau de la comparaison historique, le contrôle repasse : les 20 combinaisons de styles existants et les chiffres restent identiques. Le nouveau panneau et les aperçus sont couverts séparément par `confidence-v116-ui.py`, également repassé après les derniers ajustements mobiles. Les 60 parcours sont ainsi validés, sans modification des assertions financières. Les [résultats](docs/confiance-116-results.json) conservent l’exécution initiale et les recontrôles.

@@ -25,7 +25,7 @@ try:
   f.stop();api.ROOT=current
   # Keep the exact old app before installation, through the production snapshot function.
   subprocess.run(['node','--input-type=module','-e',"import {preserveRollbackRelease} from './mac-rollback.js';preserveRollbackRelease(process.argv[1],process.argv[2]);",str(baseline),str(f.dir/'data')],cwd=current,check=True)
-  f.start();after=f.get('/api/state');assert finances(after)==finances(before);assert f.get('/api/backup/export')['tables']==tables;assert f.get(share+'/data')['daily']==shared['daily'];assert all(highlow(after,n)==highlow(before,n) for n in [30,60,90])
+  f.start();after=f.get('/api/state');assert finances(after)==finances(before);upgraded=f.get('/api/backup/export')['tables'];assert next(x['value'] for x in upgraded['app_settings'] if x['key']=='card_recurring_protection_since_v12')==api.DAY;upgraded['app_settings']=[x for x in upgraded['app_settings'] if x['key']!='card_recurring_protection_since_v12'];assert upgraded==tables;assert f.get(share+'/data')['daily']==shared['daily'];assert all(highlow(after,n)==highlow(before,n) for n in [30,60,90])
   page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+json.load(open(current/'package.json'))['version']);assert visible_daily(page)==day_text
   with sqlite3.connect(f.dir/'data'/'budget.sqlite') as db:assert db.execute('PRAGMA user_version').fetchone()[0]==1
   backups=list((f.dir/'data'/'backups').glob('budget-before-schema-v1-*.sqlite'));assert len(backups)==1

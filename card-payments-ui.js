@@ -84,7 +84,7 @@ export function initialize(runtime) {
         head,
         n(
           "p",
-          "Les achats augmentent la carte. Le remboursement prévu réduit le compte bancaire à sa date. Aucune réserve automatique pour les cartes. Confirmez ensuite les paiements effectués auprès de votre banque.",
+          "Les achats augmentent la carte. Le remboursement prévu réduit le compte bancaire à sa date. Les achats couverts par une enveloppe et les dépenses récurrentes sur carte restent protégés jusqu’au remboursement; la dette ancienne n’est pas réservée automatiquement. Confirmez ensuite les paiements effectués auprès de votre banque.",
           "quiet-copy",
         ),
       );

@@ -1,5 +1,11 @@
 # Versions de Sillage
 
+## 12.0.0 — récurrences sur carte protégées et repères plus clairs
+
+Les dépenses récurrentes sur carte sans enveloppe réduisent désormais le disponible prévu à leur date, sans diminuer le solde bancaire. Les achats réels identifiés ou explicitement associés au prévu restent protégés jusqu’au remboursement; celui-ci libère la protection sans deuxième déduction. Les paiements partiels, achats anticipés, exceptions et remboursements marchands sont couverts. La dette initiale générale et les imports historiques ne deviennent pas des réserves. La protection des achats récurrents réels démarre à l’activation de la v12, conservée après redémarrage, remise à zéro et restauration. Les associations déjà reconnues restent stables lors d’un changement de tarif; la suppression d’une récurrence ne libère pas un achat réel encore à payer.
+
+Les cartes d’enveloppes précisent la période, le prochain renouvellement et le report, avec la différence entre objectif et protection actuelle. La vue simplifiée affiche le numéro de version et propose de recharger l’interface lorsqu’elle diffère du serveur. Dans Sauvegardes, une vérification manuelle consulte la version publique GitHub et propose le ZIP si elle est plus récente; aucune donnée financière n’est envoyée et aucune installation n’est automatique. Les sauvegardes et le retour à la v11.1 restent disponibles. Guide de validation Safari/iPhone ajouté; essais réalisés sous Chromium, pas sur appareil iOS réel.
+
 ## 11.6.0 — comprendre et vérifier son disponible
 
 Les lignes Solde bancaire inclus et Argent protégé ouvrent le détail du calcul actuel ou le chemin quotidien de la prévision. Le tableau de bord indique les comptes inclus à vérifier, la dernière validation et les vérifications devenues obsolètes. Le rapprochement montre le solde enregistré avant saisie et un aperçu du disponible actuel et des minimums sur 30/60/90 jours si ce seul solde était corrigé. L’aperçu utilise le moteur canonique, sans écriture. Les recherches de doublons et de transactions manquantes existantes restent accessibles. Une modification du compte ou des opérations invalide l’aperçu affiché; toute correction exige toujours une action explicite et une note. Sur téléphone, le résultat prend le focus après comparaison. Aucun changement des règles de calcul, des enveloppes ou des remboursements de carte.

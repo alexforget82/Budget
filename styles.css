@@ -1,7 +1,7 @@
 /* Legacy selector order is intentionally preserved; tokens have their own layer. */
 @layer application, tokens;
-@import url("/styles-foundation.css?v=11.6.0") layer(application);
-@import url("/styles-domains.css?v=11.6.0") layer(application);
-@import url("/styles-sillage.css?v=11.6.0") layer(application);
-@import url("/styles-mobile.css?v=11.6.0") layer(application);
-@import url("/styles-tokens.css?v=11.6.0") layer(tokens);
+@import url("/styles-foundation.css?v=12.0.0") layer(application);
+@import url("/styles-domains.css?v=12.0.0") layer(application);
+@import url("/styles-sillage.css?v=12.0.0") layer(application);
+@import url("/styles-mobile.css?v=12.0.0") layer(application);
+@import url("/styles-tokens.css?v=12.0.0") layer(tokens);

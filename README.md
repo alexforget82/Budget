@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v11.6.0](https://github.com/alexforget82/Budget/archive/refs/tags/v11.6.0.zip).
+Téléchargez et décompressez [la version v12.0.0](https://github.com/alexforget82/Budget/archive/refs/tags/v12.0.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -26,6 +26,16 @@ Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répert
 - **Récurrences** programme les revenus, factures et virements. **Enveloppes** protège les sommes du Safe-to-Spend, à la date prévue ou plus tôt si alimentées. Chaque période future protège son propre montant, même si le report du restant est désactivé; les soldes bancaires réels restent inchangés.
 - Enregistrez une dépense réelle dans **Transactions** et confirmez l’association proposée si elle remplace une échéance prévue.
 - **Disponible jour par jour** permet de consulter les prévisions. La vue simplifiée utilise les mêmes calculs. Elle affiche aussi le restant de l’enveloppe active nommée « Épicerie » (accent facultatif), son prochain renouvellement et ses achats associés, sans exposer les autres enveloppes ni les comptes. Avant le début de la première période, la carte affiche le montant prévu et la date de début; elle reste également visible si le calendrier doit être configuré.
+
+## Achats récurrents sur carte
+
+Une récurrence comme **Apple One · 53,98 $ · Capital One** retire son montant du disponible prévu à sa date. Le solde du Conjoint ne change qu’au remboursement. Enregistrez l’achat réel et confirmez son association au prévu : la somme reste protégée jusqu’au paiement de la carte, sans deuxième déduction de cette somme.
+
+La dette initiale de la carte n’est pas réservée automatiquement. La reconnaissance des achats récurrents réels commence à l’activation de la v12; un import historique sans effet sur les soldes ne crée pas de protection. Les autres achats sans enveloppe ni association à une récurrence gardent leur fonctionnement précédent. **Disponible maintenant** suit les opérations enregistrées et protections actuelles; **Minimum prévu** inclut les échéances qui ne sont pas encore passées dans le réel.
+
+## Versions et iPhone
+
+Dans **Sauvegardes → Version et mises à jour**, vérifier manuellement si un nouveau ZIP est publié, puis utiliser le raccourci Mac habituel. Aucun budget n’est transmis à GitHub et aucune mise à jour ne s’installe automatiquement. Le numéro de version apparaît aussi au bas de la vue simplifiée. Son lien reste le même. Le [guide iPhone v12](docs/IPHONE-12.md) permet de confirmer le fonctionnement sur votre appareil.
 
 ## Comprendre et vérifier le disponible
 

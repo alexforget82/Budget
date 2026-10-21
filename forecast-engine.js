@@ -3,7 +3,7 @@ import {envelopeBudgetDates} from './budget-schedule.js';
 import {deriveCardPayments} from './card-payments-engine.js';
 
 // Pure simulation: never writes actual account or envelope balances.
-function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrides=[],moves=[],links=[],transactions=[],transfers=[],periods=[],renewals=[],envelopeOverrides=[],envelopeMoves=[],envelopeLinks=[],today,since=today,horizon=90,nextOccurrence,occurrenceInfo,similarDescription}) {
+function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrides=[],moves=[],links=[],transactions=[],transfers=[],periods=[],renewals=[],envelopeOverrides=[],envelopeMoves=[],envelopeLinks=[],today,cardProtectionSince=today,protectedCardTransactions=[],since=today,horizon=90,nextOccurrence,occurrenceInfo,similarDescription}) {
  const addDays=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
  const end=addDays(today,horizon-1),distance=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))/86400000;
  const warnings=[],rows=[],used=new Set(),actualMap=new Map([...transactions.map(t=>['transaction:'+t.id,{...t,actual_type:'transaction'}]),...transfers.map(t=>['transfer:'+t.id,{...t,actual_type:'transfer'}])]);
@@ -73,7 +73,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
  }
  const futureActuals=transactions.filter(t=>t.happened_on>today);
  if(futureActuals.length)warnings.push({code:'future_actuals',message:futureActuals.length+' transaction(s) datée(s) dans le futur sont déjà intégrées aux soldes réels. Utilisez une opération prévue pour les prochains paiements.'});
- const cardFunds=createCardEnvelopeFunds({accounts,envelopes,transactions,transfers,today}),openingCardEnvelope=cardFunds.total(),openingCardFunds=cardFunds.entries();
+ const cardFunds=createCardEnvelopeFunds({accounts,envelopes,transactions,transfers,today,recurring,links,overrides,moves,cardProtectionSince,protectedCardTransactions,occurrenceInfo,similarDescription}),openingCardEnvelope=cardFunds.total(),openingCardFunds=cardFunds.entries();
  const balances=new Map(accounts.map(a=>[a.id,a.balance_cents])),reserves=new Map(envelopes.map(e=>[e.id,e.reserved_cents]));
  let reserved=envelopes.reduce((s,e)=>s+e.reserved_cents,0),unassigned=0;
  const cumulative={income_cents:0,expense_cents:0,envelope_cents:0,transfer_cents:0};
@@ -91,7 +91,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
    const before=reserves.get(e.id)||0,budget=envOverrides.get(e.id+'|'+date)??scheduled?.amount_cents??e.budget_cents,early=transfers.filter(t=>t.envelope_id===e.id&&t.envelope_on===date&&t.happened_on<date).reduce((n,t)=>n+Math.max(0,t.amount_cents-(e.rollover?(t.envelope_effect_cents||0):0)),0),remaining=Math.max(0,budget-early-earlyEnvelopePurchases({accounts,transactions,envelopeLinks},e,date)),advance=e.advance_funding?.[date],credit=advance?.amount_cents||0,kept=Math.min(before,advance?.remaining_cents||0),overlap=e.rollover?0:credit-kept,other=early+earlyEnvelopePurchases({accounts,transactions,envelopeLinks},e,date),addition=Math.max(0,budget-credit-Math.max(0,other-overlap)),accumulate=e.rollover||(e.forecast_spend===0&&date>today),after=advance?(accumulate?before+addition:kept+addition):(accumulate?before+remaining:remaining);
    reserves.set(e.id,after);reserved+=after-before;events.push({id:'env-'+e.id,description:'Renouvellement · '+e.name,type:'reserve',amount_cents:after-before,envelope_id:e.id,envelope_renewal:true,cash_impact_cents:0,sts_impact_cents:before-after});
   }
-  for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0).sort((a,b)=>{const rank=r=>fundingByTransfer.has(r.key)?100:r.type==='expense'&&r.envelope_id&&accountMap.get(r.account_id)?.kind==='credit'?50:0;return rank(b)-rank(a);})){
+  for(const row of rows.filter(r=>r.simulation_on===date&&r.remaining_cents>0).sort((a,b)=>{const rank=r=>fundingByTransfer.has(r.key)?100:r.type==='expense'&&accountMap.get(r.account_id)?.kind==='credit'?50:0;return rank(b)-rank(a);})){
    // Unconfirmed past income must not finance today's spending.
    if(row.status==='pending'&&row.type==='income')continue;
    if(row.status==='pending'&&row.type==='transfer'&&!included(accountMap.get(row.account_id))&&included(accountMap.get(row.to_account_id))){warnings.push({code:'late_incoming_transfer',message:row.description+' : entrée en retard non ajoutée au disponible tant que le virement n’est pas confirmé.'});continue;}
@@ -99,7 +99,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
    if(row.type==='income'){balances.set(row.account_id,(balances.get(row.account_id)||0)+(account?.kind==='credit'?-amount:amount));if(account?.kind==='credit')cardFunds.pay(account.id,amount);}
    if(row.type==='expense'){
     if(account)balances.set(account.id,(balances.get(account.id)||0)+(account.kind==='credit'?amount:-amount));else unassigned+=amount;
-    if(account?.kind==='credit'&&row.envelope_id)cardFunds.charge(account.id,row.envelope_id,Math.min(amount,Math.max(0,balances.get(account.id)||0)));
+    if(account?.kind==='credit')cardFunds.charge(account.id,row.envelope_id,Math.min(amount,Math.max(0,balances.get(account.id)||0)),row.source==='recurring'&&!row.envelope_id);
     const allowance=envelopes.find(e=>e.id===row.envelope_id&&e.forecast_spend!==0&&e.forecast_account_id===row.account_id);if(row.envelope_id&&!cardFunds.isExternalAllowance(row.envelope_id)&&!(allowance&&account?.kind!=='credit'&&!included(account)&&accounts.filter(included).length===1))consume(row.envelope_id,Math.max(0,amount-(row.funded_cents||0)));
    }
    if(row.type==='transfer'){

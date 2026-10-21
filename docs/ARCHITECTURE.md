@@ -49,3 +49,11 @@ Trois priorités redondantes ont été retirées et vérifiées; les autres ne s
 Tous les modules nécessaires restent à la racine afin que le copieur Mac existant les installe. Le validateur de version et les tests de copie installée vérifient aussi les nouvelles ressources. Le dossier `data/` est exclu de la copie du code.
 
 Il n’y a aucune dépendance externe à l’exécution. Un analyseur de syntaxe et un formateur ont servi ponctuellement pendant cette réorganisation, hors du dépôt; ils ne sont pas nécessaires sur le Mac pour lancer Sillage.
+
+## Protections de carte v12
+
+`card-envelope-funds.js` utilise le même ensemble de lots pour les achats d’enveloppes et les achats récurrents identifiés sans enveloppe. Les remboursements consomment les lots de la carte concernée. `card_envelope_reserved_cents` et `sts_breakdown.card_envelopes` conservent leur nom de compatibilité mais comprennent également les lots avec `protection_kind: recurring` et `envelope_id: null`. Les consommateurs du disponible utilisent `forecastInput()` complet; le suivi d’enveloppes reprend le total initial de la même simulation. La dette générale reste exclue et `credit_reserved_cents` reste nul.
+
+Une date d’activation et les identités de transactions protégées à conserver sont stockées dans `app_settings`. Pas de changement du schéma SQLite. Une identité complète évite de protéger par erreur un nouvel achat ayant réutilisé un identifiant supprimé. Avant modification/suppression d’une récurrence, les achats déjà reconnus sont conservés; les associations d’occurrences reconnues restent stables pour les modifications de tarif. Les modifications de transactions actualisent ou retirent leurs identités dans la même transaction SQLite. Les sauvegardes valident ces métadonnées.
+
+La vérification de version est une route propriétaire GET `/api/release/check`, avec URL publique fixe, délai de cinq secondes et réponse limitée à 8 Ko. Elle n’utilise ni cookie, ni identité Tailscale, ni données financières. Le téléchargement proposé est un ZIP GitHub à tag de version valide; l’installation conserve le parcours Mac existant.

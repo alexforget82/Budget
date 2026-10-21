@@ -77,8 +77,15 @@ export function initialize(runtime) {
     );
     undoButton.id = "v41-undo";
     undoButton.disabled = true;
+    const reloadInterface = b(
+      "Recharger l’interface mise à jour",
+      () => location.reload(),
+      "secondary",
+    );
+    reloadInterface.id = "v12-reload-interface";
+    reloadInterface.hidden = true;
     const versionFooter = n("div", undefined, "app-nav-footer");
-    versionFooter.append(version);
+    versionFooter.append(version, reloadInterface);
     document.querySelector(".app-shell-nav").append(versionFooter);
     tools.append(
       b("Rechercher…", openSearch, "v41-header-action"),
@@ -846,6 +853,48 @@ export function initialize(runtime) {
       ),
     );
     $("section-sauvegardes").querySelector(".section-head").after(backups);
+    const releasePanel = n("section", undefined, "feature-panel");
+    releasePanel.id = "v12-release-panel";
+    const releaseVersion = n("p"),
+      releaseResult = n("p"),
+      releaseCheck = b(
+        "Vérifier les mises à jour",
+        async () => {
+          releaseCheck.disabled = true;
+          releaseResult.replaceChildren();
+          releaseResult.textContent = "Vérification en cours…";
+          try {
+            const r = await request("/api/release/check");
+            releaseResult.textContent = r.available
+              ? "Version " + r.latest_version + " disponible. "
+              : "Aucune version plus récente publiée.";
+            if (r.available) {
+              const a = n("a", "Télécharger le ZIP");
+              a.href = r.download_url;
+              a.rel = "noopener noreferrer";
+              releaseResult.append(a);
+            }
+          } catch (e) {
+            releaseResult.textContent = e.message;
+          } finally {
+            releaseCheck.disabled = false;
+          }
+        },
+        "secondary",
+      );
+    releaseResult.setAttribute("role", "status");
+    releasePanel.append(
+      n("h3", "Version et mises à jour"),
+      releaseVersion,
+      n(
+        "p",
+        "Cette vérification consulte seulement le numéro de version public sur GitHub. Aucun chiffre du budget n’est envoyé. L’installation reste manuelle et conserve les sauvegardes et le raccourci de retour à la v11.1.",
+        "quiet-copy",
+      ),
+      releaseCheck,
+      releaseResult,
+    );
+    $("section-sauvegardes").append(releasePanel);
     function options(select, items, label, empty) {
       const old = select.value;
       select.replaceChildren();
@@ -870,7 +919,12 @@ export function initialize(runtime) {
       }
       bankLedgerStamp = stamp;
       current = s;
-      version.textContent = "v" + s.version.replace(/\.0$/, "");
+      releaseVersion.textContent = "Version installée : v" + s.version;
+      version.textContent =
+        s.version === "12.0.0"
+          ? "v12.0.0"
+          : "Interface v12.0.0 · serveur v" + s.version;
+      reloadInterface.hidden = s.version === "12.0.0";
       version.title = "Version du serveur : " + s.version;
       undoButton.disabled = !s.support41?.undo.available;
       undoButton.title =

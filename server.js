@@ -1,3 +1,4 @@
+import { checkPublicRelease } from "./mac-update.js";
 import { readJson, isJsonRequest } from "./http-body.js";
 import { securityHeaders, authorizeRequest } from "./http-security.js";
 import { createReadRoutes } from "./routes-read.js";
@@ -23,6 +24,8 @@ import { createBudgetTools80 } from "./budget-tools-v80.js";
 import { createGlobalBudget } from "./global-budget.js";
 import {
   cardEnvelopeTotal,
+  recurringCardPurchaseIds,
+  cardPurchaseIdentity,
   earlyEnvelopePurchases,
 } from "./card-envelope-funds.js";
 import { createBudgetBanking } from "./budget-banking.js";
@@ -60,6 +63,11 @@ const todayLocal = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 const { db, q, run, atomic } = openBudgetDatabase(dir, todayLocal());
+run(
+  "INSERT OR IGNORE INTO app_settings(key,value) VALUES(?,?)",
+  "card_recurring_protection_since_v12",
+  todayLocal(),
+);
 
 const cents = (v) =>
   typeof v === "number" && Number.isFinite(v) && Math.abs(v) < 100000000
@@ -535,6 +543,27 @@ function forecastInput() {
       "SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on",
     );
   return {
+    cardProtectionSince:
+      q(
+        "SELECT value FROM app_settings WHERE key='card_recurring_protection_since_v12'",
+      )[0]?.value ||
+      q("SELECT value FROM app_settings WHERE key='forecast_tracking_since'")[0]
+        ?.value ||
+      todayLocal(),
+    protectedCardTransactions: (() => {
+      try {
+        const ids = JSON.parse(
+          q(
+            "SELECT value FROM app_settings WHERE key='card_recurring_protected_ids_v12'",
+          )[0]?.value || "[]",
+        );
+        return Array.isArray(ids)
+          ? ids.filter((t) => t && Number.isSafeInteger(t.id))
+          : [];
+      } catch {
+        return [];
+      }
+    })(),
     fundingLinks: journey.forecastLinks(),
     accounts,
     envelopes,
@@ -562,6 +591,53 @@ function forecastInput() {
     occurrenceInfo,
     similarDescription,
   };
+}
+function writeProtectedCardPurchases(items) {
+  run(
+    "INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+    "card_recurring_protected_ids_v12",
+    JSON.stringify(items),
+  );
+}
+function rememberRecurringCardPurchases() {
+  const args = forecastInput(),
+    ids = new Set(recurringCardPurchaseIds(args));
+  if (!ids.size) return;
+  const items = args.transactions
+    .filter((t) => ids.has(t.id))
+    .map(cardPurchaseIdentity);
+  // Preserve already-recognized actual occurrences when a rule's price/name changes.
+  for (const row of buildForecast(args).rows.filter(
+    (r) => r.source === "recurring" && r.type === "expense" && !r.envelope_id,
+  )) {
+    for (const ref of row.actual_ids) {
+      const id = Number(ref.split(":")[1]);
+      if (ref.startsWith("transaction:") && ids.has(id))
+        run(
+          "INSERT OR IGNORE INTO reconciliation_links(recurring_id,occurrence_on,actual_type,actual_id) VALUES(?,?,?,?)",
+          row.recurring_id,
+          row.original_on,
+          "transaction",
+          id,
+        );
+    }
+  }
+
+  if (items.length) writeProtectedCardPurchases(items);
+}
+function refreshProtectedCardPurchase(id) {
+  const items = forecastInput().protectedCardTransactions;
+  if (!items.some((t) => t.id === id)) return;
+  const current = q("SELECT * FROM transactions WHERE id=?", id)[0];
+  writeProtectedCardPurchases(
+    items
+      .filter((t) => t.id !== id)
+      .concat(
+        current && current.amount_cents < 0 && current.affects_balance !== 0
+          ? [cardPurchaseIdentity(current)]
+          : [],
+      ),
+  );
 }
 function currentEnvelopeDetails(envelopes) {
   return envelopes.map((raw) => {
@@ -647,13 +723,7 @@ function snapshot() {
       .filter((a) => a.kind !== "credit" && a.included)
       .reduce((s, a) => s + a.balance_cents, 0),
     envelopeReserved = envelopes.reduce((s, e) => s + e.reserved_cents, 0),
-    cardReserved = cardEnvelopeTotal({
-      accounts,
-      envelopes,
-      transactions: q("SELECT * FROM transactions"),
-      transfers: q("SELECT * FROM account_transfers"),
-      today: todayLocal(),
-    }),
+    cardReserved = cardEnvelopeTotal(forecastInput()),
     reserved = envelopeReserved + cardReserved;
   const manual = q("SELECT * FROM reconciliation_links");
   const envelopeOverrides = q(
@@ -682,7 +752,11 @@ function snapshot() {
     credit: [],
     card_envelopes: simulation.card_envelope_funds.map((f) => ({
       ...f,
-      name: envelopes.find((e) => e.id === f.envelope_id)?.name || "Enveloppe",
+      name:
+        envelopes.find((e) => e.id === f.envelope_id)?.name ||
+        (f.protection_kind === "recurring"
+          ? "Achats récurrents sur carte"
+          : "Enveloppe"),
       card_name:
         accounts.find((a) => a.id === f.card_account_id)?.name || "Carte",
     })),
@@ -1103,6 +1177,7 @@ function transactionChange(x, remove = false) {
         old,
       );
   atomic(() => {
+    rememberRecurringCardPurchases();
     if (
       updated &&
       old.account_id === updated.account &&
@@ -1183,6 +1258,7 @@ function transactionChange(x, remove = false) {
         id,
       );
     }
+    refreshProtectedCardPurchase(id);
   });
 }
 function transferChange(x, remove = false) {
@@ -1480,6 +1556,7 @@ function sharedSummary() {
     lowest = first.reduce((a, b) => (b.cash_cents < a.cash_cents ? b : a)),
     highest = first.reduce((a, b) => (b.cash_cents > a.cash_cents ? b : a));
   return {
+    version: features.state().version,
     updated_at: new Date().toISOString(),
     grocery: sharedGrocery(args.envelopes),
     current_safe_cents: safe,
@@ -1594,6 +1671,7 @@ const planningRoutes = createPlanningRoutes({
   validDate,
 });
 const recurrencesRoutes = createRecurrencesRoutes({
+  rememberRecurringCardPurchases,
   atomic,
   cents,
   journey,
@@ -1688,6 +1766,20 @@ const handleRequest = async (req, res) => {
       return res.end(
         fs.readFileSync(new URL("./shared-view.html", import.meta.url)),
       );
+    }
+    if (req.method === "GET" && req.url === "/api/release/check") {
+      try {
+        return reply(
+          res,
+          200,
+          await checkPublicRelease(features.state().version),
+        );
+      } catch {
+        return reply(res, 503, {
+          error:
+            "Impossible de vérifier la version publiée. Réessayez plus tard; votre budget reste accessible.",
+        });
+      }
     }
     if (req.method === "GET") {
       readRoutes(req, res);
@@ -2211,7 +2303,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.6.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (12.0.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

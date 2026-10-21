@@ -1,6 +1,7 @@
 // Extracted without changing domain validation or financial operations.
 export function createRecurrencesRoutes({
   atomic,
+  rememberRecurringCardPurchases = () => {},
   cents,
   journey,
   monthlyBudget,
@@ -61,7 +62,10 @@ export function createRecurrencesRoutes({
       if (req.url === "/api/recurring/delete") {
         if (!exists("recurring", id))
           return reply(res, 400, { error: "Règle introuvable" });
-        run("DELETE FROM recurring WHERE id=?", id);
+        atomic(() => {
+          rememberRecurringCardPurchases();
+          run("DELETE FROM recurring WHERE id=?", id);
+        });
         monthlyBudget.prune();
       } else {
         const amount = cents(x.amount),
@@ -194,6 +198,7 @@ export function createRecurrencesRoutes({
         ];
         atomic(() => {
           if (req.url.endsWith("update")) {
+            rememberRecurringCardPurchases();
             if (funding)
               throw Error(
                 "Associez le financement lors de la création du virement.",

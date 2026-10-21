@@ -393,11 +393,39 @@ export function initialize(runtime) {
         row(box, "Objectif par période", i.period_budget_cents);
         row(box, "Protégé maintenant", e.reserved_cents + held);
         row(box, period ? "Achats de la période" : "Achats ce mois-ci", spent);
-        if (period)
+        if (period) {
           row(box, "Objectif moins achats", i.period_budget_cents - spent);
-        else box.append(n("p", "Pas de période en cours.", "quiet-copy"));
+          box.append(
+            n("p", "Période depuis le " + date(i.period_start), "quiet-copy"),
+          );
+        } else box.append(n("p", "Pas de période en cours.", "quiet-copy"));
+        box.append(
+          n(
+            "p",
+            i.next_renewal
+              ? "Prochain renouvellement : " + date(i.next_renewal)
+              : "Sans renouvellement programmé",
+            "quiet-copy",
+          ),
+        );
+        box.append(
+          n(
+            "p",
+            e.rollover
+              ? "Report activé : le restant est conservé au renouvellement."
+              : "Sans report : le restant ne s’ajoute pas au prochain budget.",
+            "quiet-copy",
+          ),
+        );
         const d = n("details");
         d.append(n("summary", "Comprendre cette enveloppe"));
+        d.append(
+          n(
+            "p",
+            "Le budget par période est prévu. Seul le montant protégé maintenant est déjà retiré du disponible actuel. La prévision protège les prochaines périodes à leurs dates.",
+            "quiet-copy",
+          ),
+        );
         row(d, "Réserve inutilisée", e.reserved_cents);
         row(d, "Achats sur carte encore protégés", held);
         d.append(

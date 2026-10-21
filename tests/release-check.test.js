@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {checkPublicRelease} from '../mac-update.js';
+const stub=version=>async(url,options)=>{assert.equal(url,'https://raw.githubusercontent.com/alexforget82/Budget/main/package.json');assert.equal(options.credentials,'omit');assert.equal(options.redirect,'error');assert.deepEqual(options.headers,{Accept:'application/json'});return new Response(JSON.stringify({name:'mon-budget-local',version}));};
+test('public release comparison is numeric and sends no budget or private identifiers',async()=>{const r=await checkPublicRelease('12.0.0',stub('12.0.1'));assert.equal(r.available,true);assert.equal(r.download_url,'https://github.com/alexforget82/Budget/archive/refs/tags/v12.0.1.zip');for(const v of ['12.0.0','11.9.9'])assert.equal((await checkPublicRelease('12.0.0',stub(v))).available,false);});
+test('malformed, failed and oversized version manifests are rejected',async()=>{await assert.rejects(checkPublicRelease('12.0.0',stub('12.bad')));await assert.rejects(checkPublicRelease('12.0.0',async()=>new Response('',{status:503})));await assert.rejects(checkPublicRelease('12.0.0',async()=>new Response('x'.repeat(8193))));});

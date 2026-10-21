@@ -180,7 +180,7 @@ export function initialize(runtime) {
       p.append(
         el(
           "p",
-          "Le seuil de couleur de 100 $ est un repère : il ne réserve aucun argent. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; la dette sans enveloppe ne crée pas de réserve automatique.",
+          "Le seuil de couleur de 100 $ est un repère : il ne réserve aucun argent. Les achats liés à une enveloppe restent protégés jusqu’au remboursement; les achats récurrents sur carte sont aussi protégés, sans réserver toute la dette ancienne.",
           "sub",
         ),
       );
@@ -1041,7 +1041,7 @@ export function initialize(runtime) {
       content.append(
         el(
           "p",
-          "Une réserve gèle de l’argent : elle n’est pas une dépense bancaire. Une dépense associée utilise cette réserve. Les virements entre comptes inclus ont un effet net nul. Les achats liés à une enveloppe restent protégés jusqu’au remboursement de la carte. Le remboursement utilise cette protection sans deuxième déduction. Une ancienne dette sans achat lié à une enveloppe ne crée aucune réserve automatique.",
+          "Une réserve gèle de l’argent : elle n’est pas une dépense bancaire. Une dépense associée utilise cette réserve. Les virements entre comptes inclus ont un effet net nul. Les achats liés à une enveloppe et les achats récurrents sur carte restent protégés jusqu’au remboursement de la carte. Le remboursement utilise cette protection sans deuxième déduction. Une ancienne dette sans achat lié à une enveloppe ne crée aucune réserve automatique.",
           "quiet-copy",
         ),
       );

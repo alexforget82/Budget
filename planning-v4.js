@@ -622,7 +622,7 @@ export function initialize(runtime) {
         breakdown.append(
           n(
             "p",
-            "Les opérations réelles sont déjà dans le solde de départ. Les achats d’enveloppes sur carte restent protégés; la dette sans enveloppe ne crée pas de réserve automatique.",
+            "Les opérations réelles sont déjà dans le solde de départ. Les achats d’enveloppes et les achats récurrents sur carte restent protégés; la dette ancienne ne crée pas de réserve automatique.",
             "v4-footnote",
           ),
         );
@@ -1463,7 +1463,7 @@ export function initialize(runtime) {
           "Options · " + (a?.name || "Compte à choisir");
         note.textContent =
           a?.kind === "credit"
-            ? "Sur carte : le remboursement calculé est pris en compte si un plan existe. Sinon, prévoyez son remboursement séparément. Aucune réserve automatique de carte."
+            ? "Sur carte : cet achat est protégé dans le scénario. Le remboursement calculé est pris en compte si un plan existe; sinon, programmez-le séparément. Le solde bancaire bougera lors du remboursement."
             : !a?.included
               ? "Ce compte est exclu du disponible global. Son solde propre reste pris en compte dans la simulation."
               : "L’achat diminuera le solde bancaire et le disponible à cette date.";
