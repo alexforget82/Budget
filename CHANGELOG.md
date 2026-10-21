@@ -1,5 +1,15 @@
 # Versions de Sillage
 
+## 13.1.0 — paiement réel des cartes et confort iPhone
+
+Dans Comptes, chaque carte propose **Payer cette carte**, distinct de la planification des remboursements. Le compte du budget est présélectionné, avec le montant protégé sur la carte lorsqu’il existe. Un aperçu sans écriture montre les soldes bancaire et carte, le disponible actuel et son minimum sur 30 jours avant/après. La confirmation réutilise le virement réel existant. Un remboursement prévu correspondant de façon unique est reconnu; les cas encore à associer sont signalés.
+
+Les confirmations sont à usage unique, expirent après cinq minutes et sont refusées si les données ont changé. Un paiement identique déjà saisi nécessite une reconnaissance explicite. Les crédits sur carte et comptes exclus suivent le moteur actuel, sans nouveau calcul de protection ni changement de schéma.
+
+Sur téléphone : boutons et champs lisibles, fenêtre adaptée à la zone visible avec le clavier, navigation inférieure masquée pendant la saisie, distinction entre clavier et zoom, en-tête opaque pendant le défilement. La réponse à la simulation d’achat de la vue simplifiée est amenée au focus. Les liens privés existants sont conservés. Essais Chromium et changements de viewport simulés; aucune validation sur iPhone physique.
+
+[Installation et vérifications](docs/SILLAGE-13.1.md).
+
 ## 13.0.0 — la présentation approuvée devient l’interface réelle
 
 Tableau de bord recentré sur le disponible actuel, avec minimum prévu, détail des protections, graphique, minimum/maximum sur 30/60/90 jours, prochains mouvements, enveloppes et derniers achats. Le graphique réutilise son rendu et ses données existants; le mode détaillé et la personnalisation restent disponibles. Le raccourci vers la prochaine rentrée d’argent est conservé.

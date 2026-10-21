@@ -1,0 +1,27 @@
+"""Actual repayment preview/confirmation against the canonical ledger; isolated data only."""
+import importlib.util,copy,unittest
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
+class Payments(api.BudgetAPI):
+ def runTest(self):
+  bank=self.account(balance=1000);card=self.account('credit',5000)
+  self.post('/api/recurring',{'description':'Apple One','amount':53.98,'type':'expense','account_id':card,'frequency':'monthly','start_on':api.DAY});self.transaction(card,-53.98,description='Apple One')
+  payload={'from_account_id':bank,'to_account_id':card,'amount':20,'description':'Paiement Capital One','happened_on':api.DAY}
+  before=self.get('/api/backup/export')['tables'];preview=self.post('/api/card-payments/actual-preview',payload);self.assertEqual(self.get('/api/backup/export')['tables'],before);self.assertEqual(preview['before']['safe_cents'],94602);self.assertEqual(preview['after']['source_cents'],98000);self.assertEqual(preview['after']['safe_cents'],94602)
+  state=self.post('/api/card-payments/actual-confirm',{'token':preview['token']});self.assertEqual(state['safe_cents'],preview['after']['safe_cents']);self.assertEqual(state['card_envelope_reserved_cents'],preview['after']['protected_cents']);self.assertEqual(min(state['safe_cents'],*[d['safe_cents'] for d in state['forecast'][:30]]),preview['after']['minimum_30_cents']);self.assertEqual(next(a['balance_cents'] for a in state['accounts'] if a['id']==card),preview['after']['card_cents'])
+  after=self.get('/api/backup/export')['tables'];self.post('/api/card-payments/actual-confirm',{'token':preview['token']},400);self.assertEqual(self.get('/api/backup/export')['tables'],after)
+  dup=self.post('/api/card-payments/actual-preview',payload);self.assertTrue(dup['duplicates']);self.post('/api/card-payments/actual-confirm',{'token':dup['token']},400);self.assertEqual(self.get('/api/backup/export')['tables'],after);s=self.post('/api/card-payments/actual-confirm',{'token':dup['token'],'acknowledged':True});self.assertEqual(s['safe_cents'],94602)
+  # Unprotected debt must really reduce available money, and changing the budget invalidates a preview.
+  p=self.post('/api/card-payments/actual-preview',{**payload,'amount':100});self.assertLess(p['after']['safe_cents'],p['before']['safe_cents']);self.transaction(bank,-1,description='Autre appareil');after=self.get('/api/backup/export')['tables'];self.post('/api/card-payments/actual-confirm',{'token':p['token']},400);self.assertEqual(self.get('/api/backup/export')['tables'],after)
+  p=self.post('/api/card-payments/actual-preview',{**payload,'amount':100});s=self.post('/api/card-payments/actual-confirm',{'token':p['token']});self.assertEqual(s['safe_cents'],p['after']['safe_cents']);self.assertEqual(s['card_envelope_reserved_cents'],p['after']['protected_cents'])
+  for bad in [{**payload,'from_account_id':card},{**payload,'to_account_id':bank},{**payload,'happened_on':self.future73(1)},{**payload,'amount':0}]:self.post('/api/card-payments/actual-preview',bad,400)
+  # Excluded cash account repays a protected card: the exact released reserve is reflected.
+  other=self.account('savings',500);self.post('/api/accounts/update',{'id':other,'name':'Personnel','kind':'savings','balance':500,'included':False});self.transaction(card,-53.98,description='Apple One');p=self.post('/api/card-payments/actual-preview',{**payload,'from_account_id':other,'amount':53.98});self.assertFalse(p['source_included']);s=self.post('/api/card-payments/actual-confirm',{'token':p['token']});self.assertEqual(s['safe_cents'],p['after']['safe_cents'])
+  # Envelope purchase, protected until repayment, also uses the same preview.
+  e=self.post('/api/envelopes',{'name':'Épicerie','reserved':100,'budget':100,'frequency':'weekly','start_on':api.DAY,'forecast_spend':False})['envelopes'][0]['id'];self.transaction(card,-50,envelope_id=e,description='Marché');p=self.post('/api/card-payments/actual-preview',{**payload,'amount':50});s=self.post('/api/card-payments/actual-confirm',{'token':p['token']});self.assertEqual(s['safe_cents'],p['after']['safe_cents']);self.assertEqual(s['cash_cents'],next(a['balance_cents'] for a in s['accounts'] if a['id']==bank))
+  # A uniquely matching scheduled repayment is reused, rather than remaining as a second forecast payment.
+  self.post('/api/recurring',{'description':'Remboursement mensuel choisi','amount':10,'type':'transfer','account_id':bank,'to_account_id':card,'frequency':'monthly','one_time':True,'start_on':api.DAY});p=self.post('/api/card-payments/actual-preview',{**payload,'amount':10});self.assertEqual(p['matched_plan'],'Remboursement mensuel choisi');s=self.post('/api/card-payments/actual-confirm',{'token':p['token']});row=next(r for r in s['planning']['rows'] if r['description']=='Remboursement mensuel choisi');self.assertEqual(row['status'],'actual');self.assertEqual(min(s['safe_cents'],*[d['safe_cents'] for d in s['forecast'][:30]]),p['after']['minimum_30_cents'])
+  print('PASS: read-only exact repayment previews, partial/protected/unprotected/excluded/envelope payments, real balances, forecast minimum, duplicate acknowledgment, single-use confirmation, stale-preview rejection and invalid inputs.')
+# Run only this integration case, not the inherited historical suite again.
+if __name__=='__main__':
+ r=unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([Payments()]));raise SystemExit(not r.wasSuccessful())

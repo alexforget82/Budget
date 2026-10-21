@@ -658,3 +658,148 @@ html[data-theme] body.sillage-v13 .v44-metric > strong {
     border-top: 1px solid var(--v80-line) !important;
   }
 }
+/* v13.1: actual card repayment and iPhone form/keyboard refinements. */
+.v131-payment-dialog {
+  width: min(620px, calc(100% - 24px));
+}
+.v131-payment-result {
+  padding: 18px !important;
+  margin: 18px 0 0 !important;
+  border: 1px solid var(--v80-line) !important;
+  border-radius: 12px;
+  background: var(--v80-raised) !important;
+}
+.v131-payment-result table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 12px;
+}
+.v131-payment-result th {
+  width: 40%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.v131-payment-result td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.v131-payment-result td,
+.v131-payment-result th {
+  padding: 10px 4px;
+  vertical-align: top;
+}
+.v131-duplicate {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.v131-duplicate[hidden] {
+  display: none !important;
+}
+.v131-duplicate input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.v131-payment-result button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 12px;
+}
+.card-payment-shortcut {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 dialog[open] {
+    max-height: calc(
+      var(--mobile-visible-height, 100dvh) - max(12px, env(safe-area-inset-top))
+    ) !important;
+    overscroll-behavior-y: contain;
+    scroll-padding: 16px;
+    bottom: var(--mobile-keyboard-offset, 0px) !important;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog {
+    position: fixed !important;
+    inset: auto 0 var(--mobile-keyboard-offset, 0px) !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 0 !important;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog .dialog-inner {
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog .dialog-heading {
+    align-items: start;
+    gap: 12px;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog h2 {
+    font-size: 21px !important;
+    overflow-wrap: anywhere;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog :is(input, select) {
+    font-size: 16px !important;
+    min-height: 46px;
+    max-width: 100%;
+    min-width: 0;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog form {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog label {
+    font-size: 13px;
+    gap: 6px;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-dialog button {
+    min-height: 44px;
+  }
+  html[data-theme] body.sillage-v13.sillage-keyboard-open .mobile-tabbar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html[data-theme] body.sillage-v13 :is(input, textarea, select) {
+    scroll-margin: 80px 0 24px;
+  }
+  html[data-theme] body.sillage-v13 .card-payment-shortcut button {
+    min-height: 44px;
+    flex: 1;
+  }
+  html[data-theme] body.sillage-v13 .v131-payment-result {
+    padding: 12px !important;
+  }
+}
+html[data-theme] body.sillage-v13 .v131-payment-dialog .dialog-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--v80-surface) !important;
+  border-bottom: 1px solid var(--v80-line);
+  padding: 12px 0;
+  margin: 0 0 14px;
+  gap: 12px;
+}
+html[data-theme] body.sillage-v13 .v131-payment-dialog .dialog-heading h2 {
+  margin: 0 !important;
+  line-height: 1.25;
+}
+html[data-theme] body.sillage-v13 .v131-payment-dialog .dialog-heading button {
+  flex-shrink: 0;
+}
+html[data-theme] body.sillage-v13 .v131-payment-result {
+  background: var(--v80-raised) !important;
+  color: var(--v80-ink) !important;
+  border-color: var(--v80-line) !important;
+}
+html[data-theme] body.sillage-v13 #actual-payment-confirm {
+  background: var(--v80-accent) !important;
+  color: var(--s26-on-accent) !important;
+  border: 0 !important;
+  min-height: 48px;
+}

@@ -203,6 +203,13 @@ export function initialize(runtime) {
   function viewport() {
     const visible = window.visualViewport,
       zoomed = visible && Math.abs(visible.scale - 1) > 0.01;
+    document.body.classList.toggle(
+      "sillage-keyboard-open",
+      !!visible &&
+        !zoomed &&
+        innerHeight - visible.height > 120 &&
+        !!document.activeElement?.matches("input,textarea,select"),
+    );
     const height = !zoomed && visible ? visible.height : innerHeight;
     const offset =
       !zoomed && visible
@@ -220,6 +227,8 @@ export function initialize(runtime) {
   window.visualViewport?.addEventListener("resize", viewport);
   window.visualViewport?.addEventListener("scroll", viewport);
   window.addEventListener("resize", viewport);
+  document.addEventListener("focusin", viewport);
+  document.addEventListener("focusout", () => setTimeout(viewport, 0));
   viewport();
   compact.addEventListener("change", layout);
   layout();

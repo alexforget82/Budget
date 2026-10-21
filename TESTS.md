@@ -1,5 +1,13 @@
 # Vérifications de Sillage
 
+## v13.1.0 — paiement réel et confort iPhone
+
+**113 tests Node, 201 tests API historiques et 64 scripts Python réussis.** Le premier passage complet Python donne 64/64. Le nouveau cas API vérifie aperçu sans écriture, paiement partiel, protection d’achat récurrent et d’enveloppe, dette non protégée, compte exclu, soldes réels, minimum projeté, reconnaissance d’un remboursement prévu unique, doublon, confirmation à usage unique et aperçu périmé. Les tests Node supplémentaires vérifient expiration, immutabilité du montant confirmé, données modifiées et échec d’écriture.
+
+Le nouveau parcours UI couvre cinq largeurs et les deux thèmes, la présélection du Conjoint et du montant protégé, les modifications après aperçu, la confirmation avec données concurrentes, l’enregistrement d’un seul virement et l’avertissement de doublon. Des changements de visualViewport simulent le clavier et le zoom, sans prétendre tester le véritable iOS. L’API ciblée et le parcours UI sont relancés après les derniers ajustements du nouveau parcours.
+
+[Guide et captures](docs/SILLAGE-13.1.md) · [Résultats](docs/v131/checks.json). Aucun changement de schéma. Les règles de protection existantes restent celles du moteur canonique. Les essais utilisent uniquement des bases fictives temporaires sous Chromium.
+
 ## v13.0.0 — refonte visuelle
 
 **110 tests Node, 201 tests API et 62 parcours Python validés.** Le premier passage Python donne 57/62; les cinq échecs sont résolus et relancés : raccourci prochaine rentrée, densité des transactions sur petit écran, ouverture des options d’enveloppes dans le parcours historique, couleur sombre attendue et remplacement de l’ancienne exigence de styles identiques par la validation de la nouvelle présentation. Les assertions financières historiques restent actives. Le nouveau parcours v13 est relancé après les derniers ajustements.

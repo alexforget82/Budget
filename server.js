@@ -1,3 +1,4 @@
+import { createCardPaymentActions } from "./card-payment-actions.js";
 import { checkPublicRelease } from "./mac-update.js";
 import { readJson, isJsonRequest } from "./http-body.js";
 import { securityHeaders, authorizeRequest } from "./http-security.js";
@@ -1659,6 +1660,15 @@ const transfersRoutes = createTransfersRoutes({
   validateTransfer,
   validateTransferEnvelope,
 });
+const actualCardPayments = createCardPaymentActions({
+  forecastInput,
+  validateTransfer,
+  buildForecast,
+  cardEnvelopeTotal,
+  record: (payload) =>
+    transfersRoutes({ url: "/api/transfers" }, null, payload),
+});
+
 const planningRoutes = createPlanningRoutes({
   cardPayments,
   dayDistance,
@@ -1837,6 +1847,8 @@ const handleRequest = async (req, res) => {
       req.method !== "POST" ||
       (!featureRoutes.has(req.url) &&
         ![
+          "/api/card-payments/actual-confirm",
+          "/api/card-payments/actual-preview",
           "/api/budget/start-preview",
           "/api/budget/start-apply",
           "/api/workspace/bulk-preview",
@@ -1950,6 +1962,7 @@ const handleRequest = async (req, res) => {
         q(`SELECT id FROM ${table} WHERE id=?`, id).length > 0;
     if (
       ![
+        "/api/card-payments/actual-preview",
         "/api/budget/start-preview",
         "/api/workspace/bulk-preview",
         "/api/workspace/split-preview",
@@ -1991,6 +2004,13 @@ const handleRequest = async (req, res) => {
       applyEnvelopeRenewals();
       res.budgetBefore = features.exportBackup();
       res.budgetRoute = req.url;
+    }
+    if (req.url === "/api/card-payments/actual-preview")
+      return reply(res, 200, actualCardPayments.preview(x));
+    if (req.url === "/api/card-payments/actual-confirm") {
+      actualCardPayments.confirm(x);
+      journey.enforceScope();
+      return reply(res, 200, snapshot());
     }
     if (req.url === "/api/workspace/bulk-preview")
       return reply(res, 200, tools80.bulkPlan(x));
@@ -2303,7 +2323,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (13.0.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (13.1.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

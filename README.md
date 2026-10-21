@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v13.0.0](https://github.com/alexforget82/Budget/archive/refs/tags/v13.0.0.zip).
+Téléchargez et décompressez [la version v13.1.0](https://github.com/alexforget82/Budget/archive/refs/tags/v13.1.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -19,6 +19,10 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répertoire courant. Ne lancez pas deux serveurs sur le même port ou deux copies différentes de votre budget.
+
+## Payer une carte
+
+Dans **Comptes**, choisissez **Payer cette carte**. Vérifiez le compte bancaire, le montant réellement payé et la date; consultez l’aperçu avant/après, puis confirmez. Aucun virement bancaire n’est exécuté par Sillage. Les achats doivent déjà être enregistrés dans Transactions. [Guide v13.1](docs/SILLAGE-13.1.md).
 
 ## Présentation v13
 
