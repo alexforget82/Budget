@@ -1410,9 +1410,15 @@ function sharedGrocery(envelopes) {
   if (matches.length !== 1) return null;
   const e = monthlyBudget.enrichEnvelope(matches[0]);
   const detail = currentEnvelopeDetails([e])[0];
-  if (!detail.period_start) return null;
-  const period = detail.period_start;
-  const scheduled = envelopeBudgetDates(e, period, period, nextOccurrence)[0];
+  const status = detail.period_start
+    ? "current"
+    : detail.next_renewal
+      ? "upcoming"
+      : "unconfigured";
+  const period = detail.period_start || detail.next_renewal;
+  const scheduled = period
+    ? envelopeBudgetDates(e, period, period, nextOccurrence)[0]
+    : null;
   const budget =
     q(
       "SELECT budget_cents FROM envelope_budget_overrides WHERE envelope_id=? AND occurrence_on=?",
@@ -1433,7 +1439,8 @@ function sharedGrocery(envelopes) {
     period,
     period,
   );
-  let remaining = budget - detail.spent_cents;
+  const spent = purchases.reduce((n, t) => n - t.amount_cents, 0);
+  let remaining = status === "unconfigured" ? e.reserved_cents : budget - spent;
   const renewed = q(
     "SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?",
     e.id,
@@ -1447,10 +1454,11 @@ function sharedGrocery(envelopes) {
   }
   return {
     name: e.name,
+    status,
     period_start: period,
     next_renewal: detail.next_renewal,
     budget_cents: budget,
-    spent_cents: detail.spent_cents,
+    spent_cents: spent,
     remaining_cents: remaining,
     rollover: !!e.rollover,
     purchases,
@@ -2170,7 +2178,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.5.1) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (11.5.2) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

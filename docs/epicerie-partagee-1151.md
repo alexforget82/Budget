@@ -1,4 +1,6 @@
-# Épicerie dans la vue simplifiée — v11.5.1
+# Épicerie dans la vue simplifiée
+
+Depuis la v11.5.2, la carte reste visible avant le premier renouvellement : elle affiche le montant prévu et « Débute le… ». Sans calendrier, elle présente la réserve actuelle et une indication de configuration. Les modalités de la v11.5.1 ci-dessous décrivent le suivi lorsqu’une période a commencé.
 
 Après mise à jour du Mac, actualiser le lien habituel de la vue simplifiée sur l’iPhone. Aucun nouveau lien n’est nécessaire.
 

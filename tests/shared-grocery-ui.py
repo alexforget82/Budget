@@ -21,6 +21,8 @@ try:
   assert f.get('/api/backup/export')['tables']==before
   f.transaction(aid,-20,envelope_id=eid);page.locator('#refresh').click();expect(page.locator('#grocery-remaining')).to_contain_text('160,00');expect(page.locator('.grocery-purchase')).to_have_count(2)
   page.get_by_role('button',name='90 jours',exact=True).click();expect(page.locator('#grocery-remaining')).to_contain_text('160,00')
+  f.post('/api/envelopes/update',{'id':eid,'name':'Epicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':f.future73(7),'rollover':False,'forecast_spend':False});page.locator('#refresh').click();expect(page.locator('#grocery-card')).to_be_visible();expect(page.locator('#grocery-until')).to_contain_text('Débute le');expect(page.locator('#grocery-remaining')).to_contain_text('230,00');
+  f.post('/api/envelopes/update',{'id':eid,'name':'Epicerie','reserved':0,'budget':230,'frequency':'none','forecast_spend':False});page.locator('#refresh').click();expect(page.locator('#grocery-card')).to_be_visible();expect(page.locator('#grocery-until')).to_contain_text('Aucune période configurée');
   f.post('/api/sharing',{'action':'revoke'});page.locator('#refresh').click();expect(page.locator('#grocery-card')).to_be_hidden();expect(page.locator('.grocery-purchase')).to_have_count(0);assert not errors,errors;browser.close()
  print('PASS: weekly grocery remainder, Thursday renewal, bank/card purchases, escaped labels, other data private, phone widths/themes, refresh, revocation and read-only data.')
 finally:f.tearDown()

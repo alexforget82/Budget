@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v11.5.1](https://github.com/alexforget82/Budget/archive/refs/tags/v11.5.1.zip).
+Téléchargez et décompressez [la version v11.5.2](https://github.com/alexforget82/Budget/archive/refs/tags/v11.5.2.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -25,7 +25,7 @@ Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répert
 - **Budget** compare les objectifs aux transactions classées, sans réserver d’argent. Les montants à la semaine et aux deux semaines sont multipliés par le nombre réel de dates du mois, jamais par une moyenne annuelle. Choisissez un calendrier si la ligne le demande.
 - **Récurrences** programme les revenus, factures et virements. **Enveloppes** protège les sommes du Safe-to-Spend, à la date prévue ou plus tôt si alimentées. Chaque période future protège son propre montant, même si le report du restant est désactivé; les soldes bancaires réels restent inchangés.
 - Enregistrez une dépense réelle dans **Transactions** et confirmez l’association proposée si elle remplace une échéance prévue.
-- **Disponible jour par jour** permet de consulter les prévisions. La vue simplifiée utilise les mêmes calculs. Elle affiche aussi le restant de l’enveloppe active nommée « Épicerie » (accent facultatif), son prochain renouvellement et ses achats associés, sans exposer les autres enveloppes ni les comptes.
+- **Disponible jour par jour** permet de consulter les prévisions. La vue simplifiée utilise les mêmes calculs. Elle affiche aussi le restant de l’enveloppe active nommée « Épicerie » (accent facultatif), son prochain renouvellement et ses achats associés, sans exposer les autres enveloppes ni les comptes. Avant le début de la première période, la carte affiche le montant prévu et la date de début; elle reste également visible si le calendrier doit être configuré.
 
 ## Sur iPhone
 

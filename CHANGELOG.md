@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.5.2 — épicerie toujours visible
+
+Le suivi partagé reste visible avant la première période : montant prévu et date de début. Sans calendrier, la carte présente la réserve actuelle et indique la configuration manquante. Si aucune enveloppe ne peut être identifiée, un état de configuration remplace la disparition de la carte. Les achats anticipés associés à la première échéance sont inclus. Le lien existant reste valide; calcul du Safe-to-Spend conservé.
+
 ## 11.5.1 — épicerie dans la vue simplifiée
 
 Carte de suivi de l’enveloppe active Épicerie : budget de la période, achats associés, restant et prochain renouvellement. Liste d’achats repliable, libellés rendus comme texte, aucun compte ou autre enveloppe exposé. Le montant et le calendrier viennent de l’enveloppe existante; aucun montant de 230 $ ou 203 $ n’est imposé. Le report est respecté lorsque le renouvellement courant a été appliqué. Les achats associés à une autre période ne sont pas déduits deux fois. Actualisation et révocation du lien effacent les données devenues indisponibles. Calcul du Safe-to-Spend conservé.

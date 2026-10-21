@@ -31,6 +31,10 @@ python3 tests/run-python-checks.py --results /tmp/sillage-checks --jobs 2
 
 Le premier lance les tests Node puis les tests API. Le second exécute chaque script Python supplémentaire, conserve chaque journal et renvoie un échec si un script échoue. Aucun test n’est ignoré automatiquement. `CHROMIUM_PATH` permet d’utiliser un Chromium installé sur la machine.
 
+## Vérification de la v11.5.2
+
+97 tests Node et 193 tests API réussis. Le nouveau cas couvre une enveloppe avant sa première échéance et sans calendrier. Le parcours navigateur d’épicerie vérifie que la carte reste visible dans ces deux situations et disparaît après révocation; le parcours de simulation simplifiée reste vert.
+
 ## Vérification de la v11.5.1
 
 97 tests Node et 192 tests API réussis. Quatre nouveaux cas API couvrent le suivi d’épicerie : absence/ambiguïté/inactivité, budget hebdomadaire, achats bancaires et sur carte, dépassement, report réel, exception de montant et achats associés à une autre période. Six parcours navigateur ciblés vérifient l’épicerie, la vue simplifiée existante, les périodes, les chiffres du propriétaire, la confidentialité et la comparaison financière avec la référence. Les autres résultats complets ci-dessous correspondent à la v11.5.0.

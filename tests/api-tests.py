@@ -34,6 +34,10 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_shared_grocery_visible_before_start_and_without_schedule(self):
+  aid=self.account();s=self.post('/api/envelopes',{'name':'Epicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':self.future73(7),'rollover':False,'forecast_spend':False});eid=next(e['id'] for e in s['envelopes'] if e['name']=='Epicerie');path=self.post('/api/sharing',{'action':'create'})['path'];before=self.get('/api/backup/export')['tables'];g=self.get(path+'/data')['grocery']
+  self.assertEqual(g['status'],'upcoming');self.assertEqual(g['remaining_cents'],23000);self.assertEqual(g['next_renewal'],self.future73(7));self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  self.post('/api/envelopes/update',{'id':eid,'name':'Epicerie','reserved':0,'budget':230,'frequency':'none','forecast_spend':False});g=self.get(path+'/data')['grocery'];self.assertEqual(g['status'],'unconfigured');self.assertEqual(g['remaining_cents'],0);self.assertIsNone(g['period_start'])
  def test_shared_grocery_weekly_budget_purchases_and_privacy(self):
   aid=self.account();card=self.account(kind='credit',balance=0)
   self.post('/api/envelopes',{'name':'Épicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':DAY,'rollover':False,'forecast_spend':False})
