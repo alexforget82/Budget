@@ -66,6 +66,25 @@ export function initialize(runtime) {
       if (!items.length) d.append(n("p", "Aucun montant.", "quiet-copy"));
       for (const item of items) row(d, item.name, item.value);
       host.append(d);
+      return d;
+    }
+    function reveal(line, targets) {
+      const label = line.querySelector("span"),
+        action = button(label.textContent, () => {
+          const show = targets.some((t) => !t.open);
+          for (const target of targets) target.open = show;
+          action.setAttribute("aria-expanded", String(show));
+        });
+      action.className = "v116-calculation-link";
+      action.setAttribute("aria-expanded", "false");
+      for (const target of targets)
+        target.addEventListener("toggle", () =>
+          action.setAttribute(
+            "aria-expanded",
+            String(targets.every((t) => t.open)),
+          ),
+        );
+      label.replaceWith(action);
     }
     function explain() {
       if (!current) return;
@@ -110,8 +129,8 @@ export function initialize(runtime) {
             : "Disponible prévu au " + date(day.date),
         ),
       );
-      row(content, "Solde bancaire inclus", cash);
-      row(content, "Argent protégé", -reserved);
+      const cashLine = row(content, "Solde bancaire inclus", cash);
+      const protectedLine = row(content, "Argent protégé", -reserved);
       row(content, "Disponible après protections", safe, "v81-total");
       row(
         content,
@@ -124,7 +143,7 @@ export function initialize(runtime) {
         now ? s.card_envelope_reserved_cents : day.card_envelope_reserved_cents,
       );
       if (now) {
-        details(
+        const accountDetail = details(
           content,
           "Comptes compris dans le calcul",
           s.sts_breakdown.accounts.map((a) => ({
@@ -132,7 +151,7 @@ export function initialize(runtime) {
             value: a.balance_cents,
           })),
         );
-        details(
+        const envelopeDetail = details(
           content,
           "Réserves par enveloppe",
           s.sts_breakdown.envelopes.map((e) => ({
@@ -140,13 +159,22 @@ export function initialize(runtime) {
             value: e.reserved_cents,
           })),
         );
-        details(
+        const cardDetail = details(
           content,
           "Achats sur carte à rembourser",
           s.sts_breakdown.card_envelopes.map((f) => ({
             name: f.name + " · " + f.card_name,
             value: f.amount_cents,
           })),
+        );
+        reveal(cashLine, [accountDetail]);
+        reveal(protectedLine, [envelopeDetail, cardDetail]);
+        content.append(
+          n(
+            "p",
+            "Les paiements à venir sont intégrés aux dates de la prévision. Ils ne sont pas déduits une deuxième fois du disponible actuel. Choisissez une date pour suivre leur effet.",
+            "quiet-copy",
+          ),
         );
       } else {
         const bridge = day.bridge;
@@ -173,6 +201,8 @@ export function initialize(runtime) {
         );
         const path = n("details");
         path.append(n("summary", "Suivre le calcul jour par jour"));
+        reveal(cashLine, [path]);
+        reveal(protectedLine, [path]);
         let previous = s.safe_cents;
         for (const d of days) {
           const delta = d.safe_cents - previous;
@@ -258,6 +288,74 @@ export function initialize(runtime) {
       }),
     );
     hero.append(actions);
+    const bankStatus = n("details", undefined, "v116-bank-status");
+    bankStatus.id = "v116-bank-status";
+    hero.append(bankStatus);
+    function drawBankStatus(s) {
+      const wasOpen = bankStatus.open;
+      bankStatus.replaceChildren();
+      const accounts = s.accounts.filter(
+        (a) => a.included && a.kind !== "credit",
+      );
+      const checks = s.support41?.bank_checks || [];
+      const pending = accounts.filter(
+        (a) => !checks.find((c) => c.account_id === a.id)?.current,
+      );
+      bankStatus.append(
+        n(
+          "summary",
+          !accounts.length
+            ? "Configurer le compte du disponible"
+            : pending.length
+              ? "Soldes à vérifier · " + pending.length + " compte(s)"
+              : "Soldes vérifiés · " + accounts.length + " compte(s)",
+        ),
+      );
+      bankStatus.append(
+        n(
+          "p",
+          "Vérifié signifie comparé au solde que vous avez saisi, sans connexion automatique à la banque.",
+          "quiet-copy",
+        ),
+      );
+      for (const a of accounts) {
+        const check = checks.find((c) => c.account_id === a.id),
+          line = n("div", undefined, "v116-bank-account");
+        line.append(
+          n("strong", a.name),
+          n(
+            "span",
+            check?.current
+              ? "Rapprochement à jour"
+              : check?.checked_at
+                ? "À revérifier depuis une modification"
+                : "Pas encore vérifié",
+          ),
+          button("Vérifier " + a.name, () => window.budgetOpenBankCheck(a.id)),
+        );
+        if (check?.checked_at)
+          line.append(
+            n(
+              "small",
+              "Dernière vérification : " +
+                new Date(check.checked_at).toLocaleString("fr-CA", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
+            ),
+          );
+        bankStatus.append(line);
+      }
+      if (!accounts.length)
+        bankStatus.append(
+          button("Ouvrir les comptes", () =>
+            document
+              .querySelector('.app-shell-nav [data-view="comptes"]')
+              .click(),
+          ),
+        );
+      bankStatus.open = wasOpen;
+    }
     const more = n("details", undefined, "v81-dashboard-details");
     more.id = "v81-dashboard-details";
     more.append(
@@ -363,6 +461,7 @@ export function initialize(runtime) {
     });
     function draw(s) {
       current = s;
+      drawBankStatus(s);
       polishHero();
       const selected = choose.value;
       choose.replaceChildren(

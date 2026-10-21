@@ -31,6 +31,12 @@ python3 tests/run-python-checks.py --results /tmp/sillage-checks --jobs 2
 
 Le premier lance les tests Node puis les tests API. Le second exécute chaque script Python supplémentaire, conserve chaque journal et renvoie un échec si un script échoue. Aucun test n’est ignoré automatiquement. `CHROMIUM_PATH` permet d’utiliser un Chromium installé sur la machine.
 
+## Vérification de la v11.6.0
+
+97 tests Node et 195 tests API réussis. La suite complète donne 59/60 scripts Python; le seul échec compare l’ancien tableau de bord avec le nouveau panneau de vérification ajouté. Après exclusion ciblée de ce nouveau panneau de la comparaison historique, le contrôle repasse : les 20 combinaisons de styles existants et les chiffres restent identiques. Le nouveau panneau et les aperçus sont couverts séparément par `confidence-v116-ui.py`, également repassé après les derniers ajustements mobiles. Les 60 parcours sont ainsi validés, sans modification des assertions financières. Les [résultats](docs/confiance-116-results.json) conservent l’exécution initiale et les recontrôles.
+
+Le [guide](docs/confiance-11.6.md) décrit le calcul détaillé et l’aperçu des corrections. Les deux nouvelles vérifications API comparent le résultat théorique à une correction réelle sur données temporaires et contrôlent l’absence d’écriture pendant la comparaison.
+
 ## Vérification de la v11.5.2
 
 97 tests Node et 193 tests API réussis. Le nouveau cas couvre une enveloppe avant sa première échéance et sans calendrier. Le parcours navigateur d’épicerie vérifie que la carte reste visible dans ces deux situations et disparaît après révocation; le parcours de simulation simplifiée reste vert.

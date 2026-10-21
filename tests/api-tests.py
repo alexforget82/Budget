@@ -34,6 +34,21 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_bank_preview_uses_canonical_current_and_minimums_without_writes(self):
+  aid=self.account(balance=1000);self.post('/api/envelopes',{'name':'Protégé','reserved':200,'budget':0,'frequency':'none','forecast_spend':False});self.post('/api/recurring',{'description':'Facture prochaine','amount':900,'type':'expense','account_id':aid,'frequency':'monthly','one_time':True,'start_on':self.future73(2)})
+  state=self.get('/api/state');before=self.get('/api/backup/export')['tables'];out=self.post('/api/workspace/reconcile',{'account_id':aid,'balance':950,'since':DAY})
+  self.assertEqual(out['safe_impact']['before']['current_cents'],state['safe_cents']);self.assertEqual(out['safe_impact']['after']['current_cents'],state['safe_cents']-5000)
+  for n in [30,60,90]:self.assertEqual(out['safe_impact']['before']['minimums'][str(n)],min(state['safe_cents'],*[d['safe_cents'] for d in state['forecast'][:n]]))
+  self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  actual=self.post('/api/balance/reconcile',{'account_id':aid,'balance':950,'expected_balance_cents':state['accounts'][0]['balance_cents'],'note':'Test de l’aperçu','confirm':True})
+  self.assertEqual(actual['safe_cents'],out['safe_impact']['after']['current_cents'])
+  for n in [30,60,90]:self.assertEqual(out['safe_impact']['after']['minimums'][str(n)],min(actual['safe_cents'],*[d['safe_cents'] for d in actual['forecast'][:n]]))
+ def test_bank_preview_excluded_accounts_and_card_do_not_reserve_debt(self):
+  aid=self.account();card=self.account(kind='credit',balance=200);other=self.account(kind='savings',balance=100)
+  self.post('/api/accounts/update',{'id':other,'name':'Compte exclu','kind':'savings','balance':100,'included':False});state=self.get('/api/state');before=self.get('/api/backup/export')['tables']
+  for account,balance in [(card,400),(other,50)]:
+   out=self.post('/api/workspace/reconcile',{'account_id':account,'balance':balance,'since':DAY});self.assertEqual(out['safe_impact']['before'],out['safe_impact']['after']);self.assertEqual(out['safe_impact']['before']['current_cents'],state['safe_cents'])
+  self.assertEqual(self.get('/api/backup/export')['tables'],before)
  def test_shared_grocery_visible_before_start_and_without_schedule(self):
   aid=self.account();s=self.post('/api/envelopes',{'name':'Epicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':self.future73(7),'rollover':False,'forecast_spend':False});eid=next(e['id'] for e in s['envelopes'] if e['name']=='Epicerie');path=self.post('/api/sharing',{'action':'create'})['path'];before=self.get('/api/backup/export')['tables'];g=self.get(path+'/data')['grocery']
   self.assertEqual(g['status'],'upcoming');self.assertEqual(g['remaining_cents'],23000);self.assertEqual(g['next_renewal'],self.future73(7));self.assertEqual(self.get('/api/backup/export')['tables'],before)

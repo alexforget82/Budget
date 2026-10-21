@@ -2539,3 +2539,119 @@ html[data-theme]
 #s26-chatgpt-dialog {
   overflow-wrap: anywhere;
 }
+
+/* Calculation and bank checks share the canonical ledger, with explicit previews. */
+.sillage-2026 .v116-calculation-link {
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--v80-accent);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+.sillage-2026 .v116-bank-status {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--v80-line);
+  border-radius: 14px;
+  color: var(--v80-ink);
+}
+.sillage-2026 .v116-bank-status summary {
+  cursor: pointer;
+  min-height: 24px;
+  font-weight: 650;
+}
+.sillage-2026 .v116-bank-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--v80-line);
+}
+.sillage-2026 .v116-bank-account span,
+.sillage-2026 .v116-bank-account small {
+  grid-column: 1;
+  color: var(--v80-muted);
+}
+.sillage-2026 .v116-bank-account button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 44px;
+  white-space: normal;
+}
+.sillage-2026 .v116-bank-context,
+.sillage-2026 .v116-bank-impact {
+  grid-column: 1 / -1;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--v80-raised);
+  color: var(--v80-ink);
+}
+.sillage-2026 .v116-impact-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--v80-line);
+}
+.sillage-2026 .v116-impact-line strong {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 760px) {
+  .sillage-2026 .v116-bank-status {
+    padding: 12px;
+    font-size: 13px;
+  }
+  .sillage-2026 .v116-bank-status summary {
+    min-height: 44px;
+    display: list-item;
+  }
+  .sillage-2026 .v116-bank-account {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sillage-2026 .v116-bank-account button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .sillage-2026 .v116-impact-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}
+@media (max-width: 760px) {
+  .sillage-2026 #v41-bank-dialog .v41-form {
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .sillage-2026 #v41-bank-dialog .v41-form label {
+    margin: 0;
+    gap: 6px;
+  }
+  .sillage-2026 #v116-bank-context {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+  }
+  .sillage-2026 #v41-bank-dialog .v41-bank-summary {
+    scroll-margin-top: 78px;
+  }
+}
+/* Opaque sticky heading prevents scrolled controls showing through it. */
+@media (max-width: 760px) {
+  html[data-theme] .sillage-2026 #v41-bank-dialog .dialog-heading {
+    background: var(--v80-surface) !important;
+    z-index: 5;
+  }
+}
+html[data-theme] .sillage-2026 #v116-bank-impact {
+  background: var(--v80-raised) !important;
+  border-color: var(--v80-line) !important;
+  color: var(--v80-ink) !important;
+}

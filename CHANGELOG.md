@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.6.0 — comprendre et vérifier son disponible
+
+Les lignes Solde bancaire inclus et Argent protégé ouvrent le détail du calcul actuel ou le chemin quotidien de la prévision. Le tableau de bord indique les comptes inclus à vérifier, la dernière validation et les vérifications devenues obsolètes. Le rapprochement montre le solde enregistré avant saisie et un aperçu du disponible actuel et des minimums sur 30/60/90 jours si ce seul solde était corrigé. L’aperçu utilise le moteur canonique, sans écriture. Les recherches de doublons et de transactions manquantes existantes restent accessibles. Une modification du compte ou des opérations invalide l’aperçu affiché; toute correction exige toujours une action explicite et une note. Sur téléphone, le résultat prend le focus après comparaison. Aucun changement des règles de calcul, des enveloppes ou des remboursements de carte.
+
 ## 11.5.2 — épicerie toujours visible
 
 Le suivi partagé reste visible avant la première période : montant prévu et date de début. Sans calendrier, la carte présente la réserve actuelle et indique la configuration manquante. Si aucune enveloppe ne peut être identifiée, un état de configuration remplace la disparition de la carte. Les achats anticipés associés à la première échéance sont inclus. Le lien existant reste valide; calcul du Safe-to-Spend conservé.

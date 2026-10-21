@@ -1912,8 +1912,41 @@ const handleRequest = async (req, res) => {
       const ids = tools80.splitApply(x);
       return reply(res, 200, { ...snapshot(), split_ids: ids });
     }
-    if (req.url === "/api/workspace/reconcile")
-      return reply(res, 200, tools80.reconcile(x));
+    if (req.url === "/api/workspace/reconcile") {
+      const result = tools80.reconcile(x),
+        original = forecastInput();
+      const summarize = (args) => {
+        const cash = args.accounts
+          .filter((a) => a.included && a.kind !== "credit")
+          .reduce((n, a) => n + a.balance_cents, 0);
+        const safe =
+          cash -
+          args.envelopes.reduce((n, e) => n + e.reserved_cents, 0) -
+          cardEnvelopeTotal(args);
+        const days = buildForecast(args).days;
+        return {
+          current_cents: safe,
+          minimums: Object.fromEntries(
+            [30, 60, 90].map((n) => [
+              n,
+              Math.min(safe, ...days.slice(0, n).map((d) => d.safe_cents)),
+            ]),
+          ),
+        };
+      };
+      const changed = {
+        ...original,
+        accounts: original.accounts.map((a) => ({
+          ...a,
+          balance_cents:
+            a.id === result.account.id ? result.bank_cents : a.balance_cents,
+        })),
+      };
+      return reply(res, 200, {
+        ...result,
+        safe_impact: { before: summarize(original), after: summarize(changed) },
+      });
+    }
     if (req.url === "/api/budget/start-preview")
       return reply(res, 200, globalBudget.startPreview(x));
     if (req.url === "/api/budget/start-apply") {
@@ -2178,7 +2211,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.5.2) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (11.6.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

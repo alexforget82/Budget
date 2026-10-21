@@ -42,7 +42,7 @@ Les composants conservent leur ordre dans la couche `application`. Les variables
 
 Trois priorités redondantes ont été retirées et vérifiées; les autres ne sont pas déclarées inutiles. Leur retrait futur nécessite des comparaisons supplémentaires, notamment pour les styles intégrés utilisés par l’outil de contraste.
 
-`refactor-parity-ui.py` compare 20 combinaisons de vue/thème sur ordinateur au code v11.3 : propriétés CSS visibles identiques et données financières identiques. Depuis la v11.5, le téléphone est volontairement remanié et vérifié séparément par `mobile-v115-ui.py`. `mobile-ui.js`, initialisé en dernier, déplace les contrôles existants dans des sections repliables et restaure leurs positions sur ordinateur; il ne modifie aucun calcul. Les URL d’entrée, modules et styles portent une version; le serveur n’accepte ces variantes que pour sa liste fermée de fichiers publics.
+`refactor-parity-ui.py` compare 20 combinaisons de vue/thème sur ordinateur au code v11.3 : propriétés CSS visibles identiques et données financières identiques. Le panneau de vérification ajouté en v11.6 est exclu de cette comparaison historique et possède son propre parcours `confidence-v116-ui.py`. Depuis la v11.5, le téléphone est volontairement remanié et vérifié séparément par `mobile-v115-ui.py`. `mobile-ui.js`, initialisé en dernier, déplace les contrôles existants dans des sections repliables et restaure leurs positions sur ordinateur; il ne modifie aucun calcul. Les URL d’entrée, modules et styles portent une version; le serveur n’accepte ces variantes que pour sa liste fermée de fichiers publics.
 
 ## Installation et développement
 

@@ -47,6 +47,7 @@ export function initialize(runtime) {
       bankError.textContent = "";
       bankResult.replaceChildren();
       bankBalance.value = "";
+      bankContext();
       bank.d.showModal();
       bankBalance.focus();
     };
@@ -239,12 +240,32 @@ export function initialize(runtime) {
       bankBalance = n("input"),
       bankSince = n("input"),
       bankError = n("p", undefined, "v4-error"),
-      bankResult = n("div");
+      bankResult = n("div"),
+      bankContextCopy = n("p", undefined, "v116-bank-context");
+    let bankLedgerStamp = "";
+    bankContextCopy.id = "v116-bank-context";
+    bankContextCopy.setAttribute("role", "status");
+    function bankContext() {
+      const account = current?.accounts.find(
+        (a) => String(a.id) === bankAccount.value,
+      );
+      bankContextCopy.textContent = account
+        ? "Solde Sillage : " +
+          cash(account.balance_cents) +
+          (account.kind === "credit"
+            ? " dû sur la carte · dette exclue du disponible"
+            : account.included
+              ? " · compte inclus dans le disponible"
+              : " · compte exclu du disponible")
+        : "Ajoutez un compte avant de comparer les soldes.";
+      compare.disabled = !account;
+    }
     bankAccount.name = "account_id";
     bankAccount.required = true;
     bankBalance.type = "number";
     bankBalance.name = "balance";
     bankBalance.step = ".01";
+    bankBalance.inputMode = "decimal";
     bankBalance.required = true;
     bankSince.type = "date";
     bankSince.name = "since";
@@ -259,6 +280,7 @@ export function initialize(runtime) {
     compare.type = "submit";
     bankForm.append(
       field("Compte à vérifier", bankAccount),
+      bankContextCopy,
       field("Solde bancaire actuel ($)", bankBalance),
       field("Opérations à examiner depuis le", bankSince),
       compare,
@@ -287,17 +309,20 @@ export function initialize(runtime) {
             bankTicket++;
             bankError.textContent = "";
             bankResult.replaceChildren();
+            bankContext();
             bank.d.showModal();
           },
           "v4-button v4-primary",
         ),
       );
     bankForm.oninput = () => {
+      bankContext();
       bankTicket++;
       bankResult.replaceChildren();
       bankError.textContent = "";
     };
     bankForm.onchange = () => {
+      bankContext();
       bankTicket++;
       bankResult.replaceChildren();
     };
@@ -332,6 +357,46 @@ export function initialize(runtime) {
           n("strong", "Écart : " + cash(out.delta_cents)),
         );
         bankResult.append(summary);
+        if (out.safe_impact) {
+          const impact = n("section", undefined, "v116-bank-impact");
+          impact.id = "v116-bank-impact";
+          impact.append(
+            n("h3", "Si vous corrigiez seulement ce solde"),
+            n(
+              "p",
+              "Aperçu sans enregistrement. Les réserves et échéances sont conservées; aucun achat ni revenu n’est créé.",
+              "v4-footnote",
+            ),
+          );
+          const line = (label, before, after) => {
+            const r = n("div", undefined, "v116-impact-line");
+            r.append(
+              n("span", label),
+              n("strong", cash(before) + " → " + cash(after)),
+            );
+            impact.append(r);
+          };
+          line(
+            "Disponible maintenant",
+            out.safe_impact.before.current_cents,
+            out.safe_impact.after.current_cents,
+          );
+          for (const days of [30, 60, 90])
+            line(
+              "Minimum prévu · " + days + " jours",
+              out.safe_impact.before.minimums[days],
+              out.safe_impact.after.minimums[days],
+            );
+          if (out.account.kind === "credit")
+            impact.append(
+              n(
+                "p",
+                "Une correction du solde dû ne programme pas de remboursement de carte et ne réserve pas cette dette automatiquement.",
+                "v4-footnote",
+              ),
+            );
+          bankResult.append(impact);
+        }
         if (out.delta_cents === 0)
           bankResult.append(
             b(
@@ -661,6 +726,16 @@ export function initialize(runtime) {
           correction.append(field("Note obligatoire", note), save);
           bankResult.append(correction);
         }
+        if (matchMedia("(max-width:760px)").matches) {
+          summary.tabIndex = -1;
+          summary.focus({ preventScroll: true });
+          summary.scrollIntoView({ block: "start" });
+          const heading = bank.inner.querySelector(".dialog-heading");
+          bank.d.scrollTop +=
+            summary.getBoundingClientRect().top -
+            heading.getBoundingClientRect().bottom -
+            12;
+        }
       } catch (err) {
         bankError.textContent = err.message;
       } finally {
@@ -779,6 +854,21 @@ export function initialize(runtime) {
       if (items.some((i) => String(i.id) === old)) select.value = old;
     }
     function draw(s) {
+      const stamp = JSON.stringify([
+        s.accounts,
+        s.calendar_actuals,
+        s.calendar_transfers,
+        s.envelopes,
+        s.recurring,
+        s.forecast,
+      ]);
+      if (bankLedgerStamp && bankLedgerStamp !== stamp && bank.d.open) {
+        bankTicket++;
+        bankResult.replaceChildren();
+        bankError.textContent =
+          "Les comptes, opérations ou prévisions ont changé. Comparez de nouveau les soldes.";
+      }
+      bankLedgerStamp = stamp;
       current = s;
       version.textContent = "v" + s.version.replace(/\.0$/, "");
       version.title = "Version du serveur : " + s.version;
@@ -787,6 +877,7 @@ export function initialize(runtime) {
         s.support41?.undo.error ||
         "Annulation protégée de la dernière modification";
       options(bankAccount, s.accounts, (a) => a.name);
+      bankContext();
       options(
         profileSelect,
         s.support41?.profiles || [],

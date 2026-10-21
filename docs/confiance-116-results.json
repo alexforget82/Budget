@@ -1,0 +1,321 @@
+{
+  "version": "11.6.0",
+  "node_passed": 97,
+  "api_passed": 195,
+  "python_initial": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 0,
+      "seconds": 9.9
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 0,
+      "seconds": 7.3
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 0,
+      "seconds": 20.0
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 0,
+      "seconds": 6.2
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 0,
+      "seconds": 2.8
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 0,
+      "seconds": 5.7
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 7.1
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 9.3
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 0,
+      "seconds": 4.9
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 4.5
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 4.0
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 12.8
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 16.7
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 6.2
+    },
+    {
+      "test": "calendar-budget-v113-ui.py",
+      "code": 0,
+      "seconds": 4.5
+    },
+    {
+      "test": "calendar-envelope-renewals-ui.py",
+      "code": 0,
+      "seconds": 1.9
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 0,
+      "seconds": 13.5
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 0,
+      "seconds": 16.1
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 5.0
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 0,
+      "seconds": 13.0
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.9
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 3.1
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 3.8
+    },
+    {
+      "test": "chatgpt-export-ui.py",
+      "code": 0,
+      "seconds": 4.1
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 6.1
+    },
+    {
+      "test": "confidence-v116-ui.py",
+      "code": 0,
+      "seconds": 10.3
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.2
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 12.4
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 7.5
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 6.0
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 9.0
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 0,
+      "seconds": 12.0
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.4
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 3.4
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.3
+    },
+    {
+      "test": "migration-rollback-ui.py",
+      "code": 0,
+      "seconds": 2.3
+    },
+    {
+      "test": "mobile-v115-ui.py",
+      "code": 0,
+      "seconds": 31.8
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 0,
+      "seconds": 20.6
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 7.5
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 17.1
+    },
+    {
+      "test": "refactor-parity-ui.py",
+      "code": 1,
+      "seconds": 20.7
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 4.3
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 26.1
+    },
+    {
+      "test": "security-view-ui.py",
+      "code": 0,
+      "seconds": 1.3
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 0,
+      "seconds": 2.4
+    },
+    {
+      "test": "shared-grocery-ui.py",
+      "code": 0,
+      "seconds": 1.6
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 1.8
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.4
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 2.1
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 0,
+      "seconds": 14.5
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 0,
+      "seconds": 10.0
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 4.2
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 6.1
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 4.8
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 4.4
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 3.9
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 12.0
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 0,
+      "seconds": 7.0
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 9.6
+    }
+  ],
+  "rechecks": [
+    {
+      "test": "refactor-parity-ui.py",
+      "code": 0,
+      "reason": "New bank status panel excluded from historical style comparison; financial equality retained.",
+      "log": "PASS: 20 desktop view/theme combinations retain identical visible computed styles; mobile intentionally redesigned and verified separately; canonical 90-day forecasts, planning, accounts, reserves and ledger are identical to pinned 11.3. All comparisons use temporary data.\n"
+    },
+    {
+      "test": "confidence-v116-ui.py",
+      "code": 0,
+      "reason": "Final mobile heading, visible result and stale preview checks.",
+      "log": "PASS: clickable exact current/future equations, account verification status, read-only bank impact, stale preview invalidation, explicit checkpoint, two themes and three widths. Captures: /tmp/sillage-confidence-116-ebbkfhu9\n"
+    }
+  ]
+}

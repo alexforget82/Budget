@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v11.5.2](https://github.com/alexforget82/Budget/archive/refs/tags/v11.5.2.zip).
+Téléchargez et décompressez [la version v11.6.0](https://github.com/alexforget82/Budget/archive/refs/tags/v11.6.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -26,6 +26,12 @@ Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répert
 - **Récurrences** programme les revenus, factures et virements. **Enveloppes** protège les sommes du Safe-to-Spend, à la date prévue ou plus tôt si alimentées. Chaque période future protège son propre montant, même si le report du restant est désactivé; les soldes bancaires réels restent inchangés.
 - Enregistrez une dépense réelle dans **Transactions** et confirmez l’association proposée si elle remplace une échéance prévue.
 - **Disponible jour par jour** permet de consulter les prévisions. La vue simplifiée utilise les mêmes calculs. Elle affiche aussi le restant de l’enveloppe active nommée « Épicerie » (accent facultatif), son prochain renouvellement et ses achats associés, sans exposer les autres enveloppes ni les comptes. Avant le début de la première période, la carte affiche le montant prévu et la date de début; elle reste également visible si le calendrier doit être configuré.
+
+## Comprendre et vérifier le disponible
+
+Depuis le tableau de bord, **Pourquoi ce montant ?** explique le solde moins les protections. Cliquez sur les lignes soulignées pour ouvrir les comptes ou les enveloppes concernés; choisissez une date pour suivre les mouvements prévus.
+
+**Soldes à vérifier** ouvre le suivi des comptes inclus. **Rapprocher avec ma banque** compare le solde que vous saisissez avec Sillage et montre l’effet d’une éventuelle correction sur le disponible et les minimums 30/60/90 jours. Comparer ne modifie rien. Examinez d’abord les opérations et les pistes de doublons; une correction reste explicite et motivée. « Vérifié » signifie comparé à votre saisie, sans connexion bancaire automatique.
 
 ## Sur iPhone
 

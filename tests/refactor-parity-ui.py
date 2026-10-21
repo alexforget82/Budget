@@ -12,7 +12,7 @@ try:
  for i in range(8):f.transaction(aid,-10-i,description='Achat '+str(i),category_id=cid)
  before=f.get('/api/backup/export')['tables'];financial=f.get('/api/state');samples={};differences=[]
  selector='.workspace-header,.app-shell-nav,.view-active,.view-active button,.view-active input,.view-active select,.view-active .v60-budget-row,.view-active .ledger-row,.view-active summary,.view-active h2,.view-active h3,.view-active strong'
- probe='''(selector)=>[...document.querySelectorAll(selector)].filter(n=>n.getClientRects().length).map((n,i)=>{const c=getComputedStyle(n);return {key:n.id||n.tagName+':'+n.className+':'+i,css:Object.fromEntries(['display','position','color','backgroundColor','fontSize','fontWeight','lineHeight','padding','margin','borderRadius','gridTemplateColumns'].map(k=>[k,c[k]]))}})'''
+ probe='''(selector)=>[...document.querySelectorAll(selector)].filter(n=>n.getClientRects().length&&!n.closest("#v116-bank-status")).map((n,i)=>{const c=getComputedStyle(n);return {key:n.id||n.tagName+':'+n.className+':'+i,css:Object.fromEntries(['display','position','color','backgroundColor','fontSize','fontWeight','lineHeight','padding','margin','borderRadius','gridTemplateColumns'].map(k=>[k,c[k]]))}})'''
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},reduced_motion='reduce');errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   def capture(version):
