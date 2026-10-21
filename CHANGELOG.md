@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 11.5.1 — épicerie dans la vue simplifiée
+
+Carte de suivi de l’enveloppe active Épicerie : budget de la période, achats associés, restant et prochain renouvellement. Liste d’achats repliable, libellés rendus comme texte, aucun compte ou autre enveloppe exposé. Le montant et le calendrier viennent de l’enveloppe existante; aucun montant de 230 $ ou 203 $ n’est imposé. Le report est respecté lorsque le renouvellement courant a été appliqué. Les achats associés à une autre période ne sont pas déduits deux fois. Actualisation et révocation du lien effacent les données devenues indisponibles. Calcul du Safe-to-Spend conservé.
+
 ## 11.5.0 — interface iPhone
 
 Navigation rapide en bas, en-tête compact, version en bas à gauche, options secondaires repliées sur téléphone. Budget : mois lisible et montants sans coupure. Transactions : filtres regroupés pour laisser voir les opérations. Prévision : compte et scénarios regroupés, résumé compact. Calendrier mobile initial en semaine avec choix du mois conservé. Formulaires adaptés au toucher, fenêtres en bas d’écran et prise en compte des zones de sécurité. Vue simplifiée plus compacte. Contrôles et gestionnaires existants réutilisés, calculs conservés; disposition ordinateur restaurée au changement de largeur.

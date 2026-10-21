@@ -563,49 +563,8 @@ function forecastInput() {
     similarDescription,
   };
 }
-function snapshot() {
-  applyEnvelopeRenewals();
-  const accounts = q("SELECT * FROM accounts ORDER BY id DESC"),
-    envelopes = q("SELECT * FROM envelopes ORDER BY id DESC"),
-    recurring = q("SELECT * FROM recurring ORDER BY id DESC"),
-    overrides = q(
-      "SELECT * FROM recurring_overrides ORDER BY occurrence_on,id",
-    );
-  const cash = accounts
-      .filter((a) => a.kind !== "credit" && a.included)
-      .reduce((s, a) => s + a.balance_cents, 0),
-    envelopeReserved = envelopes.reduce((s, e) => s + e.reserved_cents, 0),
-    cardReserved = cardEnvelopeTotal({
-      accounts,
-      envelopes,
-      transactions: q("SELECT * FROM transactions"),
-      transfers: q("SELECT * FROM account_transfers"),
-      today: todayLocal(),
-    }),
-    reserved = envelopeReserved + cardReserved;
-  const manual = q("SELECT * FROM reconciliation_links");
-  const envelopeOverrides = q(
-      "SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on",
-    ),
-    moves = q("SELECT * FROM recurring_moves");
-  const simulation = buildForecast(forecastInput());
-  const budgetConfig = monthlyBudget.config();
-  for (const row of simulation.rows) {
-    if (row.source === "recurring")
-      row.category_id = budgetConfig.recurring[row.recurring_id] || null;
-  }
-  for (const row of simulation.rows)
-    row.signature = createHash("sha256")
-      .update(JSON.stringify(row))
-      .digest("hex");
-  const projected = simulation.days;
-  const windows = spendingWindows(
-    accounts,
-    recurring,
-    projected.slice(0, 30),
-    cash - reserved,
-  );
-  const envelopeDetails = envelopes.map((raw) => {
+function currentEnvelopeDetails(envelopes) {
+  return envelopes.map((raw) => {
     const e = monthlyBudget.enrichEnvelope(raw);
     const next = (() => {
       if (!e.active || e.frequency === "none" || !e.start_on) return null;
@@ -675,6 +634,50 @@ function snapshot() {
       period_start: periodStart,
     };
   });
+}
+function snapshot() {
+  applyEnvelopeRenewals();
+  const accounts = q("SELECT * FROM accounts ORDER BY id DESC"),
+    envelopes = q("SELECT * FROM envelopes ORDER BY id DESC"),
+    recurring = q("SELECT * FROM recurring ORDER BY id DESC"),
+    overrides = q(
+      "SELECT * FROM recurring_overrides ORDER BY occurrence_on,id",
+    );
+  const cash = accounts
+      .filter((a) => a.kind !== "credit" && a.included)
+      .reduce((s, a) => s + a.balance_cents, 0),
+    envelopeReserved = envelopes.reduce((s, e) => s + e.reserved_cents, 0),
+    cardReserved = cardEnvelopeTotal({
+      accounts,
+      envelopes,
+      transactions: q("SELECT * FROM transactions"),
+      transfers: q("SELECT * FROM account_transfers"),
+      today: todayLocal(),
+    }),
+    reserved = envelopeReserved + cardReserved;
+  const manual = q("SELECT * FROM reconciliation_links");
+  const envelopeOverrides = q(
+      "SELECT * FROM envelope_budget_overrides ORDER BY occurrence_on",
+    ),
+    moves = q("SELECT * FROM recurring_moves");
+  const simulation = buildForecast(forecastInput());
+  const budgetConfig = monthlyBudget.config();
+  for (const row of simulation.rows) {
+    if (row.source === "recurring")
+      row.category_id = budgetConfig.recurring[row.recurring_id] || null;
+  }
+  for (const row of simulation.rows)
+    row.signature = createHash("sha256")
+      .update(JSON.stringify(row))
+      .digest("hex");
+  const projected = simulation.days;
+  const windows = spendingWindows(
+    accounts,
+    recurring,
+    projected.slice(0, 30),
+    cash - reserved,
+  );
+  const envelopeDetails = currentEnvelopeDetails(envelopes);
   const sts_breakdown = {
     credit: [],
     card_envelopes: simulation.card_envelope_funds.map((f) => ({
@@ -1392,6 +1395,67 @@ function sharedPath() {
   const token = sharedToken();
   return token ? "/shared/" + token : null;
 }
+// This projection exposes only the grocery envelope, never accounts or other purchases.
+function sharedGrocery(envelopes) {
+  const matches = envelopes.filter(
+    (e) =>
+      e.active &&
+      e.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase() === "epicerie",
+  );
+  // An ambiguous name must not choose an arbitrary envelope.
+  if (matches.length !== 1) return null;
+  const e = monthlyBudget.enrichEnvelope(matches[0]);
+  const detail = currentEnvelopeDetails([e])[0];
+  if (!detail.period_start) return null;
+  const period = detail.period_start;
+  const scheduled = envelopeBudgetDates(e, period, period, nextOccurrence)[0];
+  const budget =
+    q(
+      "SELECT budget_cents FROM envelope_budget_overrides WHERE envelope_id=? AND occurrence_on=?",
+      e.id,
+      period,
+    )[0]?.budget_cents ??
+    scheduled?.amount_cents ??
+    e.budget_cents;
+  const purchases = q(
+    `SELECT t.happened_on,t.description,t.amount_cents
+    FROM transactions t LEFT JOIN envelope_actual_links l ON l.transaction_id=t.id
+    WHERE t.envelope_id=? AND t.happened_on<=? AND t.amount_cents<0
+      AND ((l.transaction_id IS NOT NULL AND l.occurrence_on=?)
+        OR (l.transaction_id IS NULL AND t.happened_on>=?))
+    ORDER BY t.happened_on DESC,t.id DESC`,
+    e.id,
+    todayLocal(),
+    period,
+    period,
+  );
+  let remaining = budget - detail.spent_cents;
+  const renewed = q(
+    "SELECT 1 FROM envelope_renewal_log WHERE envelope_id=? AND occurrence_on=?",
+    e.id,
+    period,
+  ).length;
+  if (e.rollover && renewed) {
+    const futureFunding = Object.entries(e.advance_funding || {})
+      .filter(([date]) => date > todayLocal())
+      .reduce((n, [, a]) => n + a.remaining_cents, 0);
+    remaining = Math.max(0, e.reserved_cents - futureFunding);
+  }
+  return {
+    name: e.name,
+    period_start: period,
+    next_renewal: detail.next_renewal,
+    budget_cents: budget,
+    spent_cents: detail.spent_cents,
+    remaining_cents: remaining,
+    rollover: !!e.rollover,
+    purchases,
+  };
+}
 function sharedSummary() {
   applyEnvelopeRenewals();
   const args = forecastInput(),
@@ -1409,6 +1473,7 @@ function sharedSummary() {
     highest = first.reduce((a, b) => (b.cash_cents > a.cash_cents ? b : a));
   return {
     updated_at: new Date().toISOString(),
+    grocery: sharedGrocery(args.envelopes),
     current_safe_cents: safe,
     daily: days.map((d) => ({ date: d.date, safe_cents: d.safe_cents })),
     periods: Object.fromEntries(
@@ -2105,7 +2170,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (11.5.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (11.5.1) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

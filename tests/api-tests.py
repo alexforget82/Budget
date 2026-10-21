@@ -34,6 +34,47 @@ class BudgetAPI(unittest.TestCase):
  def import_rows(self,payload,selected=None,**extra):
   preview=self.post('/api/import/preview',payload)
   return self.post('/api/import/commit',{**payload,'fingerprint':preview['fingerprint'],'selected_rows':selected or [r['row'] for r in preview['rows'] if not r.get('error') and not r.get('duplicate')],**extra})
+ def test_shared_grocery_weekly_budget_purchases_and_privacy(self):
+  aid=self.account();card=self.account(kind='credit',balance=0)
+  self.post('/api/envelopes',{'name':'Épicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':DAY,'rollover':False,'forecast_spend':False})
+  eid=next(e['id'] for e in self.get('/api/state')['envelopes'] if e['name']=='Épicerie')
+  self.post('/api/envelopes',{'name':'Secret personnel','reserved':100,'budget':0,'frequency':'none','forecast_spend':False})
+  self.transaction(card,-50,envelope_id=eid,description='<b>Épicerie du lundi</b>')
+  self.transaction(aid,-9,description='Achat confidentiel')
+  path=self.post('/api/sharing',{'action':'create'})['path'];before=self.get('/api/backup/export')['tables'];g=self.get(path+'/data')['grocery']
+  self.assertEqual((g['budget_cents'],g['spent_cents'],g['remaining_cents']),(23000,5000,18000));self.assertEqual(g['next_renewal'],self.future73(7));self.assertEqual(g['period_start'],DAY)
+  self.assertEqual(set(g['purchases'][0]),{'description','amount_cents','happened_on'});self.assertEqual(len(g['purchases']),1)
+  self.assertNotIn('Secret personnel',json.dumps(g));self.assertNotIn('Achat confidentiel',json.dumps(g));self.assertEqual(self.get('/api/backup/export')['tables'],before)
+  self.transaction(aid,-20,envelope_id=eid);self.assertEqual(self.get(path+'/data')['grocery']['remaining_cents'],16000)
+  self.transaction(aid,-200,envelope_id=eid);self.assertEqual(self.get(path+'/data')['grocery']['remaining_cents'],-4000)
+ def test_shared_grocery_missing_ambiguous_and_inactive(self):
+  self.account();path=self.post('/api/sharing',{'action':'create'})['path'];self.assertIsNone(self.get(path+'/data')['grocery'])
+  for name in ['Epicerie','Épicerie']:self.post('/api/envelopes',{'name':name,'reserved':0,'budget':203,'frequency':'weekly','start_on':DAY,'rollover':False,'forecast_spend':False})
+  self.assertIsNone(self.get(path+'/data')['grocery'])
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('UPDATE envelopes SET active=0')
+  self.assertIsNone(self.get(path+'/data')['grocery'])
+ def test_shared_grocery_period_links_overrides_and_renewal(self):
+  aid=self.account();self.post('/api/envelopes',{'name':'Epicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':DAY,'rollover':False,'forecast_spend':False});eid=next(e['id'] for e in self.get('/api/state')['envelopes'] if e['name']=='Epicerie')
+  prior=(datetime.date.fromisoformat(DAY)-datetime.timedelta(days=1)).isoformat()
+  self.transaction(aid,-10,envelope_id=eid,happened_on=prior,description='Achat anticipé courant');self.transaction(aid,-15,envelope_id=eid,description='Achat semaine suivante')
+  tx=self.get('/api/state')['transactions']
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:
+   for t in tx:
+    occurrence=DAY if t['description']=='Achat anticipé courant' else self.future73(7)
+    db.execute('INSERT INTO envelope_actual_links(transaction_id,envelope_id,occurrence_on) VALUES(?,?,?)',(t['id'],eid,occurrence))
+   db.execute('INSERT INTO envelope_budget_overrides(envelope_id,occurrence_on,budget_cents) VALUES(?,?,?)',(eid,DAY,20300))
+  path=self.post('/api/sharing',{'action':'create'})['path'];g=self.get(path+'/data')['grocery'];self.assertEqual((g['budget_cents'],g['spent_cents'],g['remaining_cents']),(20300,1000,19300));self.assertEqual(len(g['purchases']),1)
+  # Move an old period into history; the current period must not keep its purchases.
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:
+   db.execute('UPDATE envelope_actual_links SET occurrence_on=? WHERE envelope_id=?',(prior,eid))
+  g=self.get(path+'/data')['grocery'];self.assertEqual(g['spent_cents'],0);self.assertEqual(g['remaining_cents'],20300);self.assertEqual(g['purchases'],[])
+ def test_shared_grocery_rollover_and_overbudget(self):
+  aid=self.account();self.post('/api/envelopes',{'name':'Epicerie','reserved':30,'budget':230,'frequency':'weekly','start_on':DAY,'rollover':True,'forecast_spend':False})
+  eid=next(e['id'] for e in self.get('/api/state')['envelopes'] if e['name']=='Epicerie')
+  # A true carried balance, not advance funding of the initial period.
+  with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('UPDATE envelopes SET reserved_cents=26000 WHERE id=?',(eid,))
+  path=self.post('/api/sharing',{'action':'create'})['path'];self.transaction(aid,-50,envelope_id=eid)
+  g=self.get(path+'/data')['grocery'];self.assertEqual(g['remaining_cents'],21000);self.assertTrue(g['rollover'])
  def test_v73_advance_follows_changed_schedule_and_deleted_envelope_is_pruned(self):
   self.account();first=self.future73(2);second=self.future73(4);payload={'name':'Date modifiée','reserved':0,'budget':230,'frequency':'weekly','start_on':first,'rollover':True,'forecast_spend':False};s=self.post('/api/envelopes',payload);eid=s['envelopes'][0]['id'];self.fund73(eid,100);s=self.post('/api/envelopes/update',{**payload,'id':eid,'reserved':100,'start_on':second});self.assertEqual(next(d for d in s['forecast'] if d['date']==first)['safe_cents'],90000);self.assertEqual(next(d for d in s['forecast'] if d['date']==second)['safe_cents'],77000);self.post('/api/envelopes/delete',{'id':eid});backup=self.get('/api/backup/export');self.post('/api/backup/validate',{'backup':backup});self.assertNotIn(str(eid),json.loads(next(a['value'] for a in backup['tables']['app_settings'] if a['key']=='envelope_advances_v73')))
  def test_v73_backup_rejects_corrupt_advance_and_demo_cannot_create_real_share(self):
@@ -233,7 +274,7 @@ class BudgetAPI(unittest.TestCase):
   self.account();future=self.future73();payload={'name':'Avance','reserved':0,'budget':230,'frequency':'weekly','start_on':future,'rollover':True,'forecast_spend':False};s=self.post('/api/envelopes',payload);eid=s['envelopes'][0]['id'];self.fund73(eid,100);s=self.post('/api/envelopes/update',{**payload,'id':eid,'reserved':60});self.assertEqual(s['safe_cents'],94000);self.assertEqual(next(d for d in s['forecast'] if d['date']==future)['safe_cents'],77000);backup=self.get('/api/backup/export');self.post('/api/support/undo',{'token':s['support41']['undo']['token']});self.assertEqual(self.get('/api/state')['safe_cents'],90000);self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.stop();self.start();self.assertEqual(next(d for d in self.get('/api/state')['forecast'] if d['date']==future)['safe_cents'],77000)
   self.assertIn('envelope_advances_v73',[a['key'] for a in backup['tables']['app_settings']]);self.post('/api/envelopes/fund',{'id':eid,'amount':10,'expected_reserved_cents':0},400)
  def test_v73_shared_summary_only_expected_fields_rotation_revocation(self):
-  self.account();self.assertIsNone(self.get('/api/sharing')['path']);path=self.post('/api/sharing',{'action':'create'})['path'];html=self.call(path,raw=True);self.assertIn('Sillage',html);data=self.get(path+'/data');self.assertEqual(set(data),{'updated_at','current_safe_cents','daily','periods','highest_30','lowest_30'});self.assertEqual(set(data['periods']),{'30','60','90'});self.assertEqual(data['periods']['30']['safe_cents'],100000);self.assertEqual(data['highest_30']['amount_cents'],100000)
+  self.account();self.assertIsNone(self.get('/api/sharing')['path']);path=self.post('/api/sharing',{'action':'create'})['path'];html=self.call(path,raw=True);self.assertIn('Sillage',html);data=self.get(path+'/data');self.assertEqual(set(data),{'updated_at','current_safe_cents','daily','periods','highest_30','lowest_30','grocery'});self.assertEqual(set(data['periods']),{'30','60','90'});self.assertEqual(data['periods']['30']['safe_cents'],100000);self.assertEqual(data['highest_30']['amount_cents'],100000)
   self.call(path+'/api/state',status=403);self.post(path+'/data',{'amount':100},403);self.call('/shared/'+'a'*64+'/data',status=403);self.assertNotIn(path.split('/')[-1],json.dumps(self.get('/api/backup/export')))
   second=self.post('/api/sharing',{'action':'create'})['path'];self.assertNotEqual(second,path);self.call(path,status=403);self.post('/api/sharing',{'action':'revoke'});self.call(second+'/data',status=403);self.assertEqual(self.get('/api/state')['cash_cents'],100000)
  def test_v73_shared_private_view_cannot_read_owner_api_or_write(self):
