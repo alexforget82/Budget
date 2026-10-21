@@ -53,10 +53,10 @@ test('period exceptions, zero allocations and stopped schedules remain authorita
  const zero=simulate({}, {envelopeOverrides:[{envelope_id:1,occurrence_on:'2026-10-29',budget_cents:0}]});
  assert.equal(zero.days.find(d=>d.date==='2026-10-29').safe_cents,77000);
 });
-test('early bank/card purchases use the same period budget even without advance funding',()=>{
+test('explicit early bank/card purchases use the same period budget even without advance funding',()=>{
  for(const card of [false,true])for(const credit of [0,10000,23000]){
   const effect=Math.min(credit,10000),accountId=card?2:1;
-  const result=simulate({reserved_cents:credit-effect,...(credit?{advance_funding:{[start]:{amount_cents:credit,remaining_cents:credit-effect}}}:{})},{accounts:[{id:1,kind:'checking',included:1,balance_cents:card?100000:90000},...(card?[{id:2,kind:'credit',included:0,balance_cents:10000}]:[])],transactions:[{id:1,account_id:accountId,envelope_id:1,amount_cents:-10000,envelope_effect_cents:effect,happened_on:today,affects_balance:1}]});
+  const result=simulate({reserved_cents:credit-effect,...(credit?{advance_funding:{[start]:{amount_cents:credit,remaining_cents:credit-effect}}}:{})},{accounts:[{id:1,kind:'checking',included:1,balance_cents:card?100000:90000},...(card?[{id:2,kind:'credit',included:0,balance_cents:10000}]:[])],envelopeLinks:[{transaction_id:1,envelope_id:1,occurrence_on:start}],transactions:[{id:1,account_id:accountId,envelope_id:1,amount_cents:-10000,envelope_effect_cents:effect,happened_on:today,affects_balance:1}]});
   assert.equal(result.days.find(d=>d.date===start).safe_cents,77000,JSON.stringify({card,credit}));
   assert.equal(result.days.find(d=>d.date==='2026-10-29').safe_cents,54000);
  }

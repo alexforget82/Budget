@@ -237,7 +237,8 @@ export const cardEnvelopeTotal = (args) =>
 
 // An early purchase must not be allocated again at the start of its period.
 // Protected budgets also recognize purchases on included bank accounts.
-// Explicit period associations take priority.
+// Only an explicit period association makes an earlier purchase consume a future period.
+// Merely selecting an envelope does not assign an expense before its first start date.
 export function earlyEnvelopePurchases(
   { accounts = [], transactions = [], envelopeLinks = [] },
   envelope,
@@ -261,10 +262,7 @@ export function earlyEnvelopePurchases(
         t.affects_balance !== 0 &&
         t.amount_cents < 0 &&
         t.happened_on < on &&
-        (links.has(t.id)
-          ? links.get(t.id).occurrence_on === on
-          : envelope.start_on === on &&
-            t.happened_on >= (envelope.planning_since || t.happened_on)),
+        links.get(t.id)?.occurrence_on === on,
     )
     .reduce(
       (n, t) =>

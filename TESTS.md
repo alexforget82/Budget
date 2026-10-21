@@ -1,5 +1,9 @@
 # Vérifications de Sillage
 
+## v13.1.1 — première période d’enveloppe
+
+114 tests Node réussis, dont le cas du 20/27 octobre sur compte bancaire et carte, en budget protégé et en paiement daté. Les tests historiques d’achats anticipés expriment maintenant explicitement l’association à la période future lorsqu’ils la supposent. Un nouveau parcours API vérifie la première période, les semaines suivantes, le redémarrage, l’absence de changements au grand livre, l’association volontaire et le renouvellement réel dû aujourd’hui. Le parcours API de paiement de carte et les parcours UI calendrier/épicerie sont également vérifiés. Les 201 tests de la suite API historique complète passent après clarification des cas d’achat anticipé volontaire. La suite Python complète n’est pas relancée pour ce correctif ciblé.
+
 ## v13.1.0 — paiement réel et confort iPhone
 
 **113 tests Node, 201 tests API historiques et 64 scripts Python réussis.** Le premier passage complet Python donne 64/64. Le nouveau cas API vérifie aperçu sans écriture, paiement partiel, protection d’achat récurrent et d’enveloppe, dette non protégée, compte exclu, soldes réels, minimum projeté, reconnaissance d’un remboursement prévu unique, doublon, confirmation à usage unique et aperçu périmé. Les tests Node supplémentaires vérifient expiration, immutabilité du montant confirmé, données modifiées et échec d’écriture.

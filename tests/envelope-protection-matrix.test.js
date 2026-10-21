@@ -29,10 +29,10 @@ test('partial and full advances cover only one occurrence for every frequency an
   for(let i=0;i<3;i++)assert.equal(result.days.find(d=>d.date===nextOccurrence(start,frequency,i)).safe_cents,1000000-(i+1)*23000);
  }
 });
-test('early actual purchases on Joint and each card are counted once, with or without advance funding',()=>{
+test('explicit early actual purchases on Joint and each card are counted once, with or without advance funding',()=>{
  for(const frequency of frequencies)for(const rollover of [0,1])for(const account_id of [1,2,3,4])for(const credit of [0,10000,23000]){
   const effect=Math.min(credit,10000),bank=account_id===1;
-  const result=forecast({frequency,rollover,reserved_cents:credit-effect,...(credit?{advance_funding:{[start]:{amount_cents:credit,remaining_cents:credit-effect}}}:{})},{accounts:accounts.map(a=>({...a,balance_cents:a.id===1?1000000-(bank?10000:0):a.id===account_id?10000:0})),transactions:[{id:1,account_id,envelope_id:1,amount_cents:-10000,envelope_effect_cents:effect,happened_on:today,affects_balance:1}]});
+  const result=forecast({frequency,rollover,reserved_cents:credit-effect,...(credit?{advance_funding:{[start]:{amount_cents:credit,remaining_cents:credit-effect}}}:{})},{accounts:accounts.map(a=>({...a,balance_cents:a.id===1?1000000-(bank?10000:0):a.id===account_id?10000:0})),envelopeLinks:[{transaction_id:1,envelope_id:1,occurrence_on:start}],transactions:[{id:1,account_id,envelope_id:1,amount_cents:-10000,envelope_effect_cents:effect,happened_on:today,affects_balance:1}]});
   const name=JSON.stringify({frequency,rollover,account_id,credit});
   for(let i=0;i<3;i++)assert.equal(result.days.find(d=>d.date===nextOccurrence(start,frequency,i)).safe_cents,1000000-(i+1)*23000,name);
  }

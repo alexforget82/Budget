@@ -18,3 +18,14 @@ const at=(s,on)=>s.days.find(d=>d.date===on);
 test('230 weekly on CIBC stays protected before any payment and accumulates across weeks',()=>{const s=simulate();assert.equal(at(s,'2026-10-21').safe_cents,100000);for(const [on,safe] of [['2026-10-22',77000],['2026-10-29',54000],['2026-11-05',31000]]){const d=at(s,on);assert.equal(d.cash_cents,100000);assert.equal(d.safe_cents,safe);assert.equal(d.reserved_cents,100000-safe);assert.equal(d.credit_reserved_cents,0);}});
 test('same-day projected card payment consumes the protected amount without another Safe-to-Spend deduction',()=>{const rule={id:1,type:'transfer',description:'Paiement CIBC',active:1,amount_cents:23000,account_id:1,to_account_id:2,start_on:'2026-10-22',frequency:'weekly'};const s=simulate({recurring:[rule]});for(const [on,cash] of [['2026-10-22',77000],['2026-10-29',54000]]){const d=at(s,on);assert.equal(d.cash_cents,cash);assert.equal(d.safe_cents,cash);assert.equal(d.card_envelope_reserved_cents,0);}});
 test('every date reconciles bank cash, unused envelopes and protected card purchases',()=>{const s=simulate();for(const d of s.days){const b=d.bridge;assert.equal(b.opening_cash_cents+b.income_cents+b.expense_cents+b.envelope_cents+b.transfer_cents,d.cash_cents);assert.equal(d.envelope_reserved_cents+d.card_envelope_reserved_cents,d.reserved_cents);assert.equal(d.cash_cents-d.reserved_cents,d.safe_cents);}});
+test('an ordinary purchase before the first period cannot consume that future allocation',()=>{
+ for(const account of [1,2])for(const mode of [0,1]){
+  const envelope={...env,name:'Essence Alex',start_on:'2026-10-27',budget_cents:6000,forecast_spend:mode,forecast_account_id:account};
+  const transactions=[tx(1,-6000,1,account,'2026-10-20')];
+  const result=simulate({today:'2026-10-21',envelopes:[envelope],transactions});
+  const event=at(result,'2026-10-27').events.find(e=>e.envelope_renewal);
+  assert.equal(event.amount_cents,6000);
+  const linked=simulate({today:'2026-10-21',envelopes:[envelope],transactions,envelopeLinks:[{transaction_id:1,envelope_id:1,occurrence_on:'2026-10-27'}]});
+  if(account===2||mode===0)assert.equal(at(linked,'2026-10-27').events.find(e=>e.envelope_renewal).amount_cents,0);
+ }
+});

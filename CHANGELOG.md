@@ -1,5 +1,11 @@
 # Versions de Sillage
 
+## 13.1.1 — une ancienne dépense ne consomme plus automatiquement la première période
+
+Correction de l’attribution implicite des achats antérieurs au début d’une enveloppe. Sélectionner une enveloppe dans une transaction passée ne suffit plus à remplacer son premier budget futur. Un achat explicitement associé à cette occurrence continue de la consommer; les avances de financement conservent leurs règles. Le même calcul sert aux prévisions et aux renouvellements réels. Aucun achat ni solde bancaire existant n’est modifié.
+
+Exemple : achat Essence Alex de 60 $ le 20 octobre, début hebdomadaire le 27 octobre. Sans association explicite au 27, la prévision protège 60 $ le 27, puis de nouveau les semaines suivantes. Correctif commun à toutes les enveloppes.
+
 ## 13.1.0 — paiement réel des cartes et confort iPhone
 
 Dans Comptes, chaque carte propose **Payer cette carte**, distinct de la planification des remboursements. Le compte du budget est présélectionné, avec le montant protégé sur la carte lorsqu’il existe. Un aperçu sans écriture montre les soldes bancaire et carte, le disponible actuel et son minimum sur 30 jours avant/après. La confirmation réutilise le virement réel existant. Un remboursement prévu correspondant de façon unique est reconnu; les cas encore à associer sont signalés.

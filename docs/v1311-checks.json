@@ -1,0 +1,18 @@
+{
+  "version": "13.1.1",
+  "node": {
+    "passed": 114,
+    "failed": 0
+  },
+  "api": {
+    "passed": 201,
+    "failed": 0
+  },
+  "targeted_passed": [
+    "envelope-first-period-api.py",
+    "card-payment-actual-api.py",
+    "calendar-envelope-renewals-ui.py",
+    "shared-grocery-ui.py"
+  ],
+  "note": "The initial historical API run exposed two subcases assuming implicit early purchase allocation. Their fixtures now express the intended explicit period association; the new regression verifies the opposite case without association. The full historical API suite passes after that clarification. Full Python suite not rerun for this targeted fix."
+}

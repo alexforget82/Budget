@@ -299,6 +299,10 @@ class BudgetAPI(unittest.TestCase):
      before=self.get('/api/state');s=self.post('/api/envelopes',{'name':f'Courses {account} {funding}','reserved':0,'budget':230,'frequency':'weekly','start_on':self.future73(2),'rollover':False,'forecast_spend':False});eid=s['envelopes'][0]['id']
      if funding:self.fund73(eid,funding)
      s=self.transaction(account,-100,envelope_id=eid);self.assertEqual(s['safe_cents'],before['safe_cents']-max(100,funding)*100)
+     # Without advance funding, this scenario deliberately associates the purchase to that future period.
+     if not funding:
+      with sqlite3.connect(self.dir/'data'/'budget.sqlite') as db:db.execute('INSERT INTO envelope_actual_links(transaction_id,envelope_id,occurrence_on) VALUES(?,?,?)',(s['transactions'][0]['id'],eid,self.future73(2)))
+      s=self.get('/api/state')
      self.assertEqual(s['forecast'][2]['safe_cents'],before['forecast'][2]['safe_cents']-23000);self.assertEqual(s['forecast'][9]['safe_cents'],before['forecast'][9]['safe_cents']-46000)
      if account==card:
       prior=s;s=self.post('/api/transfers',{'from_account_id':joint,'to_account_id':card,'amount':100,'description':'Remboursement CIBC','happened_on':DAY});self.assertEqual(s['safe_cents'],prior['safe_cents']);self.assertEqual(s['forecast'][2]['safe_cents'],prior['forecast'][2]['safe_cents'])

@@ -9,7 +9,7 @@ try:
  bank=f.account(balance=1000);f.post('/api/setup/scope',{'account_id':bank});card=f.account('credit',100)
  f.post('/api/recurring',{'description':'Apple One','amount':53.98,'type':'expense','account_id':card,'frequency':'monthly','start_on':api.DAY});f.transaction(card,-53.98,description='Apple One');before=f.get('/api/backup/export')['tables']
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v13.1.0')
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v13.1.1')
   for theme in ['light','dark']:
    set_theme(page,theme)
    for width in [320,390,430,768,1440]:
