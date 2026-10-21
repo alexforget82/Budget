@@ -74,3 +74,12 @@ def budget_action(page,name):
  action=page.get_by_role('button',name=name,exact=True)
  if not action.is_visible():open_mobile_options(page,'mobile-budget-options')
  action.click()
+
+
+def manage_envelope(page, identifier=None):
+ """Open v13 compact card management without changing its financial actions."""
+ selector='.envelope-tile' if identifier is None else f'.envelope-tile[data-envelope-id="{identifier}"]'
+ card=page.locator(selector).first
+ detail=card.locator('.v13-envelope-detail')
+ if detail.count() and detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
+ return card

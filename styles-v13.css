@@ -1,0 +1,660 @@
+/* Sillage v13: approved prototype adapted to the existing live controls. */
+html[data-theme] body.sillage-v13 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  background: var(--v80-bg) !important;
+  color: var(--v80-ink) !important;
+}
+html[data-theme] body.sillage-v13 :is(h1, h2, h3) {
+  letter-spacing: -0.025em;
+}
+html[data-theme] body.sillage-v13 :is(button, input, select, textarea) {
+  font-family: inherit;
+}
+html[data-theme]
+  body.sillage-v13
+  :is(button, a, input, select, summary):focus-visible {
+  outline: 2px solid var(--v80-accent) !important;
+  outline-offset: 4px;
+}
+html[data-theme]
+  body.sillage-v13
+  :is(.bank-balance, .v80-hero-value, .v4-value, .v60-metrics strong) {
+  white-space: nowrap;
+}
+html[data-theme] body.sillage-v13 .workspace-header {
+  background: transparent !important;
+  border: 0 !important;
+  padding-top: 26px;
+  padding-bottom: 22px;
+}
+html[data-theme] body.sillage-v13 .workspace-header h1 {
+  font-size: 28px !important;
+  font-weight: 700;
+}
+html[data-theme] body.sillage-v13 .workspace-header .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+html[data-theme] body.sillage-v13 .app-shell-nav {
+  background: var(--s26-nav) !important;
+  border-right: 1px solid var(--v80-line) !important;
+}
+html[data-theme] body.sillage-v13 .brand strong {
+  font-size: 24px !important;
+  letter-spacing: -1px;
+}
+html[data-theme] body.sillage-v13 .brand-year {
+  font-size: 10px !important;
+  letter-spacing: 1px;
+  margin-top: 3px;
+  color: var(--v80-muted);
+}
+html[data-theme]
+  body.sillage-v13
+  :is(
+    section,
+    .feature-panel,
+    .v4-surface,
+    .bank-card,
+    .envelope-tile,
+    .v80-hero
+  ) {
+  box-shadow: none !important;
+}
+html[data-theme] body.sillage-v13 .v47-toolbar > div:first-child {
+  display: none;
+}
+html[data-theme] body.sillage-v13 .v47-toolbar {
+  justify-content: flex-end;
+  margin: 0 0 14px;
+}
+html[data-theme] body.sillage-v13 .v80-hero {
+  border: 1px solid var(--v80-line) !important;
+  background: var(--v80-surface) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+}
+html[data-theme]
+  body.sillage-v13
+  .home-essential:not(.v47-editing)
+  .v80-hero-body {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) !important;
+  gap: 24px;
+}
+html[data-theme]
+  body.sillage-v13
+  .home-essential:not(.v47-editing)
+  .v80-hero-value {
+  font-size: clamp(32px, 3.4vw, 46px) !important;
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+}
+html[data-theme]
+  body.sillage-v13
+  .home-essential:not(.v47-editing)
+  .v80-hero-facts
+  > div:nth-child(3) {
+  display: none !important;
+}
+html[data-theme]
+  body.sillage-v13
+  .home-essential:not(.v47-editing)
+  .v80-hero-facts
+  > div:nth-child(2) {
+  padding: 12px 24px !important;
+  border: 0 !important;
+  border-left: 1px solid var(--v80-line) !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+html[data-theme]
+  body.sillage-v13
+  .home-essential:not(.v47-editing)
+  .v80-hero-facts
+  strong {
+  margin: 8px 0 !important;
+  font-size: 26px !important;
+}
+html[data-theme] body.sillage-v13 .v80-hero-caption {
+  font-size: 12px !important;
+  max-width: 480px;
+}
+html[data-theme] body.sillage-v13 .v81-hero-actions {
+  padding-top: 0 !important;
+  border: 0 !important;
+  margin: 14px 0 0 !important;
+}
+html[data-theme] body.sillage-v13 .v13-equation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 16px;
+  border-top: 1px solid var(--v80-line);
+  margin-top: 20px;
+  padding-top: 18px;
+  align-items: center;
+}
+.v13-equation span,
+.v13-extremes span,
+.v13-extremes small {
+  display: block;
+  font-size: 11px;
+  color: var(--v80-muted);
+}
+.v13-equation strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+html[data-theme] body.sillage-v13 .v13-link {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--v80-accent) !important;
+  font-size: 12px;
+  min-height: 40px;
+  padding: 6px 0;
+  box-shadow: none !important;
+  text-align: left;
+}
+html[data-theme] body.sillage-v13 .v13-home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: 18px;
+  margin: 18px 0;
+}
+html[data-theme] body.sillage-v13 .v13-home-grid[hidden] {
+  display: none !important;
+}
+html[data-theme] body.sillage-v13 .v13-panel {
+  min-width: 0;
+  background: var(--v80-surface) !important;
+  border: 1px solid var(--v80-line) !important;
+  border-radius: 16px !important;
+  padding: 22px !important;
+  margin: 0 !important;
+}
+.v13-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+html[data-theme] body.sillage-v13 .v13-panel-head h2 {
+  font-size: 16px !important;
+  margin: 0 !important;
+}
+.v13-muted {
+  font-size: 12px;
+  color: var(--v80-muted);
+}
+html[data-theme] body.sillage-v13 .v13-graph-slot .v80-spark {
+  display: block !important;
+  width: 100%;
+  height: 210px !important;
+  margin: 20px 0 0;
+  color: var(--v80-accent);
+  overflow: visible;
+}
+.v13-extremes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  border-top: 1px solid var(--v80-line);
+  padding-top: 14px;
+  margin-top: 12px;
+}
+.v13-extremes strong {
+  display: block;
+  font-size: 17px;
+  margin: 5px 0;
+}
+html[data-theme] body.sillage-v13 .v13-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 0;
+  border: 0 !important;
+  border-bottom: 1px solid var(--v80-line) !important;
+  background: transparent !important;
+  color: var(--v80-ink) !important;
+  text-align: left;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font-size: 13px;
+}
+html[data-theme] body.sillage-v13 .v13-row:last-child {
+  border-bottom: 0 !important;
+}
+.v13-row > div {
+  min-width: 0;
+}
+.v13-row strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.v13-row small {
+  display: block;
+  color: var(--v80-muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.v13-row b {
+  white-space: nowrap;
+  font-size: 13px;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-toolbar input {
+  min-width: 180px;
+  flex: 1;
+  max-width: 400px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--v80-surface) !important;
+  color: var(--v80-ink) !important;
+  border: 1px solid var(--v80-line) !important;
+  border-radius: 10px;
+}
+.v13-filters {
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--v80-line);
+  border-radius: 10px;
+  padding: 3px;
+}
+html[data-theme] body.sillage-v13 .v13-filters button {
+  padding: 8px 12px;
+  min-height: 38px;
+  color: var(--v80-muted) !important;
+  border-radius: 7px !important;
+}
+html[data-theme] body.sillage-v13 .v13-filters button[aria-pressed="true"] {
+  background: var(--v80-raised) !important;
+  color: var(--v80-ink) !important;
+}
+html[data-theme] body.sillage-v13 #envelopes {
+  display: grid !important;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 290px), 1fr)
+  ) !important;
+  gap: 18px !important;
+  align-items: start;
+}
+html[data-theme] body.sillage-v13 .envelope-tile {
+  padding: 22px !important;
+  border: 1px solid var(--v80-line) !important;
+  background: var(--v80-surface) !important;
+  border-radius: 16px !important;
+  min-width: 0;
+}
+html[data-theme] body.sillage-v13 .envelope-tile[hidden] {
+  display: none !important;
+}
+html[data-theme] body.sillage-v13 .envelope-tile h3 {
+  font-size: 17px !important;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+html[data-theme] body.sillage-v13 .envelope-tile .tile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+html[data-theme] body.sillage-v13 .envelope-tile .bank-card-top {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+html[data-theme] body.sillage-v13 .envelope-tile .bank-balance {
+  font-size: 30px !important;
+  line-height: 1.2;
+  margin: 4px 0 12px !important;
+  letter-spacing: -0.8px;
+}
+html[data-theme] body.sillage-v13 .envelope-tile .balance-caption {
+  font-size: 12px !important;
+  margin: 0;
+}
+.v13-envelope-period {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--v80-muted);
+  margin: 12px 0;
+}
+html[data-theme] body.sillage-v13 .envelope-tile progress {
+  height: 5px !important;
+  margin: 5px 0 12px !important;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-detail {
+  border-top: 1px solid var(--v80-line);
+  padding-top: 12px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.v13-envelope-detail > summary {
+  cursor: pointer;
+  color: var(--v80-muted);
+  padding: 6px 0;
+  min-height: 36px;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-detail .v81-envelope-facts {
+  padding: 12px !important;
+  margin: 12px 0 !important;
+  background: var(--v80-raised) !important;
+}
+html[data-theme] body.sillage-v13 .v44-card-tools {
+  margin-top: 12px !important;
+  padding-top: 10px !important;
+  gap: 10px;
+}
+html[data-theme] body.sillage-v13 .v44-card-tools button {
+  font-size: 12px !important;
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+}
+html[data-theme] body.sillage-v13 .v44-check {
+  font-size: 12px !important;
+}
+html[data-theme] body.sillage-v13 .v44-overview {
+  gap: 12px;
+  margin: 16px 0;
+}
+html[data-theme] body.sillage-v13 .v44-metric {
+  padding: 16px !important;
+  border-radius: 12px !important;
+}
+@media (min-width: 1100px) {
+  html[data-theme] body.sillage-v13 {
+    padding-left: 250px !important;
+    padding-right: 32px !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  html[data-theme] body.sillage-v13 .app-shell-nav {
+    width: 218px !important;
+    padding: 24px 18px !important;
+  }
+}
+@media (max-width: 1000px) {
+  html[data-theme] body.sillage-v13 .v13-home-grid {
+    grid-template-columns: 1fr;
+  }
+  html[data-theme] body.sillage-v13 .v13-equation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .v13-equation > .v13-link {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 {
+    font-size: 14px !important;
+    padding: 0 16px calc(105px + env(safe-area-inset-bottom)) !important;
+  }
+  html[data-theme] body.sillage-v13 .app-shell-nav {
+    margin: 0 -16px 16px !important;
+    padding: 10px 16px !important;
+    border-bottom: 1px solid var(--v80-line) !important;
+  }
+  html[data-theme] body.sillage-v13 .app-shell-nav .quick-add {
+    min-width: 0;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+  html[data-theme] body.sillage-v13 .v47-toolbar-actions {
+    gap: 8px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  html[data-theme] body.sillage-v13 .v47-toolbar-actions button {
+    min-height: 40px !important;
+  }
+  html[data-theme] body.sillage-v13 .v80-hero {
+    padding: 18px !important;
+  }
+  html[data-theme]
+    body.sillage-v13
+    .home-essential:not(.v47-editing)
+    .v80-hero-body {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  html[data-theme]
+    body.sillage-v13
+    .home-essential:not(.v47-editing)
+    .v80-hero-facts
+    > div:nth-child(2) {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    border-left: 0 !important;
+    border-top: 1px solid var(--v80-line) !important;
+    padding: 14px 0 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 6px;
+  }
+  html[data-theme]
+    body.sillage-v13
+    .home-essential:not(.v47-editing)
+    .v80-hero-facts
+    strong {
+    font-size: 22px !important;
+    margin: 0 !important;
+    white-space: nowrap;
+  }
+  html[data-theme] body.sillage-v13 .v80-hero-facts small {
+    grid-column: 1/-1;
+  }
+  html[data-theme] body.sillage-v13 .v13-equation {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  .v13-equation > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .v13-equation strong {
+    margin: 0;
+    font-size: 13px;
+  }
+  .v13-equation > .v13-link {
+    min-height: 38px !important;
+  }
+  html[data-theme] body.sillage-v13 .v13-panel {
+    padding: 18px !important;
+  }
+  html[data-theme] body.sillage-v13 .v13-panel-head h2 {
+    font-size: 15px !important;
+  }
+  html[data-theme] body.sillage-v13 .v13-panel-head .v13-link {
+    font-size: 11px;
+  }
+  html[data-theme] body.sillage-v13 .v13-graph-slot .v80-spark {
+    height: 165px !important;
+  }
+  html[data-theme] body.sillage-v13 .v13-envelope-toolbar {
+    gap: 10px;
+  }
+  html[data-theme] body.sillage-v13 .v13-envelope-toolbar input {
+    font-size: 16px;
+    max-width: none;
+    width: 100%;
+  }
+  html[data-theme] body.sillage-v13 .v13-filters {
+    width: 100%;
+    justify-content: space-between;
+  }
+  html[data-theme] body.sillage-v13 .v13-filters button {
+    padding: 8px;
+    min-height: 42px;
+    font-size: 11px;
+  }
+  html[data-theme] body.sillage-v13 #envelopes {
+    grid-template-columns: 1fr !important;
+  }
+  html[data-theme] body.sillage-v13 .envelope-tile {
+    padding: 20px !important;
+  }
+  html[data-theme] body.sillage-v13 .envelope-tile input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+  html[data-theme] body.sillage-v13 .v13-envelope-detail summary {
+    min-height: 44px;
+  }
+  html[data-theme] body.sillage-v13 .mobile-tabbar {
+    background: var(--s26-nav) !important;
+    border-top: 1px solid var(--v80-line) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] body.sillage-v13 * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+html[data-theme] body.sillage-v13 .app-shell-nav button[data-view].active {
+  background: var(--s26-selected) !important;
+  color: var(--v80-accent) !important;
+}
+html[data-theme] body.sillage-v13 .v44-overview {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+html[data-theme] body.sillage-v13 .v44-overview > .v44-metric:first-child {
+  display: none;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-options {
+  border: 1px solid var(--v80-line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 12px 0;
+  color: var(--v80-muted);
+  font-size: 12px;
+}
+.v13-envelope-options > summary {
+  cursor: pointer;
+  min-height: 32px;
+  display: list-item;
+  padding: 6px 0;
+}
+html[data-theme] body.sillage-v13 .v13-envelope-detail .bank-card-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+html[data-theme]
+  body.sillage-v13
+  .v13-envelope-detail
+  .bank-card-footer
+  button {
+  min-height: 40px !important;
+}
+html[data-theme] body.sillage-v13 #v116-bank-status {
+  margin-top: 16px;
+}
+html[data-theme] body.sillage-v13 .v13-graph-slot {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(25% - 1px),
+    var(--v80-line) calc(25% - 1px),
+    var(--v80-line) 25%
+  );
+  border-radius: 6px;
+}
+
+.v13-chart-dates {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--v80-muted);
+  padding-top: 8px;
+}
+html[data-theme] body.sillage-v13 .v44-overview > .v44-metric {
+  grid-column: auto !important;
+  min-width: 0;
+}
+html[data-theme] body.sillage-v13 .v44-metric > strong {
+  font-size: 24px !important;
+  margin-top: 6px !important;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 #section-enveloppes .section-head {
+    margin-bottom: 10px !important;
+    gap: 8px;
+  }
+  html[data-theme] body.sillage-v13 #section-enveloppes .page-intro {
+    font-size: 12px;
+    margin: 10px 0 !important;
+  }
+  html[data-theme] body.sillage-v13 #section-enveloppes .v44-overview {
+    margin: 12px 0 !important;
+    gap: 10px !important;
+  }
+  html[data-theme] body.sillage-v13 .v44-overview .v44-metric {
+    padding: 12px !important;
+  }
+  html[data-theme] body.sillage-v13 .v44-overview .v44-metric > span {
+    font-size: 10px !important;
+  }
+  html[data-theme] body.sillage-v13 .v44-overview .v44-metric > strong {
+    font-size: 22px !important;
+  }
+  html[data-theme] body.sillage-v13 .v13-envelope-options {
+    padding: 4px 12px;
+    margin: 10px 0;
+  }
+  html[data-theme] body.sillage-v13 .v13-envelope-toolbar {
+    margin: 12px 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 .register-compact .register-top {
+    margin-bottom: 6px !important;
+  }
+  html[data-theme] body.sillage-v13 .register-compact .register-tools {
+    padding: 12px !important;
+  }
+}
+@media (min-width: 1100px) {
+  html[data-theme] body.sillage-v13 .app-shell-nav {
+    padding-bottom: 100px !important;
+  }
+  html[data-theme] body.sillage-v13 .app-nav-footer {
+    position: fixed;
+    left: 18px;
+    bottom: 0;
+    width: 182px;
+    z-index: 35;
+    margin: 0 !important;
+    padding: 12px 10px 16px !important;
+    background: var(--s26-nav) !important;
+    border-top: 1px solid var(--v80-line) !important;
+  }
+}

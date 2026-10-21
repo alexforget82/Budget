@@ -1,4 +1,13 @@
-# Vérifications de Sillage 11.4
+# Vérifications de Sillage
+
+## v13.0.0 — refonte visuelle
+
+**110 tests Node, 201 tests API et 62 parcours Python validés.** Le premier passage Python donne 57/62; les cinq échecs sont résolus et relancés : raccourci prochaine rentrée, densité des transactions sur petit écran, ouverture des options d’enveloppes dans le parcours historique, couleur sombre attendue et remplacement de l’ancienne exigence de styles identiques par la validation de la nouvelle présentation. Les assertions financières historiques restent actives. Le nouveau parcours v13 est relancé après les derniers ajustements.
+
+Le parcours `visual-v13-ui.py` vérifie les montants actuels et les extrêmes des trois horizons contre l’état serveur, la décomposition sans double comptage des protections sur carte, huit largeurs de 320 à 1920 pixels et neuf écrans dans les deux thèmes. Il vérifie aussi recherche/filtres, édition des enveloppes, état après rafraîchissement, tableau de bord personnalisable, vue partagée et absence d’écritures financières pendant la navigation.
+
+[Guide et captures](docs/SILLAGE-13.md) · [Relevé des résultats](docs/v13/checks.json). Les essais utilisent uniquement des bases temporaires fictives sous Chromium. Aucun essai sur iPhone physique ou Safari réel. Aucun changement du moteur financier ni du schéma de la base.
+
 
 ## Export ChatGPT — 11.4.3
 

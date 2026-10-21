@@ -1,5 +1,13 @@
 # Versions de Sillage
 
+## 13.0.0 — la présentation approuvée devient l’interface réelle
+
+Tableau de bord recentré sur le disponible actuel, avec minimum prévu, détail des protections, graphique, minimum/maximum sur 30/60/90 jours, prochains mouvements, enveloppes et derniers achats. Le graphique réutilise son rendu et ses données existants; le mode détaillé et la personnalisation restent disponibles. Le raccourci vers la prochaine rentrée d’argent est conservé.
+
+Les enveloppes deviennent des cartes compactes avec recherche sans distinction d’accents, filtres de fréquence et détails de gestion repliables. Réserve inutilisée, achats et renouvellement restent distincts. Les contrôles existants d’ajustement, de suppression, de sélection et de configuration conservent leurs actions. Le thème commun et la vue simplifiée reçoivent une finition visuelle; aucun nouveau lien partagé n’est nécessaire. Ressources versionnées, validation de l’installateur mise à jour. Aucun changement du schéma SQLite ni des règles financières.
+
+[Installation, captures et vérifications](docs/SILLAGE-13.md).
+
 ## 12.0.0 — récurrences sur carte protégées et repères plus clairs
 
 Les dépenses récurrentes sur carte sans enveloppe réduisent désormais le disponible prévu à leur date, sans diminuer le solde bancaire. Les achats réels identifiés ou explicitement associés au prévu restent protégés jusqu’au remboursement; celui-ci libère la protection sans deuxième déduction. Les paiements partiels, achats anticipés, exceptions et remboursements marchands sont couverts. La dette initiale générale et les imports historiques ne deviennent pas des réserves. La protection des achats récurrents réels démarre à l’activation de la v12, conservée après redémarrage, remise à zéro et restauration. Les associations déjà reconnues restent stables lors d’un changement de tarif; la suppression d’une récurrence ne libère pas un achat réel encore à payer.

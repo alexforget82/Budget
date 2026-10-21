@@ -8,7 +8,7 @@ if ! command -v node >/dev/null 2>&1 || ! node -e 'const [a,b]=process.versions.
   read -r -p "Appuyez sur Entrée pour fermer."
   exit 1
 fi
-if curl --silent --fail http://127.0.0.1:3030/api/state | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="12.0.0"?0:1)}catch{process.exit(1)}})'; then
+if curl --silent --fail http://127.0.0.1:3030/api/state | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.version==="13.0.0"?0:1)}catch{process.exit(1)}})'; then
   echo "Sillage est déjà ouvert. Vérifiez que cette instance utilise le dossier voulu."
   open http://127.0.0.1:3030
   exit 0

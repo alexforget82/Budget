@@ -2,7 +2,7 @@
 import importlib.util,json,os,shutil,sys,tempfile
 from pathlib import Path
 sys.dont_write_bytecode=True
-from ui_navigation import navigate_legacy as navigate
+from ui_navigation import manage_envelope,navigate_legacy as navigate
 from playwright.sync_api import sync_playwright,expect
 spec=importlib.util.spec_from_file_location('budget_api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-planning-ui-'))
@@ -22,7 +22,7 @@ try:
   navigate(page,'comptes');assert page.locator('.bank-card').count()==3;assert page.locator('.bank-card.credit input').count()==0;assert page.locator('#balance-form').is_hidden();page.evaluate('scrollTo(0,0)');page.screenshot(path=str(images/'comptes.png'),full_page=True)
   page.locator(f'.bank-card[data-account-id="{checking}"] button',has_text='Modifier').click();expect(page.locator('dialog[open]')).to_be_visible();page.keyboard.press('Escape')
   page.get_by_role('button',name='Comparer un solde',exact=True).click();expect(page.locator('#balance-form')).to_be_visible();page.keyboard.press('Escape')
-  navigate(page,'enveloppes');assert page.locator('.envelope-tile').count()==3;assert page.locator('#v21-env-form').is_hidden();page.screenshot(path=str(images/'enveloppes.png'),full_page=True);page.locator('.envelope-tile button',has_text='Ajuster').first.click();expect(page.locator('dialog[open]')).to_be_visible();page.keyboard.press('Escape')
+  navigate(page,'enveloppes');assert page.locator('.envelope-tile').count()==3;assert page.locator('#v21-env-form').is_hidden();page.screenshot(path=str(images/'enveloppes.png'),full_page=True);manage_envelope(page).get_by_role('button',name='Ajuster l’enveloppe',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.keyboard.press('Escape')
   navigate(page,'recurrences');page.get_by_text('Gérer les règles récurrentes',exact=True).click();assert page.locator('.recurrence-tile').count()==5;assert page.locator('#v21-link-form').is_hidden();page.screenshot(path=str(images/'recurrences.png'),full_page=True)
   page.locator('[data-filter="income"]').click();assert page.locator('.recurrence-tile').count()==1;page.locator('[data-filter="all"]').click();assert page.locator('.recurrence-tile').count()==5
   navigate(page,'prevision');assert page.locator('#planning-day-slider').get_attribute('max')=='89';assert page.locator('#forecast').is_hidden();assert page.locator('#planning-weeks .week-card').count()==4

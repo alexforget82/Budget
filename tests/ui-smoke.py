@@ -44,7 +44,7 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    for width in [375,390,768,1024,1440]:
     page.set_viewport_size({'width':width,'height':900});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),width
    page.set_viewport_size({'width':390,'height':844});page.screenshot(path=str(artifacts/'mobile.png'),full_page=True)
-   page.emulate_media(color_scheme='dark',reduced_motion='reduce');page.wait_for_function("document.documentElement.dataset.theme==='dark'");assert page.locator('body').evaluate('(e)=>getComputedStyle(e).backgroundColor')=='rgb(16, 27, 40)'
+   page.emulate_media(color_scheme='dark',reduced_motion='reduce');page.wait_for_function("document.documentElement.dataset.theme==='dark'");assert page.locator('body').evaluate('(e)=>getComputedStyle(e).backgroundColor')=='rgb(16, 26, 40)'
    # Negative budget: use actual API input, then validate the warning against the response.
    s=post('/api/accounts/update',{'id':aid,'name':'Compte quotidien','balance':-1500,'kind':'checking','included':True})
    page.set_viewport_size({'width':1440,'height':1100});page.reload();page.wait_for_selector('.forecast-alert:not([hidden])');assert page.locator('.chart-dot.below-zero').count()>0

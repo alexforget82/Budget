@@ -1,6 +1,6 @@
 # Sillage — proposition visuelle v13
 
-Prototype autonome du tableau de bord et des enveloppes, avec des données fictives. L’application publiée reste en v12.0.0. Ouvrir `index.html` après extraction de `../Sillage-v13-maquette.zip`.
+Prototype autonome du tableau de bord et des enveloppes, avec des données fictives. Cette proposition a ensuite été intégrée à la v13.0.0; ce dossier conserve la maquette fictive autonome. Ouvrir `index.html` après extraction de `../Sillage-v13-maquette.zip`.
 
 La proposition comprend une navigation adaptée au téléphone, des montants lisibles, une explication du disponible, des horizons illustratifs 30/60/90 jours, une recherche d’enveloppes, des filtres et deux thèmes. Les actions de création ne sont pas implémentées dans ce prototype.
 

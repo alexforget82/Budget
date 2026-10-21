@@ -17,16 +17,16 @@ html[data-theme="light"] {
   --s26-amber: #855713;
 }
 html[data-theme="dark"] {
-  --v80-bg: #101b28;
-  --v80-surface: #172534;
-  --v80-raised: #1d2e40;
-  --v80-line: #34485c;
-  --v80-ink: #edf3fa;
-  --v80-muted: #b3c2d3;
-  --v80-accent: #79dfcb;
+  --v80-bg: #101a28;
+  --v80-surface: #162332;
+  --v80-raised: #1c2b3d;
+  --v80-line: #293b4f;
+  --v80-ink: #edf3f8;
+  --v80-muted: #a2b3c5;
+  --v80-accent: #7be0cb;
   --v80-blue: #9bbcff;
-  --s26-nav: #0d1722;
-  --s26-selected: #183c39;
+  --s26-nav: #0c1521;
+  --s26-selected: #1a3938;
   --s26-on-accent: #102925;
   --s26-red: #ffabb5;
   --s26-amber: #edcd89;
