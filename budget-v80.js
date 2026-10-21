@@ -532,6 +532,15 @@ export function initialize(runtime) {
       error.setAttribute("role", "alert");
       mode.add(new Option("Changer la catégorie", "category"));
       mode.add(new Option("Changer le statut de révision", "review"));
+      mode.add(new Option("Changer l’enveloppe", "envelope"));
+      const envelope = el("select");
+      envelope.setAttribute("aria-label", "Enveloppe de la sélection");
+      envelope.add(new Option("Aucune enveloppe", ""));
+      for (const e of latest.envelopes.filter((e) => e.active))
+        envelope.add(new Option(e.name, String(e.id)));
+      const envelopeField = field("Enveloppe", envelope);
+      envelope.setAttribute("aria-label", "Enveloppe de la sélection");
+      envelopeField.hidden = true;
       review.add(new Option("Révisées", "true"));
       review.add(new Option("À vérifier", "false"));
       const categoryField = field("Catégorie", category),
@@ -541,18 +550,20 @@ export function initialize(runtime) {
       mode.onchange = () => {
         categoryField.hidden = childField.hidden = mode.value !== "category";
         reviewField.hidden = mode.value !== "review";
+        envelopeField.hidden = mode.value !== "envelope";
       };
       form.append(
         el(
           "p",
           ids.length +
-            " opération(s). Les comptes, montants, dates et enveloppes seront conservés.",
+            " opération(s). Les comptes, montants et dates seront conservés. Un changement d’enveloppe peut déplacer les réserves; vérifiez l’aperçu.",
           "quiet-copy",
         ),
         field("Action", mode),
         categoryField,
         childField,
         reviewField,
+        envelopeField,
         error,
       );
       const preview = el("button", "Vérifier les modifications", "primary");
@@ -578,7 +589,9 @@ export function initialize(runtime) {
                 category_id: category.value ? Number(category.value) : null,
                 subcategory_id: child.value ? Number(child.value) : null,
               }
-            : { reviewed: review.value === "true" };
+            : mode.value === "envelope"
+              ? { envelope_id: envelope.value ? Number(envelope.value) : null }
+              : { reviewed: review.value === "true" };
         try {
           const p = await request("/api/workspace/bulk-preview", {
             ids,
@@ -588,8 +601,23 @@ export function initialize(runtime) {
           out.replaceChildren(
             el(
               "p",
-              p.items.length +
-                " opération(s) seront modifiées. Aucun effet sur les soldes ni les réserves.",
+              (mode.value === "envelope"
+                ? ""
+                : "Aucun effet sur les soldes ni les réserves. ") +
+                p.items.length +
+                " opération(s) seront modifiées. Disponible : " +
+                money(p.before.safe_cents) +
+                " → " +
+                money(p.after.safe_cents) +
+                ". Réserves : " +
+                money(p.before.reserved_cents) +
+                " → " +
+                money(p.after.reserved_cents) +
+                ". Minimum sur 90 jours : " +
+                money(p.before.minimum_cents) +
+                " → " +
+                money(p.after.minimum_cents) +
+                ". Soldes bancaires conservés.",
               "quiet-copy",
             ),
             btn(
@@ -612,6 +640,53 @@ export function initialize(runtime) {
               "primary",
             ),
           );
+          const detached = p.items.filter((i) => i.detaches_period).length;
+          if (detached)
+            out.prepend(
+              el(
+                "p",
+                detached +
+                  " association(s) au prévu seront retirées par le changement d’enveloppe.",
+                "warning",
+              ),
+            );
+          for (const old of p.before.envelopes || []) {
+            const updated = p.after.envelopes.find((e) => e.id === old.id);
+            if (updated && updated.reserved_cents !== old.reserved_cents)
+              out.prepend(
+                el(
+                  "p",
+                  old.name +
+                    " : réserve " +
+                    money(old.reserved_cents) +
+                    " → " +
+                    money(updated.reserved_cents),
+                  "quiet-copy",
+                ),
+              );
+          }
+          const details = el("details");
+          details.append(el("summary", "Voir les transactions concernées"));
+          for (const item of p.items) {
+            const target =
+              latest.envelopes.find((e) => e.id === item.envelope_id)?.name ||
+              "Sans enveloppe";
+            details.append(
+              el(
+                "p",
+                item.description +
+                  " → " +
+                  target +
+                  (item.historical
+                    ? " · Historique : aucune réserve consommée"
+                    : "") +
+                  (item.detaches_period
+                    ? " · Ancienne association au prévu retirée"
+                    : ""),
+              ),
+            );
+          }
+          out.prepend(details);
         } catch (e) {
           error.textContent = e.message;
         } finally {

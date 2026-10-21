@@ -24,6 +24,8 @@ export function initialize(runtime) {
       const old = select.value;
       select.replaceChildren();
       if (empty !== undefined) select.add(new Option(empty, ""));
+      if (select.id === "csv-category")
+        select.add(new Option("Non-catégorisé", "uncategorized"));
       if (select.id === "v3-category-filter")
         select.add(new Option("Non-catégorisé", "uncategorized"));
       for (const item of items)
@@ -473,12 +475,34 @@ export function initialize(runtime) {
       invalidateCSV();
       return true;
     };
+    const csvEnvelope = document.createElement("select");
+    csvEnvelope.id = "csv-envelope";
+    csvEnvelope.setAttribute("aria-label", "Enveloppe de l’import");
+    csvEnvelope.add(
+      new Option("Proposer selon les commerçants et catégories", "auto"),
+    );
+    csvEnvelope.add(new Option("Aucune enveloppe", "none"));
+    const csvEnvelopeField = document.createElement("label");
+    csvEnvelopeField.textContent = "Enveloppe de l’import";
+    csvEnvelopeField.append(csvEnvelope);
+    by("csv-category").parentElement.after(csvEnvelopeField);
+    csvEnvelope.onchange = invalidateCSV;
     function csvInput() {
       return {
         csv,
+        ...(csvEnvelope.value === "auto"
+          ? {}
+          : {
+              envelope_id:
+                csvEnvelope.value === "none" ? null : Number(csvEnvelope.value),
+            }),
         delimiter: by("csv-file-info").dataset.delimiter,
         account_id: by("csv-account").value,
-        category_id: by("csv-category").value || null,
+        category_id:
+          by("csv-category").value === "uncategorized"
+            ? null
+            : by("csv-category").value || null,
+        category_explicit_none: by("csv-category").value === "uncategorized",
         subcategory_id: by("csv-subcategory")?.value || null,
         date_format: by("csv-date-format").value,
         invert_sign: by("csv-invert").checked,
@@ -625,6 +649,11 @@ export function initialize(runtime) {
                     (current.subcategories.find(
                       (s) => s.id === r.subcategory_id,
                     )?.name || "")
+                  : "") +
+                (r.envelope_id
+                  ? " · Enveloppe : " +
+                    (current.envelopes.find((e) => e.id === r.envelope_id)
+                      ?.name || "—")
                   : ""),
             ),
             node(
@@ -797,11 +826,20 @@ export function initialize(runtime) {
     runtime.render = function (s) {
       oldRender(s);
       current = s;
+      const chosenEnvelope = csvEnvelope.value;
+      csvEnvelope.replaceChildren(
+        new Option("Proposer selon les commerçants et catégories", "auto"),
+        new Option("Aucune enveloppe", "none"),
+      );
+      for (const e of s.envelopes.filter((e) => e.active))
+        csvEnvelope.add(new Option(e.name, String(e.id)));
+      if ([...csvEnvelope.options].some((o) => o.value === chosenEnvelope))
+        csvEnvelope.value = chosenEnvelope;
       for (const [id, empty] of [
         ["transaction-category", "Non-catégorisé"],
         ["v2-edit-category", "Non-catégorisé"],
         ["v3-category-filter", "Toutes"],
-        ["csv-category", "Non-catégorisé"],
+        ["csv-category", "Proposer selon les commerçants"],
         ["budget-category", undefined],
       ])
         options(

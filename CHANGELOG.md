@@ -1,5 +1,13 @@
 # Versions de Sillage
 
+## 13.2.0 — simplifier la saisie et le classement des enveloppes
+
+L’enveloppe est visible dans le formulaire de dépense. Les choix du dernier achat au même nom de commerçant normalisé sont proposés à la saisie et dans le CSV. Les accents, la casse, les espaces et la ponctuation sont neutralisés; aucune correspondance approximative entre commerces différents. Les relations catégorie/enveloppe sont proposées seulement lorsqu’elles sont uniques, sans configuration dans Budget. Les choix manuels, y compris aucune enveloppe ou Non-catégorisé, restent prioritaires.
+
+Le filtre Sans enveloppe porte sur tout le registre. La modification en lot propose Changer l’enveloppe et un aperçu des réserves et du Safe-to-Spend avant/après, sans écriture avant confirmation. Elle réutilise le traitement de modification unitaire et signale les associations de période qui seront retirées. Les montants, dates et mouvements bancaires restent ceux des transactions existantes; les réserves changent selon leur nouvelle affectation. Le CSV conserve également son mode historique sans effet sur les soldes.
+
+Aucune modification du schéma ni des moteurs de prévision et de protection des cartes. L’association d’un achat anticipé à une période future reste volontaire : le choix de période à la saisie appartient à la phase 2.
+
 ## 13.1.2 — associer un achat anticipé à un budget réservé
 
 Le menu « Associer au prévu » propose maintenant les périodes futures des enveloppes en mode budget protégé, distinctes des dépenses programmées. L’association volontaire d’une transaction déjà affectée à cette enveloppe conserve la date et les soldes réels, réduit seulement le budget futur restant et ne termine pas la période. Les associations répétées, les dates incompatibles et les données devenues périmées sont refusées.

@@ -1,5 +1,13 @@
 # Vérifications de Sillage
 
+## v13.2.0 — phase 1 : saisie et classement des enveloppes
+
+**117 tests Node, 201 tests API historiques et 68 scripts Python validés.** Le passage Python complet donne 64/68; les quatre parcours concernés sont corrigés puis relancés avec succès : budget-v44-ui (préremplissage devenu automatique), budget-v80-ui (message sans effet financier pour les anciennes actions), compact-register-ui (densité du registre) et transaction-transfers-ui (options de virement repliées). La suite npm complète passe après les dernières modifications.
+
+Les nouveaux tests vérifient les noms normalisés, les ambiguïtés, les choix manuels et leur effacement, le CSV historique et réel, le refus des aperçus périmés, le filtre sur tout le registre, et la stricte parité de la modification en lot avec la modification unitaire sur une même base restaurée. Les achats sur carte et les associations de période sont couverts. Les aperçus et la navigation ne modifient pas les données financières. Le nouveau parcours UI couvre 320, 390 et 1440 pixels dans les deux thèmes; il est relancé après les derniers ajustements.
+
+[Guide et captures](docs/SILLAGE-13.2.md) · [Résultats](docs/v132/checks.json). Bases fictives temporaires et Chromium uniquement; aucun essai sur iPhone physique ou Safari réel, ni accès aux finances de l’utilisateur.
+
 ## v13.1.2 — association aux périodes de budget protégé
 
 114 tests Node et 201 tests API réussis. Nouveau parcours `reserved-period-match-ui.py` : achat bancaire de 71,69 $ associé au budget du lendemain, menus et fiche sur format iPhone, restant de 158,31 $ dans la vue partagée, date/transaction/comptes inchangés, période toujours ouverte, semaines suivantes intactes, absence de double association et refus de données périmées ou dates non proposées. Le même parcours vérifie l’achat sur carte : protection conservée jusqu’au remboursement, sans seconde charge ni modification de solde lors de l’association.

@@ -1,3 +1,4 @@
+import {buildEntryMemory,normalizeMerchant} from './entry-memory.js';
 import {validCalendarMetadata} from './budget-calendar.js';
 import {validateStartBudget,startBudgetKey} from './budget-start.js';
 import {splitImportKeys} from './budget-tools-v80.js';
@@ -135,8 +136,10 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     const subgroups=q(`SELECT t.category_id,t.subcategory_id,COALESCE(s.name,'Sans sous-catégorie') name,SUM(-t.amount_cents) expense_cents FROM transactions t LEFT JOIN subcategories s ON s.id=t.subcategory_id WHERE ${filter} AND t.amount_cents<0 GROUP BY t.category_id,t.subcategory_id ORDER BY expense_cents DESC`,...values);
     return {month,...totals,net_cents:totals.income_cents-totals.expense_cents,groups,subgroups,budgets};
   }
+  function entryMemory(){return buildEntryMemory({transactions:q('SELECT id,description,amount_cents,happened_on,category_id,subcategory_id,envelope_id FROM transactions'),categories:q('SELECT id,name,archived FROM categories'),subcategories:q('SELECT id,category_id,archived FROM subcategories'),envelopes:q('SELECT id,name,active FROM envelopes')});}
   function preview(x){
     const account=Number(x.account_id);if(!q('SELECT id FROM accounts WHERE id=?',account).length)throw Error('Choisissez un compte.');
+    const memory=entryMemory();
     const parsed=parseCSV(x.csv,x.delimiter),map=x.mapping||{};
     const column=name=>{const n=Number(map[name]);if(map[name]===''||map[name]===null||map[name]===undefined)return null;if(!Number.isInteger(n)||n<0||n>=parsed.headers.length)throw Error('Correspondance de colonne invalide.');return n;};
     const cols=Object.fromEntries(['date','description','amount','debit','credit','category','subcategory'].map(k=>[k,column(k)]));
@@ -156,17 +159,24 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
         else{const debit=cols.debit===null?0:bankAmount(row[cols.debit])||0,credit=cols.credit===null?0:bankAmount(row[cols.credit])||0;if(debit<0||credit<0||(debit&&credit))throw Error('Débit et crédit doivent être positifs et distincts.');amount=credit-debit;}
         if(x.invert_sign===true)amount=-amount;if(!amount)throw Error('Montant nul ou manquant.');
         const key=JSON.stringify([date,description.toLowerCase(),amount]),duplicate=seen.has(key);seen.add(key);
-        const resolved=cols.category===null?category:isUncategorizedName(row[cols.category])?null:categories.get(row[cols.category].trim().toLowerCase())??category;let child=resolved===category?sub:null;if(cols.subcategory!==null&&row[cols.subcategory].trim()){const name=row[cols.subcategory].trim().normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA');child=q('SELECT * FROM subcategories WHERE category_id=? AND archived=0',resolved).find(s=>s.name.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA')===name)?.id;if(!child)throw Error('Sous-catégorie inconnue pour cette catégorie.');}return {row:index+1,date,description,amount_cents:amount,category_id:resolved,subcategory_id:child,duplicate};
+        const resolved=cols.category===null?category:isUncategorizedName(row[cols.category])?null:categories.get(row[cols.category].trim().toLowerCase())??category;let child=resolved===category?sub:null;if(cols.subcategory!==null&&row[cols.subcategory].trim()){const name=row[cols.subcategory].trim().normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA');child=q('SELECT * FROM subcategories WHERE category_id=? AND archived=0',resolved).find(s=>s.name.normalize('NFD').replace(/\p{M}/gu,'').toLocaleLowerCase('fr-CA')===name)?.id;if(!child)throw Error('Sous-catégorie inconnue pour cette catégorie.');}let targetCategory=resolved,envelope=null;
+        if(amount<0){const remembered=memory.merchants.find(m=>m.key===normalizeMerchant(description));
+          if(cols.category===null&&!category&&x.category_explicit_none!==true&&remembered?.category_id){targetCategory=remembered.category_id;child=remembered.subcategory_id;}
+          if(Object.hasOwn(x,'envelope_id')){envelope=x.envelope_id===null?null:Number(x.envelope_id);if(envelope!==null&&!q('SELECT 1 FROM envelopes WHERE id=? AND active=1',envelope).length)throw Error('Enveloppe d’import invalide.');}
+          else envelope=(cols.category!==null||category||x.category_explicit_none===true)?(memory.category_envelopes[targetCategory]||null):(remembered?remembered.envelope_id:memory.category_envelopes[targetCategory]);
+          if(Object.hasOwn(x,'envelope_id')&&envelope&&cols.category===null&&!category&&x.category_explicit_none!==true){targetCategory=memory.envelope_categories[envelope]||null;child=null;}
+        }
+        return {row:index+1,date,description,amount_cents:amount,category_id:targetCategory,subcategory_id:child,envelope_id:envelope||null,duplicate};
       }catch(e){return {row:index+1,error:e.message};}
     });
-    return {...parsed,rows,fingerprint:createHash('sha256').update(JSON.stringify([x.csv,x.delimiter,x.mapping,x.account_id,x.date_format,x.category_id,x.subcategory_id,x.invert_sign,x.affects_balance])).digest('hex')};
+    return {...parsed,rows,fingerprint:createHash('sha256').update(JSON.stringify([x.csv,x.delimiter,x.mapping,x.account_id,x.date_format,x.category_id,x.subcategory_id,x.invert_sign,x.affects_balance,x.envelope_id,x.category_explicit_none,rows.map(r=>[r.category_id,r.subcategory_id,r.envelope_id])])).digest('hex')};
   }
   function importCSV(x){
     const result=preview(x);if(result.fingerprint!==x.fingerprint)throw Error('Le fichier ou les options ont changé. Recommencez l’aperçu.');
     if(!Array.isArray(x.selected_rows)||!x.selected_rows.length||x.selected_rows.length>2000||new Set(x.selected_rows).size!==x.selected_rows.length)throw Error('Sélectionnez les opérations à importer.');
     const rows=x.selected_rows.map(n=>result.rows.find(row=>row.row===n));if(rows.some(r=>!r||r.error||(r.duplicate&&x.include_duplicates!==true)))throw Error('La sélection contient une erreur ou un doublon non autorisé.');
     let batch;
-    atomic(()=>{batch=run('INSERT INTO import_batches(created_at,account_id,affects_balance,imported_count) VALUES(?,?,?,?)',new Date().toISOString(),Number(x.account_id),x.affects_balance===true?1:0,rows.length).lastInsertRowid;for(const r of rows)addTransaction({account_id:x.account_id,description:r.description,amount:r.amount_cents/100,happened_on:r.date,category_id:r.category_id,subcategory_id:r.subcategory_id}, {affectsBalance:x.affects_balance===true,importBatch:Number(batch)});});
+    atomic(()=>{batch=run('INSERT INTO import_batches(created_at,account_id,affects_balance,imported_count) VALUES(?,?,?,?)',new Date().toISOString(),Number(x.account_id),x.affects_balance===true?1:0,rows.length).lastInsertRowid;for(const r of rows)addTransaction({account_id:x.account_id,description:r.description,amount:r.amount_cents/100,happened_on:r.date,category_id:r.category_id,subcategory_id:r.subcategory_id,envelope_id:r.envelope_id}, {affectsBalance:x.affects_balance===true,importBatch:Number(batch)});});
     return {imported:rows.length,batch_id:Number(batch)};
   }
   function post(route,x){
@@ -192,5 +202,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'13.1.2',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({entry_memory:entryMemory(),uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'13.2.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

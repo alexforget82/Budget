@@ -819,3 +819,41 @@ html[data-theme] body.sillage-v13 #actual-payment-confirm {
     flex-shrink: 0;
   }
 }
+html[data-theme] body.sillage-v13 .v132-missing-envelope {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0 !important;
+  padding: 8px 10px;
+  border: 1px solid var(--v80-line);
+  border-radius: 8px;
+  color: var(--v80-ink) !important;
+  font-size: 12px !important;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html[data-theme] body.sillage-v13 .v132-missing-envelope input {
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  flex: none;
+  accent-color: var(--v80-accent);
+}
+html[data-theme] body.sillage-v13 #transaction .entry-more[hidden] {
+  display: none !important;
+}
+@media (min-width: 761px) {
+  html[data-theme] body.sillage-v13 .v132-missing-envelope {
+    min-height: 32px;
+    padding: 5px 8px;
+    line-height: 1;
+  }
+  html[data-theme] body.sillage-v13 .v132-missing-envelope input {
+    width: 16px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+  }
+}

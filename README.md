@@ -4,7 +4,7 @@ Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Do
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v13.1.2](https://github.com/alexforget82/Budget/archive/refs/tags/v13.1.2.zip).
+Téléchargez et décompressez [la version v13.2.0](https://github.com/alexforget82/Budget/archive/refs/tags/v13.2.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -19,6 +19,10 @@ npm start
 ```
 
 Ouvrez `http://127.0.0.1:3030`. Le dossier `data/` utilisé est celui du répertoire courant. Ne lancez pas deux serveurs sur le même port ou deux copies différentes de votre budget.
+
+## Saisie et enveloppes
+
+L’enveloppe est directement visible lors de la saisie d’une dépense. Sillage propose les choix déjà utilisés pour ce commerçant, y compris dans un import CSV. Le filtre **Sans enveloppe** permet de retrouver les dépenses à classer, puis de modifier leur enveloppe en lot avec un aperçu avant confirmation. [Guide v13.2](docs/SILLAGE-13.2.md).
 
 ## Payer une carte
 

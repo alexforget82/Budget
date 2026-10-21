@@ -1,3 +1,4 @@
+import { normalizeMerchant } from "./entry-memory.js?v=13.2.0";
 // Domain initializer. Shared state and rendering hooks are explicit dependencies.
 export function initialize(runtime) {
   /* A focused register and a small, reusable transaction editor. */
@@ -81,6 +82,8 @@ export function initialize(runtime) {
       const b = button(
         label,
         () => {
+          if (mode === "all" || mode === "income")
+            missingEnvelope.checked = false;
           $("v2-kind").value = ["expense", "income"].includes(mode) ? mode : "";
           $("v2-review").value = mode === "pending" ? "0" : "";
           filterChange();
@@ -124,6 +127,19 @@ export function initialize(runtime) {
     const hiddenKind = $("v2-kind").parentElement;
     hiddenKind.hidden = true;
     advancedFields.append(hiddenKind);
+    const missingEnvelope = node("input");
+    missingEnvelope.type = "checkbox";
+    missingEnvelope.id = "v132-without-envelope";
+    const missingLabel = node("label", "Sans enveloppe");
+    missingEnvelope.setAttribute("aria-label", "Dépenses sans enveloppe");
+    missingLabel.className = "v132-missing-envelope";
+    missingLabel.prepend(missingEnvelope);
+    quick.firstElementChild.after(missingLabel);
+    missingEnvelope.onchange = () => {
+      if (missingEnvelope.checked) $("v2-kind").value = "expense";
+      filterChange();
+      updateFilters();
+    };
     tools.append(advanced);
     const filterFooter = node("div", undefined, "register-filter-footer"),
       resultLabel = node("span", "Chargement de vos opérations…");
@@ -142,6 +158,7 @@ export function initialize(runtime) {
           "v3-date-to",
         ])
           $(id).value = "";
+        missingEnvelope.checked = false;
         window.budgetSetSubcategory?.("v3-category-filter", null);
         period.value = "all";
         filterChange();
@@ -265,7 +282,7 @@ export function initialize(runtime) {
         "v3-date-from",
         "v3-date-to",
       ].filter((id) => $(id).value).length;
-      reset.hidden = !active;
+      reset.hidden = !active && !missingEnvelope.checked;
       const count =
         Number(!!$("v3-category-filter").value) +
         Number(!!review && mode !== "pending") +
@@ -459,7 +476,7 @@ export function initialize(runtime) {
         transfer &&
         latest?.accounts.find((a) => String(a.id) === destination.value)
           ?.kind === "credit";
-      more.hidden = select.value === "income" || cardRepayment;
+      more.hidden = !transfer || cardRepayment;
       $("envelope-options").disabled =
         select.value === "income" || cardRepayment;
       if (cardRepayment) $("envelope-options").value = "";
@@ -481,6 +498,7 @@ export function initialize(runtime) {
     timing.onchange = transferFields;
     destination.onchange = transferFields;
     frequency.onchange = transferFields;
+    const envelopeField = $("envelope-options").parentElement;
     const more = node("details", undefined, "entry-more");
     more.append(
       node("summary", "Associer une enveloppe (facultatif)"),
@@ -521,6 +539,7 @@ export function initialize(runtime) {
       dateLabel,
       frequencyLabel,
       categoryHint,
+      envelopeField,
       more,
       accountHint,
       transferHint,
@@ -537,33 +556,32 @@ export function initialize(runtime) {
     function suggestEnvelope(merchant) {
       envelopeSuggestion.replaceChildren();
       envelopeSuggestion.hidden = true;
+      if (select.value !== "expense" || envelopeManual) return;
       const envelope = latest?.envelopes.find(
         (e) => e.id === merchant?.envelope_id && e.active,
       );
+      if (!envelope) {
+        if (
+          merchantEnvelope &&
+          $("envelope-options").value === String(merchantEnvelope)
+        )
+          $("envelope-options").value = "";
+        merchantEnvelope = null;
+        return;
+      }
       if (
-        select.value !== "expense" ||
-        $("envelope-options").value ||
-        !merchant ||
-        merchant.amount_cents >= 0 ||
-        !envelope
+        categoryTouched &&
+        category.value &&
+        merchant.category_id &&
+        category.value !== String(merchant.category_id)
       )
         return;
-      envelopeSuggestion.append(
-        node("span", "Comme votre dernier achat : " + envelope.name),
-        button(
-          "Utiliser cette enveloppe",
-          () => {
-            if (
-              normalize(description.value) !== normalize(merchant.description)
-            )
-              return;
-            $("envelope-options").value = String(envelope.id);
-            more.open = true;
-            envelopeSuggestion.hidden = true;
-          },
-          "text-action",
-        ),
-      );
+      $("envelope-options").value = String(envelope.id);
+      merchantEnvelope = envelope.id;
+      envelopeSuggestion.textContent =
+        "Enveloppe proposée : " +
+        envelope.name +
+        ". Votre choix reste modifiable.";
       envelopeSuggestion.hidden = false;
     }
     $("envelope-options").addEventListener("change", () => {
@@ -575,6 +593,7 @@ export function initialize(runtime) {
       keepOpen = false;
     let ruleEnvelope = null,
       envelopeManual = false,
+      merchantEnvelope = null,
       ruleCategory = null;
     window.budgetClearRuleSuggestion = () => {
       if (ruleCategory && !categoryTouched && category.value === ruleCategory) {
@@ -623,10 +642,11 @@ export function initialize(runtime) {
         rule.envelope_id &&
         !envelopeManual &&
         select.value === "expense" &&
-        !$("envelope-options").value
+        (!$("envelope-options").value || merchantEnvelope)
       ) {
         $("envelope-options").value = String(rule.envelope_id);
         ruleEnvelope = rule.envelope_id;
+        merchantEnvelope = null;
         more.open = true;
       }
       categoryHint.textContent =
@@ -634,7 +654,7 @@ export function initialize(runtime) {
       categoryHint.hidden = false;
     };
 
-    const normalize = (value) => value.trim().toLocaleLowerCase("fr-CA");
+    const normalize = normalizeMerchant;
     function syncType() {
       if (select.value !== "expense") envelopeSuggestion.hidden = true;
       types
@@ -651,7 +671,17 @@ export function initialize(runtime) {
           : select.value === "income"
             ? "Nouveau revenu"
             : "Nouvelle dépense";
-      more.hidden = select.value === "income";
+      envelopeField.hidden = select.value === "income";
+      if (select.value === "transfer") {
+        if (envelopeField.parentElement !== more) {
+          more.append(envelopeField);
+          more.open = false;
+        }
+        more.hidden = false;
+      } else {
+        if (envelopeField.parentElement === more) more.before(envelopeField);
+        more.hidden = true;
+      }
       more.querySelector("summary").textContent =
         select.value === "transfer"
           ? "Utiliser une enveloppe (facultatif)"
@@ -674,6 +704,12 @@ export function initialize(runtime) {
     function suggestCategory(merchant, explicit = false) {
       suggestEnvelope(merchant);
       if (!latest || (categoryTouched && !explicit)) return;
+      if (
+        envelopeManual &&
+        $("envelope-options").value &&
+        merchant?.envelope_id !== Number($("envelope-options").value)
+      )
+        return;
       if (
         merchant &&
         merchant.category_id &&
@@ -726,16 +762,38 @@ export function initialize(runtime) {
       categoryTouched = true;
       categoryHint.hidden = true;
     });
+    $("envelope-options").addEventListener("change", () => {
+      if (select.value !== "expense" || categoryTouched) return;
+      const suggested =
+        latest?.entry_memory?.envelope_categories[$("envelope-options").value];
+      if (suggested) {
+        category.value = String(suggested);
+        window.budgetSetSubcategory?.("transaction-category", null, suggested);
+        lastSuggested = category.value;
+      }
+    });
     category.addEventListener("change", () => {
+      if (select.value === "expense" && !envelopeManual) {
+        const suggested =
+          latest?.entry_memory?.category_envelopes[category.value];
+        if (suggested) {
+          $("envelope-options").value = String(suggested);
+          merchantEnvelope = null;
+        } else if (merchantEnvelope) {
+          $("envelope-options").value = "";
+          merchantEnvelope = null;
+        }
+      }
       categoryTouched = true;
       categoryHint.hidden = true;
       lastSuggested = null;
     });
     description.addEventListener("input", () => {
       copyNotice.hidden = true;
-      const merchant = latest?.recent_descriptions?.find(
-        (m) => normalize(m.description) === normalize(description.value),
-      );
+      const merchant = (
+        (select.value === "expense" ? latest?.entry_memory?.merchants : null) ||
+        latest?.recent_descriptions
+      )?.find((m) => normalize(m.description) === normalize(description.value));
       suggestCategory(merchant);
     });
     select.addEventListener("change", () => {
@@ -746,7 +804,11 @@ export function initialize(runtime) {
       window.budgetSetSubcategory?.("transaction-category", null);
       lastSuggested = null;
       suggestCategory(
-        latest?.recent_descriptions?.find(
+        (
+          (select.value === "expense"
+            ? latest?.entry_memory?.merchants
+            : null) || latest?.recent_descriptions
+        )?.find(
           (m) => normalize(m.description) === normalize(description.value),
         ),
       );
@@ -819,6 +881,7 @@ export function initialize(runtime) {
     window.appOpenEditor = function (key) {
       if (key === "transaction" && !amount.value && !description.value) {
         envelopeManual = false;
+        merchantEnvelope = null;
         ruleEnvelope = null;
         select.value = "expense";
         select.dispatchEvent(new Event("change", { bubbles: true }));
@@ -865,6 +928,7 @@ export function initialize(runtime) {
         const again = keepOpen;
         keepOpen = false;
         envelopeManual = false;
+        merchantEnvelope = null;
         ruleEnvelope = null;
         categoryTouched = false;
         lastSuggested = null;

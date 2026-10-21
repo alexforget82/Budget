@@ -23,6 +23,7 @@ export function validateUpdateFolder(folder, currentVersion) {
     if (incoming[i] > current[i]) break;
   }
   for (const name of [
+    "entry-memory.js",
     "card-payment-actual-ui.js",
     "card-payment-actions.js",
     "sillage-v13.js",

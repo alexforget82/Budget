@@ -1417,6 +1417,7 @@ export function initialize(runtime) {
       if (by("v2-account").value) p.set("account", by("v2-account").value);
       if (by("v2-review").value) p.set("reviewed", by("v2-review").value);
       if (by("v2-kind").value) p.set("kind", by("v2-kind").value);
+      if(by('v132-without-envelope')?.checked)p.set('without_envelope','1');
       for (const [id, key] of [
         ["v3-category-filter", "category"],
         ["v3-date-from", "from"],

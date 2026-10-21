@@ -214,6 +214,7 @@ const tools80 = createBudgetTools80({
   allowanceCoverage,
   journey,
   support,
+  updateTransaction:(x)=>transactionChange(x,false,true),
 });
 const proWorkspace = createProWorkspace({
   db,
@@ -1156,7 +1157,7 @@ function detachEnvelopeActual(id) {
       link.occurrence_on,
     );
 }
-function transactionChange(x, remove = false) {
+function transactionChange(x, remove = false, withinTransaction = false) {
   const id = Number(x.id),
     old = db.prepare("SELECT * FROM transactions WHERE id=?").get(id);
   if (!old) throw Error("Transaction introuvable");
@@ -1177,7 +1178,7 @@ function transactionChange(x, remove = false) {
         },
         old,
       );
-  atomic(() => {
+  (withinTransaction ? (fn)=>fn() : atomic)(() => {
     rememberRecurringCardPurchases();
     if (
       updated &&
@@ -1393,6 +1394,7 @@ function listTransactions(url, all = false) {
     where.push("t.subcategory_id=?");
     args.push(Number(params.get("subcategory")));
   }
+  if(params.get('without_envelope')==='1')where.push('t.amount_cents<0 AND t.envelope_id IS NULL');
   if (params.get("envelope")) {
     where.push("t.envelope_id=?");
     args.push(Number(params.get("envelope")));
@@ -2395,7 +2397,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (13.1.2) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (13.2.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

@@ -14,7 +14,7 @@ try:
  f.transaction(card,-50,description='Marché de la semaine',envelope_id=eid)
  path=f.post('/api/sharing',{'action':'create'})['path'];before=f.get('/api/backup/export')['tables'];state=f.get('/api/state')
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v13.1.2');expect(page.locator('#v13-home-grid')).to_be_visible()
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v13.2.0');expect(page.locator('#v13-home-grid')).to_be_visible()
   def cash(c):return page.evaluate('(n)=>new Intl.NumberFormat("fr-CA",{style:"currency",currency:"CAD"}).format(n/100)',c)
   expect(page.locator('#v80-safe')).to_have_text(cash(state['safe_cents']))
   expect(page.locator('#v13-equation')).to_contain_text(cash(state['cash_cents']));expect(page.locator('#v13-equation>div strong').nth(1)).to_have_text(cash(-state['envelope_reserved_cents']));assert state['cash_cents']-state['envelope_reserved_cents']-state['card_envelope_reserved_cents']-state['credit_reserved_cents']==state['safe_cents']
@@ -42,7 +42,7 @@ try:
   after=f.get('/api/backup/export')['tables'];assert all(before[k]==after[k] for k in before if k!='app_settings')
   # A refreshed state cannot duplicate or expand the compact management details.
   f.transaction(aid,-1,description='Achat après rafraîchissement');navigate(page,'dashboard');page.locator('#home-refresh').click() if page.locator('#home-refresh').count() else page.reload();navigate(page,'enveloppes');expect(page.locator('#envelopes .envelope-tile')).to_have_count(2);expect(page.locator('#envelopes .v13-envelope-period')).to_have_count(2);expect(page.locator('#envelopes .v81-envelope-facts')).to_have_count(2);expect(page.locator('#envelopes>.envelope-tile>.v81-envelope-facts')).to_have_count(0)
-  page.goto(f.base+path);expect(page.locator('#shared-version')).to_have_text('Sillage v13.1.2');expect(page.locator('#grocery-card')).to_be_visible();expected=f.get(path+'/data');expect(page.locator('#safe')).to_have_text(cash(expected['current_safe_cents']))
+  page.goto(f.base+path);expect(page.locator('#shared-version')).to_have_text('Sillage v13.2.0');expect(page.locator('#grocery-card')).to_be_visible();expected=f.get(path+'/data');expect(page.locator('#safe')).to_have_text(cash(expected['current_safe_cents']))
   for theme in ['dark','light']:
    page.emulate_media(color_scheme=theme)
    for width in [320,390,430,768]:
