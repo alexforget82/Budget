@@ -1,5 +1,15 @@
 # Vérifications de Sillage
 
+## v13.3.0 — phases 2 et 3 : période à la saisie et gestion simplifiée
+
+**117 tests Node, 201 tests API historiques et 70 scripts Python validés.** Le passage Python complet donne 67/70. Les trois parcours corrigés sont relancés : budget-v43-ui (gestion via la fiche, options avancées et distinction prochain budget/réserve actuelle), budget-v44-ui (libellé Gérer) et card-envelope-protection-ui (champ Enveloppe désormais directement visible). Leurs assertions financières restent actives. La suite npm complète passe; le nouveau parcours UI est relancé après les derniers ajustements visuels.
+
+`envelope-entry-api.py` compare une saisie avec période et l’ancien enregistrement suivi de l’association explicite, en restaurant une même base de départ : comptes, achats, enveloppes, liens et prévisions identiques sur banque et carte. Il vérifie aussi aperçu sans écriture, refus de choix périmé, date non proposée ou montant modifié, absence de sauvegarde partielle et comportement par défaut inchangé.
+
+`envelope-entry-ui.py` couvre quatre largeurs de 320 à 1440 pixels dans les deux thèmes, choix avant sauvegarde, date réelle conservée, montant 158,31 $ restant sur 230 $, absence de deuxième demande d’association, formulaire courant/avancé, raccourci facture, masquage de l’alimentation en double, navigation sans écriture et refus puis nouvelle confirmation après modification sur un autre appareil. Les parcours historiques de vue partagée et de rapprochement passent aussi.
+
+[Guide et captures](docs/SILLAGE-13.3.md) · [Résultats](docs/v133/checks.json). Bases temporaires fictives et Chromium uniquement; aucune validation sur iPhone physique ou Safari réel. Aucune modification de schéma ni des moteurs de calcul.
+
 ## v13.2.0 — phase 1 : saisie et classement des enveloppes
 
 **117 tests Node, 201 tests API historiques et 68 scripts Python validés.** Le passage Python complet donne 64/68; les quatre parcours concernés sont corrigés puis relancés avec succès : budget-v44-ui (préremplissage devenu automatique), budget-v80-ui (message sans effet financier pour les anciennes actions), compact-register-ui (densité du registre) et transaction-transfers-ui (options de virement repliées). La suite npm complète passe après les dernières modifications.

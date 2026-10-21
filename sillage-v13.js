@@ -332,14 +332,18 @@ export function initialize(runtime) {
       let details = card.querySelector(".v13-envelope-detail");
       if (!details) {
         details = node("details", undefined, "v13-envelope-detail");
-        details.append(node("summary", "Gérer et comprendre"));
+        details.append(node("summary", "Détails du budget"));
       }
       // Keep the original editing, deletion and selection buttons and their handlers.
       for (const item of card.querySelectorAll(
         ":scope>.envelope-facts,:scope>.envelope-mode-note,:scope>.card-caption:not(.balance-caption),:scope>.v81-envelope-facts,:scope>.bank-card-footer",
       ))
         details.append(item);
+      // Management has one entry point: the sheet. Keep only read-only facts here.
+      details.querySelector('.bank-card-footer')?.remove();
       card.querySelector(".v44-card-tools")?.before(details);
+      const manage = card.querySelector('.v44-sheet-button');
+      if (manage) manage.textContent = 'Gérer';
       card.querySelector(".v13-envelope-period")?.remove();
       const compact = node("div", undefined, "v13-envelope-period");
       compact.append(
@@ -357,14 +361,29 @@ export function initialize(runtime) {
         ),
       );
       const balance = card.querySelector(".bank-balance");
+      if (i.mode === 'reserved' && e.frequency !== 'none') {
+        const remaining = i.period_start
+          ? i.period_budget_cents - i.spent_period_cents
+          : i.next_period_remaining_cents;
+        balance.textContent = money(remaining);
+        compact.firstChild.textContent = i.period_start
+          ? 'Restant du budget de la période'
+          : 'Restant du prochain budget';
+      }
       balance.after(compact);
       const balanceProgress = card.querySelector("progress");
+      const isBudget = i.mode === 'reserved' && e.frequency !== 'none';
+      const remaining = i.period_start ? i.period_budget_cents - i.spent_period_cents : i.next_period_remaining_cents;
+      if (balanceProgress && isBudget) {
+        balanceProgress.max = Math.max(1, i.period_start ? i.period_budget_cents : remaining + i.next_period_spent_cents);
+        balanceProgress.value = Math.max(0, remaining);
+      }
       balanceProgress?.setAttribute(
         "aria-label",
-        e.name + " : " + money(e.reserved_cents) + " de réserve inutilisée",
+        e.name + " : " + money(isBudget ? remaining : e.reserved_cents) + (isBudget ? " restant du budget" : " de réserve inutilisée"),
       );
       const caption = card.querySelector(".balance-caption");
-      if (caption) caption.textContent = "Réserve inutilisée";
+      if (caption) caption.textContent = i.mode === "reserved" && e.frequency !== "none" ? "Restant à dépenser" : "Réserve inutilisée";
       const label = card.querySelector(".bank-card-top .card-caption");
       if (label)
         label.textContent =

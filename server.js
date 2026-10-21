@@ -1646,7 +1646,7 @@ const envelopesRoutes = createEnvelopesRoutes({
   validDate,
 });
 const transactionsRoutes = createTransactionsRoutes({
-  addTransaction,
+  addTransaction: addManualTransaction,
   atomic,
   reply,
   run,
@@ -1662,11 +1662,22 @@ const transfersRoutes = createTransfersRoutes({
   validateTransfer,
   validateTransferEnvelope,
 });
-// Explicitly associate an existing purchase with a protected budget period.
+// Preview the same protected-period choices for an existing purchase or an unsaved draft.
 function protectedPeriodOptions(x) {
-  const args = forecastInput(),
-    t = args.transactions.find((t) => t.id === Number(x.transaction_id)),
-    e = args.envelopes.find((e) => e.id === t?.envelope_id),
+  const args = forecastInput();
+  let t;
+  if (x.draft) {
+    const v = validateTransaction(x.draft);
+    t = {
+      id: -1,
+      account_id: v.account,
+      envelope_id: v.envelope,
+      amount_cents: v.amount,
+      happened_on: v.date,
+      affects_balance: 1,
+    };
+  } else t = args.transactions.find((t) => t.id === Number(x.transaction_id));
+  const e = args.envelopes.find((e) => e.id === t?.envelope_id),
     account = args.accounts.find((a) => a.id === t?.account_id);
   if (
     !t ||
@@ -1687,7 +1698,7 @@ function protectedPeriodOptions(x) {
   )
     return { choices: [] };
   const signature = createHash("sha256")
-    .update(JSON.stringify(args))
+    .update(JSON.stringify(x.draft ? { args, draft: t } : args))
     .digest("hex");
   return {
     choices: projection.days
@@ -1707,6 +1718,26 @@ function protectedPeriodOptions(x) {
         amount_cents: -t.amount_cents,
       })),
   };
+}
+// Manual entry reuses the same purchase and explicit period link, in one transaction.
+function addManualTransaction(x) {
+  let choice = null;
+  if (x.budget_period_on) {
+    choice = protectedPeriodOptions({ draft: x }).choices.find(
+      (c) => c.date === x.budget_period_on && c.signature === x.budget_period_signature,
+    );
+    if (!choice)
+      throw Error("La période ou les données ont changé. Vérifiez le choix avant d’enregistrer.");
+  }
+  const id = addTransaction(x);
+  if (choice)
+    run(
+      "INSERT INTO envelope_actual_links(transaction_id,envelope_id,occurrence_on) VALUES(?,?,?)",
+      id,
+      choice.envelope_id,
+      choice.date,
+    );
+  return id;
 }
 const actualCardPayments = createCardPaymentActions({
   forecastInput,
@@ -2397,7 +2428,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (13.2.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (13.3.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

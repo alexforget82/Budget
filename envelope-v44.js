@@ -315,6 +315,10 @@ export function initialize(runtime) {
           else runtime.editEnvelope(id);
         }),
       );
+      actions.append(button("Supprimer l’enveloppe", async () => {
+        await runtime.deleteEnvelope(id);
+        if (!runtime.state.envelopes.some(e => e.id === id)) sheet.dialog.close();
+      }, "v4-button quiet-danger"));
       sheet.inner.append(actions);
       const history = node("div", undefined, "v44-history");
       history.append(
@@ -668,7 +672,7 @@ export function initialize(runtime) {
         const tools = node("div", undefined, "v44-card-tools");
         tools.append(
           button(
-            "Voir la fiche",
+            "Gérer",
             () => showSheet(id),
             "v4-button v44-sheet-button",
           ),

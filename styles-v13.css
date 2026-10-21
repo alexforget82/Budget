@@ -857,3 +857,33 @@ html[data-theme] body.sillage-v13 #transaction .entry-more[hidden] {
     min-height: 16px !important;
   }
 }
+
+/* Envelope entry: a small explicit decision before saving. */
+html[data-theme] body.sillage-v13 #envelope-entry-period {
+  display: block;
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid var(--v80-line, #37534c);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 0;
+}
+html[data-theme] body.sillage-v13 #envelope-entry-period[hidden] { display: none !important; }
+html[data-theme] body.sillage-v13 #transaction #envelope-entry-period > label {
+  display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; min-height: 44px; text-align: left;
+}
+html[data-theme] body.sillage-v13 #transaction #envelope-entry-period input {
+  width: 18px; min-height: 18px; height: 18px; flex: none; margin: 0;
+}
+html[data-theme] body.sillage-v13 #envelope-entry-period p { font-size: 12px; line-height: 1.5; }
+html[data-theme] body.sillage-v13 #envelope-entry-advanced { grid-column: 1 / -1; }
+html[data-theme] body.sillage-v13 #envelope-entry-advanced summary { cursor: pointer; padding: 12px 0; }
+html[data-theme] body.sillage-v13 #envelope-entry-advanced[open] { display: grid; gap: 12px; }
+html[data-theme] body.sillage-v13 .envelope-entry-intro { grid-column: 1 / -1; margin: 0 0 8px; }
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v13 #envelope { grid-template-columns: 1fr; }
+  html[data-theme] body.sillage-v13 #envelope .envelope-entry-intro { font-size: 13px; line-height: 1.5; }
+}
+
+html[data-theme] body.sillage-v13 #envelope .envelope-entry-rollover { grid-column: span 2; }
+@media (max-width: 760px) { html[data-theme] body.sillage-v13 #envelope .envelope-entry-rollover { grid-column: 1; } }

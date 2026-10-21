@@ -83,3 +83,13 @@ def manage_envelope(page, identifier=None):
  detail=card.locator('.v13-envelope-detail')
  if detail.count() and detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
  return card
+
+
+def edit_envelope(page, identifier=None):
+ """Open the single management entry, then advanced fields for historical test scenarios."""
+ selector='.envelope-tile' if identifier is None else f'.envelope-tile[data-envelope-id="{identifier}"]'
+ page.locator(selector).first.get_by_role('button',name='Gérer',exact=True).click()
+ page.locator('#v44-envelope-sheet').get_by_role('button',name='Ajuster les montants',exact=True).click()
+ advanced=page.locator('#envelope-entry-advanced')
+ if advanced.get_attribute('open') is None:advanced.locator(':scope>summary').click()
+ return page.locator('#envelope')

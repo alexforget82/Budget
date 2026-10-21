@@ -26,6 +26,7 @@ export function validateUpdateFolder(folder, currentVersion) {
     "entry-memory.js",
     "card-payment-actual-ui.js",
     "card-payment-actions.js",
+    "envelope-entry-ui.js",
     "sillage-v13.js",
     "styles-v13.css",
     "mobile-ui.js",

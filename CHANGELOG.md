@@ -1,5 +1,13 @@
 # Versions de Sillage
 
+## 13.3.0 — phases 2 et 3 : période à la saisie et enveloppes simplifiées
+
+Pour un achat anticipé dans une enveloppe en budget protégé, le formulaire propose la période actuelle ou un prochain renouvellement compatible dans les sept jours. Le choix reste volontaire. L’achat et son lien de période sont enregistrés dans une seule transaction SQLite, en réutilisant la saisie existante et le lien explicite. La date réelle est conservée et la période reste ouverte pour d’autres achats. Les aperçus ne créent rien; des données modifiées entre-temps imposent de revérifier le choix. La saisie attend la vérification de période et empêche les doubles soumissions. Les imports et modifications de transactions ne sont pas associés automatiquement.
+
+Le formulaire d’enveloppe met en avant le nom, le budget, la fréquence, la date de départ et le traitement du restant. Réserve actuelle, état et ancien mode de paiement restent dans Options avancées. Un raccourci mène à la création d’une facture dans Récurrences. Les enveloppes existantes ne sont ni converties ni reprogrammées. L’alimentation récurrente n’est plus proposée à la création pour une enveloppe qui se renouvelle déjà; les anciennes règles restent modifiables.
+
+Les cartes de budget protégé montrent le restant de la période ou, avant son début, celui du prochain budget, avec sa date de renouvellement. Les réserves restent dans les détails; Gérer est l’entrée de gestion commune. Aucun changement de schéma ni des moteurs de prévision ou de protection des cartes. La séparation du modèle, optionnelle en phase 4, n’est pas effectuée.
+
 ## 13.2.0 — simplifier la saisie et le classement des enveloppes
 
 L’enveloppe est visible dans le formulaire de dépense. Les choix du dernier achat au même nom de commerçant normalisé sont proposés à la saisie et dans le CSV. Les accents, la casse, les espaces et la ponctuation sont neutralisés; aucune correspondance approximative entre commerces différents. Les relations catégorie/enveloppe sont proposées seulement lorsqu’elles sont uniques, sans configuration dans Budget. Les choix manuels, y compris aucune enveloppe ou Non-catégorisé, restent prioritaires.

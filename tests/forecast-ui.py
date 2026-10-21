@@ -1,3 +1,4 @@
+from ui_navigation import edit_envelope
 """Real envelope forecasts and reconciliation in Chromium, isolated financial data."""
 import importlib.util,os,shutil,sys,tempfile,datetime
 from pathlib import Path
@@ -34,7 +35,7 @@ try:
     navigate(page,view);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(view,width)
   page.set_viewport_size({'width':390,'height':844});navigate(page,'suivi');page.screenshot(path=str(images/'mobile-prevu-reel.png'),full_page=True)
   assert f.get('/api/backup/export')['tables']==before,'Browsing changed financial records'
-  page.set_viewport_size({'width':1440,'height':1100});navigate(page,'enveloppes');manage_envelope(page).get_by_role('button',name='Ajuster l’enveloppe',exact=True).click();expect(page.locator('#envelope-forecast-account')).to_be_visible();expect(page.locator('#envelope [name="forecast_spend"]')).to_be_visible();page.keyboard.press('Escape')
+  page.set_viewport_size({'width':1440,'height':1100});navigate(page,'enveloppes');edit_envelope(page);expect(page.locator('#envelope-forecast-account')).to_be_visible();expect(page.locator('#envelope [name="forecast_spend"]')).to_be_visible();page.keyboard.press('Escape')
   assert not errors,errors;browser.close()
  print('PASS: envelope calendar expenses, exact bank forecast, graph switch, actual draft without saving, 215 replaces 230, reopen/close partial period, manual recurring match with different amount, no browsing writes, four views at five widths, envelope configuration.')
  print('Captures fictives :',images)
