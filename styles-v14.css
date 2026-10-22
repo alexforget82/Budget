@@ -1,0 +1,224 @@
+/* Sillage 14: one visual system, using the existing controls and their handlers. */
+html[data-theme] body.sillage-v14 {
+  --sillage-radius: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+html[data-theme] body.sillage-v14 :is(h1,h2,h3) { letter-spacing: -.025em; font-weight: 650; }
+html[data-theme] body.sillage-v14 :is(button,input,select,textarea) { border-radius: 6px !important; }
+html[data-theme] body.sillage-v14 :is(input,select,textarea) {
+  background: var(--v80-surface) !important;
+  color: var(--v80-ink) !important;
+  border-color: var(--v80-line) !important;
+}
+html[data-theme] body.sillage-v14 :is(button,.v4-button) { font-weight: 550; box-shadow: none !important; }
+html[data-theme] body.sillage-v14 :is(button,a,summary,input,select,textarea):focus-visible {
+  outline: 2px solid var(--v80-accent) !important; outline-offset: 3px;
+}
+html[data-theme] body.sillage-v14 :is(.workspace-header .eyebrow,.v4-kicker,.v80-eyebrow) { display: none; }
+html[data-theme] body.sillage-v14 .workspace-header { padding: 4px 0 22px; margin: 0 0 16px; border-bottom: 1px solid var(--v80-line) !important; }
+html[data-theme] body.sillage-v14 .workspace-header h1 { font-size: 25px !important; }
+html[data-theme] body.sillage-v14 .workspace-header .page-intro { margin: 4px 0 0; font-size: 12px; }
+html[data-theme] body.sillage-v14 .page-intro { font-size: 13px; line-height: 1.5; }
+html[data-theme] body.sillage-v14 .app-shell-nav { box-shadow: none !important; }
+html[data-theme] body.sillage-v14 .brand { padding: 4px 8px 24px; }
+html[data-theme] body.sillage-v14 .brand strong { font-size: 22px !important; letter-spacing: -.8px; }
+html[data-theme] body.sillage-v14 .brand-year { border: 0; padding: 0; font-weight: 450; }
+html[data-theme] body.sillage-v14 .brand small { display: none; }
+html[data-theme] body.sillage-v14 .nav-caption { font-size: 10px; letter-spacing: .06em; font-weight: 500; margin-bottom: 5px; }
+html[data-theme] body.sillage-v14 .nav-group { margin-top: 14px; }
+html[data-theme] body.sillage-v14 .app-shell-nav button[data-view] { min-height: 36px; padding: 7px 10px; font-size: 12px; border-radius: 5px !important; }
+html[data-theme] body.sillage-v14 .app-shell-nav button[data-view]:is(.active,.planning-hub-active) { box-shadow: none; font-weight: 650; }
+html[data-theme] body.sillage-v14 .app-nav-footer { border-top: 1px solid var(--v80-line); padding-top: 12px; }
+html[data-theme] body.sillage-v14 .s26-tools > summary { font-size: 11px; padding: 10px; }
+html[data-theme] body.sillage-v14 :is(section[data-section],.sillage-content,#app-dashboard) { background: transparent !important; box-shadow: none !important; }
+html[data-theme] body.sillage-v14 :is(.feature-panel,.v4-card,.v4-chart-card,.v4-day-panel,.v4-calendar-board,.v4-surface,.sillage-surface,.v70-overview,.v44-alerts) {
+  border-radius: 6px !important; box-shadow: none !important; background: var(--v80-surface) !important;
+}
+html[data-theme] body.sillage-v14 :is(.feature-panel,.sillage-surface) { padding: 18px; }
+/* Home: a single leading amount; supporting information is a ledger, not a wall of tiles. */
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero {
+  border: 0 !important; border-bottom: 1px solid var(--v80-line) !important;
+  border-radius: 0 !important; background: transparent !important; padding: 8px 0 22px !important;
+}
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-body { grid-template-columns: minmax(0,1fr) minmax(180px,.65fr) !important; gap: 16px; }
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-value { font-size: clamp(34px,3.6vw,48px) !important; letter-spacing: -1.6px; font-weight: 600; }
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-body h2 { font-size: 14px !important; margin-bottom: 10px; }
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts > div:first-child { display: none !important; }
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts > div:nth-child(2) { border: 0 !important; padding: 8px 0 !important; }
+html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts strong { font-size: 24px !important; font-weight: 550; }
+html[data-theme] body.sillage-v14 .v80-segment,
+html[data-theme] body.sillage-v14 :is(.v4-segment,.planning-tabs,.entry-type-selector) { border-radius: 6px !important; padding: 3px; box-shadow: none !important; }
+html[data-theme] body.sillage-v14 :is(.v80-segment,.v4-segment) button { min-height: 32px; font-size: 12px; padding: 5px 12px; }
+html[data-theme] body.sillage-v14 .v14-calculation { margin-top: 14px; font-size: 12px; }
+html[data-theme] body.sillage-v14 .v14-calculation > summary { display: list-item; cursor: pointer; color: var(--v80-muted); padding: 7px 0; }
+html[data-theme] body.sillage-v14 .v13-equation { margin-top: 8px; padding-top: 12px; }
+html[data-theme] body.sillage-v14 .v13-home-grid { gap: 0 28px; margin-top: 8px; }
+html[data-theme] body.sillage-v14 .v13-panel { padding: 20px 0 !important; border: 0 !important; border-bottom: 1px solid var(--v80-line) !important; border-radius: 0 !important; background: transparent !important; }
+html[data-theme] body.sillage-v14 .v13-panel-head h2 { font-size: 15px !important; }
+html[data-theme] body.sillage-v14 .v13-row { padding: 11px 0; gap: 12px; min-height: 50px; }
+html[data-theme] body.sillage-v14 .v13-row strong { font-weight: 550; }
+html[data-theme] body.sillage-v14 .v13-row small { margin-top: 2px; }
+html[data-theme] body.sillage-v14 .v13-graph-slot .v80-spark { height: 180px !important; margin-top: 12px; }
+html[data-theme] body.sillage-v14 .v13-extremes strong { font-size: 18px; font-weight: 600; }
+html[data-theme] body.sillage-v14 :is(.home-alert,.home-all-clear,#v116-bank-status) { border-radius: 4px !important; box-shadow: none !important; }
+/* All workspaces use the same summary strip and small secondary figures. */
+html[data-theme] body.sillage-v14 :is(.v60-metrics,.register-summary,.v4-metrics,.v44-overview,.sillage-review-summary) {
+  gap: 0 !important; background: transparent !important; border: 0 !important;
+  border-top: 1px solid var(--v80-line) !important; border-bottom: 1px solid var(--v80-line) !important;
+  border-radius: 0 !important; padding: 0 !important; margin-top: 16px; margin-bottom: 18px;
+}
+html[data-theme] body.sillage-v14 :is(.v60-metrics,.register-summary,.v4-metrics,.v44-overview,.sillage-review-summary) > :is(div,section) {
+  background: transparent !important; border: 0 !important; border-radius: 0 !important;
+  padding: 14px 16px !important; box-shadow: none !important; min-width: 0;
+}
+html[data-theme] body.sillage-v14 :is(.v60-metrics,.register-summary,.v4-metrics,.v44-overview,.sillage-review-summary) > :first-child { padding-left: 0 !important; }
+html[data-theme] body.sillage-v14 :is(.v60-metrics,.register-summary,.v4-metrics,.v44-overview,.sillage-review-summary) strong {
+  font-size: clamp(18px,1.8vw,25px) !important; line-height: 1.25; letter-spacing: -.6px; font-weight: 600;
+}
+html[data-theme] body.sillage-v14 :is(.v60-metrics,.v4-metrics) :is(span,small,p) { font-size: 11px; }
+html[data-theme] body.sillage-v14 .v60-metric-actual { border: 0 !important; padding-top: 4px !important; margin-top: 6px; }
+/**** Budget and transactions: preserve the column grid and all row controls. ****/
+html[data-theme] body.sillage-v14 :is(.v60-directory,.v60-group,#v2-transaction-list,.register-tools,.sillage-ledger-head) { border-radius: 0 !important; box-shadow: none !important; }
+html[data-theme] body.sillage-v14 .v60-directory { border-left: 0; border-right: 0; }
+html[data-theme] body.sillage-v14 .v60-group-heading { background: var(--v80-raised) !important; padding-top: 10px; padding-bottom: 10px; font-size: 11px; font-weight: 600; }
+html[data-theme] body.sillage-v14 .v60-budget-row { padding-top: 8px; padding-bottom: 8px; min-height: 43px; background: transparent; }
+html[data-theme] body.sillage-v14 .v60-budget-row .v60-name { font-size: 12px; font-weight: 500; }
+html[data-theme] body.sillage-v14 .v60-category-copy small { font-size: 10px; }
+html[data-theme] body.sillage-v14 :is(.register-tools,.register-top) { background: transparent !important; }
+html[data-theme] body.sillage-v14 .register-tools { padding: 0 0 12px !important; border: 0 !important; }
+html[data-theme] body.sillage-v14 #v2-transaction-list { border: 0 !important; background: var(--v80-surface) !important; }
+html[data-theme] body.sillage-v14 .sillage-ledger-head { border: 0 !important; border-bottom: 1px solid var(--v80-line) !important; }
+html[data-theme] body.sillage-v14 .register-compact .ledger-row { min-height: 46px; padding-top: 5px !important; padding-bottom: 5px !important; }
+html[data-theme] body.sillage-v14 .ledger-name { font-weight: 550; }
+html[data-theme] body.sillage-v14 .category-tag { background: transparent !important; padding-left: 0; }
+html[data-theme] body.sillage-v14 .review-pill { border: 0 !important; border-radius: 0 !important; font-size: 10px; }
+html[data-theme] body.sillage-v14 .review-pill.reviewed { background: transparent !important; color: var(--v80-muted) !important; }
+html[data-theme] body.sillage-v14 .ledger-menu-items { border-radius: 6px; box-shadow: 0 6px 20px #0002 !important; }
+/* Envelope directory: one row per budget, details stay attached to the row. */
+html[data-theme] body.sillage-v14 #envelopes.envelope-card-grid { display: block; }
+html[data-theme] body.sillage-v14 #envelopes > .envelope-tile {
+  display: grid; grid-template-columns: minmax(160px,1fr) 170px 190px auto;
+  gap: 4px 20px; align-items: center; padding: 16px 0 !important;
+  background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--v80-line) !important; border-radius: 0 !important;
+}
+html[data-theme] body.sillage-v14 #envelopes > .envelope-tile[hidden] { display: none !important; }
+html[data-theme] body.sillage-v14 .envelope-tile > .bank-card-top { grid-column: 1; grid-row: 1 / span 3; }
+html[data-theme] body.sillage-v14 .envelope-tile .tile-icon { display: none; }
+html[data-theme] body.sillage-v14 .envelope-tile h3 { font-size: 14px; font-weight: 600; }
+html[data-theme] body.sillage-v14 .envelope-tile > .balance-caption { grid-column: 2; grid-row: 1; margin: 0; font-size: 10px; }
+html[data-theme] body.sillage-v14 .envelope-tile > .bank-balance { grid-column: 2; grid-row: 2; font-size: 22px !important; letter-spacing: -.5px; line-height: 1.2; margin: 0; }
+html[data-theme] body.sillage-v14 .envelope-tile > progress { grid-column: 2; grid-row: 3; height: 3px; margin: 4px 0 0; width: 100%; }
+html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-period { grid-column: 3; grid-row: 1 / span 3; font-size: 11px; margin: 0; }
+html[data-theme] body.sillage-v14 .envelope-tile > .v44-card-tools { grid-column: 4; grid-row: 1 / span 3; border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+html[data-theme] body.sillage-v14 .envelope-tile .v44-sheet-button { min-height: 34px; padding: 6px 12px; font-size: 12px; background: transparent !important; color: var(--v80-ink) !important; border: 1px solid var(--v80-line) !important; }
+html[data-theme] body.sillage-v14 .envelope-tile .v44-check { font-size: 10px; }
+html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-detail { grid-column: 1 / -1; grid-row: 4; border-top: 0; font-size: 11px; padding: 0; margin: 6px 0 0; }
+html[data-theme] body.sillage-v14 .envelope-tile .v81-envelope-facts { border-radius: 0; background: transparent !important; padding: 10px 0; border: 0; }
+html[data-theme] body.sillage-v14 .envelope-tile .v13-envelope-detail summary { font-size: 11px; padding: 5px 0; }
+/* Charts and calendars share a quiet plotting area; selection remains explicit. */
+html[data-theme] body.sillage-v14 :is(.v4-chart-card,.v4-day-panel,.v4-calendar-board) { border-radius: 4px !important; }
+html[data-theme] body.sillage-v14 .v4-chart-card { padding: 18px; }
+html[data-theme] body.sillage-v14 .v4-chart-heading h3 { font-size: 16px; }
+html[data-theme] body.sillage-v14 .v4-day-panel { padding: 18px; }
+html[data-theme] body.sillage-v14 .v4-day-value { font-size: 30px; font-weight: 600; letter-spacing: -.8px; }
+html[data-theme] body.sillage-v14 .v4-day-event { border-radius: 4px; }
+html[data-theme] body.sillage-v14 .v4-calendar-cell { border-radius: 3px !important; box-shadow: none !important; background: var(--v80-surface) !important; }
+html[data-theme] body.sillage-v14 .v4-calendar-cell.is-selected { background: var(--s26-selected) !important; border-color: var(--v80-accent) !important; outline: 1px solid var(--v80-accent); outline-offset: -1px; }
+html[data-theme] body.sillage-v14 .v4-calendar-cell.is-low .v4-cell-balance { color: var(--s26-red) !important; }
+html[data-theme] body.sillage-v14 .v4-cell-balance { font-size: 12px; font-weight: 600; }
+html[data-theme] body.sillage-v14 .v4-cell-events { gap: 3px; }
+html[data-theme] body.sillage-v14 :is(.v4-event-label,.v4-event-badge) { border-radius: 2px; font-size: 10px; }
+/* Editors retain their working keyboard, validation and save behavior. */
+html[data-theme] body.sillage-v14 dialog { border-radius: 10px !important; border-color: var(--v80-line) !important; box-shadow: 0 18px 70px #0003; }
+html[data-theme] body.sillage-v14 dialog::backdrop { background: #10171966; backdrop-filter: none !important; }
+html[data-theme] body.sillage-v14 .dialog-heading h2 { font-size: 19px; }
+html[data-theme] body.sillage-v14 #transaction .entry-amount input { background: var(--v80-surface) !important; font-size: 28px; font-weight: 550; border-radius: 6px !important; }
+html[data-theme] body.sillage-v14 :is(.entry-category-hint,.v44-envelope-suggestion,.entry-account-hint) { background: transparent !important; border: 0 !important; padding: 2px 0 !important; color: var(--v80-muted) !important; font-size: 11px; }
+@media (min-width: 761px) {
+  html[data-theme] body.sillage-v14 { padding: 24px 30px 50px 244px; }
+  html[data-theme] body.sillage-v14 .app-shell-nav { width: 214px; padding-left: 12px; padding-right: 12px; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  html[data-theme] body.sillage-v14 { padding-left: 220px; padding-right: 20px; }
+  html[data-theme] body.sillage-v14 .app-shell-nav { width: 200px; }
+  html[data-theme] body.sillage-v14 #envelopes > .envelope-tile { grid-template-columns: minmax(0,1fr) 140px auto; gap: 6px 12px; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-period { grid-column: 1; grid-row: 4; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v44-card-tools { grid-column: 3; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-detail { grid-row: 5; }
+}
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v14 { padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
+  html[data-theme] body.sillage-v14 .app-shell-nav { margin: 0 -16px 16px; padding: max(10px,env(safe-area-inset-top)) 16px 10px; border-bottom: 1px solid var(--v80-line) !important; }
+  html[data-theme] body.sillage-v14 .app-shell-nav .mobile-navigation-trigger { font-size: 15px; padding-left: 0; }
+  html[data-theme] body.sillage-v14 .app-shell-nav .quick-add { border-radius: 5px !important; }
+  html[data-theme] body.sillage-v14 .mobile-tabbar { box-shadow: none; padding-top: 4px; }
+  html[data-theme] body.sillage-v14 .mobile-tabbar button { border-radius: 0 !important; min-height: 48px; }
+  html[data-theme] body.sillage-v14 .mobile-tabbar button[aria-current=page] { background: transparent !important; color: var(--v80-ink) !important; box-shadow: inset 0 2px var(--v80-accent) !important; }
+  html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero { padding: 4px 0 16px !important; }
+  html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-body { grid-template-columns: minmax(0,1fr) !important; gap: 8px; }
+  html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts > div:nth-child(2) { display: grid !important; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 12px; padding: 8px 0 !important; }
+  html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts strong { font-size: 20px !important; margin: 0 !important; }
+  html[data-theme] body.sillage-v14 .home-essential:not(.v47-editing) .v80-hero-facts small { grid-column: 1 / -1; font-size: 11px; }
+  html[data-theme] body.sillage-v14 .v13-home-grid { display: block; margin-top: 0; }
+  html[data-theme] body.sillage-v14 .v13-panel { padding: 18px 0 !important; }
+  html[data-theme] body.sillage-v14 .v13-panel-head h2 { font-size: 14px !important; }
+  html[data-theme] body.sillage-v14 .v13-graph-slot .v80-spark { height: 142px !important; }
+  html[data-theme] body.sillage-v14 :is(.v60-metrics,.v4-metrics,.v44-overview) { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  html[data-theme] body.sillage-v14 :is(.v60-metrics,.v4-metrics,.v44-overview) > :is(div,section) { padding: 12px 8px !important; }
+  html[data-theme] body.sillage-v14 :is(.v60-metrics,.v4-metrics,.v44-overview) strong { font-size: clamp(15px,4vw,20px) !important; letter-spacing: -.5px; white-space: nowrap; }
+  html[data-theme] body.sillage-v14 :is(.v60-metrics,.v4-metrics,.v44-overview) :is(span,small,p) { font-size: 10px; }
+  html[data-theme] body.sillage-v14 .v60-group-heading { border-radius: 0; }
+  html[data-theme] body.sillage-v14 .v60-budget-row { padding-top: 10px; padding-bottom: 10px; }
+  html[data-theme] body.sillage-v14 .register-compact .ledger-row { min-height: 78px; }
+  html[data-theme] body.sillage-v14 .ledger-name { font-size: 13px; }
+  html[data-theme] body.sillage-v14 .ledger-amount { font-size: 14px; }
+  html[data-theme] body.sillage-v14 :is(.register-filter,.v132-missing-envelope) { min-height: 36px; }
+  html[data-theme] body.sillage-v14 #envelopes > .envelope-tile { grid-template-columns: minmax(0,1fr) auto; gap: 6px 12px; padding: 14px 0 !important; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .bank-card-top { grid-column: 1; grid-row: 1; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .balance-caption { grid-column: 2; grid-row: 1; text-align: right; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .bank-balance { grid-column: 2; grid-row: 2; font-size: 22px !important; text-align: right; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-period { grid-column: 1; grid-row: 2; font-size: 10px; }
+  html[data-theme] body.sillage-v14 .envelope-tile > progress { grid-column: 1 / -1; grid-row: 3; margin: 4px 0; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v44-card-tools { grid-column: 1 / -1; grid-row: 4; display: flex; justify-content: space-between; padding: 3px 0; }
+  html[data-theme] body.sillage-v14 .envelope-tile .v44-sheet-button { min-height: 44px; padding: 8px 14px; }
+  html[data-theme] body.sillage-v14 .envelope-tile > .v13-envelope-detail { grid-row: 5; }
+  html[data-theme] body.sillage-v14 .v4-calendar-cell { padding: 6px 3px; }
+  html[data-theme] body.sillage-v14 .v4-cell-balance { font-size: 10px; }
+  html[data-theme] body.sillage-v14 dialog { border-radius: 12px 12px 0 0 !important; }
+  html[data-theme] body.sillage-v14 dialog :is(input,select,textarea) { font-size: 16px; }
+  html[data-theme] body.sillage-v14 :is(.feature-panel,.sillage-surface,.v4-day-panel) { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html[data-theme] body.sillage-v14 * { scroll-behavior: auto !important; transition: none !important; } }
+
+html[data-theme] body.sillage-v14 #app-dashboard.home-essential [data-widget=spending],
+html[data-theme] body.sillage-v14 #app-dashboard.home-essential [data-widget=spending] > .v47-widget-body { background: transparent !important; }
+html[data-theme] body.sillage-v14 .v70-scope-note { border: 0 !important; border-radius: 0; background: transparent !important; padding: 0; margin: 8px 0 0; font-size: 11px; justify-content: flex-start; gap: 12px; }
+html[data-theme] body.sillage-v14 .v70-scope-note button { border: 0; padding: 4px 0; min-height: 32px; background: transparent !important; font-size: 11px; color: var(--v80-accent) !important; }
+html[data-theme] body.sillage-v14 .app-shell-nav .s26-chatgpt-button { white-space: normal; text-align: left; font-size: 11px; line-height: 1.5; padding: 8px 10px; }
+/* Retire the previous card grid, including its explicit legacy declarations. */
+html[data-theme] body.sillage-v14 #envelopes.envelope-card-grid { display: block !important; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile .bank-card-top { margin: 0 !important; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile h3 { font-size: 14px !important; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile > .bank-balance { margin: 0 !important; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile > .balance-caption { font-size: 10px !important; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile > progress { height: 3px !important; margin: 4px 0 !important; pointer-events: none; }
+html[data-theme] body.sillage-v14 #envelopes .envelope-tile > .v44-card-tools { padding: 0 !important; margin: 0 !important; }
+html[data-theme] body.sillage-v14 :is(button.secondary,.v41-header-action) { background: var(--v80-raised) !important; color: var(--v80-ink) !important; border-color: var(--v80-line) !important; }
+html[data-theme] body.sillage-v14 :is(.primary,.v4-primary,.quick-add,#envelope-save,#account-save,#transaction .entry-submit-actions button:first-child) { background: var(--v80-accent) !important; color: var(--s26-on-accent) !important; border-color: transparent !important; }
+html[data-theme] body.sillage-v14 .planning-tabs {
+  background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--v80-line) !important;
+  border-radius: 0 !important; padding: 0 !important; gap: 14px; margin-bottom: 18px;
+}
+html[data-theme] body.sillage-v14 .planning-tabs button {
+  min-height: 40px; border: 0 !important; border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important; padding: 6px 0 !important; background: transparent !important; color: var(--v80-muted) !important;
+}
+html[data-theme] body.sillage-v14 .planning-tabs button[aria-current=page] { border-bottom-color: var(--v80-accent) !important; color: var(--v80-ink) !important; }
+@media (max-width: 760px) {
+  html[data-theme] body.sillage-v14 .register-summary { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; margin: 8px 0 12px; }
+  html[data-theme] body.sillage-v14 .register-summary > .register-metric { display: flex !important; flex-direction: column; align-items: flex-start; min-width: 0 !important; padding: 10px 6px !important; gap: 4px; }
+  html[data-theme] body.sillage-v14 .register-summary .register-metric > span { font-size: 10px; }
+  html[data-theme] body.sillage-v14 .register-summary .register-metric > strong { font-size: 18px !important; }
+}

@@ -23,7 +23,7 @@ try:
     page.wait_for_function("[...document.querySelectorAll('#monthly-budget-workspace>.v60-metrics strong')].every(e=>e.scrollWidth<=e.clientWidth+1)")
     assert page.locator('#mobile-budget-options').get_attribute('open') is None;page.locator('#mobile-budget-options>summary').click();expect(page.get_by_role('button',name='Mes enveloppes',exact=True)).to_be_visible();page.locator('#mobile-budget-options>summary').click()
     if width==390:page.screenshot(path=str(images/f'budget-{theme}.png'))
-    bar.get_by_role('button',name='Transactions',exact=True).click();expect(page.locator('.ledger-row').first).to_be_visible();assert page.locator('.ledger-row').first.bounding_box()['y']<550,(width,'ledger priority')
+    bar.get_by_role('button',name='Transactions',exact=True).click();expect(page.locator('.ledger-row').first).to_be_visible();page.screenshot(path=str(images/f'ledger-check-{theme}-{width}.png'));assert page.locator('.ledger-row').first.bounding_box()['y']<550,(width,'ledger priority',page.locator('.ledger-row').first.bounding_box(),str(images))
     check=page.locator('.v80-row-check').first;check.check();expect(page.locator('#v80-bulk-bar')).to_be_visible();check.uncheck();expect(page.locator('#v80-bulk-bar')).to_be_hidden()
     page.locator('#mobile-transaction-options>summary').click();expect(page.locator('#v2-account')).to_be_visible();page.locator('#mobile-transaction-options>summary').click()
     if width==390:page.screenshot(path=str(images/f'transactions-{theme}.png'))

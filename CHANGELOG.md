@@ -1,5 +1,13 @@
 # Versions de Sillage
 
+## 14.0.0 — refonte de la présentation
+
+Palette neutre en clair et en sombre, accent moins saturé, typographie et nombres alignés, boutons et espacements uniformes. Les budgets et transactions utilisent des registres compacts et des bandes de totaux. Les enveloppes passent d’une grille de grandes cartes à une liste : nom, restant, renouvellement et Gérer, avec les détails toujours accessibles. Les onglets de planification sont soulignés plutôt qu’affichés comme de gros boutons.
+
+Le tableau de bord garde le disponible actuel en premier, avec son minimum prévu et sa trajectoire. Le détail du calcul est replié, sans retirer son explication. Le compte utilisé pour le Safe-to-Spend est affiché près du montant au lieu d’un bandeau répété sur tous les écrans. Les titres secondaires sont raccourcis. La vue iPhone conserve ses zones tactiles, sa navigation du bas et les correctifs de clavier; la vue privée partagée adopte le même style et regroupe les extrêmes côte à côte. Les liens existants restent valides.
+
+Aucune migration ni modification des moteurs financiers. Les contrôles et événements existants sont réutilisés, avec comparaison des tables financières avant/après navigation et vérification des montants affichés contre l’API canonique.
+
 ## 13.3.0 — phases 2 et 3 : période à la saisie et enveloppes simplifiées
 
 Pour un achat anticipé dans une enveloppe en budget protégé, le formulaire propose la période actuelle ou un prochain renouvellement compatible dans les sept jours. Le choix reste volontaire. L’achat et son lien de période sont enregistrés dans une seule transaction SQLite, en réutilisant la saisie existante et le lien explicite. La date réelle est conservée et la période reste ouverte pour d’autres achats. Les aperçus ne créent rien; des données modifiées entre-temps imposent de revérifier le choix. La saisie attend la vérification de période et empêche les doubles soumissions. Les imports et modifications de transactions ne sont pas associés automatiquement.

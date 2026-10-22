@@ -921,10 +921,10 @@ export function initialize(runtime) {
       current = s;
       releaseVersion.textContent = "Version installée : v" + s.version;
       version.textContent =
-        s.version === "13.3.0"
-          ? "v13.3.0"
-          : "Interface v13.3.0 · serveur v" + s.version;
-      reloadInterface.hidden = s.version === "13.3.0";
+        s.version === "14.0.0"
+          ? "v14.0.0"
+          : "Interface v14.0.0 · serveur v" + s.version;
+      reloadInterface.hidden = s.version === "14.0.0";
       version.title = "Version du serveur : " + s.version;
       undoButton.disabled = !s.support41?.undo.available;
       undoButton.title =

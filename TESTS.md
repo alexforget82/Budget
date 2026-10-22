@@ -1,5 +1,15 @@
 # Vérifications de Sillage
 
+## v14.0.0 — présentation unifiée
+
+**117 tests Node, 201 tests API historiques et 71 scripts Python validés.** Le passage complet Python donne 69/71; deux défauts d’affichage sont corrigés puis les parcours relancés : budget-v44-ui (l’ancienne grille de cartes provoquait un chevauchement lors de la sélection) et mobile-v115-ui (les totaux du registre repoussaient la première transaction sous le seuil de visibilité à 320 px). La suite npm complète passe après mise à jour du contrôle des sept feuilles de style installées. Le nouveau parcours v14 et le contrôle de contraste sont relancés après les derniers ajustements.
+
+`visual-v14-ui.py` vérifie un registre de 45 achats, les montants canoniques, le calcul accessible sous un volet replié, les lignes d’enveloppes, les nombres entiers des totaux, six largeurs de 320 à 1920 px, deux thèmes et sept écrans, la vue partagée et l’absence d’écriture financière pendant la navigation. Le contraste texte/fond du document doit dépasser 7:1 dans chaque thème. Les contrôles de contraste historiques des catégories, boutons, en-têtes et dialogues passent aussi.
+
+Le parcours v13 conserve sa couverture des horizons 30/60/90, des montants actuels et extrêmes, de neuf écrans sur huit largeurs, des réglages du tableau de bord et des enveloppes. Le contrôle iPhone historique couvre les zones tactiles, les feuilles de saisie, le clavier simulé, les menus, filtres et actions en lot. La copie installée charge les nouveaux fichiers sans erreur. Les tests historiques de transactions, cartes, réserves, périodes, partage et restauration restent actifs.
+
+[Guide et captures](docs/SILLAGE-14.md) · [Résultats](docs/v14/checks.json). Bases fictives et Chromium uniquement : aucun essai sur Safari réel ou iPhone physique. Aucun moteur financier ni schéma modifié.
+
 ## v13.3.0 — phases 2 et 3 : période à la saisie et gestion simplifiée
 
 **117 tests Node, 201 tests API historiques et 70 scripts Python validés.** Le passage Python complet donne 67/70. Les trois parcours corrigés sont relancés : budget-v43-ui (gestion via la fiche, options avancées et distinction prochain budget/réserve actuelle), budget-v44-ui (libellé Gérer) et card-envelope-protection-ui (champ Enveloppe désormais directement visible). Leurs assertions financières restent actives. La suite npm complète passe; le nouveau parcours UI est relancé après les derniers ajustements visuels.
