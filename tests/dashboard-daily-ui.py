@@ -1,3 +1,4 @@
+from ui_navigation import dashboard_control
 """One-click canonical daily Safe-to-Spend from either home mode."""
 import importlib.util,shutil
 from pathlib import Path
@@ -18,6 +19,6 @@ try:
   for width in [320,390,768,1440]:
    page.set_viewport_size({'width':width,'height':844});assert dialog.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1');assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');expect(dialog.locator('.home-daily-row').first).to_be_visible()
   dialog.get_by_role('button',name='Fermer',exact=True).click();expect(page.locator('#home-daily-open')).to_be_focused();page.keyboard.press('Enter');expect(dialog).to_be_visible();page.keyboard.press('Escape');expect(dialog).not_to_be_visible()
-  page.locator('#home-mode').click();page.locator('#home-daily-open').click();expect(dialog).to_be_visible();f.transaction(aid,-25);dialog.get_by_role('button',name='Actualiser les montants',exact=True).click();expected=f.get('/api/state')['forecast'][0]['safe_cents'];money=page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",expected);expect(dialog.locator('.home-daily-row').first.locator('strong')).to_have_text(money);assert not errors,errors;browser.close()
+  dashboard_control(page,'home-mode');page.locator('#home-daily-open').click();expect(dialog).to_be_visible();f.transaction(aid,-25);dialog.get_by_role('button',name='Actualiser les montants',exact=True).click();expected=f.get('/api/state')['forecast'][0]['safe_cents'];money=page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",expected);expect(dialog.locator('.home-daily-row').first.locator('strong')).to_have_text(money);assert not errors,errors;browser.close()
  print('PASS: quick daily dialog in both dashboard modes, selected horizon and exact canonical 30/60/90 dates/amounts after reserves, responsive scroll, keyboard/focus and refresh, no browsing writes.')
 finally:f.tearDown()

@@ -23,6 +23,7 @@ export function validateUpdateFolder(folder, currentVersion) {
     if (incoming[i] > current[i]) break;
   }
   for (const name of [
+    "money.js",
     "sillage-v14.js",
     "styles-v14.css",
     "entry-memory.js",

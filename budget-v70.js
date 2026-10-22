@@ -756,8 +756,8 @@ export function initialize(runtime) {
         el(
           "span",
           s.setup70.scope
-            ? "Safe-to-spend : " + s.setup70.scope.name + " uniquement"
-            : "Compte du Safe-to-Spend à choisir dans Bien démarrer",
+            ? "Disponible à dépenser : " + s.setup70.scope.name + " uniquement"
+            : "Compte du disponible à choisir dans Bien démarrer",
         ),
         button("Configurer", () => go("demarrage")),
       );

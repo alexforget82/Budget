@@ -917,258 +917,62 @@ button {
 }
 
 /* v1.2.2 — Prévision compatible Safari (boutons explicites) */
-.forecast-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 12px 0;
-}
-.forecast-actions {
-  display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-.forecast-actions button {
-  font-size: 12px;
-  padding: 8px 11px;
-}
-.forecast-accordion {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  max-height: 680px;
-  overflow-y: auto;
-  padding: 2px 5px 6px 1px;
-}
-.forecast-day {
-  border: 1px solid #dfe7f0;
-  border-radius: 11px;
-  background: #fff;
-  overflow: hidden;
-}
-.forecast-day.is-open {
-  border-color: #b7d1ed;
-  box-shadow: 0 3px 14px rgba(22, 53, 92, 0.07);
-}
-.forecast-day-summary {
-  display: grid;
-  grid-template-columns: minmax(115px, 1fr) minmax(140px, 2.5fr) minmax(
-      100px,
-      1fr
-    ) 15px;
-  gap: 12px;
-  align-items: center;
-  padding: 11px 13px;
-  cursor: pointer;
-  list-style: none;
-}
-.forecast-day-summary {
-  width: 100%;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  font-family: inherit;
-  font-weight: normal;
-  font-size: inherit;
-  box-sizing: border-box;
-}
-.forecast-day-summary::-webkit-details-marker {
-  display: none;
-}
-.forecast-day-summary:hover {
-  background: #f3f7fc;
-}
-.forecast-day-summary:focus-visible {
-  outline: 3px solid #498ac7;
-  outline-offset: -3px;
-}
-.forecast-day-date {
-  font-weight: 750;
-  font-size: 13px;
-  text-transform: capitalize;
-}
-.forecast-day-chips {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.forecast-chip {
-  display: inline-block;
-  border-radius: 7px;
-  padding: 4px 7px;
-  font-size: 11px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-.forecast-chip.income {
-  background: #eaf8f0;
-  color: #126341;
-}
-.forecast-chip.expense {
-  background: #fff0eb;
-  color: #963f23;
-}
-.forecast-chip.transfer {
-  background: #eaf2ff;
-  color: #22549b;
-}
-.forecast-chip.reserve {
-  background: #f4eeff;
-  color: #69419c;
-}
-.forecast-day-safe {
-  text-align: right;
-  font-size: 14px;
-  font-weight: 850;
-  color: #087454;
-  font-variant-numeric: tabular-nums;
-}
-.forecast-day-safe.negative {
-  color: #a32c35;
-}
-.forecast-chevron {
-  color: #70829a;
-  font-size: 18px;
-  transition: transform 0.15s;
-}
-.forecast-day.is-open .forecast-chevron {
-  transform: rotate(180deg);
-}
-.forecast-day-body[hidden] {
-  display: none !important;
-}
-.forecast-day-body {
-  border-top: 1px solid #e3eaf2;
-  padding: 11px 13px 14px;
-  background: #fcfdff;
-}
-.forecast-day-stats {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.forecast-day-stats > span {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.forecast-day-stats small {
-  font-size: 11px;
-  color: #65758a;
-}
-.forecast-day-stats strong {
-  font-size: 13px;
-}
-.forecast-day-groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 9px;
-}
-.forecast-quiet {
-  font-size: 12px;
-  color: #8592a3;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @media (max-width: 680px) {
-  .forecast-day-summary {
-    grid-template-columns: minmax(95px, 1fr) minmax(80px, 1fr) 15px;
-    gap: 6px;
-  }
-  .forecast-day-chips {
-    grid-column: 1/-1;
-    grid-row: 2;
-  }
-  .forecast-day-safe {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .forecast-chevron {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .forecast-accordion {
-    max-height: 75vh;
-  }
+
+
+
+
+
 }
 
 /* 1.2.2: explicit dimensions to avoid collapsed flex children in Safari */
-#forecast.forecast-accordion {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-#forecast > .forecast-day {
-  display: block !important;
-  flex: 0 0 auto !important;
-  min-height: 52px !important;
-}
-#forecast .forecast-day-summary {
-  display: flex !important;
-  min-height: 50px !important;
-  height: auto !important;
-  align-items: center !important;
-  visibility: visible !important;
-}
-#forecast .forecast-day-date {
-  display: block !important;
-}
+
+
+
+
 @media (max-width: 600px) {
-  #forecast .forecast-day-summary {
-    flex-wrap: wrap !important;
-  }
-  #forecast .forecast-day-chips {
-    order: 3;
-    flex-basis: 100% !important;
-  }
+
+
 }
-.envelope-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
-  align-items: end;
-}
-.envelope-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.envelope-form button {
-  align-self: end;
-}
-.envelope-list {
-  display: grid;
-  gap: 9px;
-  margin-top: 14px;
-}
-.envelope-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid #dce5f0;
-  background: #f9fbfe;
-  padding: 12px 14px;
-  border-radius: 11px;
-}
-.envelope-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.envelope-actions button {
-  font-size: 12px;
-  padding: 8px 10px;
-}
+
+
+
+
+
+
+
 @media (max-width: 600px) {
-  .envelope-item {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+
 }
 
 /* v1.4 : trois horizons Safe-to-Spend */
@@ -1944,10 +1748,10 @@ body:not(.app-dashboard-mode) > .sts-explain {
 
 :root {
   color-scheme: light dark;
-  --v2-accent: #2363a5;
-  --v2-line: #dbe4ef;
-  --v2-card: #fff;
-  --v2-text: #1d3148;
+
+
+
+
 }
 body {
   font-variant-numeric: tabular-nums;
@@ -2045,11 +1849,7 @@ body {
   display: none;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --v2-card: #203043;
-    --v2-text: #e9f2ff;
-    --v2-line: #40546b;
-  }
+
   body {
     background: #101b29;
     color: #e9f2ff;
@@ -2223,13 +2023,13 @@ body {
 /* Visual workspace: shared palette, navigation and responsive surfaces. */
 :root {
   color-scheme: light;
-  --v2-card: #fff;
-  --v2-text: #213c35;
-  --v2-line: #e1e8e3;
-  --v2-accent: #176b53;
-  --ink: #203a32;
-  --muted: #697d74;
-  --accent: #176b53;
+
+
+
+
+
+
+
 }
 * {
   box-sizing: border-box;
@@ -4942,9 +4742,7 @@ body:not(.app-dashboard-mode) > .welcome-banner {
   .bank-balance {
     font-size: 32px;
   }
-  .account-switch {
-    font-size: 10px;
-  }
+
   .bank-card-top h3 {
     font-size: 16px;
   }
@@ -6145,9 +5943,7 @@ body:not(.app-dashboard-mode) > .welcome-banner {
   .entry-type {
     flex: 1;
   }
-  .merchant-chip {
-    font-size: 10px;
-  }
+
 }
 .ledger-meta {
   color: #6f8063;

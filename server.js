@@ -1,3 +1,4 @@
+import { toCents } from "./money.js";
 import { createCardPaymentActions } from "./card-payment-actions.js";
 import { checkPublicRelease } from "./mac-update.js";
 import { readJson, isJsonRequest } from "./http-body.js";
@@ -70,10 +71,7 @@ run(
   todayLocal(),
 );
 
-const cents = (v) =>
-  typeof v === "number" && Number.isFinite(v) && Math.abs(v) < 100000000
-    ? Math.round(v * 100)
-    : null;
+const cents = toCents;
 const reply = (r, status, o) => {
   if (r.budgetBefore && status === 200) {
     support.recordUndo(r.budgetBefore, r.budgetRoute);
@@ -1249,7 +1247,10 @@ function transactionChange(x, remove = false, withinTransaction = false) {
       const effect = old.affects_balance
         ? applyEnvelope(
             updated.envelope,
-            updated.amount + allowanceCoverage(updated, id),
+            updated.amount + Math.max(
+              journey.coveredForTransaction(updated, id),
+              allowanceCoverage(updated, id),
+            ),
           )
         : 0;
       run(
@@ -2428,7 +2429,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (14.0.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (14.1.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

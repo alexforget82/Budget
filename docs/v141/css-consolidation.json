@@ -1,0 +1,59 @@
+{
+  "duplicate_rules_removed": 51,
+  "duplicate_declarations_removed": 0,
+  "shadowed_palette_definitions_removed": 63,
+  "active_sheets_before": 7,
+  "active_sheets_after": 4,
+  "bytes_before_excluding_tokens": 346187,
+  "bytes_after_excluding_tokens": 339919,
+  "comparison_stage": "Consolidation only, before the authorized dashboard changes",
+  "view_count": 36,
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "widths": [
+    390,
+    1440
+  ],
+  "visible_elements": 11516,
+  "computed_properties_per_element": 27,
+  "computed_style_differences": 0,
+  "data": "Temporary fictitious database; no user budget",
+  "baseline_commit": "73b7eca",
+  "computed_properties": [
+    "display",
+    "position",
+    "color",
+    "background-color",
+    "border-color",
+    "border-width",
+    "border-radius",
+    "font-size",
+    "font-weight",
+    "font-family",
+    "line-height",
+    "letter-spacing",
+    "text-align",
+    "padding",
+    "margin",
+    "gap",
+    "grid-template-columns",
+    "grid-row",
+    "align-items",
+    "justify-content",
+    "width",
+    "height",
+    "min-height",
+    "max-width",
+    "overflow",
+    "opacity",
+    "box-shadow"
+  ],
+  "canonical_sheets": [
+    "styles-foundation.css",
+    "styles-domains.css",
+    "styles-sillage.css",
+    "styles-tokens.css"
+  ]
+}

@@ -2,7 +2,7 @@
 import importlib.util,json,shutil,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate,header_action
+from ui_navigation import set_theme,navigate,header_action
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='sillage-mobile-115-'))
 try:
@@ -12,7 +12,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));context=browser.new_context(viewport={'width':390,'height':844},locale='fr-CA',is_mobile=True,has_touch=True);page=context.new_page();page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+state['version']);bar=page.get_by_role('navigation',name='Navigation rapide');expect(page.locator('#v4-calendar [data-calendar-view=week]')).to_have_attribute('aria-pressed','true')
   for theme in ['light','dark']:
-   page.set_viewport_size({'width':1440,'height':1000});page.get_by_label('Apparence',exact=True).select_option(theme)
+   page.set_viewport_size({'width':1440,'height':1000});set_theme(page,theme)
    for width in [320,375,390,430,760]:
     page.set_viewport_size({'width':width,'height':844});expect(bar).to_be_visible()
     for view in ['dashboard','budget','transactions','prevision','calendrier','comptes','enveloppes','recurrences','sauvegardes']:

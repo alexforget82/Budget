@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
   s=post('/api/transactions',{'account_id':aid,'amount':-42.75,'description':'Courses de la semaine','happened_on':day(0)})
   with sync_playwright() as p:
    browser_path=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');b=p.chromium.launch(**({'executable_path':browser_path} if browser_path else {}));page=b.new_page(viewport={'width':1440,'height':1100});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
-   page.goto(base);page.wait_for_selector('#home-mode');detailed_dashboard(page);page.wait_for_selector('.chart-dot');assert page.locator('.chart-dot').count()==30
+   page.goto(base);page.wait_for_selector('#home-mode',state='attached');detailed_dashboard(page);page.wait_for_selector('.chart-dot');assert page.locator('.chart-dot').count()==30
    assert page.locator('.forecast-metrics').inner_text().count('$')==3
    minimum=min(x['safe_cents'] for x in s['forecast'][:30]);assert page.locator('.forecast-alert').is_hidden()
    selected=page.locator('.chart-dot[tabindex="0"]');selected.focus();page.keyboard.press('End');assert page.locator('.chart-dot').last.get_attribute('tabindex')=='0';assert s['forecast'][29]['date'][-2:] in page.locator('.chart-selection').inner_text()

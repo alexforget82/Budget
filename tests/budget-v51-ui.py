@@ -1,9 +1,8 @@
-from ui_navigation import set_theme
 """V5.1 version footer, dark text contrast and light-mode restoration."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate
+from ui_navigation import header_action,set_theme,navigate
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v51-ui-'))
 try:
@@ -19,7 +18,7 @@ try:
   assert not page.evaluate('window.contrastFailures("#category-search,#category-create-form input","::placeholder")')
   # A legacy inline !important color on white must remain readable, then restore exactly in light mode.
   page.evaluate('''const b=document.createElement('button');b.id='legacy-contrast-fixture';b.textContent='Ancien bouton';b.style.cssText='background:#fff!important;color:#d5e7d9!important';document.querySelector('#section-categories').append(b)''');contrast('#legacy-contrast-fixture');set_theme(page,'light');page.wait_for_timeout(100);assert page.locator('#legacy-contrast-fixture').evaluate('(e)=>e.style.getPropertyValue("color")')=='rgb(213, 231, 217)';page.locator('#legacy-contrast-fixture').evaluate('(e)=>e.remove()');set_theme(page,'dark');contrast('.category-workspace h2,.category-workspace p,.v52-category-name>strong,.v41-header-action,#app-version');page.screenshot(path=str(images/'categories-sombre.png'),full_page=True)
-  page.locator('#open-transaction').click();contrast('#transaction label,#transaction button,#transaction-dialog h2');page.locator('#close-transaction').click();page.get_by_role('button',name='Rechercher…',exact=True).click();contrast('#v41-search h2,#v41-search label,#v41-search button');page.locator('#v41-search').get_by_role('button',name='Fermer',exact=True).click()
+  page.locator('#open-transaction').click();contrast('#transaction label,#transaction button,#transaction-dialog h2');page.locator('#close-transaction').click();header_action(page,'Rechercher…');contrast('#v41-search h2,#v41-search label,#v41-search button');page.locator('#v41-search').get_by_role('button',name='Fermer',exact=True).click()
   page.set_viewport_size({'width':390,'height':900});navigate(page,'categories');expect(version).to_be_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(images/'categories-iphone.png'),full_page=True);page.reload();expect(version).to_have_text('v'+f.get('/api/state')['version']);expect(page.locator('html')).to_have_attribute('data-theme','dark');assert not errors,errors;browser.close()
  after=f.get('/api/backup/export')['tables'];assert all(before[k]==after[k] for k in before if k!='app_settings')
  print('PASS: v5.1 footer below +Transaction at desktop bottom and on mobile, category/header/dialog contrast, legacy inline !important repair and exact light restoration, persistence and unchanged financial data. Captures:',images)

@@ -1,5 +1,18 @@
 # Vérifications de Sillage
 
+## v14.1.0 — contrôles et corrections ciblées
+
+**120 tests Node, 201 tests API historiques et 73 scripts Python validés.** Le passage complet Python donne 69/73. Quatre parcours sont adaptés puis relancés avec succès : entry-phase1-ui attend les options d’enveloppes après rechargement avant d’exercer le préremplissage; responsive-v501-ui ouvre Outils seulement si fermé; sillage-v10-ui ouvre Plus avant Scénarios; ui-smoke attend le contrôle replié avant de l’ouvrir par Plus. Les assertions financières, de classement et de navigation restent actives.
+
+`precision-calendar.test.js` vérifie le refus des fractions de cent (1.005, 10.005, notation scientifique), les montants valides, le CSV, les jours observés de Noël sans collision, le 30 septembre et le 11 novembre, le dernier jour ouvrable et les dates fixes non ajustées. `entry-integrity-api.py` reproduit un achat financé par Bien démarrer : changer sa description reste neutre; après correction de la règle et de l’achat de 100 à 90 dollars, la réserve n’est plus consommée à nouveau. Le test échoue avec l’ancien chemin de couverture. Les refus de précision sont vérifiés sans mutation des tables.
+
+`dashboard-controls-ui.py` vérifie les menus, la fermeture et le focus avec Échap, les raccourcis recherche/jour par jour, la navigation détaillée, les déplacements des réglages après changement de largeur, les valeurs d’axe et extrêmes canoniques sur 30/60/90 jours, une courbe constante, quatre largeurs et deux thèmes. Les tables financières et prévisions restent identiques après navigation. Le parcours est relancé après les derniers ajustements. Les contrôles historiques v13/v14, contraste, installation, période d’enveloppe, cartes et partage passent aussi.
+
+Avant les retouches du tableau de bord, la consolidation seule conserve les 27 propriétés calculées de chacun des 11 516 éléments visibles sur 36 vues (neuf écrans, deux thèmes, deux largeurs). Les feuilles actives passent de sept à quatre; 51 règles identiques et 63 définitions globales de palette remplacées sont retirées. Les fichiers de compatibilité restent servis et la copie installée exige le nouveau module de validation monétaire.
+
+[Guide et captures](docs/SILLAGE-14.1.md) · [Résultats](docs/v141/checks.json) · [Relevé CSS](docs/v141/css-consolidation.json). Données fictives et Chromium pour les tests; aucun essai sur Safari réel ou iPhone physique. Aucune migration de base. Les trois corrections ont volontairement un effet sur les saisies, modifications et dates calculées concernées.
+
+
 ## v14.0.0 — présentation unifiée
 
 **117 tests Node, 201 tests API historiques et 71 scripts Python validés.** Le passage complet Python donne 69/71; deux défauts d’affichage sont corrigés puis les parcours relancés : budget-v44-ui (l’ancienne grille de cartes provoquait un chevauchement lors de la sélection) et mobile-v115-ui (les totaux du registre repoussaient la première transaction sous le seuil de visibilité à 320 px). La suite npm complète passe après mise à jour du contrôle des sept feuilles de style installées. Le nouveau parcours v14 et le contrôle de contraste sont relancés après les derniers ajustements.

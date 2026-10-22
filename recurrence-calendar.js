@@ -1,4 +1,4 @@
-// The existing Quebec/Canada date rules, extracted without changing arithmetic.
+// Quebec/Canada banking calendar; unadjusted fixed dates retain their nominal date.
 const dateFrom = (s) => new Date(s + "T12:00:00Z"),
   iso = (d) => d.toISOString().slice(0, 10);
 export function lastWeekday(y, m) {
@@ -31,6 +31,8 @@ export function holidaySet(y) {
     let d = fixed(month, day);
     if (d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 2);
     if (d.getUTCDay() === 0) d.setUTCDate(d.getUTCDate() + 1);
+    while ([0, 6].includes(d.getUTCDay()) || set.has(iso(d)))
+      d.setUTCDate(d.getUTCDate() + 1);
     add(d);
   };
   const nthMonday = (month, n) => {
@@ -49,6 +51,8 @@ export function holidaySet(y) {
   observed(7, 1);
   nthMonday(9, 1);
   nthMonday(10, 2);
+  observed(9, 30);
+  observed(11, 11);
   observed(12, 25);
   observed(12, 26);
   return set;
@@ -73,7 +77,7 @@ export function occurrenceInfo(start, frequency, i, adjust = "none") {
     const d = dateFrom(start);
     d.setUTCDate(1);
     d.setUTCMonth(d.getUTCMonth() + i);
-    nominal = lastWeekday(d.getUTCFullYear(), d.getUTCMonth() + 1);
+    nominal = shiftDate(lastWeekday(d.getUTCFullYear(), d.getUTCMonth() + 1), "before");
   } else nominal = nextOccurrence(start, frequency, i);
   return { date: shiftDate(nominal, adjust), estimated: false, nominal };
 }

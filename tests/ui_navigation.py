@@ -31,20 +31,40 @@ def manage_category(page,category_id):
   if toggle.count() and toggle.get_attribute('aria-expanded')!='true':toggle.click()
  return row
 
+def reveal_action(page,action):
+ """Open the actual overflow or settings menu containing a control."""
+ action.wait_for(state='attached')
+ if action.is_visible():return
+ overflow=action.locator('xpath=ancestor::details[@id="dashboard-more"]')
+ if overflow.count() and overflow.locator(':scope>summary').is_visible() and overflow.get_attribute('open') is None:
+  overflow.locator(':scope>summary').click()
+ if action.is_visible():return
+ trigger=page.locator('.mobile-navigation-trigger')
+ if trigger.is_visible() and trigger.get_attribute('aria-expanded')!='true':trigger.click()
+ tools=action.locator('xpath=ancestor::details[@id="s26-tools"]')
+ if tools.count() and tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
+ if overflow.count() and overflow.locator(':scope>summary').is_visible() and overflow.get_attribute('open') is None:overflow.locator(':scope>summary').click()
+
 def header_action(page,name):
- """Header actions move into the tools menu on small screens."""
- action=page.get_by_role('button',name=name,exact=True)
- if page.evaluate('matchMedia("(max-width:760px)").matches') or not action.is_visible():
-  trigger=page.locator('.mobile-navigation-trigger')
-  if trigger.is_visible() and not page.locator('.app-shell-nav').evaluate('(n)=>n.classList.contains("mobile-menu-open")'):trigger.click()
-  tools=page.locator('#s26-tools')
-  if tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
+ candidates=page.get_by_role('button',name=name,exact=True,include_hidden=True)
+ candidates.first.wait_for(state='attached')
+ matches=candidates.all()
+ action=next((a for a in matches if a.is_visible()),None)
+ if action is None:action=next((a for a in matches if a.locator('xpath=ancestor::details[@id="dashboard-more"]').count()),matches[0])
+ reveal_action(page,action)
+ action.click()
+
+def dashboard_control(page,identifier):
+ action=page.locator('#'+identifier)
+ reveal_action(page,action)
  action.click()
 
 def detailed_dashboard(page):
  """Open the retained detailed widgets explicitly instead of the essential home."""
  button=page.locator('#home-mode')
- if button.get_attribute('aria-expanded')!='true':button.click()
+ if button.get_attribute('aria-expanded')!='true':
+  reveal_action(page,button)
+  button.click()
  detail=page.locator('#v81-dashboard-details')
  if detail.count() and detail.is_visible() and detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
 
@@ -56,15 +76,12 @@ def transaction_action(page,name):
  action.click()
 
 def set_theme(page,theme):
- """Appearance is in the full menu on a phone and the header on desktop."""
+ """Appearance lives in Tools and settings at every screen width."""
  select=page.get_by_label('Apparence',exact=True)
- if page.evaluate('matchMedia("(max-width:760px)").matches'):
-  trigger=page.locator('.mobile-navigation-trigger')
-  if trigger.get_attribute('aria-expanded')!='true':trigger.click()
-  tools=page.locator('#s26-tools')
-  if tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
+ reveal_action(page,select)
  select.select_option(theme)
- if page.evaluate('matchMedia("(max-width:760px)").matches') and page.locator('.mobile-navigation-trigger').get_attribute('aria-expanded')=='true':page.locator('.mobile-navigation-trigger').click()
+ trigger=page.locator('.mobile-navigation-trigger')
+ if trigger.is_visible() and trigger.get_attribute('aria-expanded')=='true':trigger.click()
 
 def open_mobile_options(page,identifier):
  panel=page.locator('#'+identifier)

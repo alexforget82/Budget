@@ -1,9 +1,8 @@
-from ui_navigation import set_theme
 """Essential home and actionable, canonical forecast alerts; date visible on every row."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate
+from ui_navigation import dashboard_control,set_theme,navigate
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='essential-home-'))
 try:
@@ -16,7 +15,7 @@ try:
   money=lambda cents:page.evaluate("c=>(c/100).toLocaleString('fr-CA',{style:'currency',currency:'CAD'})",cents)
   expect(page.locator('#v80-safe')).to_have_text(money(state['safe_cents']));expect(page.locator('.v80-hero-facts>div:nth-child(2) strong')).to_have_text(money(min(state['safe_cents'],*[d['safe_cents'] for d in state['forecast'][:30]])));expect(page.locator('.v80-hero-facts>div:nth-child(3)')).to_contain_text('Prochaine paie')
   page.get_by_role('button',name='Voir la prochaine rentrée d’argent',exact=True).click();expect(page.locator('#v4-selected-date')).to_have_value(f.future73(10));navigate(page,'dashboard');page.locator('#v80-hero [data-horizon="60"]').click();expect(page.locator('#home-alerts')).to_contain_text('Un manque de');assert page.locator('.home-alert-danger').count()==1;page.locator('.home-alert-danger').get_by_role('button',name='Voir cette date',exact=True).click();expect(page.locator('#v4-selected-date')).to_have_value(f.future73(40));navigate(page,'dashboard');page.locator('#home-alerts').get_by_role('button',name='Vérifier les opérations',exact=True).click();expect(page.locator('#planning-inbox')).to_be_visible();navigate(page,'dashboard')
-  page.locator('#home-mode').click();expect(page.locator('#v81-maximum')).to_be_visible();page.reload();expect(page.locator('#home-mode')).to_have_text('Revenir à l’essentiel');page.locator('#home-mode').click();page.locator('#dashboard-customize').click();assert 'v47-editing' in page.locator('#app-dashboard').get_attribute('class');expect(page.locator('[data-widget=summary]')).to_be_visible();page.locator('#dashboard-customize').click()
+  dashboard_control(page,'home-mode');expect(page.locator('#v81-maximum')).to_be_visible();page.reload();expect(page.locator('#home-mode')).to_have_text('Revenir à l’essentiel');dashboard_control(page,'home-mode');dashboard_control(page,'dashboard-customize');assert 'v47-editing' in page.locator('#app-dashboard').get_attribute('class');expect(page.locator('[data-widget=summary]')).to_be_visible();dashboard_control(page,'dashboard-customize')
   navigate(page,'transactions');when=page.locator('.ledger-row time.sillage-row-date');expect(when).to_have_count(1);expect(when).to_be_visible();expect(when).to_have_attribute('datetime',api.DAY);page.locator('#sillage-sort').select_option('amount:asc');expect(when).to_be_visible();page.locator('#register-density').click();expect(when).to_be_visible();page.locator('#register-density').click()
   for theme in ['light','dark']:
    set_theme(page,theme)

@@ -2,7 +2,7 @@
 import importlib.util,shutil,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate,set_theme
+from ui_navigation import header_action,navigate,set_theme
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='sillage-confidence-116-'))
 try:
@@ -15,7 +15,7 @@ try:
   for theme in ['light','dark']:
    set_theme(page,theme)
    for width in [320,390,1440]:
-    page.set_viewport_size({'width':width,'height':844});navigate(page,'dashboard');page.get_by_role('button',name='Pourquoi ce montant ?',exact=True).click();d=page.locator('#v81-explanation');d.get_by_label('Date du calcul').select_option('now')
+    page.set_viewport_size({'width':width,'height':844});navigate(page,'dashboard');header_action(page,'Pourquoi ce montant ?');d=page.locator('#v81-explanation');d.get_by_label('Date du calcul').select_option('now')
     d.get_by_role('button',name='Solde bancaire inclus',exact=True).click();expect(d.locator('details').filter(has=page.get_by_text('Comptes compris dans le calcul',exact=True))).to_have_attribute('open','')
     d.get_by_role('button',name='Argent protégé',exact=True).click();expect(d.locator('details').filter(has=page.get_by_text('Réserves par enveloppe',exact=True))).to_have_attribute('open','');expect(d.locator('.v81-total strong')).to_have_text(money(initial['safe_cents']))
     d.get_by_label('Date du calcul').select_option(initial['forecast'][2]['date']);d.get_by_role('button',name='Solde bancaire inclus',exact=True).click();expect(d.locator('details').filter(has=page.get_by_text('Suivre le calcul jour par jour',exact=True)).first).to_have_attribute('open','');assert d.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1');d.get_by_role('button',name='Fermer',exact=True).click()

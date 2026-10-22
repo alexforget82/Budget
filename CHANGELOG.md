@@ -1,5 +1,14 @@
 # Versions de Sillage
 
+## 14.1.0 — tableau de bord et corrections ciblées
+
+Horizon 30/60/90 et accès jour par jour en premier; recherche, annulation, personnalisation, scénarios, rapprochement et explications réunis dans Plus. Apparence et État des données passent dans Outils et réglages, sur ordinateur comme sur téléphone. Le minimum prévu est plus lisible à droite du disponible. Le graphique porte une échelle monétaire et marque les extrêmes du même horizon, y compris le montant actuel. Le compte est désigné par « Disponible à dépenser ».
+
+Les montants numériques avec une fraction de cent sont refusés avant écriture, au lieu d’un arrondi implicite. Modifier financièrement une transaction réutilise les deux sources de couverture d’enveloppe déjà consultées à sa création; la transaction modifiée est exclue de sa propre recherche de reçu. Les jours bancaires observés de Noël et du lendemain ne se superposent plus; le 30 septembre et le 11 novembre sont inclus. Le dernier jour ouvrable évite aussi les jours fériés. Une date fixe sans ajustement reste inchangée.
+
+Les sept feuilles CSS actives sont consolidées en quatre fichiers canoniques, sans nouvelle couche de version : fondation, domaines, présentation Sillage et variables. Les anciens liens CSS restent des points de compatibilité. Avant les changements de tableau de bord, les styles calculés de 11 516 éléments sur 36 vues sont identiques. Aucune migration de base ni réécriture des opérations existantes.
+
+
 ## 14.0.0 — refonte de la présentation
 
 Palette neutre en clair et en sombre, accent moins saturé, typographie et nombres alignés, boutons et espacements uniformes. Les budgets et transactions utilisent des registres compacts et des bandes de totaux. Les enveloppes passent d’une grille de grandes cartes à une liste : nom, restant, renouvellement et Gérer, avec les détails toujours accessibles. Les onglets de planification sont soulignés plutôt qu’affichés comme de gros boutons.

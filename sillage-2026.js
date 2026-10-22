@@ -162,9 +162,11 @@ export function initialize(runtime) {
     mobileActions.className = "s26-mobile-actions";
     body.append(mobileActions);
     function placeActions() {
-      for (const { node, marker } of slots)
+      for (const { node, marker } of slots) {
+        if (node.dataset.dashboardManaged === "true") continue;
         if (compact.matches) mobileActions.append(node);
         else marker.after(node);
+      }
     }
     compact.addEventListener("change", placeActions);
     placeActions();

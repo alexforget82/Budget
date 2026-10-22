@@ -1,9 +1,8 @@
-from ui_navigation import edit_envelope
 """Approved v13 presentation on live temporary financial data, never the user's database."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from ui_navigation import navigate,set_theme,manage_envelope,detailed_dashboard
+from ui_navigation import dashboard_control,edit_envelope,navigate,set_theme,manage_envelope,detailed_dashboard
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='sillage-v13-'))
 try:
@@ -15,7 +14,7 @@ try:
  f.transaction(card,-50,description='Marché de la semaine',envelope_id=eid)
  path=f.post('/api/sharing',{'action':'create'})['path'];before=f.get('/api/backup/export')['tables'];state=f.get('/api/state')
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v14.0.0');expect(page.locator('#v13-home-grid')).to_be_visible()
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v14.1.0');expect(page.locator('#v13-home-grid')).to_be_visible()
   def cash(c):return page.evaluate('(n)=>new Intl.NumberFormat("fr-CA",{style:"currency",currency:"CAD"}).format(n/100)',c)
   expect(page.locator('#v80-safe')).to_have_text(cash(state['safe_cents']))
   expect(page.locator('#v13-equation')).to_contain_text(cash(state['cash_cents']));expect(page.locator('#v13-equation>div strong').nth(1)).to_have_text(cash(-state['envelope_reserved_cents']));assert state['cash_cents']-state['envelope_reserved_cents']-state['card_envelope_reserved_cents']-state['credit_reserved_cents']==state['safe_cents']
@@ -24,7 +23,7 @@ try:
    page.locator(f'#v80-hero [data-horizon="{days}"]').click();values=[state['safe_cents']]+[d['safe_cents'] for d in state['forecast'][:days]]
    expect(page.locator('.v13-extremes strong').first).to_have_text(cash(min(values)));expect(page.locator('.v13-extremes strong').last).to_have_text(cash(max(values)));expect(page.locator('#v80-safe')).to_have_text(cash(state['safe_cents']))
   page.locator('#v14-calculation > summary').click();page.locator('#v13-equation button').click();expect(page.locator('dialog[open]')).to_be_visible();page.keyboard.press('Escape')
-  detailed_dashboard(page);expect(page.locator('#v13-home-grid')).to_be_hidden();expect(page.locator('#v80-hero .v80-spark')).to_have_count(1);page.locator('#home-mode').click();expect(page.locator('#v13-home-grid .v80-spark')).to_have_count(1)
+  detailed_dashboard(page);expect(page.locator('#v13-home-grid')).to_be_hidden();expect(page.locator('#v80-hero .v80-spark')).to_have_count(1);dashboard_control(page,'home-mode');expect(page.locator('#v13-home-grid .v80-spark')).to_have_count(1)
   for theme in ['dark','light']:
    set_theme(page,theme)
    for width in [320,375,390,430,768,1024,1440,1920]:
@@ -43,7 +42,7 @@ try:
   after=f.get('/api/backup/export')['tables'];assert all(before[k]==after[k] for k in before if k!='app_settings')
   # A refreshed state cannot duplicate or expand the compact management details.
   f.transaction(aid,-1,description='Achat après rafraîchissement');navigate(page,'dashboard');page.locator('#home-refresh').click() if page.locator('#home-refresh').count() else page.reload();navigate(page,'enveloppes');expect(page.locator('#envelopes .envelope-tile')).to_have_count(2);expect(page.locator('#envelopes .v13-envelope-period')).to_have_count(2);expect(page.locator('#envelopes .v81-envelope-facts')).to_have_count(2);expect(page.locator('#envelopes>.envelope-tile>.v81-envelope-facts')).to_have_count(0)
-  page.goto(f.base+path);expect(page.locator('#shared-version')).to_have_text('Sillage v14.0.0');expect(page.locator('#grocery-card')).to_be_visible();expected=f.get(path+'/data');expect(page.locator('#safe')).to_have_text(cash(expected['current_safe_cents']))
+  page.goto(f.base+path);expect(page.locator('#shared-version')).to_have_text('Sillage v14.1.0');expect(page.locator('#grocery-card')).to_be_visible();expected=f.get(path+'/data');expect(page.locator('#safe')).to_have_text(cash(expected['current_safe_cents']))
   for theme in ['dark','light']:
    page.emulate_media(color_scheme=theme)
    for width in [320,390,430,768]:

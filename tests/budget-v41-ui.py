@@ -2,8 +2,8 @@
 import importlib.util,os,shutil,sys,tempfile,datetime
 from pathlib import Path
 sys.dont_write_bytecode=True
-from ui_navigation import navigate,header_action
 from playwright.sync_api import sync_playwright,expect
+from ui_navigation import dashboard_control,navigate,header_action
 spec=importlib.util.spec_from_file_location('api',Path(__file__).with_name('api-tests.py'));api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 f=api.BudgetAPI('runTest');f.setUp();images=Path(tempfile.mkdtemp(prefix='budget-v41-ui-'))
 def day(n):return (datetime.date.today()+datetime.timedelta(days=n)).isoformat()
@@ -15,7 +15,7 @@ try:
   executable=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('chromium-browser');browser=p.chromium.launch(**({'executable_path':executable} if executable else {}));page=browser.new_page(viewport={'width':1440,'height':1100});page.set_default_timeout(10000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v'+f.get('/api/state')['version']);before=f.get('/api/backup/export')['tables']
   page.keyboard.press('Control+k');search=page.locator('#v41-search');expect(search).to_be_visible();page.locator('#v41-search-input').fill('epicerie');expect(search.locator('.v41-search-row')).to_have_count(1);search.locator('.v41-search-row').click();expect(page.locator('#v2-edit')).to_be_visible();expect(page.locator('#v2-edit-form [name="description"]')).to_have_value('Épicerie à retrouver');page.locator('#v2-edit-close').click();assert f.get('/api/backup/export')['tables']==before
   navigate(page,'comptes');page.get_by_role('button',name='Rapprocher avec ma banque',exact=True).click();bank=page.locator('#v41-bank-dialog');bank.locator('[name="account_id"]').select_option(str(aid));bank.locator('[name="balance"]').fill('985');bank.get_by_role('button',name='Comparer sans modifier',exact=True).click();expect(bank).to_contain_text('Écart : -5,00');assert f.get('/api/backup/export')['tables']==before;bank.screenshot(path=str(images/'rapprochement.png'));bank.locator('.v41-correction summary').click();bank.locator('.v41-correction input').fill('Écart vérifié avec le relevé');bank.get_by_role('button',name='Enregistrer cette correction',exact=True).click();expect(bank).to_contain_text('Solde corrigé');assert f.get('/api/state')['cash_cents']==98500;bank.get_by_role('button',name='Fermer',exact=True).click()
-  page.locator('#v41-undo').click();undo=page.locator('#v41-undo-dialog');undo.get_by_role('button',name='Confirmer l’annulation',exact=True).click();expect(undo).not_to_be_visible();assert f.get('/api/state')['cash_cents']==99000;expect(page.locator('#v41-undo')).to_be_disabled();assert f.get('/api/backup/export')['tables']==before
+  dashboard_control(page,'v41-undo');undo=page.locator('#v41-undo-dialog');undo.get_by_role('button',name='Confirmer l’annulation',exact=True).click();expect(undo).not_to_be_visible();assert f.get('/api/state')['cash_cents']==99000;expect(page.locator('#v41-undo')).to_be_disabled();assert f.get('/api/backup/export')['tables']==before
   # Remember CSV columns and account, while forcing history mode upon reuse.
   navigate(page,'importer');upload={'name':'cibc.csv','mimeType':'text/csv','buffer':('Quand;Libelle banque;Valeur\n'+api.DAY+';Marché;15,00').encode()};page.locator('#csv-file').set_input_files(upload);expect(page.locator('#csv-mapping')).to_be_visible()
   for key,index in [('date','0'),('description','1'),('amount','2')]:page.locator(f'#csv-columns select[data-column="{key}"]').select_option(index)

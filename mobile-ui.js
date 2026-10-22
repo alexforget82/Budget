@@ -187,7 +187,7 @@ export function initialize(runtime) {
     }
     if (compact.matches) {
       if (appearance)
-        document.querySelector(".s26-mobile-actions")?.append(appearance);
+        (document.getElementById("v141-settings") || document.querySelector(".s26-mobile-actions"))?.append(appearance);
       if (version) bar.append(version);
     } else {
       if (appearance) appearanceMarker.after(appearance);

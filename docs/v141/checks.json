@@ -1,0 +1,455 @@
+{
+  "version": "14.1.0",
+  "node_tests": 120,
+  "historical_api_tests": 201,
+  "python_first_pass": "69/73",
+  "python_final": "73/73 après quatre relances ciblées",
+  "final_targeted_ui": "dashboard-controls-ui.py relancé après ajustement du débordement, du clavier, de la courbe constante et du formatage; succès",
+  "css_consolidation": "36 vues, 11 516 éléments, 27 propriétés, zéro écart avant les changements visuels; voir css-consolidation.json",
+  "environment": "Bases fictives temporaires; Chromium; aucun essai sur Safari réel ou iPhone physique.",
+  "financial_changes": "Refus des fractions de cent; couverture de financement réutilisée lors d’une modification; calendrier bancaire ajusté. Aucune migration ni réécriture des opérations historiques.",
+  "results": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 5.1,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 0,
+      "seconds": 13.2,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 0,
+      "seconds": 7.6,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 0,
+      "seconds": 13.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 0,
+      "seconds": 7.8,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 0,
+      "seconds": 3.7,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 0,
+      "seconds": 6.8,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 8.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 7.3,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 0,
+      "seconds": 5.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 5.0,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 3.2,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 11.8,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 16.1,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 6.3,
+      "initial_code": 0
+    },
+    {
+      "test": "calendar-budget-v113-ui.py",
+      "code": 0,
+      "seconds": 3.7,
+      "initial_code": 0
+    },
+    {
+      "test": "calendar-envelope-renewals-ui.py",
+      "code": 0,
+      "seconds": 3.7,
+      "initial_code": 0
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 0,
+      "seconds": 13.4,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payment-actual-api.py",
+      "code": 0,
+      "seconds": 0.4,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payment-actual-ui.py",
+      "code": 0,
+      "seconds": 18.0,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 0,
+      "seconds": 15.6,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 0,
+      "seconds": 12.1,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.6,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 2.8,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "chatgpt-export-ui.py",
+      "code": 0,
+      "seconds": 4.2,
+      "initial_code": 0
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 5.4,
+      "initial_code": 0
+    },
+    {
+      "test": "confidence-v116-ui.py",
+      "code": 0,
+      "seconds": 10.6,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-controls-ui.py",
+      "code": 0,
+      "seconds": 15.8,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.0,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 14.3,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-integrity-api.py",
+      "code": 0,
+      "seconds": 0.2,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-phase1-api.py",
+      "code": 0,
+      "seconds": 0.4,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-phase1-ui.py",
+      "code": 0,
+      "seconds": 8.8,
+      "initial_code": 1,
+      "rerun_note": "Wait for the fixture envelope options after reload before testing merchant prefill; financial and manual-choice assertions retained."
+    },
+    {
+      "test": "envelope-entry-api.py",
+      "code": 0,
+      "seconds": 0.3,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-entry-ui.py",
+      "code": 0,
+      "seconds": 8.2,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-first-period-api.py",
+      "code": 0,
+      "seconds": 0.4,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 6.9,
+      "initial_code": 0
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 9.0,
+      "initial_code": 0
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 8.6,
+      "initial_code": 0
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 0,
+      "seconds": 11.9,
+      "initial_code": 0
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.6,
+      "initial_code": 0
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.4,
+      "initial_code": 0
+    },
+    {
+      "test": "migration-rollback-ui.py",
+      "code": 0,
+      "seconds": 2.6,
+      "initial_code": 0
+    },
+    {
+      "test": "mobile-v115-ui.py",
+      "code": 0,
+      "seconds": 32.5,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 0,
+      "seconds": 16.8,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 7.6,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 15.7,
+      "initial_code": 0
+    },
+    {
+      "test": "refactor-parity-ui.py",
+      "code": 0,
+      "seconds": 20.2,
+      "initial_code": 0
+    },
+    {
+      "test": "release-v12-ui.py",
+      "code": 0,
+      "seconds": 3.7,
+      "initial_code": 0
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 4.9,
+      "initial_code": 0
+    },
+    {
+      "test": "reserved-period-match-ui.py",
+      "code": 0,
+      "seconds": 2.4,
+      "initial_code": 0
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 32.8,
+      "initial_code": 1,
+      "rerun_note": "Open Tools only when closed; Appearance now uses that same menu on desktop."
+    },
+    {
+      "test": "security-view-ui.py",
+      "code": 0,
+      "seconds": 1.6,
+      "initial_code": 0
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 0,
+      "seconds": 3.1,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-grocery-ui.py",
+      "code": 0,
+      "seconds": 1.5,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 2.0,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.5,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 2.2,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 0,
+      "seconds": 14.5,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 0,
+      "seconds": 8.9,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 32.4,
+      "initial_code": 1,
+      "rerun_note": "Open Plus before Scenarios; original comparison and financial assertions retained."
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 5.1,
+      "initial_code": 0
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 4.4,
+      "initial_code": 0
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 3.4,
+      "initial_code": 0
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 11.3,
+      "initial_code": 0
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 0,
+      "seconds": 31.0,
+      "initial_code": 1,
+      "rerun_note": "Wait for attached Home mode, then open it through Plus; visibility is intentionally deferred."
+    },
+    {
+      "test": "visual-v13-ui.py",
+      "code": 0,
+      "seconds": 43.3,
+      "initial_code": 0
+    },
+    {
+      "test": "visual-v14-ui.py",
+      "code": 0,
+      "seconds": 24.3,
+      "initial_code": 0
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 11.2,
+      "initial_code": 0
+    }
+  ]
+}
