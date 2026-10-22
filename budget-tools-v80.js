@@ -1,3 +1,4 @@
+import {reconciliationHints} from './reconciliation-hints.js';
 import {createHash} from 'node:crypto';
 import {cardEnvelopeTotal} from './card-envelope-funds.js';
 
@@ -42,6 +43,6 @@ export function createBudgetTools80({db,atomic,cents,features,categoryTools,fore
  }
  function splitPreview(x){const p=splitPlan(x),token=fingerprint({id:p.old.id,parts:p.parts}),before=financial();let after;db.exec('SAVEPOINT split_preview80');try{doSplit(p);after=financial();}finally{db.exec('ROLLBACK TO split_preview80');db.exec('RELEASE split_preview80');}return {id:p.old.id,description:p.old.description,amount_cents:p.old.amount_cents,parts:p.parts,before,after,token};}
  function splitApply(x){const preview=splitPreview(x);if(x.token!==preview.token)throw Error('La dépense a changé. Vérifiez de nouveau la répartition.');const p=splitPlan(x);return atomic(()=>doSplit(p));}
- function reconcile(x){const out=support.post('/api/support/reconcile',x),groups=new Map();for(const t of out.transactions.filter(t=>t.affects_balance!==0)){const key=JSON.stringify([t.happened_on,t.amount_cents,t.description.trim().toLocaleLowerCase('fr-CA')]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);}return {...out,duplicates:[...groups.values()].filter(g=>g.length>1),unreviewed_count:out.transactions.filter(t=>!t.reviewed).length};}
+ function reconcile(x){const out=support.post('/api/support/reconcile',x),groups=new Map();for(const t of out.transactions.filter(t=>t.affects_balance!==0)){const key=JSON.stringify([t.happened_on,t.amount_cents,t.description.trim().toLocaleLowerCase('fr-CA')]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t);}return {...out,guidance:reconciliationHints(out,buildForecast(forecastInput()).rows,forecastInput().today),duplicates:[...groups.values()].filter(g=>g.length>1),unreviewed_count:out.transactions.filter(t=>!t.reviewed).length};}
  return {bulkPlan,bulkApply,splitPreview,splitApply,reconcile};
 }

@@ -1,3 +1,4 @@
+import { createForecastHistory } from "./forecast-history.js";
 import { toCents } from "./money.js";
 import { createCardPaymentActions } from "./card-payment-actions.js";
 import { checkPublicRelease } from "./mac-update.js";
@@ -71,12 +72,23 @@ run(
   todayLocal(),
 );
 
+const forecastHistory = createForecastHistory({dir,today:todayLocal});
 const cents = toCents;
 const reply = (r, status, o) => {
   if (r.budgetBefore && status === 200) {
     support.recordUndo(r.budgetBefore, r.budgetRoute);
     if (o.accounts) o.support41 = support.state();
     else if (o.state) o.state.support41 = support.state();
+  }
+  if (status === 200) {
+    try {
+      if (r.historyReset || r.budgetRoute === "/api/backup/restore") forecastHistory.reset();
+      const state = o.accounts && o.forecast ? o : o.state?.accounts && o.state?.forecast ? o.state : null;
+      if (state) forecastHistory.observe(state, features.exportBackup().tables, r.budgetRoute || "observation");
+    } catch {
+      // Explanation failures must never turn a committed financial operation into an error response.
+      forecastHistory.unavailable();
+    }
   }
   r.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -1774,6 +1786,7 @@ const recurrencesRoutes = createRecurrencesRoutes({
   validateTransferEnvelope,
 });
 const readRoutes = createReadRoutes({
+  forecastHistory,
   createHash,
   dir,
   features,
@@ -1794,6 +1807,7 @@ const readRoutes = createReadRoutes({
 const handleRequest = async (req, res) => {
   try {
     securityHeaders(res);
+    res.historyReset = req.method === 'POST' && req.url === '/api/setup/reset';
     const viewing = req.url.startsWith("/shared/");
     const accessError = authorizeRequest(req, {
       privateAccess,
@@ -2429,7 +2443,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (14.1.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (14.3.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

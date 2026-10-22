@@ -22,7 +22,7 @@ La séparation ne réécrit pas les formules financières : la comparaison contr
 
 ## Interface native ES
 
-`index.html` charge **une entrée de module** : `ui-entry.js?v=14.1.0`. Cette entrée importe les domaines puis les initialise dans l’ordre vérifié. Chaque fichier exporte `initialize(runtime)`; les anciens noms de version sont encore conservés pour identifier les domaines et garder les chemins compatibles.
+`index.html` charge **une entrée de module** : `ui-entry.js?v=14.3.0`. Cette entrée importe les domaines puis les initialise dans l’ordre vérifié. Chaque fichier exporte `initialize(runtime)`; les anciens noms de version sont encore conservés pour identifier les domaines et garder les chemins compatibles.
 
 Le noyau possède ses variables dans une fermeture. Les modules reçoivent des accesseurs explicites vers l’état et les points de rendu partagés. Le pont global, limité aux anciens noms déjà utilisés, préserve les hooks existants et les diagnostics. Il évite de changer les règles de rendu en même temps que le mécanisme de chargement. Il n’y a ni injection séquentielle de scripts classiques, ni `eval`, ni compilation au démarrage.
 
@@ -64,3 +64,15 @@ La vérification de version est une route propriétaire GET `/api/release/check`
 `money.js` valide les montants numériques entrants avant conversion en centimes. Une fraction de cent est refusée, y compris en notation scientifique; les calculs internes continuent d’utiliser des entiers. Le validateur du dossier de mise à jour exige ce module. L’import CSV possède déjà sa validation de précision et conserve son traitement des séparateurs bancaires.
 
 La modification financière d’une transaction utilise maintenant le maximum de la couverture de Bien démarrer et de celle du compte alloué, comme à la création. La transaction modifiée est exclue de la recherche de reçu; les autres reçus restent pris en compte. Les simples changements de libellé conservaient déjà leur effet d’enveloppe et le conservent encore.
+
+## Confiance v14.3
+
+`forecast-history.js` observe les états canoniques remis au propriétaire et conserve un journal privé dans `data/forecast-history.json`, écrit par remplacement atomique avec permissions privées. Une observation identique ne crée rien; une préférence d’apparence ou une coche de révision ne crée pas de variation. La dernière empreinte d’entrées et les 90 jours canoniques servent à la comparaison; seules 40 observations de variation sont conservées. Les identités composites des périodes et associations restent distinctes.
+
+À chaque horizon, la différence des minimums est exacte. Si le nouveau point bas existait dans l’ancienne fenêtre, la différence se décompose en changement du solde à cette date, changement des réserves et différence entre l’ancien point bas et cette date. Le point d’ouverture est distingué de la fin de journée. Si la date entre dans l’horizon, seule la différence globale est annoncée, sans inventer une comparaison antérieure. Les entrées modifiées d’un lot sont listées sans leur attribuer individuellement une portion du total.
+
+Le journal est indépendant du SQLite, de l’annulation financière et des exports de sauvegarde. Une restauration ou un effacement complet le réinitialise. Une panne du journal ne fait pas échouer une opération financière; son indisponibilité est affichée. Le fichier n’est pas une ressource HTTP et son contenu n’est pas ajouté à la vue partagée.
+
+`reconciliation-hints.js` est une fonction pure de suggestion : échéances dues et paires de transactions dans le compte vérifié, avec direction inversée pour le solde dû d’une carte. Les propositions sont limitées et les limites de l’échantillon sont indiquées. Les mutations restent dans les traitements existants.
+
+`budget-confidence.js` présente le journal et les résumés de période issus des insights existants. Les styles sont ajoutés à `styles-sillage.css`, sans nouvelle feuille par version. Le validateur de mise à jour et les tests de copie installée exigent les trois nouveaux modules.

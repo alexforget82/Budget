@@ -322,6 +322,22 @@ export function initialize(runtime) {
           "v4-button v4-primary",
         ),
       );
+    const bankSteps = n("nav", undefined, "confidence-bank-steps");
+    bankSteps.setAttribute("aria-label", "Étapes du rapprochement");
+    for (const [label,step] of [["1 · Comparer",1],["2 · Examiner",2],["3 · Valider",3]]) {
+      const action=b(label,()=>{
+        let target=bankForm;
+        if(step>1) {
+          if(!bankResult.children.length){bankError.textContent="Comparez les soldes avant de poursuivre.";bankBalance.focus();return;}
+          target=step===2 ? bankResult.querySelector('.confidence-bank-hints,.v80-duplicate-hints,.v41-bank-operations') : bankResult.querySelector('.v41-correction')||bankResult;
+          if(target?.tagName==='DETAILS')target.open=true;
+        }
+        target?.scrollIntoView({block:'start',behavior:'auto'});
+        for(const button of bankSteps.children)button.setAttribute('aria-current',String(button===action?'step':'false'));
+      },"secondary");
+      bankSteps.append(action);
+    }
+    bankForm.before(bankSteps);
     bankForm.oninput = () => {
       bankContext();
       bankTicket++;
@@ -434,6 +450,22 @@ export function initialize(runtime) {
               "v4-button v4-primary",
             ),
           );
+        if (out.guidance && (out.guidance.planned.length || out.guidance.pairs.length)) {
+          const hints=n('section',undefined,'confidence-bank-hints');
+          hints.append(n('h3','Pistes pour expliquer l’écart'),n('p','Correspondances de montants seulement : vérifiez le relevé avant de saisir, modifier ou supprimer quoi que ce soit.','v4-footnote'));
+          for(const row of out.guidance.planned){
+            const line=n('div',undefined,'confidence-bank-hint');
+            line.append(n('strong','Échéance à vérifier · '+row.description),n('p',row.date+' · '+cash(row.remaining_cents)),b('Voir cette échéance',()=>{bank.d.close();window.budgetExploreForecast(row.date,30);},'secondary'));
+            hints.append(line);
+          }
+          for(const pair of out.guidance.pairs){
+            const line=n('div',undefined,'confidence-bank-hint');line.append(n('strong','Deux opérations totalisent l’écart si elles sont en trop'));
+            for(const t of pair)line.append(b('Examiner : '+t.description+' · '+cash(t.amount_cents),()=>{bank.d.close();window.budgetEditRecord('transaction',t);},'secondary'));
+            hints.append(line);
+          }
+          if(out.guidance.limited)hints.append(n('p','Ces pistes portent sur les 100 dernières transactions affichées. Élargissez votre vérification dans Transactions.','v4-footnote'));
+          bankResult.append(hints);
+        }
         if (out.duplicates?.length) {
           const hints = n("details", undefined, "v80-duplicate-hints");
           hints.open = true;
@@ -921,10 +953,10 @@ export function initialize(runtime) {
       current = s;
       releaseVersion.textContent = "Version installée : v" + s.version;
       version.textContent =
-        s.version === "14.1.0"
-          ? "v14.1.0"
-          : "Interface v14.1.0 · serveur v" + s.version;
-      reloadInterface.hidden = s.version === "14.1.0";
+        s.version === "14.3.0"
+          ? "v14.3.0"
+          : "Interface v14.3.0 · serveur v" + s.version;
+      reloadInterface.hidden = s.version === "14.3.0";
       version.title = "Version du serveur : " + s.version;
       undoButton.disabled = !s.support41?.undo.available;
       undoButton.title =

@@ -1,5 +1,20 @@
 # Vérifications de Sillage
 
+## v14.3.0 — historique du minimum et rapprochement
+
+**126 tests Node, 201 tests API historiques et 75 scripts Python validés.** Le passage complet Python donne 71/75. Quatre parcours sont corrigés ou adaptés puis relancés : budget-v43-ui conserve le libellé explicite du prochain budget; budget-v73-ui vérifie la réserve dans son nouveau détail et garde ses assertions financières; entry-phase1-ui passe après correction d’un vol de focus différé reproduit indépendamment; visual-v14-ui garde sa limite de hauteur après réduction des marges du nouveau résumé. Aucune assertion financière n’est retirée.
+
+Les six tests `confidence-history.test.js` vérifient la somme exacte des trois composantes, le point d’ouverture, le changement de date du minimum, une date entrant dans l’horizon, la distinction 30/60/90, les clés composites, la persistance et la rétention, l’absence de doublon sur lecture identique, la réinitialisation et les pannes, ainsi que les signes banque/carte des pistes de rapprochement.
+
+`confidence-v143-api.py` vérifie l’absence de mutation financière sur consultation, simulation ou comparaison, la concordance du journal avec les centimes canoniques, le redémarrage, l’interdiction HTTP du fichier privé, les paires et échéances, et le nouveau point de départ après restauration ou effacement complet. Les nouveaux tests unitaires et API sont relancés après l’isolation des erreurs de stockage du journal.
+
+`confidence-v143-ui.py` vérifie le dialogue 30/60/90, le détail chiffré et la conservation d’un champ déjà choisi après ouverture, Budget/Dépensé/Restant, la réserve repliée, les étapes de rapprochement, les paires et la reprise après erreur. Les parcours couvrent 320, 390, 768 et 1440 pixels, deux thèmes, le débordement des dialogues et la stricte conservation des tables financières et de la prévision. Le nouveau parcours est relancé après les derniers ajustements. La copie installée et les parcours historiques de cartes, périodes, partage, restauration, clavier et menus restent validés.
+
+Le défaut de focus est reproduit avec un scénario déterministe : ouvrir la saisie, choisir Description avant la prochaine frame, attendre cette frame; le champ perdait le focus avant correction et le conserve après. Le préremplissage historique est ensuite relancé sans diminuer ses exigences.
+
+[Guide et captures](docs/SILLAGE-14.3.md) · [Résultats](docs/v143/checks.json). Aucun moteur financier ni schéma modifié. Journal local indépendant, initialisé dans cette version et remis à zéro après restauration ou effacement. Données fictives et Chromium; aucun essai sur Safari réel ou iPhone physique.
+
+
 ## v14.1.0 — contrôles et corrections ciblées
 
 **120 tests Node, 201 tests API historiques et 73 scripts Python validés.** Le passage complet Python donne 69/73. Quatre parcours sont adaptés puis relancés avec succès : entry-phase1-ui attend les options d’enveloppes après rechargement avant d’exercer le préremplissage; responsive-v501-ui ouvre Outils seulement si fermé; sillage-v10-ui ouvre Plus avant Scénarios; ui-smoke attend le contrôle replié avant de l’ouvrir par Plus. Les assertions financières, de classement et de navigation restent actives.

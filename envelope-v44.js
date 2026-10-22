@@ -169,10 +169,13 @@ export function initialize(runtime) {
           "v44-mode",
         ),
       );
+      const periodBudget = insight.period_start ? insight.period_budget_cents : insight.next_period_remaining_cents + insight.next_period_spent_cents;
+      const periodSpent = insight.period_start ? insight.spent_period_cents : insight.next_period_spent_cents;
+      const protectedBudget = insight.mode === 'reserved' && e.frequency !== 'none';
       const metrics = node("div", undefined, "v44-metrics");
       metrics.append(
-        metric("Réserve restante", cash(e.reserved_cents)),
-        metric("Achats ce mois-ci", cash(insight.spent_month_cents)),
+        metric(protectedBudget ? "Restant à dépenser" : "Réserve restante", cash(protectedBudget ? periodBudget-periodSpent : e.reserved_cents)),
+        metric(protectedBudget ? "Dépensé dans cette période" : "Achats ce mois-ci", cash(protectedBudget ? periodSpent : insight.spent_month_cents)),
         metric(
           e.frequency === "none"
             ? "Budget fixe"
@@ -181,7 +184,7 @@ export function initialize(runtime) {
               : "Budget par période",
           e.frequency === "none" && !e.budget_cents
             ? "Libre"
-            : cash(insight.period_budget_cents),
+            : cash(protectedBudget ? periodBudget : insight.period_budget_cents),
         ),
       );
       if (
@@ -195,6 +198,9 @@ export function initialize(runtime) {
           ),
         );
       sheet.inner.append(metrics);
+      if(protectedBudget){
+        const reserve=node('details',undefined,'confidence-reserve-detail');reserve.append(node('summary','Réserve et total du mois'),row('Argent protégé maintenant',cash(e.reserved_cents)),row('Achats ce mois-ci',cash(insight.spent_month_cents)));sheet.inner.append(reserve);
+      }
       if (insight.period_budget_cents !== e.budget_cents)
         sheet.inner.append(row("Budget habituel", cash(e.budget_cents)));
       if (insight.period_start)

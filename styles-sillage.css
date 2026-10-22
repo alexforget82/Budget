@@ -4322,3 +4322,34 @@ html[data-theme] body.sillage-v14 .dashboard-chart-label { fill:var(--v80-ink); 
  html[data-theme] body.sillage-v14 .v13-graph-slot .dashboard-chart { height:auto!important; aspect-ratio:400/204; }
  html[data-theme] body.sillage-v14 .dashboard-chart :is(.dashboard-chart-axis,.dashboard-chart-label) { font-size:14px; }
 }
+
+/* Budget confidence: read-only history and period summaries. */
+html[data-theme] .minimum-history-shortcut { display:flex; justify-content:flex-end; margin:-4px 0 12px; }
+html[data-theme] .minimum-history-shortcut button { background:transparent!important; border:0!important; color:var(--v80-muted)!important; font-size:12px; min-height:44px; }
+html[data-theme] .confidence-dialog { width:min(720px,calc(100vw - 24px)); }
+html[data-theme] .confidence-horizons { display:flex; gap:8px; margin:12px 0; }
+html[data-theme] .confidence-horizons button[aria-pressed=true] { border-color:var(--v80-accent)!important; color:var(--v80-accent)!important; }
+html[data-theme] .confidence-change { padding:14px 0; border-bottom:1px solid var(--v80-line); }
+html[data-theme] .confidence-change>summary { display:flex; justify-content:space-between; gap:12px; cursor:pointer; min-height:44px; align-items:center; }
+html[data-theme] .confidence-bridge { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; font-size:13px; }
+html[data-theme] .confidence-bridge dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+html[data-theme] .confidence-envelope-summary { display:flex; flex-wrap:wrap; gap:12px 24px; grid-column:1/-1; grid-row:3; margin:4px 0; }
+html[data-theme] .confidence-envelope-summary>div { display:grid; gap:4px; }
+html[data-theme] .confidence-envelope-summary span { font-size:11px; color:var(--v80-muted); }
+html[data-theme] .confidence-envelope-summary strong { font-size:13px; white-space:nowrap; }
+html[data-theme] body.sillage-v14 .envelope-tile:has(.confidence-envelope-summary)>progress { display:none; }
+html[data-theme] .confidence-bank-steps { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+html[data-theme] .confidence-bank-steps button { min-height:44px; font-size:12px; }
+html[data-theme] .confidence-bank-hints { padding:14px 0; border-bottom:1px solid var(--v80-line); }
+html[data-theme] .confidence-bank-hint { border-left:2px solid var(--v80-line); padding:10px 12px; margin:10px 0; }
+@media(max-width:760px) {
+ html[data-theme] body.sillage-v14 .confidence-dialog .dialog-heading { position:sticky; top:0; z-index:4; background:var(--v80-surface)!important; }
+ html[data-theme] body.sillage-v14 .confidence-dialog :is(button,summary) { min-height:44px; }
+ html[data-theme] body.sillage-v14 .confidence-envelope-summary { gap:12px; justify-content:space-between; }
+ html[data-theme] body.sillage-v14 .envelope-tile:has(.confidence-envelope-summary)>.v44-card-tools { grid-row:4; }
+ html[data-theme] .confidence-bridge { font-size:12px; }
+ html[data-theme] .confidence-bank-steps button { flex:1; }
+}
+html[data-theme] .confidence-change>summary>span { display:grid; gap:4px; min-width:0; }
+html[data-theme] .confidence-change>summary small { color:var(--v80-muted); font-size:11px; }
+html[data-theme] .confidence-change>summary>strong { flex-shrink:0; font-variant-numeric:tabular-nums; }

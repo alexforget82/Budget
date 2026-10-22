@@ -1,6 +1,6 @@
 /* Canonical CSS entry. Preserve layer order; tokens own the global palette. */
 @layer application, tokens;
-@import url("/styles-foundation.css?v=14.1.0") layer(application);
-@import url("/styles-domains.css?v=14.1.0") layer(application);
-@import url("/styles-sillage.css?v=14.1.0") layer(application);
-@import url("/styles-tokens.css?v=14.1.0") layer(tokens);
+@import url("/styles-foundation.css?v=14.3.0") layer(application);
+@import url("/styles-domains.css?v=14.3.0") layer(application);
+@import url("/styles-sillage.css?v=14.3.0") layer(application);
+@import url("/styles-tokens.css?v=14.3.0") layer(tokens);

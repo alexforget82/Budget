@@ -1,5 +1,6 @@
 import { chatgptSnapshot } from "./chatgpt-export.js";
 export function createReadRoutes({
+  forecastHistory,
   createHash,
   dir,
   features,
@@ -18,6 +19,11 @@ export function createReadRoutes({
   todayLocal,
 }) {
   return function handle(req, res) {
+    if (req.method === "GET" && req.url === "/api/forecast/history") {
+      const state = snapshot();
+      forecastHistory.observe(state,features.exportBackup().tables);
+      return reply(res,200,forecastHistory.read());
+    }
     if (
       req.method === "GET" &&
       (req.url === "/api/chatgpt/export" ||
@@ -67,7 +73,7 @@ export function createReadRoutes({
       });
     if (req.method === "GET" && req.url === "/api/private/status")
       return reply(res, 200, {
-        version: "14.1.0",
+        version: "14.3.0",
         data_key: createHash("sha256").update(path.resolve(dir)).digest("hex"),
         enabled: !!privateAccess,
         origin: privateAccess?.origin || null,

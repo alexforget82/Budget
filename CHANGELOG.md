@@ -1,5 +1,16 @@
 # Versions de Sillage
 
+## 14.3.0 — comprendre les variations et rapprocher ses comptes
+
+Intègre les objectifs proposés pour la v14.2 et le rapprochement de la v14.3. Un journal local conserve les 40 dernières observations qui modifient la trajectoire canonique du disponible. Le dialogue Pourquoi mon minimum a changé ? compare 30/60/90 jours, montre le minimum avant/après, les changements observés et une décomposition exacte à la date du nouveau point bas : solde prévu, réserves et déplacement du minimum. Une journée qui entre dans l’horizon est signalée; aucune explication à date égale n’est inventée si cette date n’était pas observée. Les effets individuels des opérations d’un lot ne sont pas estimés.
+
+Les enveloppes en budget protégé montrent Budget, Dépensé et Restant pour la période pertinente, avec prise en compte des achats anticipés associés. La fiche met le restant en premier et range la réserve actuelle et le total du mois dans un détail. Les budgets libres et paiements datés gardent leurs propres libellés.
+
+Le rapprochement ajoute trois étapes de navigation et des pistes pour une échéance due ou deux transactions dont le retrait expliquerait l’écart. Les suggestions respectent les signes des comptes bancaires et cartes, les dates et le périmètre du compte. Ce sont des pistes, sans suppression, association ni correction automatique. Les confirmations, aperçus et contrôles de données périmées existants restent actifs.
+
+Aucune migration ni modification des moteurs financiers. Le journal privé est séparé du grand livre, commence à l’installation et repart de zéro après restauration ou effacement complet. Les styles restent dans les quatre fichiers canoniques. Le focus différé du formulaire ne reprend plus le curseur lorsqu’un autre champ de saisie a déjà été choisi. Le défaut est reproduit puis vérifié par un scénario déterministe. Les parcours iPhone sont vérifiés sous Chromium; aucun essai sur Safari réel ou appareil physique.
+
+
 ## 14.1.0 — tableau de bord et corrections ciblées
 
 Horizon 30/60/90 et accès jour par jour en premier; recherche, annulation, personnalisation, scénarios, rapprochement et explications réunis dans Plus. Apparence et État des données passent dans Outils et réglages, sur ordinateur comme sur téléphone. Le minimum prévu est plus lisible à droite du disponible. Le graphique porte une échelle monétaire et marque les extrêmes du même horizon, y compris le montant actuel. Le compte est désigné par « Disponible à dépenser ».

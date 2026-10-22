@@ -1,0 +1,468 @@
+{
+  "version": "14.3.0",
+  "node_tests": 126,
+  "historical_api_tests": 201,
+  "python_first_pass": "71/75",
+  "python_final": "75/75 après quatre relances ciblées",
+  "new_coverage": "6 tests Node : pont exact, fenêtres et horizons, identités composites, journal borné/persistant, panne et signes des pistes. API : lecture/simulation sans effet, persistance, fichier privé, pistes, restauration et effacement. UI : historique, budget de période, étapes, reprise, focus conservé, deux thèmes et quatre largeurs.",
+  "focus_regression": "Scénario déterministe avant : false; après : true. Le champ Description garde le focus après la frame différée.",
+  "final_targeted": "Nouveaux tests unitaires/API relancés après le traitement de panne du journal; nouveau parcours UI relancé après les derniers ajustements de présentation et de focus.",
+  "environment": "Bases fictives temporaires; Chromium; aucun essai sur Safari réel ou appareil iPhone physique.",
+  "financial_changes": "Aucun moteur ou schéma modifié. Journal séparé du grand livre, aucune correction/association/suppression automatique par les nouvelles vues. Comparaison des tables financières et des prévisions avant/après consultation.",
+  "results": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 4.7,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 0,
+      "seconds": 11.1,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 0,
+      "seconds": 8.0,
+      "initial_code": 1,
+      "rerun_note": "The next-period label remains explicit; all existing reserve, account and forecast assertions retained."
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 0,
+      "seconds": 11.7,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 0,
+      "seconds": 6.6,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 0,
+      "seconds": 3.3,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 0,
+      "seconds": 6.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 7.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 7.4,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 0,
+      "seconds": 5.0,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 6.5,
+      "initial_code": 1,
+      "rerun_note": "The first metric now shows the budget remaining; the original 100 dollar reserve assertion opens its dedicated detail, with unchanged financial assertions."
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 11.0,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 16.2,
+      "initial_code": 0
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 6.5,
+      "initial_code": 0
+    },
+    {
+      "test": "calendar-budget-v113-ui.py",
+      "code": 0,
+      "seconds": 3.9,
+      "initial_code": 0
+    },
+    {
+      "test": "calendar-envelope-renewals-ui.py",
+      "code": 0,
+      "seconds": 3.5,
+      "initial_code": 0
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 0,
+      "seconds": 11.3,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payment-actual-api.py",
+      "code": 0,
+      "seconds": 0.3,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payment-actual-ui.py",
+      "code": 0,
+      "seconds": 17.6,
+      "initial_code": 0
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 0,
+      "seconds": 16.0,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 5.6,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 0,
+      "seconds": 13.1,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.8,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 2.9,
+      "initial_code": 0
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 4.1,
+      "initial_code": 0
+    },
+    {
+      "test": "chatgpt-export-ui.py",
+      "code": 0,
+      "seconds": 4.2,
+      "initial_code": 0
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 5.8,
+      "initial_code": 0
+    },
+    {
+      "test": "confidence-v116-ui.py",
+      "code": 0,
+      "seconds": 11.3,
+      "initial_code": 0
+    },
+    {
+      "test": "confidence-v143-api.py",
+      "code": 0,
+      "seconds": 0.4,
+      "initial_code": 0
+    },
+    {
+      "test": "confidence-v143-ui.py",
+      "code": 0,
+      "seconds": 17.5,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-controls-ui.py",
+      "code": 0,
+      "seconds": 19.0,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.4,
+      "initial_code": 0
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 14.4,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-integrity-api.py",
+      "code": 0,
+      "seconds": 0.3,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-phase1-api.py",
+      "code": 0,
+      "seconds": 0.5,
+      "initial_code": 0
+    },
+    {
+      "test": "entry-phase1-ui.py",
+      "code": 0,
+      "seconds": 8.6,
+      "initial_code": 1,
+      "rerun_note": "Reproduced deferred focus stealing the description field; preserve an already chosen input and rerun the original merchant/manual-choice scenario."
+    },
+    {
+      "test": "envelope-entry-api.py",
+      "code": 0,
+      "seconds": 0.3,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-entry-ui.py",
+      "code": 0,
+      "seconds": 8.3,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-first-period-api.py",
+      "code": 0,
+      "seconds": 0.4,
+      "initial_code": 0
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 7.3,
+      "initial_code": 0
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 8.3,
+      "initial_code": 0
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 9.7,
+      "initial_code": 0
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 0,
+      "seconds": 12.2,
+      "initial_code": 0
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.6,
+      "initial_code": 0
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 3.4,
+      "initial_code": 0
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.4,
+      "initial_code": 0
+    },
+    {
+      "test": "migration-rollback-ui.py",
+      "code": 0,
+      "seconds": 2.4,
+      "initial_code": 0
+    },
+    {
+      "test": "mobile-v115-ui.py",
+      "code": 0,
+      "seconds": 35.5,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 0,
+      "seconds": 17.6,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 9.2,
+      "initial_code": 0
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 15.7,
+      "initial_code": 0
+    },
+    {
+      "test": "refactor-parity-ui.py",
+      "code": 0,
+      "seconds": 19.3,
+      "initial_code": 0
+    },
+    {
+      "test": "release-v12-ui.py",
+      "code": 0,
+      "seconds": 3.7,
+      "initial_code": 0
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 4.7,
+      "initial_code": 0
+    },
+    {
+      "test": "reserved-period-match-ui.py",
+      "code": 0,
+      "seconds": 2.2,
+      "initial_code": 0
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 26.1,
+      "initial_code": 0
+    },
+    {
+      "test": "security-view-ui.py",
+      "code": 0,
+      "seconds": 1.3,
+      "initial_code": 0
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 0,
+      "seconds": 2.8,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-grocery-ui.py",
+      "code": 0,
+      "seconds": 1.5,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 1.7,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.3,
+      "initial_code": 0
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 2.1,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 0,
+      "seconds": 14.6,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 0,
+      "seconds": 9.7,
+      "initial_code": 0
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 4.3,
+      "initial_code": 0
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 5.5,
+      "initial_code": 0
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 4.2,
+      "initial_code": 0
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 4.2,
+      "initial_code": 0
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 3.4,
+      "initial_code": 0
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 11.7,
+      "initial_code": 0
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 0,
+      "seconds": 6.9,
+      "initial_code": 0
+    },
+    {
+      "test": "visual-v13-ui.py",
+      "code": 0,
+      "seconds": 38.5,
+      "initial_code": 0
+    },
+    {
+      "test": "visual-v14-ui.py",
+      "code": 0,
+      "seconds": 2.8,
+      "initial_code": 1,
+      "rerun_note": "Reduce new summary margins on narrow cards; retain the original under-270px card-height requirement and financial assertions."
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 8.4,
+      "initial_code": 0
+    }
+  ]
+}

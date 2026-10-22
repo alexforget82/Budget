@@ -1,4 +1,4 @@
-import { normalizeMerchant } from "./entry-memory.js?v=14.1.0";
+import { normalizeMerchant } from "./entry-memory.js?v=14.3.0";
 // Domain initializer. Shared state and rendering hooks are explicit dependencies.
 export function initialize(runtime) {
   /* A focused register and a small, reusable transaction editor. */
@@ -877,6 +877,16 @@ export function initialize(runtime) {
         submit.disabled = submitMore.disabled = false;
       }
     };
+    function focusAmountUnlessEditing() {
+      if (!dialog.open) return;
+      const active = document.activeElement;
+      if (
+        form.contains(active) &&
+        active.matches("input,select,textarea") &&
+        active !== amount
+      ) return;
+      amount.focus();
+    }
     const openEditor = window.appOpenEditor;
     window.appOpenEditor = function (key) {
       if (key === "transaction" && !amount.value && !description.value) {
@@ -894,7 +904,7 @@ export function initialize(runtime) {
       openEditor(key);
       if (key === "transaction") {
         syncType();
-        requestAnimationFrame(() => amount.focus());
+        requestAnimationFrame(focusAmountUnlessEditing);
       }
     };
     window.addEventListener("budget:repeat-transaction", (event) => {
@@ -940,7 +950,7 @@ export function initialize(runtime) {
         if (again) {
           openEditor("transaction");
           syncType();
-          requestAnimationFrame(() => amount.focus());
+          requestAnimationFrame(focusAmountUnlessEditing);
         }
       }
       return ok;
