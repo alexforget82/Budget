@@ -1,5 +1,16 @@
 # Versions de Sillage
 
+## 14.4.0 — registre compact et classement depuis la liste
+
+Le registre sépare Date, Description, Compte, Catégorie, Enveloppe, Montant et Statut, avec une case de sélection et un menu d’actions. L’en-tête reste visible pendant le défilement sur ordinateur. Les titres de colonnes permettent de trier tout l’historique; un filtre Enveloppe rejoint les filtres de catégorie, compte et période. Les totaux, l’export et la pagination portent sur les résultats complets, pas seulement sur les lignes affichées.
+
+Sur une fenêtre inférieure à 1100 pixels, la présentation passe à deux lignes : description et montant, puis date, compte et catégorie. Les détails et actions restent accessibles par le nom de l’opération ou le menu ⋯. Les zones de sélection tactiles sont élargies et les dates courantes abrégées. Le statut Prévu associé vient des associations canoniques existantes, sans nouveau rapprochement automatique.
+
+Catégories, sous-catégories et enveloppes se modifient depuis les cellules. Le traitement sécurisé de modification en lot existant est réutilisé pour une seule opération. Un changement de catégorie ne modifie pas les réserves; un changement d’enveloppe présente les effets sur disponible, réserves et minimum sur 90 jours avant confirmation. Les associations susceptibles de changer sont indiquées; une donnée modifiée après aperçu invalide la confirmation. La page courante est conservée lorsque possible et l’éditeur complet reste dans le menu.
+
+Aucun changement du schéma, du moteur de prévision ou des formules de protection. Les styles restent dans les quatre fichiers canoniques. Les liens iPhone existants sont conservés.
+
+
 ## 14.3.0 — comprendre les variations et rapprocher ses comptes
 
 Intègre les objectifs proposés pour la v14.2 et le rapprochement de la v14.3. Un journal local conserve les 40 dernières observations qui modifient la trajectoire canonique du disponible. Le dialogue Pourquoi mon minimum a changé ? compare 30/60/90 jours, montre le minimum avant/après, les changements observés et une décomposition exacte à la date du nouveau point bas : solde prévu, réserves et déplacement du minimum. Une journée qui entre dans l’horizon est signalée; aucune explication à date égale n’est inventée si cette date n’était pas observée. Les effets individuels des opérations d’un lot ne sont pas estimés.

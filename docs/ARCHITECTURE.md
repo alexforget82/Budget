@@ -22,7 +22,7 @@ La séparation ne réécrit pas les formules financières : la comparaison contr
 
 ## Interface native ES
 
-`index.html` charge **une entrée de module** : `ui-entry.js?v=14.3.0`. Cette entrée importe les domaines puis les initialise dans l’ordre vérifié. Chaque fichier exporte `initialize(runtime)`; les anciens noms de version sont encore conservés pour identifier les domaines et garder les chemins compatibles.
+`index.html` charge **une entrée de module** : `ui-entry.js?v=14.4.0`. Cette entrée importe les domaines puis les initialise dans l’ordre vérifié. Chaque fichier exporte `initialize(runtime)`; les anciens noms de version sont encore conservés pour identifier les domaines et garder les chemins compatibles.
 
 Le noyau possède ses variables dans une fermeture. Les modules reçoivent des accesseurs explicites vers l’état et les points de rendu partagés. Le pont global, limité aux anciens noms déjà utilisés, préserve les hooks existants et les diagnostics. Il évite de changer les règles de rendu en même temps que le mécanisme de chargement. Il n’y a ni injection séquentielle de scripts classiques, ni `eval`, ni compilation au démarrage.
 
@@ -76,3 +76,11 @@ Le journal est indépendant du SQLite, de l’annulation financière et des expo
 `reconciliation-hints.js` est une fonction pure de suggestion : échéances dues et paires de transactions dans le compte vérifié, avec direction inversée pour le solde dû d’une carte. Les propositions sont limitées et les limites de l’échantillon sont indiquées. Les mutations restent dans les traitements existants.
 
 `budget-confidence.js` présente le journal et les résumés de période issus des insights existants. Les styles sont ajoutés à `styles-sillage.css`, sans nouvelle feuille par version. Le validateur de mise à jour et les tests de copie installée exigent les trois nouveaux modules.
+
+## Registre v14.4
+
+`transaction-register.js` décore les lignes du registre existant et déplace les contrôles d’origine, sans copier leurs mutations. Les colonnes d’en-tête et de lignes utilisent la même variable CSS; la présentation passe à deux lignes sous 1100 pixels. Les dates, cases, menus et commandes de révision restent les éléments d’origine. Le statut d’association est lu dans les lignes de prévision et les liens existants.
+
+Le classement rapide appelle `bulk-preview` puis `bulk-apply` pour un seul identifiant, avec le jeton produit par le serveur. Les changements contiennent uniquement les champs réellement modifiés. Une catégorie seule ne réécrit pas l’enveloppe; celle-ci nécessite un aperçu et une confirmation. Une modification du formulaire supprime son aperçu, les champs sont bloqués pendant une requête et les données périmées sont refusées par le traitement existant. Le rendu final actualise l’état et la liste sans remettre systématiquement la pagination à un.
+
+Le paramètre de filtre Enveloppe était déjà pris en charge par l’API; la saisie du filtre est ajoutée à la requête et à l’export existants. Le tri par nom d’enveloppe utilise une entrée fixe de la liste SQL autorisée. Les finances ne sont ni recalculées par le navigateur ni modifiées par un filtre ou un tri. Le module fait partie des ressources fermées et des fichiers exigés par le validateur d’installation.

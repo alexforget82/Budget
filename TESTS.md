@@ -1,5 +1,18 @@
 # Vérifications de Sillage
 
+## v14.4.0 — registre compact et classement rapide
+
+**126 tests Node, 201 tests API historiques et 77 scripts Python validés.** Le passage complet Python donne 75/77. categories-v46-ui et workflows-ui ouvrent maintenant le menu ⋯ avant Modifier, puis passent à la relance. Les assertions de soldes, changements de signe, sous-catégories, archivage, import et restauration sont conservées. Le contrôle d’alignement de compact-register-ui utilise les noms des colonnes plutôt que leurs anciens indices, sans diminuer les exigences de densité ou de parité financière.
+
+`register-v144-ui.py` crée 80 opérations et vérifie les neuf colonnes alignées, l’en-tête fixe après défilement, 50 lignes puis 30 sur la deuxième page, la sélection de page, le tri global et le filtre d’enveloppe. Il parcourt 320, 390, 768, 1100, 1440 et 1920 pixels dans les deux thèmes. Les lignes restent sous 62 pixels sur ordinateur et sous 78 en présentation compacte à deux lignes. La consultation conserve exactement les tables financières et la prévision.
+
+Le même parcours modifie catégorie et sous-catégorie depuis une cellule, vérifie l’absence d’effet sur le disponible et la prévision, et conserve la deuxième page. Il vérifie le repère d’association issu du moteur, l’avertissement sur une association automatique lors d’un changement d’enveloppe, l’aperçu sans écriture, l’invalidation après changement de champ ou mutation concurrente, la confirmation explicite, le compte/date/montant conservés, le retour d’enregistrement et l’accès au classement et à l’éditeur complet sur téléphone. Fermer un aperçu ne modifie rien. Le parcours est relancé après les derniers ajustements.
+
+`register-v144-api.py` utilise 65 opérations : filtre d’enveloppe portant sur 60 résultats au-delà de la première page, pagination sans doublon, tri par enveloppe dans les deux sens, export CSV de la totalité des résultats filtrés et absence de mutation des tables ou prévisions. Les protections du traitement de modification en lot restent vérifiées par les tests existants.
+
+[Guide et captures](docs/SILLAGE-14.4.md) · [Résultats](docs/v144/checks.json). Aucun moteur financier ni schéma modifié; les mutations de classement réutilisent les traitements existants. Essais avec données fictives sous Chromium; aucun essai sur Safari réel ou iPhone physique.
+
+
 ## v14.3.0 — historique du minimum et rapprochement
 
 **126 tests Node, 201 tests API historiques et 75 scripts Python validés.** Le passage complet Python donne 71/75. Quatre parcours sont corrigés ou adaptés puis relancés : budget-v43-ui conserve le libellé explicite du prochain budget; budget-v73-ui vérifie la réserve dans son nouveau détail et garde ses assertions financières; entry-phase1-ui passe après correction d’un vol de focus différé reproduit indépendamment; visual-v14-ui garde sa limite de hauteur après réduction des marges du nouveau résumé. Aucune assertion financière n’est retirée.

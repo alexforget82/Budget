@@ -1418,6 +1418,7 @@ export function initialize(runtime) {
       if (by("v2-review").value) p.set("reviewed", by("v2-review").value);
       if (by("v2-kind").value) p.set("kind", by("v2-kind").value);
       if(by('v132-without-envelope')?.checked)p.set('without_envelope','1');
+      if(by('register-envelope-filter')?.value)p.set('envelope',by('register-envelope-filter').value);
       for (const [id, key] of [
         ["v3-category-filter", "category"],
         ["v3-date-from", "from"],
@@ -1601,8 +1602,8 @@ export function initialize(runtime) {
         if (ticket === recordsTicket) host.setAttribute("aria-busy", "false");
       }
     }
-    window.budgetRefreshTransactions = () => {
-      page = 1;
+    window.budgetRefreshTransactions = ({keepPage=false}={}) => {
+      if(!keepPage) page = 1;
       loadRecords();
     };
 

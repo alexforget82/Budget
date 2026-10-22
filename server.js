@@ -1434,6 +1434,7 @@ function listTransactions(url, all = false) {
       description: "t.description COLLATE NOCASE",
       account: "a.name COLLATE NOCASE",
       category: "COALESCE(c.name,'Non-catégorisé') COLLATE NOCASE",
+      envelope: "COALESCE(e.name,'') COLLATE NOCASE",
     },
     order = sorts[params.get("sort")] || sorts.date,
     direction = params.get("direction") === "asc" ? "ASC" : "DESC";
@@ -2443,7 +2444,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (14.3.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (14.4.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

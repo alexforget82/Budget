@@ -1,4 +1,5 @@
 export const staticFiles = new Map([
+  ["/transaction-register.js", "transaction-register.js"],
   ["/budget-confidence.js", "budget-confidence.js"],
   ["/sillage-v14.js", "sillage-v14.js"],
   ["/styles-v14.css", "styles-v14.css"],
@@ -50,6 +51,7 @@ staticFiles.set("/budget-v60.css", "budget-v60.css");
 staticFiles.set("/budget-v50.js", "budget-v50.js");
 staticFiles.set("/budget-v50.css", "budget-v50.css");
 export const mime = {
+  "transaction-register.js": "text/javascript; charset=utf-8",
   "budget-confidence.js": "text/javascript; charset=utf-8",
   "entry-memory.js": "text/javascript; charset=utf-8",
   "card-payment-actual-ui.js": "text/javascript; charset=utf-8",

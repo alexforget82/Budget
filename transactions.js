@@ -1,4 +1,4 @@
-import { normalizeMerchant } from "./entry-memory.js?v=14.3.0";
+import { normalizeMerchant } from "./entry-memory.js?v=14.4.0";
 // Domain initializer. Shared state and rendering hooks are explicit dependencies.
 export function initialize(runtime) {
   /* A focused register and a small, reusable transaction editor. */
