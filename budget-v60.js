@@ -102,7 +102,18 @@ export function initialize(runtime) {
     );
     toolbar.firstChild.setAttribute("aria-label", "Mois budgétaire précédent");
     toolbar.children[2].setAttribute("aria-label", "Mois budgétaire suivant");
-    root.append(toolbar, summary, notice, list);
+    root.classList.add("budget-register-view");
+    const hideEmpty = el("input");
+    hideEmpty.type = "checkbox";
+    hideEmpty.onchange = drawBudget;
+    const emptyControl = field("Masquer les catégories vides", hideEmpty);
+    emptyControl.className = "budget-hide-empty";
+    toolbar.append(emptyControl);
+    const tools = el("details", undefined, "budget-register-tools");
+    tools.append(el("summary", "Options du budget"));
+    const footer = el("div", undefined, "budget-register-total");
+    footer.setAttribute("aria-live", "polite");
+    root.append(toolbar, tools, summary, notice, list, footer);
     const help = el("details", undefined, "v60-help");
     help.append(
       el("summary", "Comment lire mon budget global ?"),
@@ -449,20 +460,24 @@ export function initialize(runtime) {
       if (!data) return;
       summary.replaceChildren();
       metric(
-        "Revenus",
+        "Revenus prévus",
         data.totals.income.budget_cents,
         data.totals.income.actual_cents,
       );
       metric(
-        "Dépenses",
+        "Budgété",
         data.totals.expense.budget_cents,
         data.totals.expense.actual_cents,
       );
       metric(
-        "Revenus − dépenses",
+        "Reste à répartir",
         data.planned_net_cents,
         data.actual_net_cents,
       );
+      footer.textContent = "Dépenses · Budget " + cash(data.totals.expense.budget_cents) + " · Dépensé " + cash(data.totals.expense.actual_cents) + " · Disponible " + cash(data.totals.expense.budget_cents - data.totals.expense.actual_cents);
+      // Keep secondary operations available without crowding the table.
+      for (const b of [...toolbar.children])
+        if (b.tagName === "BUTTON" && !["←", "→", "Reprendre le mois précédent"].includes(b.textContent)) tools.append(b);
       notice.replaceChildren();
       if (data.calendar_warnings?.length)
         notice.append(
@@ -537,6 +552,7 @@ export function initialize(runtime) {
           .replace(/\p{M}/gu, "")
           .toLocaleLowerCase("fr-CA"),
         rows = data.rows
+          .filter(r => !hideEmpty.checked || r.budget_cents || r.actual_cents || r.recurring_cents || r.plan || r.subcategories.some(sub => sub.plan || sub.actual_cents))
           .filter((r) =>
             (
               r.name +
@@ -566,9 +582,9 @@ export function initialize(runtime) {
       const head = el("div", undefined, "v60-table-heading");
       for (const t of [
         "Catégorie",
-        data.start_period ? "Prévu · période" : "Prévu / mois",
-        "Réel",
-        "Écart favorable",
+        data.start_period ? "Budget · période" : "Budget",
+        "Dépensé / reçu",
+        "Disponible",
       ])
         head.append(el("span", t));
       list.append(head);
@@ -606,9 +622,7 @@ export function initialize(runtime) {
         heading.append(el("span", key.split("|")[1] + " · " + items.length));
         const budget = items.reduce((n, r) => n + (r.budget_cents || 0), 0),
           actual = items.reduce((n, r) => n + r.actual_cents, 0),
-          variance = key.startsWith("income")
-            ? actual - budget
-            : budget - actual;
+          variance = budget - actual;
         for (const value of [budget, actual, variance])
           heading.append(el("strong", cash(value)));
         group.append(heading);
@@ -726,6 +740,7 @@ export function initialize(runtime) {
               r.variance_cents < 0 ? "v60-negative" : "v60-positive",
             ),
           );
+          decorateBudgetRow(row, r);
           group.append(row);
           if (r.subcategories.length) {
             const detail = el("details", undefined, "v60-subcategories");
@@ -817,6 +832,7 @@ export function initialize(runtime) {
                   sub.variance_cents < 0 ? "v60-negative" : "v60-positive",
                 ),
               );
+              decorateBudgetRow(line, {...sub, id:r.id, subcategory_id:sub.id, direction:r.direction, archived:r.archived || sub.archived});
               detail.append(line);
             }
             if (r.budget_mode === "subcategories")
@@ -844,6 +860,44 @@ export function initialize(runtime) {
       }
       if (!rows.length)
         list.append(el("p", "Aucune catégorie pour ces filtres.", "v60-empty"));
+    }
+    function decorateBudgetRow(line, row) {
+      const previous = line.querySelector(".v60-money-button");
+      const simple = !row.start_exception && row.budget_mode !== "subcategories" && (!row.plan || row.plan.frequency === "monthly");
+      if (simple && !row.archived) {
+        const input = el("input", undefined, "budget-inline-amount");
+        input.type = "number"; input.min = "0"; input.max = "100000000"; input.step = "0.01";
+        input.value = row.budget_cents == null ? "" : (row.budget_cents / 100).toFixed(2);
+        input.placeholder = "Définir";
+        input.setAttribute("aria-label", previous.getAttribute("aria-label"));
+        input.title = row.plan?.repeat ? "Montant mensuel reconduit" : "Montant pour ce mois seulement";
+        const originalMonth = data.month;
+        input.addEventListener("keydown", e => { if(e.key === "Enter") { e.preventDefault(); input.blur(); } });
+        input.onchange = async () => {
+          if (!input.reportValidity() || input.value === "") return;
+          const payload = {month:originalMonth,category_id:row.id,subcategory_id:row.subcategory_id || null,amount:Number(input.value),frequency:"monthly",repeat:row.plan?.repeat || false,direction:row.direction};
+          input.disabled = true;
+          try {
+            const preview = await request("/api/budget/global-preview",payload);
+            runtime.render(await request("/api/budget/global-apply",{...payload,token:preview.token}));
+          } catch(error) { notice.textContent = error.message; input.disabled = false; }
+        };
+        previous.replaceWith(input);
+      }
+      const remaining = line.lastElementChild;
+      if (row.direction === "income" && row.variance_cents !== null) {
+        remaining.textContent = cash(-row.variance_cents);
+        remaining.title = "Revenus restant à recevoir par rapport au budget";
+        remaining.className = row.variance_cents > 0 ? "v60-negative" : "v60-positive";
+      }
+      if (row.direction === "expense" && row.budget_cents > 0) {
+        const progress = el("progress");
+        progress.max = row.budget_cents;
+        progress.value = Math.min(row.budget_cents, Math.max(0,row.actual_cents));
+        progress.setAttribute("aria-label", "Budget utilisé pour " + row.name);
+        if (row.actual_cents > row.budget_cents) line.classList.add("budget-over");
+        remaining.append(progress);
+      }
     }
     function editBudget(row) {
       while (editor.inside.children.length > 1)

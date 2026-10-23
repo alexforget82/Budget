@@ -141,8 +141,12 @@ export function initialize(runtime) {
         ),
         actions = document.createElement("div");
       actions.className = "s26-budget-actions";
-      for (const b of buttons.slice(2)) actions.append(b);
-      budgetToolbar.append(actions);
+      for (const b of buttons.slice(2)) {
+        if (b.textContent === "Reprendre le mois précédent") continue;
+        actions.append(b);
+      }
+      const tools = document.querySelector(".budget-register-tools");
+      (tools || budgetToolbar).append(actions);
     }
     const captions = [...nav.querySelectorAll(".nav-caption")];
     captions.find((c) => c.textContent === "OUTILS")?.remove();

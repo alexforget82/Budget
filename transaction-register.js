@@ -29,6 +29,14 @@ export function initialize(runtime) {
   table.setAttribute("aria-label", "Transactions enregistrées");
   head.before(table);
   table.append(head, host);
+  const totalsFooter = node("div", undefined, "register-totals-footer");
+  totalsFooter.setAttribute("aria-live", "polite");
+  table.after(totalsFooter);
+  document.addEventListener("budget:transactions-loaded", e => {
+    const t = e.detail.summary;
+    if (!t) { totalsFooter.textContent = ""; return; }
+    totalsFooter.textContent = "Résultats filtrés · Entrées " + money(t.income_cents) + " · Sorties " + money(t.expense_cents) + " · Net " + money(t.income_cents - t.expense_cents);
+  });
   head.setAttribute("role", "row");
   const savedStatus = node("p", undefined, "register-saved-status");
   savedStatus.id = "register-saved-status";

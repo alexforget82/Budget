@@ -4421,3 +4421,64 @@ html[data-theme] body.sillage-v14 .register-table-view .register-date-cell::befo
 html[data-theme] body.sillage-v14 .register-table-view .ledger-menu-items .ledger-edit { display:block; width:100%; text-align:left; }
 html[data-theme] .register-saved-status { font-size:12px; color:var(--v80-accent); margin:6px 0; }
 html[data-theme] .register-saved-status:empty { display:none; }
+
+/* Budget register: a single hierarchy, editable monthly targets and quiet tools. */
+html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics { display:flex; gap:clamp(16px,4vw,64px); padding:14px 0; border:0; background:transparent; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics>div { flex:1; border:0; background:transparent; padding:0; min-width:0; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics strong { font-size:clamp(17px,2vw,26px); white-space:nowrap; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics :is(small,.v74-metric-actual) { display:none; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-group { border:0; margin:0; border-radius:0; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-budget-row { border-bottom:1px solid var(--v80-line); border-radius:0; }
+html[data-theme] body.sillage-v14 .budget-register-view .v60-category-copy>small { display:none; }
+html[data-theme] body.sillage-v14 .budget-inline-amount { width:100%; max-width:130px; justify-self:end; text-align:right; min-height:32px; padding:4px 8px; border:1px solid var(--v80-line); border-radius:5px; background:var(--v80-surface); color:var(--v80-ink); font:inherit; font-variant-numeric:tabular-nums; }
+html[data-theme] body.sillage-v14 .budget-register-view progress { display:block; width:100%; height:4px; margin-top:6px; border:0; accent-color:var(--v80-accent); }
+html[data-theme] body.sillage-v14 .budget-register-view .budget-over progress { accent-color:#c94c4c; }
+.budget-register-tools { margin:8px 0; }
+.budget-register-tools>summary { cursor:pointer; }
+.budget-register-tools>button { margin:8px 8px 0 0; }
+html[data-theme] body.sillage-v14 .budget-register-total { position:sticky; bottom:0; z-index:3; padding:14px; border:1px solid var(--v80-line); background:var(--v80-surface); color:var(--v80-ink); font-weight:600; font-variant-numeric:tabular-nums; }
+html[data-theme] body.sillage-v14 .register-totals-footer { padding:12px 0; text-align:right; font-size:12px; color:var(--v80-muted); font-variant-numeric:tabular-nums; }
+.register-selection-stats { font-variant-numeric:tabular-nums; font-weight:600; }
+@media(min-width:1100px) {
+ html[data-theme] body.sillage-v14 .register-table-view .register-search-row { grid-template-columns:minmax(150px,1.5fr) repeat(5,minmax(0,1fr)); gap:6px; }
+ html[data-theme] body.sillage-v14 .register-table-view .register-search-row>* { min-width:0; }
+}
+@media(max-width:600px) {
+ html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics { gap:10px; }
+ html[data-theme] body.sillage-v14 .budget-register-view .v60-metrics strong { font-size:16px; letter-spacing:-.5px; }
+ html[data-theme] body.sillage-v14 .budget-register-view .v60-budget-row { grid-template-columns:minmax(90px,1.3fr) repeat(3,minmax(0,1fr)); gap:6px; }
+ html[data-theme] body.sillage-v14 .budget-register-view .budget-inline-amount { padding:4px; font-size:16px; }
+ .budget-register-total { font-size:12px; }
+}
+html[data-theme] body.sillage-v14 .budget-register-view input[type=checkbox] { width:18px; height:18px; min-height:18px; padding:0; accent-color:var(--v80-accent); }
+html[data-theme] body.sillage-v14 .budget-register-view .budget-over progress::-webkit-progress-value { background:#c94c4c; }
+html[data-theme] body.sillage-v14 .budget-register-view .budget-over progress::-moz-progress-bar { background:#c94c4c; }
+html[data-theme] body.sillage-v14 .budget-register-tools .s26-budget-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+@media(max-width:760px) {
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; gap:8px; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>label:not(.budget-hide-empty) { grid-column:2; grid-row:1; min-width:0; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>button:first-child { grid-column:1; grid-row:1; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>button:nth-of-type(2) { grid-column:3; grid-row:1; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>button:nth-of-type(3) { grid-column:1/-1; grid-row:5; font-size:12px; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>input[type=search] { grid-column:1/-1; grid-row:2; width:100%; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-toolbar>.budget-hide-empty { display:flex; align-items:center; gap:8px; flex-direction:row-reverse; justify-content:flex-end; grid-column:1/-1; grid-row:4; font-size:12px; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics>div { display:block; grid-column:auto; padding:8px 0; border-radius:0; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics strong { font-size:clamp(13px,3.8vw,18px); letter-spacing:-.6px; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics>div:last-child>strong { grid-column:auto; grid-row:auto; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-budget-row { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-budget-row>:first-child { grid-column:1/-1; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-budget-row>:not(:first-child) { grid-column:auto; min-width:0; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-budget-row>:nth-child(3):before { content:"Dépensé / reçu"; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-budget-row>:nth-child(4):before { content:"Disponible"; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-group-heading>:nth-child(2):before { content:"Budget"; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-group-heading>:nth-child(3):before { content:"Dépensé / reçu"; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .v60-group-heading>:nth-child(4):before { content:"Disponible"; }
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view .budget-register-total { bottom:64px; font-size:11px; }
+}
+@media(max-width:760px) {
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.budget-register-tools { display:none; }
+}
+@media(max-width:760px) {
+ html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics>div.mobile-money-wide { grid-column:1/-1; }
+}

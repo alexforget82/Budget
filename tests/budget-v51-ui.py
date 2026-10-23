@@ -1,3 +1,4 @@
+from ui_navigation import budget_action
 """V5.1 version footer, dark text contrast and light-mode restoration."""
 import importlib.util,shutil,tempfile
 from pathlib import Path
@@ -10,7 +11,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1100});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);version=page.locator('#app-version');expect(version).to_have_text('v'+f.get('/api/state')['version']);expect(page.locator('.workspace-header #app-version')).to_have_count(0);expect(page.locator('.app-nav-footer #app-version')).to_have_count(1)
   assert version.bounding_box()['y']>=page.locator('#open-transaction').bounding_box()['y']+page.locator('#open-transaction').bounding_box()['height'];assert version.bounding_box()['x']<238;assert version.bounding_box()['y']>1000
-  set_theme(page,'dark');navigate(page,'categories');page.get_by_role('button',name='Tout déplier',exact=True).click()
+  set_theme(page,'dark');navigate(page,'categories');budget_action(page,'Tout déplier')
   page.evaluate('''window.contrastFailures=(selector,pseudo=null)=>[...document.querySelectorAll(selector)].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&(e.textContent.trim()||/^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName))).flatMap(e=>{const rgb=s=>(s.match(/[\\d.]+/g)||[]).map(Number),lum=a=>a.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg.length===3||bg[3]===1)break;p=p.parentElement}const c=getComputedStyle(e,pseudo),a=lum(rgb(c.color)),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05),large=parseFloat(c.fontSize)>=24||(parseFloat(c.fontSize)>=18.66&&parseInt(c.fontWeight)>=700);return ratio>=(large?3:4.5)?[]:[{text:e.textContent.slice(0,60),ratio,color:c.color,background:bg}]})''')
   def contrast(selector):
    page.wait_for_timeout(120);failures=page.evaluate('s=>window.contrastFailures(s)',selector);assert not failures,failures

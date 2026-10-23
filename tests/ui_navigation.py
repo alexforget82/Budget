@@ -89,7 +89,10 @@ def open_mobile_options(page,identifier):
 
 def budget_action(page,name):
  action=page.get_by_role('button',name=name,exact=True)
- if not action.is_visible():open_mobile_options(page,'mobile-budget-options')
+ if not action.is_visible():
+  tools=page.locator('.budget-register-tools')
+  if tools.count() and tools.is_visible() and tools.get_attribute('open') is None: tools.locator(':scope>summary').click()
+  if not action.is_visible():open_mobile_options(page,'mobile-budget-options')
  action.click()
 
 

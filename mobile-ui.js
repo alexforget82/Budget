@@ -31,7 +31,8 @@ export function initialize(runtime) {
     budget?.querySelector("input[type=search]"),
     [
       budget?.querySelector("select"),
-      budget?.querySelector(".s26-budget-actions"),
+      document.querySelector("#monthly-budget-workspace .s26-budget-actions"),
+      document.querySelector("#monthly-budget-workspace .v80-budget-overview"),
       document.querySelector("#section-budget>.page-intro"),
     ].filter(Boolean),
   );

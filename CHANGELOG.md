@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 14.5.0 — budget en tableau et totaux du registre
+
+Budget groupé avec objectifs mensuels éditables en place, progression et dépassements intégrés, bandeau de trois chiffres, total fixe et filtre des catégories vides. Commandes secondaires repliées; fréquences, exceptions et sous-catégories conservées. Transactions : total et moyenne de la sélection, filtres sur une ligne sur ordinateur et entrées/sorties/net sur tous les résultats filtrés. Aucun changement du moteur financier. Voir [le guide](docs/SILLAGE-14.5.md).
+
 ## 14.4.0 — registre compact et classement depuis la liste
 
 Le registre sépare Date, Description, Compte, Catégorie, Enveloppe, Montant et Statut, avec une case de sélection et un menu d’actions. L’en-tête reste visible pendant le défilement sur ordinateur. Les titres de colonnes permettent de trier tout l’historique; un filtre Enveloppe rejoint les filtres de catégorie, compte et période. Les totaux, l’export et la pagination portent sur les résultats complets, pas seulement sur les lignes affichées.

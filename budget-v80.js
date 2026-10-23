@@ -207,9 +207,9 @@ export function initialize(runtime) {
     );
     const budgetGraphic = el("div", undefined, "v80-overview");
     budgetOverview.append(budgetGraphic);
-    $("monthly-budget-workspace")
-      .querySelector(".v60-metrics")
-      .after(budgetOverview);
+    const budgetTools = $("monthly-budget-workspace").querySelector(".budget-register-tools");
+    if (budgetTools) budgetTools.append(budgetOverview);
+    else $("monthly-budget-workspace").querySelector(".v60-metrics").after(budgetOverview);
     function showCategory(id, month, startOn = null) {
       go("transactions");
       $("v3-category-filter").value = id == null ? "uncategorized" : String(id);
@@ -447,11 +447,15 @@ export function initialize(runtime) {
         selected.clear();
         syncSelection();
       });
-    bulkBar.append(selectionCount, selectAll, bulkOpen, clear);
+    const selectionStats = el("span", undefined, "register-selection-stats");
+    bulkBar.append(selectionCount, selectionStats, selectAll, bulkOpen, clear);
     $("v2-transaction-list").before(bulkBar);
     function syncSelection() {
       selectionCount.textContent =
         selected.size + " opération(s) sélectionnée(s) sur cette page";
+      const chosen = rows.filter(r => selected.has(r.id));
+      const sum = chosen.reduce((n,r) => n + r.amount_cents, 0);
+      selectionStats.textContent = chosen.length ? "Total " + money(sum) + " · Moyenne " + money(Math.round(sum / chosen.length)) : "";
       bulkOpen.disabled = !selected.size;
       clear.disabled = !selected.size;
       for (const c of $("v2-transaction-list").querySelectorAll(
@@ -1001,6 +1005,7 @@ export function initialize(runtime) {
         "Format chargé   →   Vérifiez le compte et les colonnes   →   Examinez l’aperçu avant confirmation";
     });
     function progressRows() {
+      if ($("monthly-budget-workspace").classList.contains("budget-register-view")) return;
       for (const row of $("monthly-budget-workspace").querySelectorAll(
         ".v60-budget-row",
       )) {

@@ -8,7 +8,7 @@ f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='sillage-132-'))
 try:
  bank=f.account(balance=1000);c1=f.make_category('Alimentation 132');c2=f.make_category('Sorties 132');a=f.post('/api/envelopes',{'name':'Courses 132','reserved':230,'budget':230,'frequency':'weekly','start_on':f.future73(1),'rollover':False,'forecast_spend':False})['envelopes'][0]['id'];b=f.post('/api/envelopes',{'name':'Loisirs 132','reserved':50,'budget':50,'frequency':'monthly','start_on':f.future73(1),'rollover':False,'forecast_spend':False})['envelopes'][0]['id'];f.transaction(bank,-20,description='ÉPICERIE -- MÉTRO',category_id=c1,envelope_id=a);f.transaction(bank,-10,description='Restaurant test',category_id=c2,envelope_id=b);missing=f.transaction(bank,-3,description='Sans enveloppe')['transactions'][0]['id'];before=f.get('/api/backup/export')['tables']
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':390,'height':844},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v14.4.0')
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':390,'height':844},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v14.5.0')
   for theme in ['light','dark']:
    set_theme(page,theme)
    for width in [320,390,1440]:

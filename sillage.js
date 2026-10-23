@@ -973,7 +973,7 @@ export function initialize(runtime) {
       current = s;
       drawHomeAlerts(s);
       if (dailyDialog.open) drawDaily();
-      $("app-version").textContent = s.version === "14.4.0" ? "v14.4.0" : "Interface v14.4.0 · serveur v" + s.version;
+      $("app-version").textContent = s.version === "14.5.0" ? "v14.5.0" : "Interface v14.5.0 · serveur v" + s.version;
       $("app-version").title =
         "Deuxième génération · version technique " + s.version;
       health.textContent = s.support41.backup.error

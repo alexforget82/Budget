@@ -1,3 +1,9 @@
+## v14.5.0 — budget en tableau et statistiques du registre
+
+126 tests Node et 201 tests API passent. Les 78 scripts Python passent après reprise des trois échecs initiaux : décalage de bouton lors du focus dans Budget, versions serveur/interface différentes pendant une exécution et mise en page iPhone (mois puis montant très long). Les scénarios concernés ont été relancés; le registre et les scénarios de budget, sous-catégories et calendrier ont également été vérifiés après les corrections. Les assertions financières sont conservées; les tests ouvrent désormais les réglages par le nom de la catégorie ou le menu Options.
+
+Le nouveau test `tests/register-budget-ui.py` vérifie les totaux sur 55 résultats/50 lignes, le total signé et la moyenne des sélections, l’enregistrement direct mensuel et la conservation du disponible, des soldes et des réserves. Vérifications aux largeurs 390/768/1100/1440; tests existants sur iPhone 320 à 760, neuf vues et deux thèmes, dont un montant de dix millions. [Résultats détaillés](docs/v145/checks.json), [guide](docs/SILLAGE-14.5.md). Les captures utilisent uniquement des données fictives.
+
 # Vérifications de Sillage
 
 ## v14.4.0 — registre compact et classement rapide
