@@ -113,7 +113,7 @@ export function initialize(runtime) {
     const c = n("div", undefined, "v4-workspace");
     c.id = "v4-calendar";
     calendar.querySelector(".page-intro").after(c);
-    f.innerHTML = `<div class="v4-topbar"><div class="v4-segment" role="group" aria-label="Horizon"><button type="button" data-days="30">30 jours</button><button type="button" data-days="60">60 jours</button><button type="button" data-days="90">90 jours</button></div><button type="button" id="v4-sim-open" class="v4-button v4-primary">Puis-je me permettre cet achat ?</button></div><div id="v4-metrics" class="v4-metrics"></div><div id="v4-alerts"></div><div class="v4-forecast-layout"><div class="v4-chart-card"><div class="v4-chart-heading"><div><p class="v4-kicker">VOTRE TRAJECTOIRE</p><h3>Un peu d’avance sur demain</h3></div><label>Afficher<select id="v4-chart-kind"><option value="both">Solde et disponible</option><option value="safe_cents">Disponible après réserves</option><option value="cash_cents">Solde bancaire prévu</option></select></label></div><div id="v4-scenario-banner" hidden></div><svg id="v4-chart" role="img" aria-label="Prévision financière"></svg><label class="v4-slider-label">Explorer une date<input id="v4-slider" type="range" min="0" max="29" value="0"></label><div class="v4-chart-legend"><span><i></i><b id="v80-primary-legend">Disponible après protections</b></span><span id="v80-bank-legend"><i class="v80-bank-mark"></i>Solde bancaire</span><span class="v4-simulation-legend" hidden><i></i>Avec la simulation</span><span>Seuil de 0 $ en pointillé</span></div><p class="v4-footnote">Point de départ : vos soldes réels. Les opérations enregistrées sont déjà incluses.</p></div><aside id="v4-forecast-day" class="v4-day-panel"></aside></div><div class="v4-lower-grid"><section class="v4-card"><div class="v4-panel-heading"><div><p class="v4-kicker">LES PROCHAINS RENDEZ-VOUS</p><h3>À garder en tête</h3></div></div><div id="v4-upcoming"></div></section><section class="v4-card"><p class="v4-kicker">DU PRÉVU AU RÉEL</p><h3>Comprendre les écarts</h3><div id="v4-comparison"></div></section></div>`;
+    f.innerHTML = `<div class="v4-topbar"><div class="v4-segment" role="group" aria-label="Horizon"><button type="button" data-days="30">30 jours</button><button type="button" data-days="60">60 jours</button><button type="button" data-days="90">90 jours</button></div><button type="button" id="v4-sim-open" class="v4-button v4-primary">Puis-je me permettre cet achat ?</button></div><div id="v4-metrics" class="v4-metrics"></div><div id="v4-alerts"></div><div class="v4-forecast-layout"><div class="v4-chart-card"><div class="v4-chart-heading"><div><p class="v4-kicker">PRÉVISIONS</p><h3>Prévision du disponible</h3></div><label>Afficher<select id="v4-chart-kind"><option value="both">Solde et disponible</option><option value="safe_cents">Disponible après réserves</option><option value="cash_cents">Solde bancaire prévu</option></select></label></div><div id="v4-scenario-banner" hidden></div><svg id="v4-chart" role="img" aria-label="Prévision financière"></svg><label class="v4-slider-label">Explorer une date<input id="v4-slider" type="range" min="0" max="29" value="0"></label><div class="v4-chart-legend"><span><i></i><b id="v80-primary-legend">Disponible après protections</b></span><span id="v80-bank-legend"><i class="v80-bank-mark"></i>Solde bancaire</span><span class="v4-simulation-legend" hidden><i></i>Avec la simulation</span><span>Seuil de 0 $ en pointillé</span></div><p class="v4-footnote">Point de départ : vos soldes réels. Les opérations enregistrées sont déjà incluses.</p></div><aside id="v4-forecast-day" class="v4-day-panel"></aside></div><div class="v4-lower-grid"><section class="v4-card"><div class="v4-panel-heading"><div><p class="v4-kicker">À VENIR</p><h3>Prochains mouvements</h3></div></div><div id="v4-upcoming"></div></section><section class="v4-card"><p class="v4-kicker">DU PRÉVU AU RÉEL</p><h3>Comprendre les écarts</h3><div id="v4-comparison"></div></section></div>`;
     c.classList.add("v80-calendar-compact");
     c.innerHTML = `<div class="v4-calendar-toolbar"><div class="v4-calendar-paging"><button type="button" id="v4-cal-prev" aria-label="Période précédente">←</button><h3 id="v4-cal-title"></h3><button type="button" id="v4-cal-next" aria-label="Période suivante">→</button></div><div class="v4-calendar-tools"><button type="button" id="v4-cal-today" class="v4-button">Aujourd’hui</button><div class="v4-segment" role="group" aria-label="Vue du calendrier"><button type="button" data-calendar-view="month">Mois</button><button type="button" data-calendar-view="week">Semaine</button></div></div></div><div class="v4-calendar-legend"><span class="income">● Revenus</span><span class="expense">● Dépenses</span><span class="transfer">● Virements</span><span class="reserve">● Réserves</span><span>✓ Réel enregistré · ○ Prévu</span></div><div class="v4-calendar-layout"><div class="v4-calendar-main"><div id="v4-cal-grid" class="v4-month-grid" role="group" aria-label="Jours du calendrier"></div><div id="v4-week-agenda"></div><p class="v4-footnote">Les montants des jours à venir indiquent le disponible prévu après réserves. Prévisions sur 90 jours.</p></div><aside id="v4-calendar-day" class="v4-day-panel"></aside></div>`;
     const density = b(
@@ -919,11 +919,11 @@ export function initialize(runtime) {
           310,
           Math.round(svg.getBoundingClientRect().width) || 740,
         ),
-        height = 320,
+        height = width < 500 ? 250 : 320,
         left = 66,
         right = width - 20,
         top = 32,
-        bottom = 265,
+        bottom = height - 55,
         min = Math.min(0, ...values),
         max = Math.max(10000, ...values),
         range = max - min || 10000,
@@ -1012,6 +1012,21 @@ export function initialize(runtime) {
         r: 4,
         class: "v4-chart-min",
       });
+      s("text", {
+        x: Math.max(left + 4, Math.min(right - 150, x(lowIndex))),
+        y: Math.max(top + 14, y(days[lowIndex][key]) - 14),
+        class: "flow-chart-min-label",
+      }, "Minimum " + cash(days[lowIndex][key]));
+      const eventDays = days.map((d,i)=>({d,i})).filter(({d})=>d.events.some(e=>["income","expense","reserve","transfer"].includes(e.type)));
+      const stride = Math.max(1, Math.ceil(eventDays.length / (width < 500 ? 5 : 10)));
+      eventDays.filter((_,i)=>i%stride===0).forEach(({d,i})=>{
+        const events=d.events.filter(e=>["income","expense","reserve","transfer"].includes(e.type));
+        const marker=s("circle",{cx:x(i),cy:y(d[key]),r:5,class:"flow-chart-event",tabindex:0,role:"button","aria-label":label(d.date)+" · "+events.map(e=>e.description).join(" · ")});
+        const title=document.createElementNS(svg.namespaceURI,"title");
+        title.textContent=label(d.date)+" · "+events.map(e=>e.description).join(" · ");marker.append(title);
+        marker.onclick=(event)=>{event.stopPropagation();choose(d.date);};
+        marker.onkeydown=event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();choose(d.date);}};
+      });
       s("line", {
         x1: x(index),
         x2: x(index),
@@ -1034,7 +1049,7 @@ export function initialize(runtime) {
           "text",
           {
             x: x(i),
-            y: 300,
+            y: height - 20,
             "text-anchor":
               i === 0 ? "start" : i === days.length - 1 ? "end" : "middle",
             class: "v4-chart-tick",
@@ -1592,7 +1607,7 @@ export function initialize(runtime) {
               result.append(
                 n(
                   "p",
-                  "Ce compte ne débite pas directement le Safe-to-Spend. Choisissez votre compte bancaire inclus pour obtenir une réponse; un achat supplémentaire sur carte peut nécessiter un remboursement à prévoir.",
+                  "Ce compte ne débite pas directement le Disponible à dépenser. Choisissez votre compte bancaire inclus pour obtenir une réponse; un achat supplémentaire sur carte peut nécessiter un remboursement à prévoir.",
                   "v4-footnote",
                 ),
               );

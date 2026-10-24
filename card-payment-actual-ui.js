@@ -172,7 +172,7 @@ export function initialize(runtime) {
         for (const [label, key] of [
           [r.source_name, "source_cents"],
           ["Montant dû · " + r.card_name, "card_cents"],
-          ["Safe-to-Spend actuel", "safe_cents"],
+          ["Disponible à dépenser actuel", "safe_cents"],
           ["Minimum prévu · 30 jours", "minimum_30_cents"],
         ]) {
           const row = n("tr");
@@ -198,7 +198,7 @@ export function initialize(runtime) {
         );
         if (!r.source_included)
           result.append(
-            n("p", "Ce compte bancaire est exclu du Safe-to-Spend.", "warning"),
+            n("p", "Ce compte bancaire est exclu du Disponible à dépenser.", "warning"),
           );
         if (r.matched_plan)
           result.append(
@@ -220,7 +220,7 @@ export function initialize(runtime) {
           );
         if (r.after.safe_cents < 0)
           result.append(
-            n("p", "Votre Safe-to-Spend devient négatif.", "warning"),
+            n("p", "Votre Disponible à dépenser devient négatif.", "warning"),
           );
         ack.checked = false;
         duplicate.hidden = !r.duplicates.length;

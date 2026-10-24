@@ -127,7 +127,7 @@ export function initialize(runtime) {
       ),
       el(
         "p",
-        "Budget ne réserve aucun argent et ne modifie pas le Safe-to-Spend. Les enveloppes protègent l’argent; les récurrences portent les échéances. Leurs programmations existantes sont conservées. Les virements internes sont exclus des revenus et dépenses.",
+        "Budget ne réserve aucun argent et ne modifie pas le Disponible à dépenser. Les enveloppes protègent l’argent; les récurrences portent les échéances. Leurs programmations existantes sont conservées. Les virements internes sont exclus des revenus et dépenses.",
       ),
     );
     root.append(help);
@@ -309,7 +309,7 @@ export function initialize(runtime) {
           countField,
           el(
             "p",
-            "Exception pour ce mois seulement. Les paiements restent dans Récurrences. Aucun effet sur le Safe-to-Spend.",
+            "Exception pour ce mois seulement. Les paiements restent dans Récurrences. Aucun effet sur le Disponible à dépenser.",
             "quiet-copy",
           ),
         );
@@ -552,7 +552,7 @@ export function initialize(runtime) {
           .replace(/\p{M}/gu, "")
           .toLocaleLowerCase("fr-CA"),
         rows = data.rows
-          .filter(r => !hideEmpty.checked || r.budget_cents || r.actual_cents || r.recurring_cents || r.plan || r.subcategories.some(sub => sub.plan || sub.actual_cents))
+          .filter(r => !hideEmpty.checked || r.budget_cents || r.actual_cents || r.recurring_cents || r.plan || r.subcategories.some(sub => sub.plan || sub.actual_cents) || displayEnvelope(r))
           .filter((r) =>
             (
               r.name +
@@ -585,6 +585,8 @@ export function initialize(runtime) {
         data.start_period ? "Budget · période" : "Budget",
         "Dépensé / reçu",
         "Disponible",
+        "Protégé maintenant",
+        "Renouvellement",
       ])
         head.append(el("span", t));
       list.append(head);
@@ -625,6 +627,7 @@ export function initialize(runtime) {
           variance = budget - actual;
         for (const value of [budget, actual, variance])
           heading.append(el("strong", cash(value)));
+        heading.append(el("span", "—"), el("span", "—"));
         group.append(heading);
         for (const r of items) {
           const row = el("div", undefined, "v60-budget-row");
@@ -858,8 +861,42 @@ export function initialize(runtime) {
         }
         list.append(group);
       }
-      if (!rows.length)
+      const linked = new Set(data.rows.map(displayEnvelope).map(e => e?.id).filter(Boolean));
+      const unlinked = latest.envelopes.filter(e => !linked.has(e.id) &&
+        (!term || e.name.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr-CA").includes(term)));
+      if (filter.value === "all" && unlinked.length) {
+        const section = el("details", undefined, "v60-group flow-unlinked-envelopes");
+        section.open = true;
+        section.append(el("summary", "Enveloppes hors budget mensuel · montants par période"));
+        for (const e of unlinked) {
+          const insight = latest.envelope_insights.items.find(i => i.id === e.id);
+          const periodBudget = insight.period_start ? insight.period_budget_cents : insight.next_period_remaining_cents + insight.next_period_spent_cents;
+          const spent = insight.period_start ? insight.spent_period_cents : insight.next_period_spent_cents;
+          const row = el("div", undefined, "v60-budget-row flow-envelope-row");
+          row.dataset.flowEnvelopeId = e.id;
+          const copy=el("div",undefined,"v60-category-copy");
+          copy.append(button(e.name,()=>window.budgetOpenEnvelopeSheet(e.id),"v60-name"));
+          row.append(copy,el("span",cash(periodBudget)),el("span",cash(spent)),el("strong",cash(periodBudget-spent),periodBudget<spent?"v60-negative":"v60-positive"));
+          appendProtection(row,e);
+          section.append(row);
+        }
+        list.append(section);
+      }
+      if (!rows.length && !unlinked.length)
         list.append(el("p", "Aucune catégorie pour ces filtres.", "v60-empty"));
+    }
+    function displayEnvelope(row) {
+      const inferred = latest.entry_memory?.category_envelopes[row.id];
+      const id = row.envelope_id || (latest.entry_memory?.envelope_categories[inferred] === row.id &&
+        !data.rows.some(other => other.id !== row.id && other.envelope_id === inferred) ? inferred : null);
+      return latest.envelopes.find(e => e.id === id);
+    }
+    function appendProtection(line, envelope) {
+      const protection = el("span", envelope ? cash(envelope.reserved_cents) : "—", "flow-protected");
+      protection.title = "Réserve actuelle, déjà exclue du disponible à dépenser. Ce n’est pas le budget mensuel.";
+      const next = latest.envelope_insights.items.find(i => i.id === envelope?.id)?.next_renewal;
+      const renewal = envelope ? button(next ? short(next) : "Sans date", () => window.budgetOpenEnvelopeSheet(envelope.id), "flow-renewal") : el("span", "—", "flow-renewal");
+      line.append(protection,renewal);
     }
     function decorateBudgetRow(line, row) {
       const previous = line.querySelector(".v60-money-button");
@@ -898,6 +935,7 @@ export function initialize(runtime) {
         if (row.actual_cents > row.budget_cents) line.classList.add("budget-over");
         remaining.append(progress);
       }
+      appendProtection(line, row.subcategory_id ? null : displayEnvelope(row));
     }
     function editBudget(row) {
       while (editor.inside.children.length > 1)
@@ -1110,7 +1148,7 @@ export function initialize(runtime) {
           out.append(
             el(
               "p",
-              "Le Safe-to-Spend, les soldes, les enveloppes et les récurrences restent identiques.",
+              "Le Disponible à dépenser, les soldes, les enveloppes et les récurrences restent identiques.",
               "quiet-copy",
             ),
             button(
@@ -1167,7 +1205,7 @@ export function initialize(runtime) {
     agenda.id = "v60-recurring";
     recurring.querySelector(".page-intro").after(agenda);
     recurring.querySelector(".section-head h2").textContent =
-      "Vos rendez-vous financiers";
+      "Récurrences";
     recurring.querySelector(".page-intro").textContent =
       "Les dates, les fréquences et les comptes. Vos objectifs mensuels restent dans Budget.";
     const old = el("details", undefined, "v60-help");
@@ -1214,7 +1252,22 @@ export function initialize(runtime) {
       "aria-label",
       "Mois des récurrences suivant",
     );
-    agenda.append(recToolbar, recMetrics, recList);
+    const calendar = el("div",undefined,"flow-rec-calendar");
+    let recView = "list";
+    const listView = button("Liste",()=>setRecView("list"));
+    const calendarView = button("Calendrier",()=>setRecView("calendar"));
+    listView.setAttribute("aria-pressed","true");
+    calendarView.setAttribute("aria-pressed","false");
+    function setRecView(view) {
+      recView=view;recList.hidden=view!=="list";calendar.hidden=view!=="calendar";
+      listView.setAttribute("aria-pressed",String(view==="list"));
+      calendarView.setAttribute("aria-pressed",String(view==="calendar"));
+    }
+    calendar.hidden=true;
+    const recViews = el("div",undefined,"flow-rec-views");
+    recViews.append(recToolbar.lastElementChild,listView,calendarView);
+    recToolbar.append(recViews);
+    agenda.append(recToolbar, recMetrics, recList, calendar);
     recMonth.onchange = drawRecurring;
     recType.onchange = drawRecurring;
     recSearch.oninput = drawRecurring;
@@ -1322,6 +1375,26 @@ export function initialize(runtime) {
                 .includes(term),
           );
         recList.replaceChildren();
+        const header=el("div",undefined,"flow-rec-head");
+        for(const text of ["Date","Récurrence / compte","Fréquence","Montant","État","Effet sur le disponible","Actions"]) header.append(el("span",text));
+        recList.append(header);
+        calendar.replaceChildren();
+        const calendarTitle=el("h3",recMonth.value);
+        calendar.append(calendarTitle);
+        const grid=el("div",undefined,"flow-rec-calendar-grid");
+        const first=new Date(recMonth.value+"-01T12:00:00"),last=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+        for(const label of ["Lun.","Mar.","Mer.","Jeu.","Ven.","Sam.","Dim."]) grid.append(el("strong",label,"flow-rec-weekday"));
+        for(let n=0;n<(first.getDay()+6)%7;n++) grid.append(el("div"));
+        for(let n=1;n<=last;n++) {
+          const date=recMonth.value+"-"+String(n).padStart(2,"0"),cell=el("div",undefined,"flow-rec-calendar-day");
+          cell.append(el("strong",String(n)));
+          for(const item of items.filter(i=>i.date===date)) {
+            const action=button(item.description+" · "+cash(item.planned_cents),()=>runtime.editRule(item.recurring_id),"flow-rec-calendar-event");
+            action.title=item.description+" · "+short(date);cell.append(action);
+          }
+          grid.append(cell);
+        }
+        calendar.append(grid);
         for (const freq of [
           "once",
           "weekly",
@@ -1391,6 +1464,11 @@ export function initialize(runtime) {
               ),
               status,
             );
+            row.insertBefore(el("span",item.one_time?"Une fois":frequencies[item.frequency],"flow-rec-frequency"),row.children[2]);
+            const event=latest.forecast.flatMap(d=>d.events).find(e=>e.key===item.key);
+            const impact=Number.isSafeInteger(event?.sts_impact_cents) ? cash(event.sts_impact_cents) :
+              item.status==="actual"?"Déjà enregistré":item.status==="skipped"?cash(0):item.status==="covered"?"Couvert par l’enveloppe":"Hors prévision";
+            row.append(el("span",impact,"flow-rec-impact"));
             const actions = el("div", undefined, "v60-rec-actions");
             if (
               ["pending", "planned"].includes(item.status) &&
@@ -1423,8 +1501,10 @@ export function initialize(runtime) {
             ),
           );
       } catch (e) {
-        if (mine === recTicket)
+        if (mine === recTicket) {
           recList.replaceChildren(el("p", e.message, "v60-error"));
+          calendar.replaceChildren(el("p", e.message, "v60-error"));
+        }
       }
     }
     function calendarText(calendar, plan) {

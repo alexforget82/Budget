@@ -27,10 +27,10 @@ try:
     check=page.locator('.v80-row-check').first;check.check();expect(page.locator('#v80-bulk-bar')).to_be_visible();check.uncheck();expect(page.locator('#v80-bulk-bar')).to_be_hidden()
     page.locator('#mobile-transaction-options>summary').click();expect(page.locator('#v2-account')).to_be_visible();page.locator('#mobile-transaction-options>summary').click()
     if width==390:page.screenshot(path=str(images/f'transactions-{theme}.png'))
-    bar.get_by_role('button',name='Prévision',exact=True).click();expect(page.locator('#v4-forecast')).to_be_visible();assert page.locator('#v4-metrics').bounding_box()['y']<500
+    navigate(page,'prevision');expect(page.locator('#v4-forecast')).to_be_visible();assert page.locator('#v4-metrics').bounding_box()['y']<500
     page.locator('#v4-forecast [data-days="60"]').click();expect(page.locator('#v4-slider')).to_have_attribute('max','59');page.locator('#v4-forecast [data-days="30"]').click()
     if width==390:page.screenshot(path=str(images/f'prevision-{theme}.png'))
-    bar.get_by_role('button',name='Plus',exact=True).click();expect(page.locator('.mobile-navigation-trigger')).to_have_attribute('aria-expanded','true');page.locator('.app-shell-nav [data-view="comptes"]').click();expect(page.locator('#section-comptes')).to_be_visible()
+    page.locator('.mobile-navigation-trigger').click();expect(page.locator('.mobile-navigation-trigger')).to_have_attribute('aria-expanded','true');page.locator('.app-shell-nav [data-view="comptes"]').click();expect(page.locator('#section-comptes')).to_be_visible()
     page.locator('.app-shell-nav .quick-add').click();dialog=page.locator('#transaction-dialog');expect(dialog).to_be_visible();assert dialog.bounding_box()['width']<=width+1;assert dialog.bounding_box()['height']<=844;assert dialog.evaluate('(e)=>Math.abs(e.getBoundingClientRect().bottom-innerHeight)<2');assert dialog.locator('[name=description]').evaluate('(e)=>parseFloat(getComputedStyle(e).fontSize)')>=16;
     if width==390:
      if theme=='dark':dialog.screenshot(path=str(images/'saisie-dark.png'))

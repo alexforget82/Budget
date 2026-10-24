@@ -2444,7 +2444,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (14.5.0) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (15.0.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

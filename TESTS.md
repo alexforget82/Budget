@@ -1,3 +1,11 @@
+## v15.0.0 — parcours regroupé, récurrences et prévisions
+
+126 tests Node et 201 tests API passent. La campagne Python a passé 73 scripts sur 79 au premier lancement. Les six échecs ont été repris après correction : sélecteur d’enveloppe devenu ambigu, sous-catégories trop larges sur tablette, nouveau titre parent Budget attendu dans le test de navigation, débordement des récurrences sur iPhone et actualisation du Bilan lorsque sa page est regroupée sous Budget. Les assertions de montants ont été conservées. Les six scripts concernés passent après correction; les tests du registre, des prévisions et du parcours mobile ont aussi été relancés après les dernières retouches.
+
+`workspace-flow-ui.py` contrôle les onglets, le panneau de paie, les montants d’enveloppe, les récurrences liste/calendrier, le tableau quotidien 30/60/90, les repères du graphique, Ctrl+K et la protection des saisies, le balayage horizontal et l’absence d’action lors d’un défilement vertical, l’action +, les liens directs, cinq largeurs et deux thèmes. Il compare prévisions, disponible, réserves et tables financières avant/après navigation. Les captures de tests vont dans un dossier temporaire par défaut; `SILLAGE_CAPTURE_DIR=docs/v150` permet de régénérer volontairement les références fictives sans écraser celles d’une ancienne version.
+
+[Guide](docs/SILLAGE-15.0.md) · [Résultats](docs/v150/checks.json)
+
 ## v14.5.0 — budget en tableau et statistiques du registre
 
 126 tests Node et 201 tests API passent. Les 78 scripts Python passent après reprise des trois échecs initiaux : décalage de bouton lors du focus dans Budget, versions serveur/interface différentes pendant une exécution et mise en page iPhone (mois puis montant très long). Les scénarios concernés ont été relancés; le registre et les scénarios de budget, sous-catégories et calendrier ont également été vérifiés après les corrections. Les assertions financières sont conservées; les tests ouvrent désormais les réglages par le nom de la catégorie ou le menu Options.

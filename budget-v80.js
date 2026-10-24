@@ -128,7 +128,7 @@ export function initialize(runtime) {
       "aria-label",
       "Trajectoire du disponible après protections",
     );
-    lead.append(el("h2", "Safe-to-Spend"), heroValue, heroCaption, spark);
+    lead.append(el("h2", "Disponible à dépenser"), heroValue, heroCaption, spark);
     const heroFacts = el("div", undefined, "v80-hero-facts");
     heroBody.append(lead, heroFacts);
     hero.append(heroBody);

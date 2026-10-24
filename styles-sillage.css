@@ -4482,3 +4482,112 @@ html[data-theme] body.sillage-v14 .budget-register-tools .s26-budget-actions { d
 @media(max-width:760px) {
  html[data-theme] body.sillage-v14 #monthly-budget-workspace.budget-register-view>.v60-metrics>div.mobile-money-wide { grid-column:1/-1; }
 }
+
+/* Shared workspace: primary destinations stay visible, related views use local tabs. */
+.workspace-flow .app-shell-nav .flow-secondary-route { display:none !important; }
+html[data-theme] body.workspace-flow .flow-budget-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 18px; border-bottom:1px solid var(--v80-line); padding-bottom:10px; }
+html[data-theme] body.workspace-flow .flow-budget-tabs button[aria-current=page] { background:var(--s26-selected); border-color:var(--v80-accent); color:var(--v80-ink); }
+html[data-theme] body.workspace-flow .flow-payday { margin:16px 0; padding:18px; border:1px solid var(--v80-line); border-radius:10px; background:var(--v80-surface); }
+.flow-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.flow-panel-heading h2 { margin:0; font-size:17px; }
+.flow-payday-values { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:15px; }
+.flow-payday-values span { display:block; color:var(--v80-muted); font-size:12px; }
+.flow-payday-values strong { display:block; margin-top:6px; font-size:19px; font-variant-numeric:tabular-nums; }
+html[data-theme] body.workspace-flow #monthly-budget-workspace :is(.v60-table-heading,.v60-group-heading,.v60-budget-row) { grid-template-columns:minmax(130px,1.6fr) repeat(3,minmax(85px,1fr)) minmax(90px,1fr) minmax(100px,1fr); }
+html[data-theme] body.workspace-flow #monthly-budget-workspace .flow-protected { text-align:right; color:var(--v80-muted); font-variant-numeric:tabular-nums; }
+html[data-theme] body.workspace-flow #monthly-budget-workspace .flow-renewal { text-align:right; font-size:12px; background:transparent; border:0; padding:5px 0; color:var(--v80-accent); }
+.flow-unlinked-envelopes>summary { padding:14px; background:var(--v80-raised); font-weight:600; font-size:12px; }
+html[data-theme] body.workspace-flow .flow-rec-head,html[data-theme] body.workspace-flow .v60-occurrence { display:grid; grid-template-columns:65px minmax(140px,1.6fr) minmax(90px,1fr) 100px 105px minmax(100px,1fr) minmax(120px,1fr); align-items:center; gap:12px; }
+html[data-theme] body.workspace-flow .flow-rec-head { padding:10px 12px; font-size:11px; color:var(--v80-muted); border-bottom:1px solid var(--v80-line); }
+html[data-theme] body.workspace-flow .v60-rec-actions { flex-wrap:wrap; gap:4px; }
+html[data-theme] body.workspace-flow .v60-occurrence :is(.flow-rec-frequency,.flow-rec-impact) { font-size:12px; }
+.flow-rec-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.flow-rec-calendar-day { min-height:100px; padding:8px; border:1px solid var(--v80-line); border-radius:5px; background:var(--v80-surface); min-width:0; }
+html[data-theme] body.workspace-flow .flow-rec-calendar-event { display:block; padding:5px 0; border:0; background:transparent; color:var(--v80-accent); text-align:left; font-size:11px; width:100%; overflow-wrap:anywhere; }
+.flow-chart-min-label { fill:var(--v80-ink); font-size:12px; font-weight:600; paint-order:stroke; stroke:var(--v80-surface); stroke-width:4px; stroke-linejoin:round; }
+.flow-chart-event { fill:var(--v80-surface); stroke:var(--v80-accent); stroke-width:2; cursor:pointer; }
+.flow-chart-event:focus { stroke-width:4; outline:none; }
+.flow-daily { overflow-x:auto; margin:24px 0; border-top:1px solid var(--v80-line); padding-top:18px; }
+.flow-daily table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.flow-daily :is(td,th) { padding:10px; text-align:right; border-bottom:1px solid var(--v80-line); }
+.flow-daily :is(td,th):nth-child(-n+2) { text-align:left; }
+.flow-shortcuts { padding:10px; font-size:12px; }
+.flow-swipe-hint { display:none; }
+.workspace-flow :is(#section-budget,#section-recurrences,#section-prevision)>.page-intro { display:none; }
+@media(max-width:1200px) and (min-width:761px) {
+ html[data-theme] body.workspace-flow #monthly-budget-workspace :is(.v60-table-heading,.v60-group-heading,.v60-budget-row) { grid-template-columns:minmax(120px,1.4fr) repeat(5,minmax(70px,1fr)); gap:8px; font-size:11px; }
+ html[data-theme] body.workspace-flow .v60-occurrence { grid-template-columns:65px minmax(140px,1fr) 100px; }
+ html[data-theme] body.workspace-flow .flow-rec-head { display:none; }
+}
+@media(max-width:760px) {
+ .flow-payday-values { grid-template-columns:1fr; gap:12px; }
+ .flow-payday-values>div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+ .flow-payday-values strong { margin:0; font-size:17px; }
+ .flow-panel-heading { align-items:flex-start; }
+ .flow-panel-heading button { font-size:11px; max-width:130px; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace :is(.v60-group-heading,.v60-budget-row) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-budget-row>:nth-child(5)::before { content:"Protégé maintenant"; display:block; font-size:10px; color:var(--v80-muted); margin-bottom:5px; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-budget-row>:nth-child(6)::before { content:"Renouvellement"; display:block; font-size:10px; color:var(--v80-muted); margin-bottom:5px; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .flow-renewal { min-height:44px; }
+ html[data-theme] body.workspace-flow .flow-rec-head { display:none; }
+ html[data-theme] body.workspace-flow .v60-occurrence { grid-template-columns:65px minmax(0,1fr) 95px; padding:10px; gap:8px; }
+ html[data-theme] body.workspace-flow .v60-occurrence .v60-rec-copy { min-width:0; }
+ html[data-theme] body.workspace-flow .v60-rec-copy strong { overflow-wrap:anywhere; }
+ html[data-theme] body.workspace-flow .v60-rec-actions { grid-column:1/-1; }
+ .flow-rec-calendar-grid { gap:2px; }
+ .flow-rec-calendar-day { padding:3px; min-height:95px; }
+ .flow-rec-weekday { font-size:10px; }
+ html[data-theme] body.workspace-flow .flow-rec-calendar-event { font-size:9px; }
+ .flow-swipe-hint { display:block; font-size:11px; color:var(--v80-muted); }
+ .flow-daily { max-width:100%; }
+ .flow-daily table { min-width:620px; }
+ .flow-budget-tabs button { flex:1; min-width:90px; font-size:11px; }
+}
+@media(max-width:760px) {
+ html[data-theme] body.workspace-flow .mobile-tabbar { grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
+@media(min-width:761px) and (max-width:1000px) {
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-table-heading { display:none; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace :is(.v60-group-heading,.v60-budget-row) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace :is(.v60-group-heading,.v60-budget-row)>:first-child { grid-column:1/-1; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-budget-row>* { min-width:0; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-budget-row>:nth-child(5)::before { content:"Protégé maintenant"; display:block; font-size:10px; margin-bottom:5px; }
+ html[data-theme] body.workspace-flow #monthly-budget-workspace .v60-budget-row>:nth-child(6)::before { content:"Renouvellement"; display:block; font-size:10px; margin-bottom:5px; }
+}
+.workspace-flow #section-budget>.section-head { display:none; }
+.flow-planning-more { margin-bottom:14px; }
+.flow-planning-more>summary { cursor:pointer; font-size:12px; color:var(--v80-muted); }
+.flow-rec-views { display:flex; gap:6px; }
+@media(max-width:760px) {
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-toolbar { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; gap:8px; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-toolbar>button:first-of-type { grid-column:1; grid-row:1; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-toolbar>button:nth-of-type(2) { grid-column:3; grid-row:1; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-toolbar>label { grid-column:2; grid-row:1; min-width:0; font-size:0; }
+ html[data-theme] body.workspace-flow #v60-recurring #v60-recurring-month { width:100%; min-width:0; text-align:center; padding:9px; font-size:15px; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-toolbar>:is(select,input[type=search],.flow-rec-views) { grid-column:1/-1; width:100%; min-width:0; }
+ html[data-theme] body.workspace-flow .flow-rec-views button { flex:1; min-width:0; font-size:12px; padding:9px 6px; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics { display:grid; grid-template-columns:1fr; gap:0; padding:8px 0; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics>div { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; padding:8px; border:0; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics strong { font-size:18px; white-space:nowrap; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics span { font-size:12px; }
+ html[data-theme] body.workspace-flow .v60-occurrence .v60-status { grid-column:1; grid-row:2; }
+ html[data-theme] body.workspace-flow .v60-occurrence .v60-rec-amount { grid-column:2; grid-row:2; text-align:right; }
+ html[data-theme] body.workspace-flow .v60-occurrence .flow-rec-impact { grid-column:3; grid-row:2; text-align:right; }
+ html[data-theme] body.workspace-flow .v60-occurrence .flow-rec-impact::before { content:"Effet disponible"; display:block; font-size:9px; color:var(--v80-muted); }
+}
+html[data-theme] body.workspace-flow .app-shell-nav button.flow-parent-active { background:var(--s26-selected); color:var(--v80-ink); box-shadow:inset 3px 0 var(--v80-accent); }
+.flow-planning-more { min-width:0; max-width:100%; overflow:hidden; }
+.flow-planning-more .planning-tabs { flex-wrap:wrap; min-width:0; max-width:100%; }
+.flow-planning-more:not([open]) .planning-tabs { display:none !important; }
+.workspace-flow .workspace-header .sub { display:none; }
+@media(max-width:760px) {
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics>div { width:100%; max-width:100%; min-width:0; grid-column:auto; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics>div>span { flex:1 1 auto; width:auto; min-width:0; }
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics>div>strong { flex:0 0 auto; width:auto; min-width:0; max-width:100%; }
+}
+@media(max-width:760px) {
+ html[data-theme] body.workspace-flow #v60-recurring>.v60-metrics { display:flex !important; flex-direction:column; align-items:stretch; }
+}
+@media(max-width:760px) {
+ html[data-theme] body.workspace-flow #v4-chart { height:250px; min-height:250px; width:100%; }
+}

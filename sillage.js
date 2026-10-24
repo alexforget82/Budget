@@ -694,7 +694,7 @@ export function initialize(runtime) {
     const dailyNow = n("p", undefined, "home-daily-now"),
       dailyList = n("div", undefined, "home-daily-list");
     dailyList.setAttribute("role", "list");
-    dailyList.setAttribute("aria-label", "Safe-to-Spend prévu par jour");
+    dailyList.setAttribute("aria-label", "Disponible à dépenser prévu par jour");
     dailyList.tabIndex = 0;
     for (const days of [30, 60, 90]) {
       const choice = b(days + " jours", () => {
@@ -973,7 +973,7 @@ export function initialize(runtime) {
       current = s;
       drawHomeAlerts(s);
       if (dailyDialog.open) drawDaily();
-      $("app-version").textContent = s.version === "14.5.0" ? "v14.5.0" : "Interface v14.5.0 · serveur v" + s.version;
+      $("app-version").textContent = s.version === "15.0.0" ? "v15.0.0" : "Interface v15.0.0 · serveur v" + s.version;
       $("app-version").title =
         "Deuxième génération · version technique " + s.version;
       health.textContent = s.support41.backup.error

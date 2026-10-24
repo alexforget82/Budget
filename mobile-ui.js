@@ -90,18 +90,19 @@ export function initialize(runtime) {
     forecast: "M3 3v18h18 M6 15l5-5 4 3 6-8",
     transactions: "M4 7h16 M16 3l4 4-4 4 M20 17H4 M8 13l-4 4 4 4",
     more: "M4 6h16 M4 12h16 M4 18h16",
+    add: "M12 4v16 M4 12h16",
   };
   const buttons = [];
   for (const [view, label, icon] of [
-    ["dashboard", "Accueil", "home"],
-    ["budget", "Budget", "budget"],
-    ["prevision", "Prévision", "forecast"],
+    ["dashboard", "Disponible", "home"],
     ["transactions", "Transactions", "transactions"],
-    ["more", "Plus", "more"],
+    ["budget", "Budget", "budget"],
+    ["add", "+", "add"],
   ]) {
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.mobileView = view;
+    if(view === "add") button.setAttribute("aria-label", "Nouvelle transaction");
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("aria-hidden", "true");
@@ -115,7 +116,8 @@ export function initialize(runtime) {
     buttons.push(button);
     button.onclick = (event) => {
       event.stopPropagation();
-      if (view === "more")
+      if (view === "add") nav.querySelector(".quick-add").click();
+      else if (view === "more")
         nav.querySelector(".mobile-navigation-trigger").click();
       else nav.querySelector(`[data-view="${view}"]`).click();
       sync();
@@ -151,8 +153,8 @@ export function initialize(runtime) {
   window.addEventListener("resize", fitMoney);
   function sync() {
     fitMoney();
-    const active =
-      nav.querySelector("[data-view].active")?.dataset.view || "dashboard";
+    const currentView = nav.querySelector("[data-view].active")?.dataset.view || "dashboard";
+    const active = document.body.classList.contains("workspace-flow") && ["bilan","enveloppes"].includes(currentView) ? "budget" : currentView;
     const planning = [
       "prevision",
       "calendrier",

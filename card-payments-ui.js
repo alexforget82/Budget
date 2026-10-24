@@ -222,7 +222,7 @@ export function initialize(runtime) {
         const a = current.accounts.find((a) => a.id === Number(source.value));
         sourceNote.textContent =
           a && !a.included
-            ? "Ce compte est exclu du disponible : ses paiements ne réduiront pas le Safe-to-Spend des comptes inclus."
+            ? "Ce compte est exclu du disponible : ses paiements ne réduiront pas le Disponible à dépenser des comptes inclus."
             : "";
       }
       mode.onchange = sync;

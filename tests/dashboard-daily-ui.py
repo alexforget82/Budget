@@ -1,5 +1,5 @@
 from ui_navigation import dashboard_control
-"""One-click canonical daily Safe-to-Spend from either home mode."""
+"""One-click canonical daily Disponible à dépenser from either home mode."""
 import importlib.util,shutil
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect

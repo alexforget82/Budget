@@ -214,10 +214,10 @@ export function initialize(runtime) {
       checkbox.disabled = a.kind === "credit";
       checkbox.setAttribute(
         "aria-label",
-        "Inclure " + a.name + " dans le Safe-to-Spend",
+        "Inclure " + a.name + " dans le Disponible à dépenser",
       );
       const labelText = document.createElement("span");
-      labelText.textContent = a.kind === "credit" ? "Exclu" : "STS";
+      labelText.textContent = a.kind === "credit" ? "Exclu" : "Disponible";
       label.append(checkbox, labelText);
       checkbox.onchange = async () => {
         const desired = checkbox.checked;
@@ -298,7 +298,7 @@ export function initialize(runtime) {
         target.name +
         " sera prévu à chaque date, même avec une réserve actuelle de 0 $. Confirmez-le dans Prévu / Réel ou associez un virement existant. Les achats personnels ne sont pas un deuxième débit du compte commun."
       : reserved
-        ? "L’argent réservé est exclu du Safe-to-Spend. Les achats réels consomment cette réserve au fil de la période. Sur carte, la somme reste protégée jusqu’au remboursement, sans deuxième déduction. Avec « Conserver le restant », chaque nouvelle période protège le budget complet en plus du restant. Ce mode ne crée aucun paiement ni virement bancaire."
+        ? "L’argent réservé est exclu du Disponible à dépenser. Les achats réels consomment cette réserve au fil de la période. Sur carte, la somme reste protégée jusqu’au remboursement, sans deuxième déduction. Avec « Conserver le restant », chaque nouvelle période protège le budget complet en plus du restant. Ce mode ne crée aucun paiement ni virement bancaire."
         : "Le budget est simulé comme une sortie bancaire à chaque date programmée. Utilisez ce mode quand la date du paiement est connue.";
     $("envelope-reserve-help").hidden = !reserved;
     f.elements.forecast_account_id.disabled = reserved;
@@ -817,8 +817,8 @@ export function initialize(runtime) {
                 : "",
               typeof e.sts_impact_cents === "number"
                 ? e.sts_impact_cents === 0
-                  ? "Hors STS · 0,00 $"
-                  : "Effet STS : " +
+                  ? "Sans effet sur le disponible · 0,00 $"
+                  : "Effet sur le disponible : " +
                     (e.sts_impact_cents > 0 ? "+" : "−") +
                     money(Math.abs(e.sts_impact_cents))
                 : "",

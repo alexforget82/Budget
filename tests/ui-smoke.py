@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='budget-polish-') as d:
    page.locator('.chart-table summary').click();assert page.locator('.chart-table tbody tr').count()==30;page.locator('.chart-table summary').click()
    page.evaluate('scrollTo(0,0)');page.screenshot(path=str(artifacts/'desktop.png'),full_page=True)
    for view in ['comptes','transactions','enveloppes','recurrences','prevision','calendrier','virements','exceptions','bilan','importer','objectifs','sauvegardes','dashboard']:
-    navigate_view(page,view);assert page.locator('#workspace-title').inner_text()==page.locator(f'[data-view="{view}"]').inner_text()
+    navigate_view(page,view);assert page.locator('#workspace-title').inner_text()==('Budget' if view in ['bilan','enveloppes'] else page.locator(f'[data-view="{view}"]').inner_text())
     for width in [390,1440]:
      page.set_viewport_size({'width':width,'height':900});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),(view,width)
    page.locator('#dashboard-envelopes').click();assert page.locator('#section-enveloppes').is_visible();navigate_view(page,'dashboard')

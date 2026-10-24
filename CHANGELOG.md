@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 15.0.0 — navigation regroupée et prévisions lisibles
+
+Budget, enveloppes et Bilan partagent une entrée et une grille présentant les réserves et renouvellements. La prochaine paie rejoint le tableau de bord. Les récurrences proposent une liste avec effet canonique sur le disponible et un calendrier. Le graphique indique son minimum et des événements sélectionnables; un tableau quotidien suit l’horizon choisi. Recherche Ctrl/⌘ K, raccourcis de navigation et de saisie, barre iPhone à quatre actions et balayage pour classer. Libellés français et sous-titres allégés. Les moteurs financiers et le schéma restent inchangés. [Guide et limites d’affichage](docs/SILLAGE-15.0.md).
+
 ## 14.5.0 — budget en tableau et totaux du registre
 
 Budget groupé avec objectifs mensuels éditables en place, progression et dépassements intégrés, bandeau de trois chiffres, total fixe et filtre des catégories vides. Commandes secondaires repliées; fréquences, exceptions et sous-catégories conservées. Transactions : total et moyenne de la sélection, filtres sur une ligne sur ordinateur et entrées/sorties/net sur tous les résultats filtrés. Aucun changement du moteur financier. Voir [le guide](docs/SILLAGE-14.5.md).

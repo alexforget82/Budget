@@ -1,5 +1,14 @@
 """Navigate using the visible menu and contextual planning tabs."""
 def navigate(page,view):
+ if page.locator('body.workspace-flow').count():
+  if view in ['enveloppes','bilan']:
+   navigate(page,'budget')
+   page.locator('#section-budget .flow-budget-tabs').locator(f'[data-budget-view="{view}"]').click()
+   return
+  if view=='paie':
+   navigate(page,'dashboard')
+   page.locator('#dashboard-payday').get_by_role('button',name='Répartition et règles',exact=True).click()
+   return
  labels={'budgets-libres':'Budgets libres','suivi':'Prévu / Réel','enveloppes':'Enveloppes','objectifs':'Objectifs','recurrences':'Récurrences','calendrier':'Calendrier'}
  target='prevision' if view in labels else view
  button=page.locator(f'.app-shell-nav [data-view="{target}"]')
@@ -10,6 +19,8 @@ def navigate(page,view):
   if tools.count() and tools.get_attribute('open') is None:tools.locator(':scope>summary').click()
  button.click()
  if view in labels:
+  more=page.locator('section.view-active .flow-planning-more')
+  if more.count() and more.get_attribute('open') is None:more.locator(':scope>summary').click()
   page.locator('section.view-active .planning-tabs').get_by_role('button',name=labels[view],exact=True).click()
 
 

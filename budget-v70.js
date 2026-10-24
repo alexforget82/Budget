@@ -162,7 +162,7 @@ export function initialize(runtime) {
       const list = el("ol");
       for (const text of [
         "Créez vos comptes avec leurs soldes bancaires actuels.",
-        "Choisissez Conjoint comme seul compte du Safe-to-Spend.",
+        "Choisissez Conjoint comme seul compte du Disponible à dépenser.",
         "Classez vos revenus et vos factures, puis définissez les budgets.",
         "Vérifiez vos prévisions et les virements pour vos dépenses personnelles.",
       ])
@@ -274,7 +274,7 @@ export function initialize(runtime) {
         "";
       const save = el("button", "Utiliser uniquement ce compte", "primary");
       save.type = "submit";
-      form.append(field("Compte du Safe-to-Spend", select), save);
+      form.append(field("Compte du Disponible à dépenser", select), save);
       form.onsubmit = async (e) => {
         e.preventDefault();
         save.disabled = true;
@@ -406,7 +406,7 @@ export function initialize(runtime) {
     function review() {
       const p = card(
         "6. Gardez une place pour les dépenses personnelles",
-        "Un cadeau pour votre conjoint ? Enregistrez un virement depuis Conjoint vers votre compte personnel. La sortie réduit le Safe-to-Spend du Conjoint, sans créer une deuxième dépense dans le budget commun. Un virement prévu agit dans la prévision; les soldes réels changent à sa confirmation.",
+        "Un cadeau pour votre conjoint ? Enregistrez un virement depuis Conjoint vers votre compte personnel. La sortie réduit le Disponible à dépenser du Conjoint, sans créer une deuxième dépense dans le budget commun. Un virement prévu agit dans la prévision; les soldes réels changent à sa confirmation.",
       );
       p.append(
         button(
