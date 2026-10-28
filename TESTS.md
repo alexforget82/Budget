@@ -1,3 +1,11 @@
+## Sillage 2 — version technique 16.0.0
+
+132 tests Node et 201 tests API passent. La campagne Python initiale a passé 74 scripts sur 81. Les sept scripts concernés ont été repris : nouvelle navigation et intitulés, guide déplacé dans Réglages, menus latéraux devant rester fermés sur iPhone. Les assertions financières sont conservées; après correction et reprise, les 81 scripts sont validés. Le test de saisie et les workflows ont été relancés après les dernières retouches.
+
+`sillage-two-ui.py` vérifie quatre pages principales et quatre onglets mobiles, les réglages détaillés, les contrôles de date progressifs, cinq largeurs/deux thèmes et une dépense couverte par une enveloppe : débit bancaire et réserve diminuent du même montant, disponible inchangé. Les comparaisons de navigation conservent prévisions et tables. `linux-installed.py` démarre une vraie copie de l’application sur la base SQLite copiée et compare toutes les tables, les soldes et la prévision. Six tests Node Linux vérifient installation, sélection des données, sauvegarde et retour au service précédent après échec, y compris une migration de la v15. Les appels systemd sont simulés; aucun Chromebook physique n’a été utilisé.
+
+[Résultats détaillés](docs/sillage2/checks.json) · [Guide et installation](docs/SILLAGE-2.md). Les captures utilisent des données fictives.
+
 ## v15.0.0 — parcours regroupé, récurrences et prévisions
 
 126 tests Node et 201 tests API passent. La campagne Python a passé 73 scripts sur 79 au premier lancement. Les six échecs ont été repris après correction : sélecteur d’enveloppe devenu ambigu, sous-catégories trop larges sur tablette, nouveau titre parent Budget attendu dans le test de navigation, débordement des récurrences sur iPhone et actualisation du Bilan lorsque sa page est regroupée sous Budget. Les assertions de montants ont été conservées. Les six scripts concernés passent après correction; les tests du registre, des prévisions et du parcours mobile ont aussi été relancés après les dernières retouches.

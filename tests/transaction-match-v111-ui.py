@@ -12,7 +12,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':1440,'height':1000});errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base)
   def create(desc,amount='55',again=False,category=True):
-   page.locator('#open-transaction').click();page.locator('#transaction [name=amount]').fill(amount);page.locator('#transaction [name=description]').fill(desc);page.locator('#account-options').select_option(str(aid));page.locator('#transaction [name=happened_on]').fill(api.DAY)
+   page.locator('#open-transaction').click();page.locator('#transaction [name=amount]').fill(amount);page.locator('#transaction [name=description]').fill(desc);page.locator('#account-options').select_option(str(aid));page.locator('#s2-entry-options>summary').click();page.locator('#transaction [name=happened_on]').fill(api.DAY)
    if category:page.locator('#transaction-category').select_option(str(cid))
    page.locator('#transaction').get_by_role('button',name='Enregistrer et continuer' if again else 'Enregistrer',exact=True).click()
   create('Essence station')

@@ -1,4 +1,5 @@
 export const staticFiles = new Map([
+  ["/simple-workspace.js", "simple-workspace.js"],
   ["/workspace-flow.js", "workspace-flow.js"],
   ["/transaction-register.js", "transaction-register.js"],
   ["/budget-confidence.js", "budget-confidence.js"],
@@ -54,6 +55,7 @@ staticFiles.set("/budget-v50.css", "budget-v50.css");
 export const mime = {
   "transaction-register.js": "text/javascript; charset=utf-8",
   "workspace-flow.js": "text/javascript; charset=utf-8",
+  "simple-workspace.js": "text/javascript; charset=utf-8",
   "budget-confidence.js": "text/javascript; charset=utf-8",
   "entry-memory.js": "text/javascript; charset=utf-8",
   "card-payment-actual-ui.js": "text/javascript; charset=utf-8",

@@ -1,5 +1,19 @@
 """Navigate using the visible menu and contextual planning tabs."""
 def navigate(page,view):
+ if page.locator('body.sillage-two').count():
+  page.wait_for_function("document.body.dataset.sillageReady==='2'")
+  button=page.locator(f'.app-shell-nav [data-view="{view}"]')
+  trigger=page.locator('.mobile-navigation-trigger')
+  if not button.is_visible() and trigger.is_visible() and trigger.get_attribute('aria-expanded')!='true':trigger.click()
+  if not button.is_visible():
+   settings=page.locator('#s26-tools')
+   if settings.get_attribute('open') is None:settings.locator(':scope>summary').click()
+  for detail in button.locator('xpath=ancestor::details').all():
+   if detail.get_attribute('open') is None:detail.locator(':scope>summary').click()
+  if view in ['enveloppes','bilan']:
+   navigate(page,'budget');page.locator('#section-budget .flow-budget-tabs').locator(f'[data-budget-view="{view}"]').click()
+  else:button.click()
+  return
  if page.locator('body.workspace-flow').count():
   if view in ['enveloppes','bilan']:
    navigate(page,'budget')

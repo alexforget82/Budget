@@ -97,7 +97,7 @@ export function initialize(runtime) {
     ["dashboard", "Disponible", "home"],
     ["transactions", "Transactions", "transactions"],
     ["budget", "Budget", "budget"],
-    ["add", "+", "add"],
+    ["recurrences", "À venir", "forecast"],
   ]) {
     const button = document.createElement("button");
     button.type = "button";
@@ -154,7 +154,9 @@ export function initialize(runtime) {
   function sync() {
     fitMoney();
     const currentView = nav.querySelector("[data-view].active")?.dataset.view || "dashboard";
-    const active = document.body.classList.contains("workspace-flow") && ["bilan","enveloppes"].includes(currentView) ? "budget" : currentView;
+    const active = document.body.classList.contains("sillage-two") ?
+      (["dashboard","prevision"].includes(currentView)?"dashboard":["budget","bilan","enveloppes","budgets-libres","objectifs"].includes(currentView)?"budget":["recurrences","calendrier","suivi","exceptions"].includes(currentView)?"recurrences":currentView) :
+      document.body.classList.contains("workspace-flow") && ["bilan","enveloppes"].includes(currentView) ? "budget" : currentView;
     const planning = [
       "prevision",
       "calendrier",

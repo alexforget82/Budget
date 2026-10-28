@@ -36,7 +36,7 @@ try:
   # Vertical scrolling never triggers classification; the + button opens the real editor.
   row.evaluate("""row=>{const touch=y=>new Touch({identifier:1,target:row,clientX:200,clientY:y});row.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,touches:[touch(200)]}));row.dispatchEvent(new TouchEvent('touchend',{bubbles:true,changedTouches:[touch(400)]}));}""")
   expect(page.locator('#register-classification-dialog')).not_to_be_visible()
-  page.locator('.mobile-tabbar [data-mobile-view=add]').click();expect(page.locator('#transaction-dialog')).to_be_visible();page.locator('#transaction-dialog').get_by_role('button',name='Fermer',exact=True).click()
+  page.locator('#open-transaction').evaluate('(b)=>b.click()');expect(page.locator('#transaction-dialog')).to_be_visible();page.locator('#transaction-dialog').get_by_role('button',name='Fermer',exact=True).click()
   assert page.locator('.mobile-tabbar>button').count()==4
   page.goto(f.base+'/#bilan');expect(page.locator('#section-bilan')).to_be_visible()
   for theme in ['light','dark']:

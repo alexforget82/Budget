@@ -1,0 +1,438 @@
+{
+  "product": "Sillage 2",
+  "version": "16.0.0",
+  "node": {
+    "passed": 132,
+    "failed": 0
+  },
+  "api": {
+    "passed": 201,
+    "failed": 0
+  },
+  "python_initial": [
+    {
+      "test": "benchmark-v10.py",
+      "code": 0,
+      "seconds": 4.5
+    },
+    {
+      "test": "budget-v41-ui.py",
+      "code": 0,
+      "seconds": 11.3
+    },
+    {
+      "test": "budget-v43-ui.py",
+      "code": 0,
+      "seconds": 9.1
+    },
+    {
+      "test": "budget-v44-ui.py",
+      "code": 0,
+      "seconds": 12.6
+    },
+    {
+      "test": "budget-v50-ui.py",
+      "code": 0,
+      "seconds": 6.8
+    },
+    {
+      "test": "budget-v51-ui.py",
+      "code": 0,
+      "seconds": 3.3
+    },
+    {
+      "test": "budget-v53-ui.py",
+      "code": 0,
+      "seconds": 6.5
+    },
+    {
+      "test": "budget-v60-ui.py",
+      "code": 0,
+      "seconds": 6.2
+    },
+    {
+      "test": "budget-v61-ui.py",
+      "code": 0,
+      "seconds": 8.9
+    },
+    {
+      "test": "budget-v70-ui.py",
+      "code": 1,
+      "seconds": 33.9
+    },
+    {
+      "test": "budget-v71-ui.py",
+      "code": 0,
+      "seconds": 4.0
+    },
+    {
+      "test": "budget-v73-ui.py",
+      "code": 0,
+      "seconds": 2.6
+    },
+    {
+      "test": "budget-v74-ui.py",
+      "code": 0,
+      "seconds": 10.6
+    },
+    {
+      "test": "budget-v80-ui.py",
+      "code": 0,
+      "seconds": 15.6
+    },
+    {
+      "test": "budget-v81-ui.py",
+      "code": 0,
+      "seconds": 6.6
+    },
+    {
+      "test": "calendar-budget-v113-ui.py",
+      "code": 0,
+      "seconds": 4.0
+    },
+    {
+      "test": "calendar-envelope-renewals-ui.py",
+      "code": 0,
+      "seconds": 3.0
+    },
+    {
+      "test": "card-envelope-protection-ui.py",
+      "code": 0,
+      "seconds": 11.9
+    },
+    {
+      "test": "card-payment-actual-api.py",
+      "code": 0,
+      "seconds": 0.4
+    },
+    {
+      "test": "card-payment-actual-ui.py",
+      "code": 0,
+      "seconds": 17.5
+    },
+    {
+      "test": "card-payments-ui.py",
+      "code": 0,
+      "seconds": 17.4
+    },
+    {
+      "test": "categories-v45-ui.py",
+      "code": 0,
+      "seconds": 4.6
+    },
+    {
+      "test": "categories-v46-ui.py",
+      "code": 0,
+      "seconds": 13.9
+    },
+    {
+      "test": "categories-v512-ui.py",
+      "code": 0,
+      "seconds": 2.7
+    },
+    {
+      "test": "categories-v513-ui.py",
+      "code": 0,
+      "seconds": 3.1
+    },
+    {
+      "test": "categories-v52-ui.py",
+      "code": 0,
+      "seconds": 5.2
+    },
+    {
+      "test": "chatgpt-export-ui.py",
+      "code": 0,
+      "seconds": 5.2
+    },
+    {
+      "test": "compact-register-ui.py",
+      "code": 0,
+      "seconds": 6.8
+    },
+    {
+      "test": "confidence-v116-ui.py",
+      "code": 0,
+      "seconds": 11.5
+    },
+    {
+      "test": "confidence-v143-api.py",
+      "code": 0,
+      "seconds": 0.5
+    },
+    {
+      "test": "confidence-v143-ui.py",
+      "code": 0,
+      "seconds": 20.1
+    },
+    {
+      "test": "dashboard-controls-ui.py",
+      "code": 0,
+      "seconds": 17.0
+    },
+    {
+      "test": "dashboard-daily-ui.py",
+      "code": 0,
+      "seconds": 2.1
+    },
+    {
+      "test": "dashboard-v47-ui.py",
+      "code": 0,
+      "seconds": 15.7
+    },
+    {
+      "test": "entry-integrity-api.py",
+      "code": 0,
+      "seconds": 0.3
+    },
+    {
+      "test": "entry-phase1-api.py",
+      "code": 0,
+      "seconds": 0.5
+    },
+    {
+      "test": "entry-phase1-ui.py",
+      "code": 0,
+      "seconds": 6.9
+    },
+    {
+      "test": "envelope-entry-api.py",
+      "code": 0,
+      "seconds": 0.3
+    },
+    {
+      "test": "envelope-entry-ui.py",
+      "code": 0,
+      "seconds": 8.7
+    },
+    {
+      "test": "envelope-first-period-api.py",
+      "code": 0,
+      "seconds": 0.3
+    },
+    {
+      "test": "envelope-transfers-ui.py",
+      "code": 0,
+      "seconds": 5.9
+    },
+    {
+      "test": "essential-home-ui.py",
+      "code": 0,
+      "seconds": 7.2
+    },
+    {
+      "test": "forecast-ui.py",
+      "code": 0,
+      "seconds": 9.7
+    },
+    {
+      "test": "free-budgets-ui.py",
+      "code": 0,
+      "seconds": 11.5
+    },
+    {
+      "test": "installed-assets-ui.py",
+      "code": 0,
+      "seconds": 1.5
+    },
+    {
+      "test": "linux-installed.py",
+      "code": 0,
+      "seconds": 0.4
+    },
+    {
+      "test": "lunch-categories-ui.py",
+      "code": 0,
+      "seconds": 3.4
+    },
+    {
+      "test": "mac-service-simulation.py",
+      "code": 0,
+      "seconds": 1.4
+    },
+    {
+      "test": "migration-rollback-ui.py",
+      "code": 0,
+      "seconds": 2.4
+    },
+    {
+      "test": "mobile-v115-ui.py",
+      "code": 1,
+      "seconds": 3.5
+    },
+    {
+      "test": "planning-ui.py",
+      "code": 1,
+      "seconds": 1.4
+    },
+    {
+      "test": "planning-v4-ui.py",
+      "code": 0,
+      "seconds": 8.1
+    },
+    {
+      "test": "planning-workflow-ui.py",
+      "code": 0,
+      "seconds": 16.6
+    },
+    {
+      "test": "refactor-parity-ui.py",
+      "code": 0,
+      "seconds": 20.6
+    },
+    {
+      "test": "register-budget-ui.py",
+      "code": 0,
+      "seconds": 2.9
+    },
+    {
+      "test": "register-v144-api.py",
+      "code": 0,
+      "seconds": 0.6
+    },
+    {
+      "test": "register-v144-ui.py",
+      "code": 0,
+      "seconds": 17.4
+    },
+    {
+      "test": "release-v12-ui.py",
+      "code": 0,
+      "seconds": 3.7
+    },
+    {
+      "test": "release-v92-ui.py",
+      "code": 0,
+      "seconds": 5.5
+    },
+    {
+      "test": "reserved-period-match-ui.py",
+      "code": 0,
+      "seconds": 3.1
+    },
+    {
+      "test": "responsive-v501-ui.py",
+      "code": 0,
+      "seconds": 33.4
+    },
+    {
+      "test": "security-view-ui.py",
+      "code": 0,
+      "seconds": 1.4
+    },
+    {
+      "test": "setup-completion-ui.py",
+      "code": 1,
+      "seconds": 6.2
+    },
+    {
+      "test": "shared-grocery-ui.py",
+      "code": 0,
+      "seconds": 1.6
+    },
+    {
+      "test": "shared-owner-match-ui.py",
+      "code": 0,
+      "seconds": 1.9
+    },
+    {
+      "test": "shared-periods-ui.py",
+      "code": 0,
+      "seconds": 1.4
+    },
+    {
+      "test": "shared-tools-ui.py",
+      "code": 0,
+      "seconds": 2.2
+    },
+    {
+      "test": "sillage-2026-ui.py",
+      "code": 1,
+      "seconds": 6.4
+    },
+    {
+      "test": "sillage-two-ui.py",
+      "code": 0,
+      "seconds": 9.1
+    },
+    {
+      "test": "sillage-ui.py",
+      "code": 1,
+      "seconds": 6.5
+    },
+    {
+      "test": "sillage-v10-ui.py",
+      "code": 0,
+      "seconds": 4.6
+    },
+    {
+      "test": "simple-purchase-ui.py",
+      "code": 0,
+      "seconds": 7.3
+    },
+    {
+      "test": "start-budget-ui.py",
+      "code": 0,
+      "seconds": 5.4
+    },
+    {
+      "test": "transaction-match-v111-ui.py",
+      "code": 0,
+      "seconds": 5.5
+    },
+    {
+      "test": "transaction-transfers-ui.py",
+      "code": 0,
+      "seconds": 4.4
+    },
+    {
+      "test": "transactions-ui.py",
+      "code": 0,
+      "seconds": 13.1
+    },
+    {
+      "test": "ui-smoke.py",
+      "code": 1,
+      "seconds": 4.9
+    },
+    {
+      "test": "visual-v13-ui.py",
+      "code": 0,
+      "seconds": 49.9
+    },
+    {
+      "test": "visual-v14-ui.py",
+      "code": 0,
+      "seconds": 24.0
+    },
+    {
+      "test": "workflows-ui.py",
+      "code": 0,
+      "seconds": 11.5
+    },
+    {
+      "test": "workspace-flow-ui.py",
+      "code": 0,
+      "seconds": 18.1
+    }
+  ],
+  "reruns": {
+    "budget-v70-ui.py": "PASS: seven-step guide, account forms, Conjoint-only scope, required transfer purpose and expense link, demo edits isolated from real tables, reset review/cancel and typed confirmation, recovery copy, empty restart, dark and five widths. Captures: /tmp/budget-v70-ui-ol8vv5ps",
+    "planning-ui.py": "PASS: cards/editors, 10 visible sidebar routes, planning tabs, recurrence filters, 30/60/90 horizons, exact server metrics, slider keyboard endpoints, week/day selection, complete daily disclosure, calendar, six views at five widths, no financial changes from browsing; inclusion toggle via API.",
+    "mobile-v115-ui.py": "PASS: light/dark, five phone widths, nine views; bottom tabs, full menu, readable amounts/month, visible ledger, filters, bulk actions, bottom sheets, desktop restoration, unchanged browsing finances and one exact transaction entry. Captures: /tmp/sillage-mobile-115-be7hp7io",
+    "setup-completion-ui.py": "PASS: completion hides setup, persists after reload, data-status button reopens it, browsing completed steps preserves completion, mobile access, unchanged ledger/forecast and reset restores the guide.",
+    "sillage-2026-ui.py": "PASS: Sillage 2026 identity, grouped navigation, nine screens light/dark, 320–1850 responsive, retained editor and daily view, canonical money unchanged and restricted viewer branding. Captures: /tmp/sillage-2026-kdgj3f45",
+    "sillage-ui.py": "PASS: Sillage identity, review queues and duplicate hints, global sorting, inspector classification with unchanged finances, refund draft, six-month comparison, calendar drag simulation without writes, dark/light and six screens at four widths. Captures: /tmp/sillage-ui-1u1u3qvr",
+    "ui-smoke.py": "PASS: modal API validation error stays visible; successful save closes modal, confirms status and changes balance by exactly 500 cents."
+  },
+  "effective_python_passed": 81,
+  "effective_python_failed": 0,
+  "additional_checks": {
+    "sillage-two-ui.py": "PASS: Sillage 2 branding, four primary routes and four phone tabs, settings/context routes, progressive date entry, canonical financial parity on read, one exact transaction, keyboard search, five widths/two themes. Captures: docs/sillage2",
+    "installed-assets-ui.py": "PASS: installed copy loads CSS, scripts and logo, displays real balances, opens the explanation and leaves the ledger unchanged."
+  },
+  "linux_tests": "Six unit tests cover source data selection, per-user service, updates, backups, rollback and failed migration recovery. An installed copy is booted on actual temporary SQLite and compared with its source. systemd commands are simulated; no physical Chromebook test.",
+  "financial_engine_changes": false,
+  "schema_changes": false,
+  "screenshots": "Fictitious fixtures only."
+}

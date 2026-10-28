@@ -1,12 +1,16 @@
-# Sillage 2026
+# Sillage 2
 
-Budget personnel local pour Mac, accessible sur iPhone avec Tailscale privé. Données SQLite sur votre Mac, aucune connexion bancaire automatique. **Node.js 22.13+**, recommandé : Node 24. Aucun paquet npm à installer pour utiliser l’application, aucune compilation et aucun CDN.
+Budget personnel local pour Linux/ChromeOS et Mac, accessible sur iPhone avec Tailscale privé configuré sur l’ordinateur hôte. Données SQLite locales, aucune connexion bancaire automatique. **Node.js 22.13+**, recommandé : Node 24. Aucun paquet npm à installer pour utiliser l’application, aucune compilation et aucun CDN.
 
-Voir [les nouveautés de Sillage 15.0](docs/SILLAGE-15.0.md).
+Quatre pages : Disponible, Transactions, Budget et À venir. [Installation Chromebook et guide de Sillage 2](docs/SILLAGE-2.md).
 
 ## Installer ou mettre à jour
 
-Téléchargez et décompressez [la version v15.0.0](https://github.com/alexforget82/Budget/archive/refs/tags/v15.0.0.zip).
+**Chromebook / Linux :** décompressez la version ci-dessous, puis lancez `bash "Installer Sillage Linux.sh"` dans son dossier. La reprise du dossier `Budget-15.0.0/data` est automatique; voir le guide pour une autre source ou une sauvegarde JSON. Le programme installé possède un dossier de données stable, un service utilisateur et un raccourci dans le lanceur.
+
+**Mac :**
+
+Téléchargez et décompressez [la version v16.0.0](https://github.com/alexforget82/Budget/archive/refs/tags/v16.0.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.

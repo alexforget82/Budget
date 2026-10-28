@@ -25,6 +25,7 @@ export function validateUpdateFolder(folder, currentVersion) {
   for (const name of [
     "transaction-register.js",
     "workspace-flow.js",
+    "simple-workspace.js",
     "forecast-history.js", "reconciliation-hints.js", "budget-confidence.js", "money.js",
     "sillage-v14.js",
     "styles-v14.css",

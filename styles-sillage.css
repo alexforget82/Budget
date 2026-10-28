@@ -4591,3 +4591,34 @@ html[data-theme] body.workspace-flow .app-shell-nav button.flow-parent-active { 
 @media(max-width:760px) {
  html[data-theme] body.workspace-flow #v4-chart { height:250px; min-height:250px; width:100%; }
 }
+/* Sillage 2: four destinations, one settings menu, progressive detail. */
+.sillage-two .app-shell-nav .nav-caption { display:none; }
+html[data-theme] body.sillage-two #s26-tools .s2-setting-route { display:flex !important; }
+html[data-theme] body.sillage-two .app-shell-nav .s2-primary { display:flex !important; margin:4px 0; min-height:44px; }
+html[data-theme] body.sillage-two .app-shell-nav .s2-primary.s2-current { background:var(--s26-selected); color:var(--v80-ink); box-shadow:inset 3px 0 var(--v80-accent); }
+.sillage-two .brand-generation { color:var(--v80-accent); font-size:22px; }
+.s2-available-actions { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+.s2-dashboard-details { padding:12px 0; border-top:1px solid var(--v80-line); }
+.s2-dashboard-details>summary { cursor:pointer; font-size:13px; color:var(--v80-muted); }
+.sillage-two .s26-tools { margin-top:18px; }
+.sillage-two .flow-planning-more { display:none; }
+.sillage-two #app-dashboard>.dashboard-intro { display:none; }
+.sillage-two #s2-entry-options { grid-column:1/-1; padding:8px 0; border-top:1px solid var(--v80-line); }
+.sillage-two #s2-entry-options summary { cursor:pointer; font-size:12px; color:var(--v80-muted); }
+.sillage-two #s2-entry-options label { margin-top:10px; }
+@media(max-width:760px) {
+ .s2-available-actions { display:grid; grid-template-columns:1fr; }
+ html[data-theme] body.sillage-two .mobile-tabbar { grid-template-columns:repeat(4,minmax(0,1fr)); }
+ html[data-theme] body.sillage-two #s26-tools .s2-setting-route { min-height:44px; }
+}
+html[data-theme] body.sillage-two #s26-tools .s2-setting-route.s2-context-route { display:none !important; }
+.s2-settings-main { border-bottom:1px solid var(--v80-line); padding:8px 0; margin-bottom:8px; }
+#s2-advanced-tools { padding:10px 0; }
+#s2-advanced-tools>summary { cursor:pointer; font-size:12px; color:var(--v80-muted); }
+.sillage-two .s2-empty-subcategory { display:none !important; }
+.sillage-two #s2-entry-options { width:100%; }
+.sillage-two #s2-entry-options[open] { display:block; }
+.sillage-two .app-shell-nav>[data-view]:not([data-view=dashboard]):not([data-view=transactions]):not([data-view=budget]):not([data-view=recurrences]) { display:none !important; }
+@media(max-width:760px) {
+ html[data-theme] body.sillage-two .app-shell-nav:not(.mobile-menu-open)>.s2-primary { display:none !important; }
+}

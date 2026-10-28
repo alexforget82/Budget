@@ -1,5 +1,11 @@
 # Versions de Sillage
 
+## Sillage 2 — version technique 16.0.0
+
+Quatre destinations principales sur ordinateur et iPhone : Disponible, Transactions, Budget, À venir. Comptes, catégories, imports et sauvegardes rejoignent Réglages; les autres outils sont repliés. Les explications et la prochaine paie quittent le premier plan, la date de saisie est progressive et les sous-catégories sans choix utile sont masquées. Les routes et moteurs financiers existants sont conservés.
+
+Installation Linux/ChromeOS avec reprise des données, copie avant mise à jour, service systemd utilisateur, dossier stable distinct du programme, programme précédent conservé et raccourci dans le lanceur. Aucun navigateur ouvert pendant la mise à jour. [Guide](docs/SILLAGE-2.md).
+
 ## 15.0.0 — navigation regroupée et prévisions lisibles
 
 Budget, enveloppes et Bilan partagent une entrée et une grille présentant les réserves et renouvellements. La prochaine paie rejoint le tableau de bord. Les récurrences proposent une liste avec effet canonique sur le disponible et un calendrier. Le graphique indique son minimum et des événements sélectionnables; un tableau quotidien suit l’horizon choisi. Recherche Ctrl/⌘ K, raccourcis de navigation et de saisie, barre iPhone à quatre actions et balayage pour classer. Libellés français et sous-titres allégés. Les moteurs financiers et le schéma restent inchangés. [Guide et limites d’affichage](docs/SILLAGE-15.0.md).
