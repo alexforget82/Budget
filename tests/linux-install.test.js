@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chooseData,linuxUnit,installLinux} from '../linux-install.js';
+import {spawnSync} from 'node:child_process';
+import {chooseData,linuxUnit,installLinux,workingDirectoryValue} from '../linux-install.js';
 const release=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const temp=()=>fs.mkdtempSync(path.join(os.tmpdir(),'sillage-linux-'));
 test('data discovery refuses empty/ambiguous installation and never replaces an existing budget',()=>{
@@ -21,7 +22,7 @@ test('data discovery refuses empty/ambiguous installation and never replaces an 
 });
 test('service paths quote spaces, percent specifiers and shell-looking dollars',()=>{
  const unit=linuxUnit('/usr/bin/node','/tmp/a b/%name/$cash');
- assert.ok(unit.includes('%%name/$$cash'));assert.ok(unit.includes('WorkingDirectory="/tmp/a b/'));assert.ok(!unit.includes('sh -c'));
+ assert.ok(unit.includes('%%name/$$cash'));assert.ok(unit.includes('WorkingDirectory=/tmp/a b/%%name/$cash\n'));assert.ok(!unit.includes('sh -c'));
 });
 test('fresh Linux install writes a user service and app launcher outside the release',async()=>{
  const home=temp(),calls=[];
@@ -59,5 +60,32 @@ test('failed migration restores the legacy service and keeps the original budget
   await assert.rejects(installLinux({home,release,command:args=>{calls.push(args);return true;},probe:async()=>false,ready:async()=>false}),/ne répond pas/);
   assert.equal(fs.readFileSync(unit,'utf8'),'legacy service');assert.equal(fs.readFileSync(path.join(oldData,'budget.sqlite'),'utf8'),'original');
   const root=path.join(home,'.local/share/sillage');assert.equal(fs.existsSync(path.join(root,'data')),false);assert.ok(fs.readdirSync(path.join(root,'backups')).some(n=>n.startsWith('failed-import-')));assert.equal(calls.at(-1)[0],'start');
+ }finally{fs.rmSync(home,{recursive:true,force:true});}
+});
+
+test('systemd parser rejects the old quoted directory and accepts generated service units',t=>{
+ const available=spawnSync('systemd-analyze',['--version'],{encoding:'utf8'});
+ if(available.error){t.skip('systemd-analyze unavailable');return;}
+ const dir=temp();
+ try{
+  for(const root of ['/tmp/sillage','/tmp/sillage space/%name/$cash']){
+   const file=path.join(dir,'sillage.service');
+   fs.writeFileSync(file,linuxUnit(process.execPath,root));
+   const parsed=spawnSync('systemd-analyze',['verify','--man=no',file],{encoding:'utf8'});
+   assert.equal(parsed.status,0,parsed.stderr);
+   fs.writeFileSync(file,linuxUnit(process.execPath,root).replace('WorkingDirectory='+workingDirectoryValue(root),'WorkingDirectory='+JSON.stringify(root)));
+   const bad=spawnSync('systemd-analyze',['verify','--man=no',file],{encoding:'utf8'});
+   assert.notEqual(bad.status,0);assert.match(bad.stderr,/path is not absolute/);
+  }
+  assert.throws(()=>workingDirectoryValue('/tmp/sillage\nExecStart=/bin/false'),/absolu/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('manual version 16 data is detected and cannot silently fall back to version 15',()=>{
+ const home=temp(),root=path.join(home,'stable');
+ try{
+  for(const name of ['Budget-15.0.0','Budget-16.0.0']){const data=path.join(home,'Applications',name,'data');fs.mkdirSync(data,{recursive:true});fs.writeFileSync(path.join(data,'budget.sqlite'),name);}
+  assert.throws(()=>chooseData({home,root}),/Plusieurs anciens budgets/);
+  const explicit=path.join(home,'Applications/Budget-16.0.0/data');assert.equal(chooseData({home,root,importData:explicit}),explicit);
+  assert.equal(fs.readFileSync(path.join(explicit,'budget.sqlite'),'utf8'),'Budget-16.0.0');
  }finally{fs.rmSync(home,{recursive:true,force:true});}
 });

@@ -1,0 +1,23 @@
+{
+  "version": "16.0.1",
+  "node": {
+    "passed": 134,
+    "failed": 0
+  },
+  "api": {
+    "passed": 201,
+    "failed": 0
+  },
+  "systemd_parser": "Actual systemd-analyze verify: legacy quoted WorkingDirectory rejected; generated normal and spaced/%/$ paths accepted.",
+  "linux_unit_tests": 8,
+  "data_discovery": "Multiple manual v15/v16 databases require explicit source; no silent fallback.",
+  "python": [
+    "linux-installed.py",
+    "installed-assets-ui.py",
+    "sillage-two-ui.py"
+  ],
+  "financial_engine_changes": false,
+  "schema_changes": false,
+  "physical_chromebook_test": false,
+  "full_user_systemd_runtime_test": false
+}

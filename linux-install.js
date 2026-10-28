@@ -8,7 +8,13 @@ import {copyReleaseFiles} from './mac-service.js';
 import {validateUpdateFolder} from './mac-update.js';
 const source=path.dirname(fileURLToPath(import.meta.url));
 export const unitQuote=value=>'"'+String(value).replace(/%/g,'%%').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\$/g,()=>'$$')+'"';
-export function linuxUnit(node,root){return `[Unit]\nDescription=Sillage 2\nAfter=network.target\n\n[Service]\nType=simple\nWorkingDirectory=${unitQuote(root)}\nExecStart=${unitQuote(node)} ${unitQuote(path.join(root,'app','server.js'))}\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=default.target\n`;}
+// WorkingDirectory takes one literal path; ExecStart has separate argument quoting.
+export function workingDirectoryValue(root){
+ const value=String(root);
+ if(!path.isAbsolute(value)||/[\r\n\0]/.test(value))throw Error('Le dossier du service doit être un chemin absolu sans retour à la ligne.');
+ return value.replace(/%/g,'%%');
+}
+export function linuxUnit(node,root){return `[Unit]\nDescription=Sillage 2\nAfter=network.target\n\n[Service]\nType=simple\nWorkingDirectory=${workingDirectoryValue(root)}\nExecStart=${unitQuote(node)} ${unitQuote(path.join(root,'app','server.js'))}\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=default.target\n`;}
 function run(args,allowFailure=false){const r=spawnSync('systemctl',['--user',...args],{encoding:'utf8'});if((r.error||r.status!==0)&&!allowFailure)throw Error(r.error?.message||(r.stderr||r.stdout||'systemctl a échoué').trim());return r.status===0;}
 export function chooseData({root,home,importData,newBudget=false}){
  const live=path.join(root,'data');
@@ -17,7 +23,8 @@ export function chooseData({root,home,importData,newBudget=false}){
   return null;
  }
  if(fs.existsSync(live))throw Error('Le dossier de données existe mais est incomplet. Conservez-le avant de réessayer.');
- const candidates=importData?[path.resolve(importData)]:[path.join(home,'Applications','Budget-15.0.0','data'),path.join(home,'Applications','Budget-14.5.0','data')].filter(p=>fs.existsSync(path.join(p,'budget.sqlite')));
+ const applications=path.join(home,'Applications');
+ const candidates=importData?[path.resolve(importData)]:(fs.existsSync(applications)?fs.readdirSync(applications,{withFileTypes:true}).filter(e=>e.isDirectory()&&/^Budget-\d+\.\d+\.\d+$/.test(e.name)).map(e=>path.join(applications,e.name,'data')).filter(p=>fs.existsSync(path.join(p,'budget.sqlite'))):[]);
  if(candidates.length>1)throw Error('Plusieurs anciens budgets existent. Précisez --import-data suivi du dossier data à conserver.');
  if(candidates.length===1){if(!fs.existsSync(path.join(candidates[0],'budget.sqlite')))throw Error('Ce dossier ne contient pas budget.sqlite.');return candidates[0];}
  if(!newBudget)throw Error('Aucun budget trouvé. Utilisez --import-data /chemin/vers/data, ou --new pour un budget vide à restaurer ensuite depuis un JSON.');

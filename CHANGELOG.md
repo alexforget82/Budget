@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 16.0.1 — réparation du service Linux/ChromeOS
+
+Correction du chemin WorkingDirectory rejeté par systemd lorsqu’il était entouré de guillemets. Le test de régression utilise le vrai vérificateur de fichiers systemd. La découverte des données inclut les dossiers versionnés 16 et refuse tout choix automatique lorsqu’il existe plusieurs bases. Aucun changement des calculs ni du schéma. [Procédure de réparation](docs/SILLAGE-2.0.1.md).
+
 ## Sillage 2 — version technique 16.0.0
 
 Quatre destinations principales sur ordinateur et iPhone : Disponible, Transactions, Budget, À venir. Comptes, catégories, imports et sauvegardes rejoignent Réglages; les autres outils sont repliés. Les explications et la prochaine paie quittent le premier plan, la date de saisie est progressive et les sous-catégories sans choix utile sont masquées. Les routes et moteurs financiers existants sont conservés.

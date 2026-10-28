@@ -1,3 +1,9 @@
+## 16.0.1 — service Linux et sélection des données
+
+134 tests Node et 201 tests API passent. Les huit tests Linux incluent le vrai `systemd-analyze verify` : ancien WorkingDirectory entre guillemets refusé, nouveau service accepté pour un chemin simple ou avec espaces et spécificateurs, chemins avec retour à la ligne refusés. Le cas de deux bases manuelles v15/v16 exige une sélection explicite. Les tests de conservation des données, sauvegarde, restauration du service et reprise après migration échouée restent verts.
+
+`linux-installed.py` redémarre une copie sur une vraie base SQLite temporaire et vérifie soldes, prévisions et toutes les tables. `installed-assets-ui.py` et `sillage-two-ui.py` passent pour les fichiers installés et le parcours de saisie. Aucun nouveau test sur Chromebook physique ni gestionnaire systemd utilisateur complet dans cet environnement. [Résultats](docs/v1601/checks.json), [réparation](docs/SILLAGE-2.0.1.md).
+
 ## Sillage 2 — version technique 16.0.0
 
 132 tests Node et 201 tests API passent. La campagne Python initiale a passé 74 scripts sur 81. Les sept scripts concernés ont été repris : nouvelle navigation et intitulés, guide déplacé dans Réglages, menus latéraux devant rester fermés sur iPhone. Les assertions financières sont conservées; après correction et reprise, les 81 scripts sont validés. Le test de saisie et les workflows ont été relancés après les dernières retouches.

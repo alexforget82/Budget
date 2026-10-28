@@ -6,7 +6,7 @@ Disponible montre l’argent libre, le minimum prévu et le graphique. Le détai
 
 La saisie garde montant, description, compte et catégorie au premier plan. L’enveloppe reste visible pour vérifier la protection de l’achat; une sous-catégorie sans choix utile n’occupe plus une ligne. La date est sous « Date de la transaction »; elle reste présélectionnée et devient visible pour un virement. Les contrôles et validations existants sont réutilisés.
 
-**Sillage 2 utilise la version technique 16.0.0**, affichée en bas. Cette numérotation permet la mise à jour depuis la série 15 sans créer un nouveau format de données. Aucun moteur financier, schéma SQLite ou calcul de réserve n’est modifié.
+**Sillage 2 utilise la version technique 16.0.1**, affichée en bas. Cette numérotation permet la mise à jour depuis la série 15 sans créer un nouveau format de données. Aucun moteur financier, schéma SQLite ou calcul de réserve n’est modifié.
 
 ## Chromebook : installer ou migrer la version 15
 
@@ -19,13 +19,13 @@ Dans le Terminal Linux :
 ```bash
 mkdir -p ~/Applications
 cd ~/Applications
-curl -fL https://github.com/alexforget82/Budget/archive/refs/tags/v16.0.0.zip -o Sillage-2.zip
+curl -fL https://github.com/alexforget82/Budget/archive/refs/tags/v16.0.1.zip -o Sillage-2.zip
 unzip Sillage-2.zip
-cd Budget-16.0.0
+cd Budget-16.0.1
 bash "Installer Sillage Linux.sh"
 ```
 
-L’installateur reprend automatiquement `~/Applications/Budget-15.0.0/data` s’il existe. Il reconnaît aussi le dossier de la v14.5. S’il en trouve plusieurs, il demande de choisir explicitement. Un dossier de données non standard se précise ainsi :
+L’installateur recherche les bases dans les dossiers versionnés `~/Applications/Budget-X.Y.Z/data`. S’il en trouve une seule, il la reprend. S’il en trouve plusieurs, il demande de choisir explicitement. Une installation stable existante conserve sa base. Un dossier de données non standard se précise ainsi :
 
 ```bash
 bash "Installer Sillage Linux.sh" --import-data "/chemin/vers/data"
