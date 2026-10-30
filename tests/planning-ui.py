@@ -35,7 +35,10 @@ try:
   page.get_by_label('Horizon de prévision',exact=True).locator('[data-horizon="60"]').click();assert page.locator('#planning-day-slider').get_attribute('max')=='59';page.get_by_label('Horizon de prévision',exact=True).locator('[data-horizon="90"]').click();page.locator('#planning-day-slider').focus();page.keyboard.press('Home');assert page.locator('#planning-date').input_value()==forecast[0]['date']
   page.locator('#planning-weeks-next').click();page.locator('#planning-weeks .week-card').first.click();assert page.locator('#planning-date').input_value()==forecast[28]['date'];page.locator('#planning-week-days button').nth(2).click();assert page.locator('#planning-date').input_value()==forecast[30]['date']
   page.locator('.forecast-source-list>summary').click();assert page.locator('#forecast .forecast-day').count()==90;page.locator('#forecast-expand').click();assert page.locator('#forecast .forecast-day.is-open').count()==90;page.locator('.forecast-source-list>summary').click()
-  navigate(page,'calendrier');assert page.locator('.cal-cell.has-movements').count()>0;page.locator('.cal-cell.has-movements').first.click();expect(page.locator('#cal-detail h3')).to_be_visible()
+  navigate(page,'calendrier')
+  # At month end all fixture movements may be in the following month.
+  if day(3)[:7]!=day(0)[:7]:page.locator('#cal-next').click()
+  expect(page.locator('.cal-cell.has-movements').first).to_be_visible();page.locator('.cal-cell.has-movements').first.click();expect(page.locator('#cal-detail h3')).to_be_visible()
   for width in [375,390,768,1024,1440]:
    page.set_viewport_size({'width':width,'height':900})
    for view in ['comptes','prevision','enveloppes','recurrences','objectifs','calendrier']:

@@ -932,7 +932,7 @@ export function initialize(runtime) {
       accounts.append(
         el("summary", "Voir les comptes et les enveloppes du calcul"),
       );
-      for (const a of s.accounts)
+      for (const a of s.accounts.filter(a => !a.simple_credit))
         line(
           accounts,
           a.name +
@@ -1065,7 +1065,7 @@ export function initialize(runtime) {
           "quiet-copy",
         ),
       );
-      for (const a of s.accounts) {
+      for (const a of s.accounts.filter(a => !a.simple_credit)) {
         const check = s.support41.bank_checks?.find(
             (c) => c.account_id === a.id,
           ),

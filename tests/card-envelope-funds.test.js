@@ -29,3 +29,18 @@ test('an ordinary purchase before the first period cannot consume that future al
   if(account===2||mode===0)assert.equal(at(linked,'2026-10-27').events.find(e=>e.envelope_renewal).amount_cents,0);
  }
 });
+test('a simple card protects recorded purchases independently of an unknown debt balance',()=>{
+ const purchase={...tx(1,-10000,null),description:'Maison'};
+ for(const balance_cents of [0,-50000,500000]){
+  const a=[accounts[0],{...accounts[1],balance_cents,simple_credit:true}];
+  assert.equal(fund({accounts:a,transactions:[purchase],protectedCardTransactions:[purchase]}).total(),10000);
+  assert.equal(fund({accounts:a,transactions:[purchase]}).total(),0);
+  assert.equal(fund({accounts:a,transactions:[purchase],protectedCardTransactions:[purchase],transfers:[payment(1,4000)]}).total(),6000);
+ }
+});
+test('future simple-card purchases are fully protected even when the internal balance is negative',()=>{
+ const result=simulate({accounts:[accounts[0],{...accounts[1],simple_credit:true,balance_cents:-999999}]});
+ assert.equal(at(result,'2026-10-22').card_envelope_reserved_cents,23000);
+ assert.equal(at(result,'2026-10-22').safe_cents,77000);
+ assert.equal(at(result,'2026-10-29').safe_cents,54000);
+});

@@ -1,3 +1,4 @@
+import {simpleCreditKey, validateSimpleCreditConfig} from "./card-envelope-funds.js";
 import {buildEntryMemory,normalizeMerchant} from './entry-memory.js';
 import {validCalendarMetadata} from './budget-calendar.js';
 import {validateStartBudget,startBudgetKey} from './budget-start.js';
@@ -106,6 +107,8 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
       }
       for(const p of stage.prepare('SELECT p.*,r.type,r.to_account_id,r.frequency,r.one_time,r.day_adjust,a.kind card_kind,b.kind source_kind FROM card_payment_plans p JOIN recurring r ON r.id=p.recurring_id JOIN accounts a ON a.id=p.card_account_id LEFT JOIN accounts b ON b.id=r.account_id').all())if(p.type!=='transfer'||p.to_account_id!==p.card_account_id||p.card_kind!=='credit'||p.source_kind==='credit'||!['weekly','biweekly','monthly'].includes(p.frequency)||p.one_time||p.day_adjust!=='none')throw Error('Plan de remboursement invalide.');
       if(stage.prepare("SELECT p.card_account_id FROM card_payment_plans p JOIN recurring r ON r.to_account_id=p.card_account_id WHERE r.type='transfer' AND r.active=1 AND r.id!=p.recurring_id").all().length)throw Error('Plusieurs remboursements actifs pour la même carte.');
+      const simpleMode=stage.prepare("SELECT value FROM app_settings WHERE key=?").get(simpleCreditKey);
+      if(simpleMode)validateSimpleCreditConfig(JSON.parse(simpleMode.value),stage.prepare("SELECT * FROM accounts").all());
       const protectionSince=stage.prepare("SELECT value FROM app_settings WHERE key='card_recurring_protection_since_v12'").get()?.value;
       if(protectionSince!==undefined&&!validDate(protectionSince))throw Error('Date de protection des achats récurrents invalide.');
       const protectionText=stage.prepare("SELECT value FROM app_settings WHERE key='card_recurring_protected_ids_v12'").get()?.value;
@@ -202,5 +205,5 @@ export function createFeatures({db,dir,cents,validDate,today,atomic,addTransacti
     else return null;
     return {changed:true};
   }
-  return {post,monthly,exportBackup,categoryId,state:()=>({entry_memory:entryMemory(),uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'16.0.1',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
+  return {post,monthly,exportBackup,categoryId,state:()=>({entry_memory:entryMemory(),uncategorized:{name:'Non-catégorisé',count:q('SELECT COUNT(*) n FROM transactions WHERE category_id IS NULL')[0].n},version:'16.1.0',categories:q('SELECT * FROM categories ORDER BY name'),subcategories:q('SELECT * FROM subcategories ORDER BY name'),goals:q('SELECT * FROM goals ORDER BY id DESC'),balance_reconciliations:q('SELECT r.*,a.name account_name FROM balance_reconciliations r JOIN accounts a ON a.id=r.account_id ORDER BY r.id DESC LIMIT 30'),recent_descriptions:q('SELECT t.description,t.category_id,t.subcategory_id,t.account_id,t.envelope_id,t.amount_cents FROM transactions t JOIN (SELECT MAX(id) id FROM transactions GROUP BY LOWER(TRIM(description))) recent ON recent.id=t.id ORDER BY t.id DESC LIMIT 15')})};
 }

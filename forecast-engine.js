@@ -99,7 +99,7 @@ function buildBaseForecast({accounts,envelopes,recurring,fundingLinks=[],overrid
    if(row.type==='income'){balances.set(row.account_id,(balances.get(row.account_id)||0)+(account?.kind==='credit'?-amount:amount));if(account?.kind==='credit')cardFunds.pay(account.id,amount);}
    if(row.type==='expense'){
     if(account)balances.set(account.id,(balances.get(account.id)||0)+(account.kind==='credit'?amount:-amount));else unassigned+=amount;
-    if(account?.kind==='credit')cardFunds.charge(account.id,row.envelope_id,Math.min(amount,Math.max(0,balances.get(account.id)||0)),row.source==='recurring'&&!row.envelope_id);
+    if(account?.kind==='credit')cardFunds.charge(account.id,row.envelope_id,account.simple_credit?amount:Math.min(amount,Math.max(0,balances.get(account.id)||0)),row.source==='recurring'&&!row.envelope_id);
     const allowance=envelopes.find(e=>e.id===row.envelope_id&&e.forecast_spend!==0&&e.forecast_account_id===row.account_id);if(row.envelope_id&&!cardFunds.isExternalAllowance(row.envelope_id)&&!(allowance&&account?.kind!=='credit'&&!included(account)&&accounts.filter(included).length===1))consume(row.envelope_id,Math.max(0,amount-(row.funded_cents||0)));
    }
    if(row.type==='transfer'){

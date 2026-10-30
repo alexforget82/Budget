@@ -205,7 +205,7 @@ export function initialize(runtime) {
       details.append(title, info);
       const amount = document.createElement("strong");
       amount.className = "account-amount";
-      amount.textContent = money(a.balance_cents);
+      amount.textContent = a.simple_credit ? "Sans suivi du solde" : money(a.balance_cents);
       const label = document.createElement("label");
       label.className = "account-choice";
       const checkbox = document.createElement("input");
@@ -251,8 +251,16 @@ export function initialize(runtime) {
     const credit = $("account-kind").value === "credit";
     $("account-included").disabled = credit;
     if (credit) $("account-included").checked = false;
+    $("account-simple-label").hidden = !credit;
+    const simple = credit && $("account-simple").checked;
+    $("account-simple-help").hidden = !simple;
+    const balance = $("account").elements.balance;
+    balance.closest("label").hidden = simple;
+    balance.required = !simple;
+    balance.disabled = simple;
   }
   $("account-kind").onchange = accountKind;
+  $("account-simple").onchange = accountKind;
   function editAccount(id) {
     const a = state.accounts.find((a) => a.id === id);
     if (!a) return;
@@ -260,6 +268,7 @@ export function initialize(runtime) {
     f.elements.id.value = a.id;
     f.elements.name.value = a.name;
     f.elements.kind.value = a.kind;
+    $("account-simple").checked = !!a.simple_credit;
     f.elements.balance.value = (a.balance_cents / 100).toFixed(2);
     $("account-included").checked = !!a.included && a.kind !== "credit";
     accountKind();
@@ -973,7 +982,9 @@ export function initialize(runtime) {
     e.preventDefault();
     const f = e.target,
       data = Object.fromEntries(new FormData(f));
-    data.balance = Number(data.balance);
+    data.simple_credit = data.kind === "credit" && $("account-simple").checked;
+    if (data.simple_credit) delete data.balance;
+    else data.balance = Number(data.balance);
     data.included = $("account-included").checked && data.kind !== "credit";
     const editing = !!data.id;
     if (editing) data.id = Number(data.id);

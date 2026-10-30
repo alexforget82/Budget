@@ -26,6 +26,8 @@ import { createProWorkspace } from "./pro-workspace.js";
 import { createBudgetTools80 } from "./budget-tools-v80.js";
 import { createGlobalBudget } from "./global-budget.js";
 import {
+  simpleCreditAccounts,
+  simpleCreditKey,
   cardEnvelopeTotal,
   recurringCardPurchaseIds,
   cardPurchaseIdentity,
@@ -535,8 +537,14 @@ function recordEnvelopeAdvance(id, delta) {
     serialized,
   );
 }
+function paymentAccounts() {
+  return simpleCreditAccounts(
+    q("SELECT * FROM accounts ORDER BY id DESC"),
+    q("SELECT value FROM app_settings WHERE key=?", simpleCreditKey)[0]?.value,
+  );
+}
 function forecastInput() {
-  const accounts = q("SELECT * FROM accounts ORDER BY id DESC"),
+  const accounts = paymentAccounts(),
     envelopes = q("SELECT * FROM envelopes ORDER BY id DESC").map(
       monthlyBudget.enrichEnvelope,
     ),
@@ -637,6 +645,14 @@ function rememberRecurringCardPurchases() {
 
   if (items.length) writeProtectedCardPurchases(items);
 }
+function protectSimpleCardPurchase(id) {
+  const current = q("SELECT * FROM transactions WHERE id=?", id)[0];
+  if (!current || current.amount_cents >= 0 || current.affects_balance === 0) return;
+  const mode = JSON.parse(q("SELECT value FROM app_settings WHERE key=?", simpleCreditKey)[0]?.value || "{}");
+  if (!mode[current.account_id]) return;
+  const items = JSON.parse(q("SELECT value FROM app_settings WHERE key='card_recurring_protected_ids_v12'")[0]?.value || "[]").filter(t => t.id !== id);
+  writeProtectedCardPurchases([...items, cardPurchaseIdentity(current)]);
+}
 function refreshProtectedCardPurchase(id) {
   const items = forecastInput().protectedCardTransactions;
   if (!items.some((t) => t.id === id)) return;
@@ -725,7 +741,7 @@ function currentEnvelopeDetails(envelopes) {
 }
 function snapshot() {
   applyEnvelopeRenewals();
-  const accounts = q("SELECT * FROM accounts ORDER BY id DESC"),
+  const accounts = paymentAccounts(),
     envelopes = q("SELECT * FROM envelopes ORDER BY id DESC"),
     recurring = q("SELECT * FROM recurring ORDER BY id DESC"),
     overrides = q(
@@ -767,7 +783,7 @@ function snapshot() {
       name:
         envelopes.find((e) => e.id === f.envelope_id)?.name ||
         (f.protection_kind === "recurring"
-          ? "Achats récurrents sur carte"
+          ? "Achats sur carte"
           : "Enveloppe"),
       card_name:
         accounts.find((a) => a.id === f.card_account_id)?.name || "Carte",
@@ -1035,6 +1051,7 @@ function addTransaction(
       accountEffect(t.account, t.amount),
       t.account,
     );
+  protectSimpleCardPurchase(Number(result.lastInsertRowid));
   return Number(result.lastInsertRowid);
 }
 function validateTransfer(x) {
@@ -1274,6 +1291,7 @@ function transactionChange(x, remove = false, withinTransaction = false) {
       );
     }
     refreshProtectedCardPurchase(id);
+    if (!remove) protectSimpleCardPurchase(id);
   });
 }
 function transferChange(x, remove = false) {
@@ -1645,7 +1663,10 @@ function sharedPurchase(x) {
     days: x.days,
   };
 }
-const accountsRoutes = createAccountsRoutes({ cents, journey, q, reply, run });
+const accountsRoutes = createAccountsRoutes({
+  cents, journey, q, reply, run, atomic,
+  protectionTotal: () => cardEnvelopeTotal(forecastInput()),
+});
 const envelopesRoutes = createEnvelopesRoutes({
   atomic,
   cents,
@@ -2444,7 +2465,7 @@ else
   http
     .createServer(handleRequest)
     .listen(PORT, HOST, () =>
-      console.log(`Sillage 2026 (16.0.1) : http://${HOST}:${PORT}`),
+      console.log(`Sillage 2026 (16.1.0) : http://${HOST}:${PORT}`),
     );
 if (privateAccess)
   http

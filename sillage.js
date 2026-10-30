@@ -486,7 +486,7 @@ export function initialize(runtime) {
         reviewHost.append(due);
         const bank = n("div", undefined, "sillage-surface");
         bank.append(n("h3", "Comptes et sauvegardes"));
-        for (const a of current.accounts) {
+        for (const a of current.accounts.filter(a => !a.simple_credit)) {
           const check = r.bank_checks.find((c) => c.account_id === a.id),
             row = n("div", undefined, "sillage-review-row");
           row.append(
@@ -973,7 +973,7 @@ export function initialize(runtime) {
       current = s;
       drawHomeAlerts(s);
       if (dailyDialog.open) drawDaily();
-      $("app-version").textContent = s.version === "16.0.1" ? "v16.0.1" : "Interface v16.0.1 · serveur v" + s.version;
+      $("app-version").textContent = s.version === "16.1.0" ? "v16.1.0" : "Interface v16.1.0 · serveur v" + s.version;
       $("app-version").title =
         "Deuxième génération · version technique " + s.version;
       health.textContent = s.support41.backup.error

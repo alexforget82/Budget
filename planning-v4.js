@@ -578,7 +578,7 @@ export function initialize(runtime) {
           const a = day.account_balances.find(
             (a) => a.id === Number(focusAccount),
           );
-          if (a) {
+          if (a && !current.accounts.find(item => item.id === a.id)?.simple_credit) {
             const meta = current.accounts.find((item) => item.id === a.id);
             const own = n("div", undefined, "v41-own-balance");
             own.append(

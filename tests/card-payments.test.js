@@ -41,3 +41,11 @@ test('two cards paid from the same bank account each produce one independent pay
 test('a vague real payment that cleared the card stays available for association instead of disappearing at zero debt',()=>{
  const s=run({today:'2026-10-23',accounts:[{...accounts[0],balance_cents:178500},{...accounts[1],balance_cents:0}],envelopes:[{...envelope,reserved_cents:1500}],transactions:[{id:1,account_id:2,envelope_id:1,amount_cents:-21500,happened_on:'2026-10-22'}],transfers:[{id:1,from_account_id:1,to_account_id:2,amount_cents:21500,description:'Opération bancaire',happened_on:'2026-10-23'}]});const row=pay(s,'2026-10-23');assert.equal(row.planned_cents,21500);assert.deepEqual(row.unmatched_payment_ids,[1]);assert.ok(s.warnings.some(w=>w.code==='card_payment_match'));
 });
+test('simple-card payment suggestions do not depend on an artificial opening debt balance',()=>{
+ for(const balance_cents of [0,-999999,500000]){
+  const s=run({accounts:[accounts[0],{...accounts[1],balance_cents,simple_credit:true}]});
+  assert.equal(pay(s,'2026-10-23').planned_cents,23000);
+  assert.equal(at(s,'2026-10-23').cash_cents,177000);
+  assert.equal(at(s,'2026-10-23').safe_cents,177000);
+ }
+});

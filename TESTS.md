@@ -1,5 +1,11 @@
 ## 16.0.1 — service Linux et sélection des données
 
+## 16.1.0 — moyens de paiement sans suivi du solde
+
+137 tests Node et 209 tests API (201 existants et 8 nouveaux scénarios) passent. Les 83 scripts complémentaires ont été validés : la campagne initiale en a passé 80; trois tests de calendrier dépendaient du mois courant et ont été corrigés puis relancés avec succès, sans changer les règles de calendrier. Le test API de fréquence avait le même problème au-delà du 28 du mois; son échec a été reproduit sur la version 16.0.1 non modifiée avant correction du jeu de données.
+
+`simple-credit-api.py` vérifie achats sans enveloppe, transfert de protection d’enveloppe, récurrences sans double déduction, paiement réel et aperçu identiques, plusieurs cartes, achat anticipé, import réel/historique, corrections, suppression, redémarrage, restauration, export de dette inconnue et rejet sans mutation d’une conversion ambiguë. La vue partagée reprend exactement les mêmes montants quotidiens. `simple-credit-ui.py` vérifie création sans montant initial, modification et aperçu de paiement sans dette affichée à 320/390/1440 px. Les contrôles Chromium n’attestent pas d’un test physique Chromebook ou Safari iOS. [Résultats](docs/v1610/checks.json) · [Guide](docs/SILLAGE-16.1.md).
+
 134 tests Node et 201 tests API passent. Les huit tests Linux incluent le vrai `systemd-analyze verify` : ancien WorkingDirectory entre guillemets refusé, nouveau service accepté pour un chemin simple ou avec espaces et spécificateurs, chemins avec retour à la ligne refusés. Le cas de deux bases manuelles v15/v16 exige une sélection explicite. Les tests de conservation des données, sauvegarde, restauration du service et reprise après migration échouée restent verts.
 
 `linux-installed.py` redémarre une copie sur une vraie base SQLite temporaire et vérifie soldes, prévisions et toutes les tables. `installed-assets-ui.py` et `sillage-two-ui.py` passent pour les fichiers installés et le parcours de saisie. Aucun nouveau test sur Chromebook physique ni gestionnaire systemd utilisateur complet dans cet environnement. [Résultats](docs/v1601/checks.json), [réparation](docs/SILLAGE-2.0.1.md).

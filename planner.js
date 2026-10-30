@@ -289,7 +289,7 @@ export function initialize(runtime) {
           ),
         );
         top.append(icon, label);
-        const value = el("div", cash(account.balance_cents), "bank-balance");
+        const value = el("div", account.simple_credit ? "Sans suivi du solde" : cash(account.balance_cents), "bank-balance");
         const credit = account.kind === "credit";
         value.classList.toggle(
           "negative",
@@ -299,7 +299,7 @@ export function initialize(runtime) {
           top,
           el(
             "p",
-            credit ? "Montant dû" : "Solde actuel",
+            credit ? account.simple_credit ? "Moyen de paiement" : "Montant dû" : "Solde actuel",
             "card-caption balance-caption",
           ),
           value,
@@ -475,7 +475,7 @@ export function initialize(runtime) {
           .filter((a) => a.kind !== "credit")
           .reduce((s, a) => s + a.balance_cents, 0),
         debt = accounts
-          .filter((a) => a.kind === "credit")
+          .filter((a) => a.kind === "credit" && !a.simple_credit)
           .reduce((s, a) => s + a.balance_cents, 0);
       const lead = el("div", undefined, "account-overview-lead");
       lead.append(
@@ -496,7 +496,9 @@ export function initialize(runtime) {
           latest.cash_cents,
           "Avant les réserves d’enveloppes",
         ],
-        ["Cartes et marges", debt, "Montants dus, suivis séparément"],
+        ...(accounts.some(a => a.kind === "credit" && !a.simple_credit)
+          ? [["Cartes et marges suivies", debt, "Les moyens de paiement sans solde sont exclus"]]
+          : []),
       ]) {
         const metric = el("div", undefined, "account-overview-metric");
         metric.append(

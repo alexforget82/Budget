@@ -1,4 +1,19 @@
 import { occurrenceInfo as defaultOccurrenceInfo } from "./recurrence-calendar.js";
+export const simpleCreditKey = "simple_credit_v161";
+// Settings stay in the normal JSON backups; no historical balance is reset.
+export function validateSimpleCreditConfig(value, accounts) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw Error("Mode de carte invalide.");
+  for (const [id, item] of Object.entries(value)) {
+    if (!/^[1-9]\d*$/.test(id) || !accounts.some(a => a.id === Number(id) && a.kind === "credit") ||
+        item !== true)
+      throw Error("Mode de carte invalide.");
+  }
+  return value;
+}
+export function simpleCreditAccounts(accounts, text = "{}") {
+  const config = validateSimpleCreditConfig(JSON.parse(text), accounts);
+  return accounts.map(a => config[a.id] ? {...a, simple_credit: true} : a);
+}
 export const cardPurchaseIdentity = (t) => ({
   id: t.id,
   account_id: t.account_id,
@@ -6,7 +21,7 @@ export const cardPurchaseIdentity = (t) => ({
   amount_cents: t.amount_cents,
   description: t.description,
 });
-// Identified recurring purchases only; an opening card balance is never protected.
+// Identified recurring or explicitly protected simple-mode purchases; never opening debt.
 export function recurringCardPurchaseIds(args) {
   const {
     accounts = [],
@@ -25,24 +40,18 @@ export function recurringCardPurchaseIds(args) {
   const cards = new Set(
     accounts.filter((a) => a.kind === "credit").map((a) => a.id),
   );
+  const protectedKeys = new Set(protectedCardTransactions.map(t => JSON.stringify(cardPurchaseIdentity(t))));
+  const isProtected = t => protectedKeys.has(JSON.stringify(cardPurchaseIdentity(t)));
   const eligible = transactions.filter(
     (t) =>
       cards.has(t.account_id) &&
       !t.envelope_id &&
       t.amount_cents < 0 &&
       t.affects_balance !== 0 &&
-      t.happened_on >= cardProtectionSince,
+      (t.happened_on >= cardProtectionSince || isProtected(t)),
   );
   const result = new Set(
-      eligible
-        .filter((t) =>
-          protectedCardTransactions.some(
-            (p) =>
-              JSON.stringify(cardPurchaseIdentity(p)) ===
-              JSON.stringify(cardPurchaseIdentity(t)),
-          ),
-        )
-        .map((t) => t.id),
+      eligible.filter(isProtected).map((t) => t.id),
     ),
     used = new Set();
   const rules = recurring.filter(
@@ -200,7 +209,7 @@ export function createCardEnvelopeFunds(args) {
   }
   // A reconciled zero/credit card balance cannot still require bank funding.
   for (const a of accounts)
-    if (cards.has(a.id) && Number.isSafeInteger(a.balance_cents)) {
+    if (cards.has(a.id) && !a.simple_credit && Number.isSafeInteger(a.balance_cents)) {
       const total = lots
         .filter((l) => l.card_account_id === a.id)
         .reduce((n, l) => n + l.amount_cents, 0);

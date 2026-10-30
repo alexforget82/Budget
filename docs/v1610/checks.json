@@ -1,0 +1,44 @@
+{
+  "version": "16.1.0",
+  "node": {
+    "passed": 137,
+    "failed": 0
+  },
+  "api": {
+    "existing_passed": 201,
+    "simple_credit_passed": 8,
+    "failed": 0
+  },
+  "python": {
+    "scripts": 83,
+    "initial_passed": 80,
+    "initial_failed": 3,
+    "rerun_passed": [
+      "planning-ui.py",
+      "sillage-ui.py",
+      "workspace-flow-ui.py"
+    ],
+    "final_all_validated": true
+  },
+  "date_fixture_fixes": "Month-end API fixture moved into the upcoming month; calendar checks select the month of their test events. Pre-existing API/planning calendar failures reproduced on the unmodified 16.0.1 baseline. No calendar production rule changed.",
+  "financial_checks": [
+    "unassigned simple-card purchase protection",
+    "envelope protection transferred to real card purchase",
+    "partial and full repayments",
+    "merchant refund and overpayment",
+    "early envelope period association",
+    "existing planned recurring expense counted once",
+    "multiple cards with isolated repayment release",
+    "matching owner/shared daily amounts",
+    "actual-payment preview equals confirmed ledger",
+    "history imports excluded, live CSV included",
+    "edit/delete, restart, JSON restore",
+    "ambiguous historical conversion rejected atomically",
+    "unknown debt exported as null"
+  ],
+  "schema_changes": false,
+  "existing_accounts_auto_converted": false,
+  "user_data_used": false,
+  "physical_chromebook_test": false,
+  "safari_ios_test": false
+}

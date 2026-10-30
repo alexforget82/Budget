@@ -202,7 +202,7 @@ export function initialize(runtime) {
     function accounts() {
       const p = card(
         "1. Saisissez les soldes actuels",
-        "Ajoutez Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins, puis vos comptes personnels si vous souhaitez y virer de l’argent. Un achat sur carte augmente le montant dû; un remboursement de carte est un virement, pas une seconde dépense.",
+        "Ajoutez Conjoint, CIBC MasterCard, Capital One MasterCard et VISA Desjardins, puis vos comptes personnels si vous souhaitez y virer de l’argent. Pour simplifier, créez vos cartes sans suivi du solde. Leurs nouveaux achats protègent le disponible; un paiement de carte n’est pas une seconde dépense.",
       );
       for (const a of latest.accounts) {
         const line = el("div", undefined, "v70-check-row");
@@ -217,7 +217,7 @@ export function initialize(runtime) {
                 credit: "Crédit / marge",
               }[a.kind],
           ),
-          el("strong", cash(a.balance_cents)),
+          el("strong", a.simple_credit ? "Sans suivi du solde" : cash(a.balance_cents)),
         );
         p.append(line);
       }

@@ -2,7 +2,7 @@
 
 Budget personnel local pour Linux/ChromeOS et Mac, accessible sur iPhone avec Tailscale privé configuré sur l’ordinateur hôte. Données SQLite locales, aucune connexion bancaire automatique. **Node.js 22.13+**, recommandé : Node 24. Aucun paquet npm à installer pour utiliser l’application, aucune compilation et aucun CDN.
 
-Quatre pages : Disponible, Transactions, Budget et À venir. [Correctif du démarrage Linux 16.0.1](docs/SILLAGE-2.0.1.md). [Installation Chromebook et guide de Sillage 2](docs/SILLAGE-2.md).
+Quatre pages : Disponible, Transactions, Budget et À venir. [Cartes et marge sans suivi du solde — 16.1.0](docs/SILLAGE-16.1.md). [Correctif du démarrage Linux 16.0.1](docs/SILLAGE-2.0.1.md). [Installation Chromebook et guide de Sillage 2](docs/SILLAGE-2.md).
 
 ## Installer ou mettre à jour
 
@@ -10,7 +10,7 @@ Quatre pages : Disponible, Transactions, Budget et À venir. [Correctif du déma
 
 **Mac :**
 
-Téléchargez et décompressez [la version v16.0.1](https://github.com/alexforget82/Budget/archive/refs/tags/v16.0.1.zip).
+Téléchargez et décompressez [la version v16.1.0](https://github.com/alexforget82/Budget/archive/refs/tags/v16.1.0.zip).
 
 - Installation automatique existante : **Applications → Sillage → Mettre a jour Sillage.command**, puis choisissez le nouveau dossier complet.
 - Première installation : placez votre dossier `data/` existant près du fichier **Installer acces automatique.command**, puis lancez-le. L’installateur refuse de créer un budget vide à la place de vos données.
@@ -51,6 +51,10 @@ Une interface plus sobre : transactions et budgets compacts, enveloppes en liste
 Un achat anticipé peut utiliser le prochain budget directement avant son enregistrement : choisissez la période proposée, sans changer sa date réelle. Les cartes d’enveloppes mettent le restant du budget en avant et offrent un bouton **Gérer**. Le formulaire courant est simplifié; les autres réglages sont dans **Options avancées**. [Guide v13.3](docs/SILLAGE-13.3.md).
 
 L’enveloppe est directement visible lors de la saisie d’une dépense. Sillage propose les choix déjà utilisés pour ce commerçant, y compris dans un import CSV. Le filtre **Sans enveloppe** permet de retrouver les dépenses à classer, puis de modifier leur enveloppe en lot avec un aperçu avant confirmation. [Guide v13.2](docs/SILLAGE-13.2.md).
+
+## Cartes et marge sans solde
+
+Dans **Réglages → Comptes**, choisissez **Crédit / marge**, puis **Sans suivi du solde**. Aucun montant de dette à saisir : les nouveaux achats protègent le disponible, même sans enveloppe. Une enveloppe déjà réservée ne déduit pas l’achat deux fois. Les comptes existants restent inchangés jusqu’à votre choix. [Exemple et précautions de reprise](docs/SILLAGE-16.1.md).
 
 ## Payer une carte
 

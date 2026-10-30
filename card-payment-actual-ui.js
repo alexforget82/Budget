@@ -66,7 +66,7 @@ export function initialize(runtime) {
       .filter((f) => f.card_account_id === card.id)
       .reduce((v, f) => v + f.amount_cents, 0);
     const suggested =
-      protectedAmount > 0 ? protectedAmount : Math.max(0, card.balance_cents);
+      protectedAmount > 0 ? protectedAmount : card.simple_credit ? 0 : Math.max(0, card.balance_cents);
     if (suggested > 0) amount.value = (suggested / 100).toFixed(2);
     const date = n("input");
     date.type = "date";
@@ -175,6 +175,7 @@ export function initialize(runtime) {
           ["Disponible à dépenser actuel", "safe_cents"],
           ["Minimum prévu · 30 jours", "minimum_30_cents"],
         ]) {
+          if (key === "card_cents" && card.simple_credit) continue;
           const row = n("tr");
           row.append(
             n("th", label),

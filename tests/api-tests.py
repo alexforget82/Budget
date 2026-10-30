@@ -948,7 +948,7 @@ class BudgetAPI(unittest.TestCase):
    self.post('/api/overrides',{'recurring_id':rid,'occurrence_on':expected,'amount':40})
    wrong=(datetime.date.fromisoformat(expected)+datetime.timedelta(days=1)).isoformat();self.post('/api/overrides',{'recurring_id':rid,'occurrence_on':wrong,'amount':40},400)
   for frequency,months in [('quarterly',3),('semiannual',6),('yearly',12)]:
-   now=datetime.date.today();index=now.year*12+now.month-1-months;start=datetime.date(index//12,index%12+1,min(now.day,28)).isoformat()
+   now=(datetime.date.today().replace(day=1)+datetime.timedelta(days=32)).replace(day=1);index=now.year*12+now.month-1-months;start=datetime.date(index//12,index%12+1,1).isoformat()
    s=self.post('/api/recurring',{'description':'Prévision '+frequency,'type':'expense','amount':10,'account_id':aid,'frequency':frequency,'start_on':start});rid=max(r['id'] for r in s['recurring']);expected=now.replace(day=min(now.day,28)).isoformat()
    self.assertTrue(any(r.get('recurring_id')==rid and r['original_on']==expected for r in s['planning']['rows']))
   backup=self.get('/api/backup/export');self.post('/api/backup/validate',{'backup':backup});self.post('/api/backup/restore',{'backup':backup,'confirm':'REMPLACER'});self.assertEqual(self.get('/api/backup/export')['tables'],backup['tables'])

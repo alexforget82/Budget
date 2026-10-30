@@ -112,7 +112,7 @@ export function initialize(runtime) {
   envelope.elements.rollover.closest('label').classList.add('envelope-entry-rollover');
   envelope.elements.rollover.querySelector('option[value=true]').textContent = 'Reporter le restant';
   envelope.elements.rollover.querySelector('option[value=false]').textContent = 'Repartir avec le budget prévu';
-  const intro = node('p', 'Nommez votre enveloppe, choisissez son montant et son rythme. Les achats réels utiliseront ce budget.');
+  const intro = node('p', 'Choisissez le montant et le rythme de votre enveloppe. Son budget protège automatiquement votre disponible; aucun virement bancaire n’est nécessaire. À chaque achat, choisissez cette enveloppe pour diminuer son restant.');
   intro.className = 'envelope-entry-intro'; envelope.prepend(intro);
   function syncEnvelope() {
     const dated = envelope.elements.forecast_spend.value === 'true';

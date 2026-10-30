@@ -853,7 +853,7 @@ export function initialize(runtime) {
         ["csv-account", undefined],
         ["balance-account", undefined],
       ])
-        options(by(id), s.accounts || [], empty);
+        options(by(id), (s.accounts || []).filter(a => id !== "balance-account" || !a.simple_credit), empty);
       const merchants = by("recent-merchants");
       merchants.replaceChildren();
       for (const item of s.recent_descriptions || [])

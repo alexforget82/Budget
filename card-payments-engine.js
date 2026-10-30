@@ -23,7 +23,7 @@ export function deriveCardPayments(args,base,skeleton,previous){
    const old=known.get(row.key),actualId=old?.status==='actual'?Number(old.actual_ids[0]?.split(':')[1]):explicit?.actual_id,actual=transfers.find(t=>t.id===actualId);
    const target=userOverrides.get(overrideKey)??outstanding;
    const candidates=transfers.filter(t=>!claimed.has('transfer:'+t.id)&&t.from_account_id===rule.account_id&&t.to_account_id===plan.card_account_id&&distance(t.happened_on,row.date)<=3);
-   const day=base.days.find(d=>d.date>=(row.date<today?today:row.date))||base.days.at(-1),owed=Math.max(0,(day.account_balances.find(a=>a.id===plan.card_account_id)?.balance_cents||0)-projectedPayments);
+   const day=base.days.find(d=>d.date>=(row.date<today?today:row.date))||base.days.at(-1),owed=accounts.find(a=>a.id===plan.card_account_id)?.simple_credit?outstanding:Math.max(0,(day.account_balances.find(a=>a.id===plan.card_account_id)?.balance_cents||0)-projectedPayments);
    const amount=userOverrides.has(overrideKey)?target:actual||candidates.length?outstanding:Math.min(outstanding,owed);
    metadata.set(row.key,{card_payment_mode:plan.mode,card_account_id:plan.card_account_id,purchase_period_start:periodStart,purchase_period_end:row.date,purchase_cents:purchases,carried_cents:carry,suggested_cents:outstanding,payment_items:items,unmatched_payment_ids:actual?[]:candidates.map(t=>t.id)});
    result.push({recurring_id:rule.id,occurrence_on:row.original_on,amount_cents:amount});

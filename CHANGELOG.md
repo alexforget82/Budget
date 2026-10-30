@@ -1,5 +1,9 @@
 # Versions de Sillage
 
+## 16.1.0 — cartes et marge sans solde à gérer
+
+Un nouveau compte de crédit propose le mode « Sans suivi du solde » : pas de dette initiale à saisir, nouveaux achats protégés même sans enveloppe, remboursements enregistrés par le bouton de paiement existant. Les réserves d’enveloppes passent aux achats sur carte puis sont libérées au remboursement, sans compter deux fois la dépense. Le mode est facultatif pour les comptes existants et ne recrée pas de dette initiale. Une conversion qui réactiverait une réserve ancienne est refusée sans modification. Imports historiques exclus, corrections et sauvegardes prises en charge. Soldes de dette masqués dans les écrans de suivi et les suggestions de paiement; export ChatGPT marqué explicitement. Formulaire d’enveloppe conservé avec une explication du fonctionnement automatique. [Guide et installation Chromebook](docs/SILLAGE-16.1.md).
+
 ## 16.0.1 — réparation du service Linux/ChromeOS
 
 Correction du chemin WorkingDirectory rejeté par systemd lorsqu’il était entouré de guillemets. Le test de régression utilise le vrai vérificateur de fichiers systemd. La découverte des données inclut les dossiers versionnés 16 et refuse tout choix automatique lorsqu’il existe plusieurs bases. Aucun changement des calculs ni du schéma. [Procédure de réparation](docs/SILLAGE-2.0.1.md).

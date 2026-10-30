@@ -8,7 +8,7 @@ f=api.BudgetAPI();f.setUp();images=Path(tempfile.mkdtemp(prefix='sillage-133-'))
 try:
  bank=f.account(balance=1000);start=f.future73(1);s=f.post('/api/envelopes',{'name':'Épicerie','reserved':0,'budget':230,'frequency':'weekly','start_on':start,'rollover':False,'forecast_spend':False});eid=s['envelopes'][0]['id'];before=f.get('/api/backup/export')['tables']
  with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':390,'height':844},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v16.0.1')
+  browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(viewport={'width':390,'height':844},locale='fr-CA');errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f.base);expect(page.locator('#app-version')).to_have_text('v16.1.0')
   for theme in ['light','dark']:
    set_theme(page,theme)
    for width in [320,390,768,1440]:
