@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.4.1
+# Le bas de laine — contrat du noyau, essai 0.4.3
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 

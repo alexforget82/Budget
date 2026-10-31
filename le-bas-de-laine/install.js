@@ -38,7 +38,7 @@ export async function install({
             signal: AbortSignal.timeout(700),
           }),
           data = await r.json();
-        if (r.ok && data.version === "0.4.2") return true;
+        if (r.ok && data.version === "0.4.3") return true;
       } catch {}
       await new Promise((r) => setTimeout(r, 100));
     }
@@ -131,7 +131,7 @@ export async function install({
       '"' + value.replace(/([\\"`$])/g, "\\$1").replaceAll("%", "%%") + '"';
     fs.writeFileSync(
       path.join(launcher, "le-bas-de-laine.desktop"),
-      `[Desktop Entry]\nType=Application\nName=Le bas de laine\nExec=${desktopQuote(process.execPath)} ${desktopQuote(path.join(app, "open.js"))}\nIcon=${path.join(app, "public/logo.svg")}\nTerminal=false\nCategories=Office;Finance;\n`,
+      `[Desktop Entry]\nType=Application\nName=Le bas de laine\nExec=${desktopQuote(process.execPath)} ${desktopQuote(path.join(app, "open.js"))}\nIcon=${path.join(app, "public/logo.png")}\nTerminal=false\nCategories=Office;Finance;\n`,
     );
     return root;
   } catch (e) {

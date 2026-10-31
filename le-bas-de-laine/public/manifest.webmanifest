@@ -1,1 +1,16 @@
-{"name":"Le bas de laine","short_name":"Bas de laine","start_url":"/","display":"standalone","background_color":"#f6f5f0","theme_color":"#214e43","icons":[{"src":"/logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Le bas de laine",
+  "short_name": "Bas de laine",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#103c69",
+  "icons": [
+    {
+      "src": "/logo.png?v=0.4.3",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

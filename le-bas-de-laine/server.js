@@ -107,6 +107,7 @@ function handler(isPrivate) {
           "/view.js",
           "/styles.css",
           "/logo.svg",
+          "/logo.png",
           "/manifest.webmanifest",
         ].includes(url.pathname) &&
         req.headers["tailscale-user-login"]?.toLowerCase() !==
@@ -122,7 +123,7 @@ function handler(isPrivate) {
           return reply(res, 404, { error: "Lien indisponible." });
         if (shared[2] === "/data")
           return reply(res, 200, {
-            version: "0.4.2",
+            version: "0.4.3",
             simulation: currentState().simulation,
           });
         const sharePath = "/s/" + shared[1];
@@ -385,6 +386,7 @@ function handler(isPrivate) {
         "/demo.json": "demo.json",
         "/styles.css": "styles.css",
         "/logo.svg": "logo.svg",
+        "/logo.png": "logo.png",
         "/manifest.webmanifest": "manifest.webmanifest",
         "/maquettes": "maquettes.html",
         "/maquettes.js": "maquettes.js",
@@ -397,11 +399,13 @@ function handler(isPrivate) {
           ? "text/javascript; charset=utf-8"
           : file.endsWith(".css")
             ? "text/css; charset=utf-8"
-            : file.endsWith(".svg")
-              ? "image/svg+xml"
-              : file.endsWith(".json")
-                ? "application/json; charset=utf-8"
-                : "application/manifest+json";
+            : file.endsWith(".png")
+              ? "image/png"
+              : file.endsWith(".svg")
+                ? "image/svg+xml"
+                : file.endsWith(".json")
+                  ? "application/json; charset=utf-8"
+                  : "application/manifest+json";
       return reply(
         res,
         200,

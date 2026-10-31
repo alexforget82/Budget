@@ -994,10 +994,10 @@ function planView() {
   settings.append(content);
   const appearance = node("div", null, "settings-card");
   appearance.append(
-    node("h3", "Laine et sapin"),
+    node("h3", "Laine et fleur de lys"),
     node(
       "p",
-      "Fond crème en mode clair. Le mode sombre suit automatiquement le réglage de votre appareil.",
+      "Bleu québécois, crème et touches dorées. Le mode sombre suit automatiquement le réglage de votre appareil.",
     ),
   );
   content.append(appearance);

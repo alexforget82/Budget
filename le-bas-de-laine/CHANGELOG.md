@@ -1,3 +1,7 @@
+# 0.4.3 — bas de laine québécois
+
+Nouveau logo : bas traditionnel, pièces d’épargne et fleur de lys. PNG commun au menu, favicon, manifeste et icône iPhone; lanceur Linux mis à jour. Palette bleu québécois/crème/doré, thème sombre bleu nuit. Couleurs de revenus et alertes conservées. Contrastes principaux vérifiés; aucun changement de calcul ou de données.
+
 # 0.4.2 — tutoriel de configuration
 
 Aide contextuelle affichée automatiquement aux quatre étapes de la configuration initiale. Masquer/afficher conserve les saisies. Tutoriel consultable depuis Aujourd’hui et Plan, avec navigation précédent/suivant et une dernière fiche sur l’usage quotidien, sans modifier la configuration existante. En-tête adaptatif sur petits écrans. Aucun changement de calcul, de calendrier ou de schéma.

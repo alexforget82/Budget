@@ -1,5 +1,5 @@
 {
-  "version": "0.4.2",
+  "version": "0.4.3",
   "horizon_days": 90,
   "node_tests": {
     "passed": 89,
@@ -38,7 +38,9 @@
       "secondary savings creation and checkpoint",
       "automatic tutorial at all 4 setup steps",
       "help visibility preserves unsaved input",
-      "read-only tutorial replay and early exit, 4 widths/2 themes"
+      "read-only tutorial replay and early exit, 4 widths/2 themes",
+      "Quebec sock logo PNG served with correct MIME and touch-icon link",
+      "blue/cream/gold palette in light and dark OS themes"
     ]
   },
   "comparison": {
@@ -114,5 +116,14 @@
     "june_24_national_closure": false,
     "legacy_state_conversion": "backup before re-keying; paid/cancelled/postponed decisions and actual transactions preserved",
     "sillage_occurrence_comparison_scope": "legacy compatibility; national list intentionally excludes Quebec June holiday"
+  },
+  "identity": {
+    "logo": "traditional wool sock, savings coins and fleur-de-lys",
+    "png_size": [
+      1254,
+      1254
+    ],
+    "principal_text_pair_minimum_contrast": 5.4,
+    "ios_hardware_icon_install_tested": false
   }
 }

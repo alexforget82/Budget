@@ -1,3 +1,13 @@
+# Vérifications — 0.4.3
+
+89 tests Node réussis. Interface générale à cinq largeurs et deux thèmes, ainsi que tutoriel mobile vérifiés sous Chromium. Contrastes des paires principales texte/surface, texte secondaire/surface, accent/fond et texte du disponible/fond du disponible : tous supérieurs à 4,5:1 dans les deux thèmes; ce contrôle ne constitue pas un audit complet d’accessibilité.
+
+Vérification HTTP réelle du PNG (signature et Content-Type), de son lien dans le manifeste et de la présence apple-touch-icon. Les liens de lecture conservent leurs manifestes propres et l’accès public au seul fichier de logo. Le lanceur Linux utilise désormais le PNG. Pas de test physique d’installation du raccourci Safari iOS revendiqué; une ancienne icône peut nécessiter de recréer le raccourci.
+
+Captures à chiffres fictifs dans `identity/`. Archive autonome : 87 tests réussis, deux références Sillage externes omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.2
 
 89 tests Node réussis; calculs et calendrier inchangés. Le parcours général Chromium et `tests/tutorial-ui.py` passent. Le nouveau parcours vérifie l’affichage automatique aux quatre étapes, la conservation d’un solde saisi après masquage/réaffichage, la configuration complète et la relecture depuis Aujourd’hui/Plan. Navigation précédent/suivant, sortie anticipée et fin du tutoriel laissent les tables de données exactement identiques. Vérifications à 320/390/768/1440 pixels, clair et sombre, sans débordement horizontal. Aucune validation physique Safari iOS revendiquée.

@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.3**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -8,7 +8,7 @@ Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte ba
 
 Ouvrez **docs/Trois-maquettes.pdf**, ou les fichiers **docs/maquettes/maquette-laine.html**, **maquette-slate.html** et **maquette-paper.html**. Les HTML sont autonomes et s’ouvrent sans serveur; ils sont des aperçus statiques. Avec le serveur lancé, **http://localhost:3040/maquettes** permet de changer la direction visuelle. Toutes les maquettes et captures utilisent des chiffres fictifs.
 
-La direction appliquée à l’application est **Laine et sapin** : crème et vert profond. Un seul thème sombre suit automatiquement le réglage de l’appareil, sans sélecteur ni préférence manuelle.
+La direction appliquée à l’application est **Laine et fleur de lys** : crème, bleu québécois et touches dorées. Un seul thème sombre suit automatiquement le réglage de l’appareil, sans sélecteur ni préférence manuelle.
 
 ## Installer sur Chromebook
 
@@ -164,3 +164,9 @@ Si des décisions d’échéance enregistrées utilisaient l’ancien 24 juin, l
 À la première configuration, une aide s’affiche automatiquement pour chacune des quatre étapes : solde réel, prochaines paies, factures fixes et limites variables. Elle explique quoi saisir, ce qui est protégé et donne un exemple. « Masquer l’aide » conserve les champs saisis; « Afficher le tutoriel » la rétablit.
 
 Après la configuration, **Tutoriel** dans Aujourd’hui ou Plan permet de revoir les étapes, puis les gestes quotidiens (achat, facture payée, cartes, vérification du solde et sauvegarde). Le parcours peut être quitté à tout moment. Il n’enregistre aucun montant, ne réinitialise rien et ne relance pas l’assistant de configuration sur un budget existant.
+
+## Identité québécoise — 0.4.3
+
+Le logo représente un bas de laine traditionnel écru à bandes rouges et grises, avec des pièces d’épargne et une fleur de lys sur fond bleu. Il est appliqué au menu, au navigateur, au lanceur Linux, au manifeste de l’application et à l’icône iPhone. Le fichier PNG généré est conservé sans modification; un SVG incorporant ce même PNG assure la compatibilité des anciens aperçus.
+
+Palette crème, bleu profond et touches dorées; mode sombre bleu nuit selon le réglage de l’appareil. Les revenus et alertes gardent leurs couleurs de sens. Aucun changement de calcul. Après mise à jour, actualisez la page. Si l’ancienne icône reste sur l’écran d’accueil iPhone, retirez seulement le raccourci puis recréez-le depuis Safari avec le même lien. Les données restent sur le serveur.

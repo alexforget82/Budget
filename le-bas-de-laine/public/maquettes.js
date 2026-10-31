@@ -2,7 +2,7 @@ import { $, todayView } from "./view.js";
 const { simulation } = await (await fetch("/demo.json")).json();
 const descriptions = {
   laine:
-    "01 — Laine et sapin. Fond crème, vert profond, espace et contraste. La direction principale proposée.",
+    "01 — Laine et fleur de lys. Fond crème, bleu québécois et touches dorées, espace et contraste. La direction principale proposée.",
   slate:
     "02 — Ardoise et menthe. Une ambiance sombre, des montants lumineux et les mêmes trois repères.",
   paper:

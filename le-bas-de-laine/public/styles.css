@@ -2,39 +2,41 @@
 @layer tokens {
   :root {
     color-scheme: light;
-    --bg: #f6f5f0;
-    --surface: #fffefb;
-    --soft: #efeee7;
-    --ink: #263d35;
-    --muted: #68746d;
-    --line: #dce1d7;
-    --accent: #285d4d;
-    --accent-soft: #e7eee5;
+    --bg: #f7f3ea;
+    --surface: #fffcf5;
+    --soft: #efe9dc;
+    --ink: #24374a;
+    --muted: #5c6a79;
+    --line: #d9dedf;
+    --accent: #174a7c;
+    --accent-soft: #e7eef5;
     --positive: #28654b;
     --danger: #a34535;
     --warning: #8b622c;
-    --hero: #214e43;
+    --gold: #b8862b;
+    --hero: #103c69;
     --hero-ink: #fffdf5;
     --radius: 18px;
-    --shadow: 0 12px 40px #263d3509;
+    --shadow: 0 12px 40px #24374a09;
     --font:
       ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
       sans-serif;
   }
   html[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #141c1a;
-    --surface: #1e2824;
-    --soft: #26312b;
-    --ink: #eff1e9;
-    --muted: #b5c1b7;
-    --line: #3b4b40;
-    --accent: #a4cdb1;
-    --accent-soft: #314637;
+    --bg: #101b29;
+    --surface: #192a3e;
+    --soft: #22364c;
+    --ink: #f4f0e8;
+    --muted: #b9c6d5;
+    --line: #3d536c;
+    --accent: #9ec9f4;
+    --accent-soft: #253f5c;
     --positive: #a4d2b6;
     --danger: #ffb5a4;
     --warning: #edc68e;
-    --hero: #2a493b;
+    --gold: #edc46c;
+    --hero: #163d66;
     --hero-ink: #fffdf5;
     --shadow: none;
   }
@@ -261,6 +263,7 @@
   }
   .brand img {
     flex: none;
+    border-radius: 9px;
   }
   .brand-small {
     display: block;
@@ -450,7 +453,7 @@
     pointer-events: none;
   }
   .hero .eyebrow {
-    color: #e4eede;
+    color: #f0ce86;
     opacity: 0.8;
   }
   .hero-amount {
@@ -828,7 +831,7 @@
     overflow: auto;
   }
   dialog::backdrop {
-    background: #10251e66;
+    background: #101b2966;
     backdrop-filter: blur(4px);
   }
   .dialog-head {
@@ -1437,7 +1440,7 @@
 .tutorial-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--gold);
   border-radius: 12px;
   padding: 1rem;
   margin: 0 0 1rem;
