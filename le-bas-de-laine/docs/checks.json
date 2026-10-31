@@ -1,0 +1,71 @@
+{
+  "version": "0.1.0",
+  "horizon_days": 30,
+  "node_tests": {
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0
+  },
+  "ui": {
+    "runner": "Playwright + Chromium",
+    "widths": [
+      320,
+      390,
+      430,
+      768,
+      1440
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "views": [
+      "today",
+      "transactions",
+      "plan"
+    ],
+    "checks": [
+      "four-step setup",
+      "single card purchase retains exact safe-to-spend",
+      "CSV history changes category usage without second bank debit",
+      "CSV resolved mapping preview/commit agree",
+      "readonly shared page",
+      "all three visual directions",
+      "self-contained HTML previews"
+    ]
+  },
+  "comparison": {
+    "real_sillage_code_on_temporary_database": true,
+    "canonical_auto_renewing_grocery_case": "30 daily values and both indicators match",
+    "unexplained_differences_never_auto_classified": true,
+    "actual_user_finances_used": false
+  },
+  "installation": {
+    "simulated_user_service": true,
+    "actual_systemd_parser": true,
+    "actual_installed_sqlite_server": true,
+    "failed_update_rollback": true,
+    "existing_sillage_data_untouched": true,
+    "physical_chromebook": false
+  },
+  "hardware_ios_safari_test": false,
+  "real_parallel_trial_completed": false,
+  "schema_tables": 8,
+  "separate_ports": {
+    "local": 3040,
+    "private_backend": 3041,
+    "tailscale_https": 8443
+  },
+  "known_limits": [
+    "Imported Sillage envelope funding/dated payments/schedules may require manual review and keep amounts provisional.",
+    "Transaction edits are available; transfer edit/delete is not yet exposed.",
+    "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
+  ],
+  "standalone_archive_tests": {
+    "passed": 43,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "The external Sillage reference program is not bundled; pure comparison classification remains tested."
+  },
+  "mockup_pdf_pages": 3
+}
