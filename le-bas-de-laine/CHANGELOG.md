@@ -1,3 +1,7 @@
+# 0.4.5 — explorer le disponible jour par jour
+
+Graphique interactif sur 30 jours dans À surveiller : curseur tactile/clavier, sélection directe sur la courbe, axes chiffrés, repère et raccourci vers le minimum. Date choisie, disponible exact, revenus/paiements et renouvellements affichés dessous. Conservation de l’alerte distincte sur 90 jours et du jour choisi lors des rafraîchissements. Même composant en lecture simplifiée. Aucune modification du moteur ou des données.
+
 # 0.4.4 — calendrier Mois / Liste
 
 Grille mensuelle dans Plan, disponible quotidien issu de la simulation, revenus/paiements/renouvellements et détail au clic. Vue Liste quotidienne; navigation limitée aux 90 jours calculés; dates hors prévision sans montant; semaine du lundi au dimanche. Adaptation mobile avec détail exact sous la grille, dates négatives et repère du minimum. Conservation du mois ouvert après une action. Correction du raccourci Payée/Reçue/Effectué : la date réelle est aujourd’hui, plutôt que la date future de l’échéance; Montant conserve le choix de date explicite. Aucun changement du moteur financier ou du schéma.

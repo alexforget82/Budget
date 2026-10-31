@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.4**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.5**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -180,3 +180,11 @@ Sur ordinateur, chaque case affiche le disponible exact en fin de journée et le
 Les revenus, paiements/virements et renouvellements de limites sont distingués. Un renouvellement est une protection incluse dans le disponible, sans débit bancaire fictif. Les factures en retard sont regroupées aujourd’hui, avec leur date d’origine et l’indication « En retard ».
 
 La vue Liste affiche les journées et leur disponible, y compris sans opération. Les actions Reçue/Payée/Effectué, Montant et Reporter réutilisent les formulaires existants. Un clic direct sur Payée/Reçue/Effectué enregistre l’opération réelle aujourd’hui; pour saisir un autre montant ou une autre date réelle, utilisez Montant. Le mois choisi reste ouvert après l’enregistrement. La navigation seule ne modifie aucune donnée.
+
+## Graphique interactif — 0.4.5
+
+Dans **Aujourd’hui → À surveiller**, le graphique affiche les **30 prochains jours**. Déplacez le curseur, touchez/glissez sur la courbe ou utilisez les flèches du clavier sur le curseur : la date, le disponible exact et les opérations prévues s’affichent dessous. Le bouton **Minimum** sélectionne le point le plus bas de ces 30 jours, marqué en doré. Les axes donnent les montants et les dates.
+
+Les renouvellements de limites sont distingués des paiements : ils protègent le disponible sans débit bancaire. Les factures en retard restent indiquées avec leur date. L’alerte sur **90 jours** demeure au-dessus du graphique, avec sa portée distincte. Les deux vues lisent les mêmes journées calculées; aucun calcul parallèle ou arrondi n’est appliqué au disponible choisi.
+
+Le graphique est également accessible dans le lien simplifié de lecture : mêmes montants et opérations, sans action d’écriture. Naviguer dans le graphique ne crée aucune transaction. Le jour choisi est conservé lors d’un rafraîchissement automatique tant qu’il reste dans les 30 jours.

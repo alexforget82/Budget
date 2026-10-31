@@ -56,46 +56,220 @@ export const panel = (title, action) => {
   el.append(head);
   return el;
 };
-export function chart(days) {
+let selectedForecastDate;
+export function chart(days, onSelect) {
   const ns = "http://www.w3.org/2000/svg",
     svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 400 94");
+  svg.setAttribute("viewBox", "0 0 400 144");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", "Évolution du disponible sur 90 jours");
+  svg.classList.add("forecast-plot");
+  svg.setAttribute(
+    "aria-label",
+    "Évolution du disponible sur " +
+      days.length +
+      " jours. Un curseur accessible se trouve sous le graphique.",
+  );
   const values = days.map((d) => d.safe_cents),
     low = Math.min(...values),
     high = Math.max(...values),
     span = high - low || 1;
   const points = values.map((v, i) => [
-    12 + (i * 376) / Math.max(1, values.length - 1),
-    9 + ((high - v) * 55) / span,
+    64 + (i * 324) / Math.max(1, values.length - 1),
+    12 + ((high - v) * 82) / span,
   ]);
   const add = (tag, attrs) => {
-    const e = document.createElementNS(ns, tag);
-    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-    svg.append(e);
-    return e;
+    const el = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    svg.append(el);
+    return el;
   };
   add("path", {
-    d: "M" + points.map((p) => p.join(",")).join(" L") + " L388,72 L12,72 Z",
+    d: "M" + points.map((p) => p.join(",")).join(" L") + " L388,108 L64,108 Z",
     class: "graph-fill",
   });
   add("path", {
     d: "M" + points.map((p) => p.join(",")).join(" L"),
     class: "graph-line",
   });
-  const i = values.indexOf(low);
-  add("circle", {
-    cx: points[i]?.[0] || 12,
-    cy: points[i]?.[1] || 9,
-    r: 3,
-    fill: "var(--accent)",
+  for (const [y, value] of [
+    [16, high],
+    [96, low],
+  ])
+    add("text", { x: 56, y, "text-anchor": "end" }).textContent = money(value);
+  add("text", { x: 64, y: 134 }).textContent = shortDate(days[0].date);
+  add("text", { x: 388, y: 134, "text-anchor": "end" }).textContent = shortDate(
+    days.at(-1).date,
+  );
+  const minIndex = values.indexOf(low),
+    minPoint = points[minIndex];
+  const minimum = add("circle", {
+    cx: minPoint[0],
+    cy: minPoint[1],
+    r: 5,
+    fill: "var(--gold)",
+    class: "forecast-minimum-point",
   });
-  add("text", { x: 12, y: 90 }).textContent = shortDate(days[0].date);
-  const end = add("text", { x: 388, y: 90, "text-anchor": "end" });
-  end.textContent = shortDate(days.at(-1).date);
+  const title = document.createElementNS(ns, "title");
+  title.textContent =
+    "Minimum : " + money(low) + " · " + longDate(days[minIndex].date);
+  minimum.append(title);
+  const line = add("line", {
+      x1: 64,
+      x2: 64,
+      y1: 5,
+      y2: 108,
+      class: "forecast-selection-line",
+    }),
+    dot = add("circle", {
+      cx: 64,
+      cy: points[0][1],
+      r: 3.5,
+      fill: "var(--accent)",
+      class: "forecast-selected-point",
+    });
+  svg.selectDay = (index) => {
+    const p = points[index];
+    line.setAttribute("x1", p[0]);
+    line.setAttribute("x2", p[0]);
+    dot.setAttribute("cx", p[0]);
+    dot.setAttribute("cy", p[1]);
+    svg.dataset.selectedDate = days[index].date;
+  };
+  if (onSelect) {
+    let dragging = false;
+    const select = (e) => {
+      const p = svg.createSVGPoint();
+      p.x = e.clientX;
+      p.y = e.clientY;
+      const local = p.matrixTransform(svg.getScreenCTM().inverse());
+      onSelect(
+        Math.max(
+          0,
+          Math.min(
+            days.length - 1,
+            Math.round(((local.x - 64) / 324) * (days.length - 1)),
+          ),
+        ),
+      );
+    };
+    svg.onpointerdown = (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      svg.setPointerCapture(e.pointerId);
+      select(e);
+    };
+    svg.onpointermove = (e) => {
+      if (dragging) select(e);
+    };
+    svg.onpointerup = svg.onpointercancel = () => {
+      dragging = false;
+    };
+  }
   return svg;
 }
+export function forecastExplorer(sim) {
+  const days = sim.daily.slice(0, 30),
+    root = node("section", null, "forecast-explorer");
+  if (!days.length) return root;
+  const heading = node("h4", "Les " + days.length + " prochains jours"),
+    range = input("forecast_day", "range", "0"),
+    details = node("div", null, "forecast-day-detail"),
+    selected = node("div", null, "forecast-selected-summary");
+  let index = Math.max(
+    0,
+    days.findIndex((d) => d.date === selectedForecastDate),
+  );
+  range.min = "0";
+  range.max = String(days.length - 1);
+  range.step = "1";
+  const graph = chart(days, showDay),
+    minIndex = days.reduce(
+      (best, d, i) => (d.safe_cents < days[best].safe_cents ? i : best),
+      0,
+    ),
+    jump = button(
+      "Minimum : " +
+        money(days[minIndex].safe_cents) +
+        " · " +
+        shortDate(days[minIndex].date),
+      () => showDay(minIndex),
+      "text-button forecast-minimum-button",
+    );
+  root.append(
+    heading,
+    graph,
+    field("Choisir une date", range),
+    jump,
+    selected,
+    details,
+  );
+  selected.setAttribute("aria-live", "polite");
+  selected.setAttribute("aria-atomic", "true");
+  function showDay(value) {
+    index = Math.max(0, Math.min(days.length - 1, Number(value)));
+    const d = days[index];
+    selectedForecastDate = d.date;
+    range.value = String(index);
+    graph.selectDay(index);
+    range.setAttribute(
+      "aria-valuetext",
+      longDate(d.date) + " · Disponible prévu " + money(d.safe_cents),
+    );
+    selected.dataset.date = d.date;
+    selected.replaceChildren(
+      node("h4", longDate(d.date)),
+      node("span", "Disponible après limites et cartes", "muted"),
+      node(
+        "strong",
+        money(d.safe_cents),
+        "forecast-selected-amount" + (d.safe_cents < 0 ? " negative" : ""),
+      ),
+    );
+    details.replaceChildren();
+    for (const e of d.events) {
+      const row = node("div", null, "forecast-event"),
+        text = node("div");
+      text.append(node("strong", e.name));
+      if (e.overdue)
+        text.append(node("small", "En retard · " + shortDate(e.date)));
+      if (e.nominal_on && e.nominal_on !== e.date)
+        text.append(
+          node("small", shortDate(e.nominal_on) + " → " + shortDate(e.date)),
+        );
+      row.append(
+        text,
+        node(
+          "strong",
+          (e.kind === "income" ? "+" : e.kind === "transfer" ? "↔ " : "−") +
+            money(e.amount_cents),
+          e.kind === "income" ? "positive" : "",
+        ),
+      );
+      details.append(row);
+    }
+    const renewals = sim.categories.flatMap((c) =>
+      c.periods
+        .filter((p) => p.date === d.date)
+        .map((p) => ({ name: c.name, amount: p.remaining_cents })),
+    );
+    for (const renewal of renewals) {
+      const row = node("div", null, "forecast-event forecast-renewal"),
+        text = node("div");
+      text.append(
+        node("strong", "Renouvellement · " + renewal.name),
+        node("small", "Protégé dans le disponible, sans débit bancaire."),
+      );
+      row.append(text, node("strong", money(renewal.amount)));
+      details.append(row);
+    }
+    if (!d.events.length && !renewals.length)
+      details.append(node("p", "Aucune opération prévue.", "muted"));
+  }
+  range.oninput = () => showDay(Number(range.value));
+  showDay(index);
+  return root;
+}
+
 export function todayView(
   sim,
   {
@@ -244,7 +418,7 @@ export function todayView(
   } else
     message.textContent =
       "Aucun creux supplémentaire prévu sous votre disponible avant la paie.";
-  minimum.append(minlabel, message, chart(sim.daily));
+  minimum.append(minlabel, message, forecastExplorer(sim));
   left.append(minimum);
   const limits = panel(
     "Vos limites",

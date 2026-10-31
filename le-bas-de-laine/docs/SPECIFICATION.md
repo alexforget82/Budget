@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.4.4
+# Le bas de laine — contrat du noyau, essai 0.4.5
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -27,3 +27,5 @@
 **Calendrier** : défauts sur les nouvelles règles : revenu avant, dépense/virement après. Les règles enregistrées conservent leurs choix. Les tableaux 2026 et 2027 reçus de l’utilisateur sont vérifiés exactement; leur provenance n’a pas été authentifiée par une consultation directe. Depuis 0.4.1 le calendrier national exclut le 24 juin et les congés sectoriels. Les anciennes décisions liées au 24 juin sont converties sans changer les transactions.
 
 **Calendrier 0.4.4** : la grille et la liste lisent les journées de simulation sans recalcul parallèle. Les jours hors horizon restent sans valeur. Les renouvellements de limites sont présentés comme protections, pas comme débits. Le raccourci de confirmation d’une échéance utilise aujourd’hui comme date réelle; le formulaire Montant permet un autre montant/date réelle.
+
+**Explorateur 0.4.5** : 30 premières journées de la simulation, sans recalcul. Minimum propre à cette fenêtre; l’alerte de 90 jours demeure distincte. La sélection et le glissement sont strictement en lecture, y compris dans la vue partagée.

@@ -1,5 +1,5 @@
 {
-  "version": "0.4.4",
+  "version": "0.4.5",
   "horizon_days": 90,
   "node_tests": {
     "passed": 89,
@@ -44,7 +44,12 @@
       "month/list calendar exact daily simulation amounts",
       "Monday-first alignment and 90-day horizon boundaries",
       "overdue bills and protected-limit renewals",
-      "calendar navigation is read-only; payment retains open month and uses actual current date"
+      "calendar navigation is read-only; payment retains open month and uses actual current date",
+      "interactive 30-day forecast: every amount matches daily engine result",
+      "slider keyboard and direct SVG pointer selection, minimum jump",
+      "selected-day events and protected-limit renewals",
+      "90-day warning remains separate from 30-day explorer",
+      "readonly shared explorer parity and identical tables after navigation"
     ]
   },
   "comparison": {

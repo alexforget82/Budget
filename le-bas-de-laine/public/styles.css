@@ -1652,3 +1652,87 @@
 .calendar-count {
   white-space: nowrap;
 }
+
+.forecast-explorer {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin-top: 0.8rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.forecast-explorer h4 {
+  margin: 0 0 0.7rem;
+}
+.minimum .forecast-plot {
+  width: 100%;
+  height: auto;
+  min-height: 115px;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.forecast-selection-line {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+.forecast-explorer input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.forecast-explorer input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.forecast-minimum-button {
+  color: var(--warning);
+  text-align: left;
+}
+.forecast-selected-summary {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.forecast-selected-summary h4 {
+  margin: 0;
+}
+.forecast-selected-summary > span {
+  font-size: 0.8rem;
+}
+.forecast-selected-amount {
+  display: block;
+  font-size: 1.8rem;
+}
+.forecast-event {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+.forecast-event > div {
+  flex: 1 1 9rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.forecast-event > strong {
+  white-space: nowrap;
+}
+.forecast-event small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.forecast-renewal {
+  color: var(--warning);
+}

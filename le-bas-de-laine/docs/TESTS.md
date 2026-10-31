@@ -1,3 +1,11 @@
+# Vérifications — 0.4.5
+
+89 tests Node réussis. `tests/forecast-explorer-ui.py` compare chacun des 30 montants affichés aux journées retournées par le moteur, à 320/390/768/1440 pixels et en clair/sombre. Vérifie les détails Bell/Discord à leur date, les limites protégées, le saut au minimum, Home/End/flèches sur le curseur, la sélection directe sur la courbe et la conservation de l’alerte 90 jours pour une facture au-delà du graphique.
+
+La lecture simplifiée affiche le même montant pour la même journée, sans boutons d’écriture. L’export des tables reste exactement identique après navigation. Les parcours généraux et outils quotidiens passent aussi. Captures fictives dans `forecast-explorer/`; pas de test matériel Safari iOS revendiqué. Archive autonome : 87 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.4
 
 89 tests Node réussis; moteur financier inchangé. `tests/calendar-grid-ui.py` configure une vraie base temporaire fictive et compare les montants des cases avec les journées du moteur. Vérifie Mois/Liste, lundi comme premier jour, journées hors horizon sans montant, navigation aux bornes, retard et renouvellement de limite. La navigation laisse l’export des tables identique. Une facture future marquée Payée crée exactement une transaction à la date réelle d’aujourd’hui et conserve l’ouverture du calendrier et le mois sélectionné.
