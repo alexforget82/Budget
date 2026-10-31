@@ -222,7 +222,9 @@ export function createService(store, clock = today) {
       ? q("SELECT * FROM recurrences WHERE id=?", Number(x.id))[0]
       : null;
     const adjustment = normalizeAdjustment(
-      x.day_adjust === undefined ? old?.day_adjust : x.day_adjust,
+      x.day_adjust === undefined
+        ? (old?.day_adjust ?? (x.kind === "income" ? "before" : "after"))
+        : x.day_adjust,
     );
     const a = account(x.account_id),
       kind = x.kind,
@@ -454,9 +456,9 @@ export function createService(store, clock = today) {
   }
   function checkpoint(x) {
     const a = account(x.account_id);
-    if (!a.is_main) throw Error("Choisissez le compte principal.");
+    if (a.kind !== "bank") throw Error("Choisissez un compte bancaire.");
     const amount = cents(x.amount),
-      difference = amount - bankBalance(store.state());
+      difference = amount - bankBalance(store.state(), a.id);
     run(
       "INSERT INTO checkpoints(seq,account_id,amount_cents,date,difference_cents) VALUES(?,?,?,?,?)",
       sequence(),
@@ -497,10 +499,13 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.3.0",
+      version: "0.4.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,
+      account_balances: data.accounts
+        .filter((a) => a.kind === "bank")
+        .map((a) => ({ id: a.id, balance_cents: bankBalance(data, a.id) })),
       last_import: lastImport,
       shared_enabled: !!setting("share_token"),
     };

@@ -153,11 +153,14 @@ function calendarFields(
       ["before", "Jour ouvrable précédent"],
       ["after", "Jour ouvrable suivant"],
     ],
-    initial.day_adjust || "none",
+    initial.day_adjust ?? (initial.kind === "income" ? "before" : "after"),
   );
   const preview = node("div", null, "calendar-preview");
   preview.setAttribute("aria-live", "polite");
-  options.append(summary, field("Si la date n’est pas ouvrable", adjustment));
+  options.append(
+    summary,
+    field("Si la date tombe un week-end ou un férié", adjustment),
+  );
   options.open = adjustment.value !== "none";
   container.append(options, preview);
   const originalLabel = startLabel.firstChild.textContent;
@@ -165,6 +168,7 @@ function calendarFields(
     timer;
   const format = (d) =>
     new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+      weekday: "short",
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -273,6 +277,7 @@ function render() {
           openBalance: checkpoint,
           openCategory: () => navigate("plan"),
           act: occurrenceAction,
+          openPurchase: purchaseEditor,
         })
       : page === "transactions"
         ? transactionsView()
@@ -775,8 +780,19 @@ function ruleEditor(r, kind = "expense") {
     ),
     destLabel = field("Vers", destination);
   const startLabel = field("Prochaine date / début", start),
-    calendar = calendarFields(frequency, start, startLabel, r || {});
-  type.onchange = () => (destLabel.hidden = type.value !== "transfer");
+    calendar = calendarFields(
+      frequency,
+      start,
+      startLabel,
+      r || { kind: type.value },
+    );
+  type.onchange = () => {
+    destLabel.hidden = type.value !== "transfer";
+    if (!r) {
+      calendar.adjustment.value = type.value === "income" ? "before" : "after";
+      calendar.adjustment.dispatchEvent(new Event("change"));
+    }
+  };
   type.onchange();
   modal(
     r ? "Modifier " + r.name : "Une nouvelle récurrence",
@@ -813,6 +829,7 @@ function planView() {
   root.append(heading);
   const grid = node("div", null, "plan-grid");
   root.append(grid);
+  grid.append(categoryReport(), scheduleView());
   for (const [label, kind] of [
     ["Paies et revenus", "income"],
     ["Factures et paiements", "expense"],
@@ -850,6 +867,11 @@ function planView() {
                 : ""),
         ),
       );
+      const next = state.simulation.daily
+        .flatMap((d) => d.events)
+        .find((e) => e.rule_id === r.id);
+      if (next)
+        left.append(node("small", scheduleDate(next), "calendar-preview-date"));
       right.append(
         node("strong", money(r.amount_cents), "money"),
         button("Modifier", () => ruleEditor(r), "text-button"),
@@ -910,20 +932,25 @@ function planView() {
   const means = panel(
     "Moyens de paiement",
     button(
-      "+ Carte / marge",
+      "+ Compte / carte",
       () => {
-        const name = required(input("name"));
+        const name = required(input("name")),
+          kind = select("account_kind", [
+            ["card", "Carte ou marge"],
+            ["bank", "Compte bancaire / épargne"],
+          ]);
         modal(
-          "Ajouter une carte ou une marge",
+          "Ajouter un compte ou une carte",
           [
             field("Nom", name),
+            field("Type de compte", kind),
             node(
               "p",
               "Aucun solde de dette à gérer. Les nouveaux achats restent protégés jusqu’au paiement.",
               "muted",
             ),
           ],
-          () => send("/api/account", { name: name.value }),
+          () => send("/api/account", { name: name.value, kind: kind.value }),
         );
       },
       "text-button",
@@ -942,6 +969,17 @@ function planView() {
           : "Sans suivi du solde",
       ),
     );
+    if (a.kind === "bank") {
+      row.append(
+        node(
+          "strong",
+          money(
+            state.account_balances?.find((b) => b.id === a.id)?.balance_cents,
+          ),
+        ),
+        button("Saisir le solde", () => secondaryBalance(a), "text-button"),
+      );
+    }
     means.append(row);
   }
   grid.append(means);
@@ -1396,7 +1434,13 @@ function setupView() {
         ),
       );
       const startLabel = card.lastElementChild,
-        calendar = calendarFields(freq, start, startLabel, item, true);
+        calendar = calendarFields(
+          freq,
+          start,
+          startLabel,
+          { ...item, kind: isPay ? "income" : "expense" },
+          true,
+        );
       card.append(calendar.container);
       const rec = { card, name, amount, freq, start, calendar };
       fields.push(rec);
@@ -1615,3 +1659,182 @@ window.addEventListener("hashchange", () => {
   if (state) navigate(location.hash.slice(1));
 });
 await refresh();
+
+function scheduleDate(e) {
+  const fmt = (d) =>
+    new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+  return e.nominal_on && e.nominal_on !== e.date
+    ? fmt(e.nominal_on) + " → " + fmt(e.date)
+    : fmt(e.date);
+}
+function secondaryBalance(a) {
+  const amount = amountField(
+    "balance",
+    (state.account_balances?.find((b) => b.id === a.id)?.balance_cents || 0) /
+      100,
+  );
+  modal(
+    "Solde · " + a.name,
+    [
+      field("Solde réel", amount),
+      node(
+        "p",
+        "Seul le compte principal alimente le disponible à dépenser. L’épargne reste à part.",
+      ),
+    ],
+    () => send("/api/checkpoint", { account_id: a.id, amount: amount.value }),
+  );
+}
+function purchaseEditor() {
+  const amount = amountField("amount"),
+    date = required(input("date", "date", dateNow())),
+    account = select(
+      "account_id",
+      state.accounts
+        .filter((a) => a.is_main || a.kind === "card")
+        .map((a) => [a.id, a.name]),
+    ),
+    category = select("category_id", [
+      ["", "Sans catégorie"],
+      ...state.categories.filter((c) => c.active).map((c) => [c.id, c.name]),
+    ]),
+    result = node("div", null, "purchase-result");
+  date.min = dateNow();
+  date.max = addDays(dateNow(), 60);
+  for (const el of [amount, date, account, category]) {
+    el.addEventListener("input", () => result.replaceChildren());
+    el.addEventListener("change", () => result.replaceChildren());
+  }
+  modal(
+    "Puis-je faire cet achat ?",
+    [
+      field("Montant", amount),
+      field("Date de l’achat", date),
+      field("Moyen de paiement", account),
+      field("Catégorie (si prévue dans une limite)", category),
+      result,
+    ],
+    async () => {
+      const r = await request("/api/purchase/preview", {
+        amount: amount.value,
+        date: date.value,
+        account_id: account.value,
+        category_id: category.value,
+      });
+      result.replaceChildren(
+        node(
+          "h2",
+          r.provisional ? "À vérifier" : r.allowed ? "Oui" : "Non",
+          r.allowed ? "positive" : "negative",
+        ),
+        node(
+          "p",
+          "Minimum après achat : " +
+            money(r.minimum_cents) +
+            " · " +
+            shortDate(r.minimum_on),
+        ),
+        node(
+          "p",
+          "Maximum : " +
+            money(r.maximum_cents) +
+            " · " +
+            r.days +
+            " jours vérifiés",
+        ),
+        node("small", "Simulation seulement. Aucune transaction enregistrée."),
+      );
+      return false;
+    },
+    "Vérifier",
+  );
+}
+function categoryReport() {
+  const host = node("details", null, "panel category-report");
+  host.append(node("summary", "Bilan par catégorie"));
+  const month = input("report_month", "month", dateNow().slice(0, 7)),
+    table = node("div", null, "report-table");
+  host.append(field("Mois", month), table);
+  const render = () => {
+    table.replaceChildren();
+    let total = 0;
+    for (const c of [
+      ...state.categories,
+      { id: null, name: "Sans catégorie" },
+    ]) {
+      const rows = state.transactions.filter(
+        (t) =>
+          t.date.startsWith(month.value) &&
+          t.category_id === c.id &&
+          t.amount_cents < 0,
+      );
+      const spent = -rows.reduce((n, t) => n + t.amount_cents, 0);
+      if (!spent) continue;
+      total += spent;
+      const row = node("div", null, "daily-row");
+      row.append(node("span", c.name), node("strong", money(spent)));
+      table.append(row);
+    }
+    const sum = node("div", null, "daily-row");
+    sum.append(
+      node("strong", "Total des achats"),
+      node("strong", money(total)),
+    );
+    table.append(sum);
+  };
+  month.onchange = render;
+  render();
+  return host;
+}
+function scheduleView() {
+  const host = node("details", null, "panel schedule");
+  host.append(node("summary", "Calendrier des échéances"));
+  const month = input("schedule_month", "month", dateNow().slice(0, 7)),
+    list = node("div");
+  host.append(
+    field("Mois", month),
+    node(
+      "small",
+      "Échéances ouvertes dans les 90 jours de prévision. Les reports utilisent leur date choisie.",
+    ),
+    list,
+  );
+  const render = () => {
+    list.replaceChildren();
+    const events = state.simulation.daily
+      .flatMap((d) => d.events)
+      .filter((e) => e.date.startsWith(month.value));
+    for (const e of events) {
+      const row = node("div", null, "schedule-row");
+      row.append(
+        node("strong", scheduleDate(e)),
+        node("span", e.name),
+        node("span", money(e.amount_cents)),
+      );
+      row.append(
+        button(
+          e.kind === "income" ? "Reçue" : "Payée",
+          () => occurrenceAction(e, "pay"),
+          "text-button",
+        ),
+        button(
+          "Reporter",
+          () => occurrenceAction(e, "postpone"),
+          "text-button",
+        ),
+      );
+      list.append(row);
+    }
+    if (!events.length)
+      list.append(
+        node("p", "Aucune échéance ouverte dans ce mois de la prévision."),
+      );
+  };
+  month.onchange = render;
+  render();
+  return host;
+}

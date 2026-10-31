@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.2.0
+# Le bas de laine — contrat du noyau, essai 0.4.0
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -21,3 +21,7 @@
 **Hors périmètre** : enveloppes séparées, sous-catégories, objectifs, scénarios, export ChatGPT, appariement à confirmer après saisie, comparaison au-delà de 90 jours. Le calendrier d’essai parallèle réel et la revue des données personnelles restent à faire par l’utilisateur.
 
 **Étape 1** : coussin Autres facultatif de 50 $/mois, sans migration financière silencieuse. Les dépenses hors limite consomment ce coussin sans changer leur classement; les factures associées en sont exclues. Le détail des réservations est dérivé du même jour contraignant que les quatre lignes. Les douze scénarios de référence figés en 0.1.0 doivent conserver exactement leur disponibilité et leurs 30 premières journées.
+
+**Outils 0.4.0** : un achat hypothétique est injecté dans le même moteur à sa date réelle; la consommation de sa limite ne commence qu’à cette date. Aucun effet avant l’achat, aucune seconde protection si sa limite le couvre. La réponse vérifie 30 jours complets, avec minimum/maximum et date du minimum. L’épargne a son propre point de contrôle, et ne rejoint jamais automatiquement le compte principal. Le bilan mensuel additionne les dépenses réelles, sans virements. L’agenda ne couvre que les échéances ouvertes des 90 jours simulés.
+
+**Calendrier** : défauts sur les nouvelles règles : revenu avant, dépense/virement après. Les règles enregistrées conservent leurs choix. Les dates sont comparées au moteur Sillage, pas certifiées par Paiements Canada : revue officielle encore ouverte.

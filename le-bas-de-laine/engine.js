@@ -51,8 +51,10 @@ export function cardLots(state) {
   }
   return lots.filter((l) => l.remaining_cents > 0);
 }
-export function bankBalance(state) {
-  const bank = state.accounts.find((a) => a.kind === "bank" && a.is_main);
+export function bankBalance(state, accountId) {
+  const bank = state.accounts.find(
+    (a) => a.kind === "bank" && (accountId ? a.id === accountId : a.is_main),
+  );
   if (!bank) return 0;
   const cp = state.checkpoints
     .filter((c) => c.account_id === bank.id)
@@ -122,7 +124,7 @@ export function categoryPeriods(state, reference, end) {
       return { ...c, periods };
     });
 }
-export function simulate(state, reference, horizon = 90) {
+export function simulate(state, reference, horizon = 90, purchase = null) {
   if (
     !validDate(reference) ||
     !Number.isInteger(horizon) ||
@@ -146,6 +148,8 @@ export function simulate(state, reference, horizon = 90) {
     for (const o of occurrences(r, start, end)) {
       const action = actions.get(o.key);
       if (action?.status === "paid" || action?.status === "cancelled") continue;
+      if (action?.postponed_on && action.postponed_on !== o.date)
+        o.nominal_on = o.nominal_on || o.date;
       o.date = action?.postponed_on || o.date;
       o.amount_cents = action?.amount_cents ?? o.amount_cents;
       if (o.kind === "income" && o.date < reference) continue;
@@ -155,6 +159,8 @@ export function simulate(state, reference, horizon = 90) {
       events.push(o);
     }
   }
+  if (purchase)
+    events.push({ ...purchase, kind: "expense", name: "Achat simulé" });
   const nextPay =
     events
       .filter(
@@ -174,6 +180,24 @@ export function simulate(state, reference, horizon = 90) {
           : addDays(nextPay, -1)
         : spendingEnd;
   const categories = categoryPeriods(state, reference, last),
+    purchaseCategories = purchase
+      ? categoryPeriods(
+          {
+            ...state,
+            transactions: [
+              ...state.transactions,
+              {
+                ...purchase,
+                amount_cents: -purchase.amount_cents,
+                id: -1,
+                seq: Number.MAX_SAFE_INTEGER,
+              },
+            ],
+          },
+          reference,
+          last,
+        )
+      : categories,
     lots = cardLots(state),
     cardHeld = new Map();
   for (const lot of lots)
@@ -223,7 +247,9 @@ export function simulate(state, reference, horizon = 90) {
       }
     }
     // Limits are protections, not fictional bank debits. New periods accumulate in the forecast.
-    const limits = categories.reduce(
+    const limits = (
+      purchase && date >= purchase.date ? purchaseCategories : categories
+    ).reduce(
       (sum, c) =>
         sum +
         c.periods

@@ -1413,3 +1413,22 @@
     display: none;
   }
 }
+
+.schedule-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.schedule-row > span {
+  flex: 1 1 8rem;
+}
+.purchase-result {
+  padding: 0.5rem 0;
+}
+.category-report label,
+.schedule label {
+  margin-top: 1rem;
+}

@@ -1,3 +1,13 @@
+# Vérifications — 0.4.0
+
+82 tests Node réussis, sans échec. Comparaison de 1 152 occurrences avec le calendrier du code Sillage, plus les listes de fériés 2026–2030. Les tests supplémentaires vérifient les défauts par intention, la date effective dans les prévisions, la simulation d’un achat sur compte/carte couvert ou hors limite sans écriture, le futur sans effet prématuré, et les soldes/points de contrôle secondaires exclus du disponible principal. Les 12 scénarios financiers figés restent identiques.
+
+`tests/ui.py`, `tests/calendar-ui.py` et `tests/features-ui.py` passent sous Chromium. Le dernier vérifie le simulateur, le bilan, l’agenda avec déplacement visible, et la création/saisie du solde d’épargne, à 320/390/768/1440 pixels et en clair/sombre. Pas de validation physique Safari iOS. La vérification officielle Paiements Canada reste ouverte; HTTP 403, voir CALENDRIER.md.
+
+L’archive autonome passe 80 tests; deux tests dépendant du programme Sillage externe sont omis, car ce programme n’est pas inclus dans l’archive indépendante.
+
+## Référence précédente
+
 # Vérifications — 0.3.0
 
 74 tests Node réussis. Les nouveaux cas couvrent week-ends, jours fériés bancaires Québec/Canada, substitutions de Noël, années bissextiles, fin de mois calendaire et ouvrable, ancrage aux deux semaines et déplacements entre mois sans doublon. Les services vérifient les aperçus sans écriture, la conservation des échéances déjà payées et reports manuels, et le rejet atomique des ajustements invalides.

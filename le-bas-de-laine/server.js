@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { validateState } from "./validation.js";
 import { openDatabase } from "./database.js";
-import { createService } from "./service.js";
-import { today, validDate } from "./dates.js";
+import { simulate } from "./engine.js";
+import { createService, cents } from "./service.js";
+import { today, validDate, addDays } from "./dates.js";
 import { planSillage, applySillage, hash } from "./import.js";
 import { previewCSV } from "./csv.js";
 const root = path.dirname(fileURLToPath(import.meta.url)),
@@ -121,7 +122,7 @@ function handler(isPrivate) {
           return reply(res, 404, { error: "Lien indisponible." });
         if (shared[2] === "/data")
           return reply(res, 200, {
-            version: "0.3.0",
+            version: "0.4.0",
             simulation: currentState().simulation,
           });
         const sharePath = "/s/" + shared[1];
@@ -196,6 +197,52 @@ function handler(isPrivate) {
             store.put("sequence", 0);
           });
           return reply(res, 200, currentState());
+        }
+        if (url.pathname === "/api/purchase/preview") {
+          const data = store.state();
+          const amount = cents(x.amount);
+          if (
+            amount <= 0 ||
+            !validDate(x.date) ||
+            x.date < today() ||
+            x.date > addDays(today(), 60)
+          )
+            throw Error(
+              "Montant positif et date au plus 60 jours après aujourd’hui requis, pour vérifier 30 jours complets.",
+            );
+          const account = data.accounts.find(
+            (a) => a.id === Number(x.account_id),
+          );
+          if (!account || !(account.is_main || account.kind === "card"))
+            throw Error("Choisissez le compte principal ou une carte.");
+          const category_id = x.category_id ? Number(x.category_id) : null;
+          if (category_id && !data.categories.some((c) => c.id === category_id))
+            throw Error("Catégorie introuvable.");
+          const baseline = simulate(data, today());
+          const result = simulate(data, today(), 90, {
+            amount_cents: amount,
+            date: x.date,
+            account_id: account.id,
+            category_id,
+            period_on: null,
+          });
+          const window = result.daily.filter(
+            (d) => d.date >= x.date && d.date <= addDays(x.date, 29),
+          );
+          const min = window.reduce((a, b) =>
+            a.safe_cents < b.safe_cents ? a : b,
+          );
+          const provisional = currentState().simulation.provisional;
+          return reply(res, 200, {
+            allowed: !provisional && min.safe_cents >= 0,
+            provisional,
+            minimum_cents: min.safe_cents,
+            minimum_on: min.date,
+            maximum_cents: Math.max(...window.map((d) => d.safe_cents)),
+            days: window.length,
+            available_cents: result.available_cents,
+            baseline_available_cents: baseline.available_cents,
+          });
         }
         if (url.pathname === "/api/recurrence/preview")
           return reply(res, 200, service.previewRecurrence(x));
@@ -292,12 +339,17 @@ function handler(isPrivate) {
         else if (url.pathname === "/api/occurrence")
           store.atomic(() => service.occurrence(x));
         else if (url.pathname === "/api/account") {
-          if (!x.name || String(x.name).length > 100)
+          if (
+            !String(x.name || "").trim() ||
+            String(x.name).length > 100 ||
+            (x.kind !== undefined && !["card", "bank"].includes(x.kind))
+          )
             throw Error("Nom du moyen de paiement requis.");
           store.atomic(() =>
             store.run(
-              "INSERT INTO accounts(name,kind) VALUES(?,'card')",
+              "INSERT INTO accounts(name,kind) VALUES(?,?)",
               String(x.name).trim(),
+              x.kind === "bank" ? "bank" : "card",
             ),
           );
         } else if (url.pathname === "/api/theme") {

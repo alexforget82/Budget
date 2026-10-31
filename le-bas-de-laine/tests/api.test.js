@@ -288,3 +288,73 @@ test("trial reset requires exact confirmation, preserves a backup and clears onl
   await f.call("/api/restore", { backup: before, confirm: "REMPLACER" });
   assert.deepEqual((await f.call("/api/export")).tables, before.tables);
 });
+
+test("readonly purchase preview uses limits and does not debit or create anything; savings excluded", async (t) => {
+  const f = await launch(t);
+  let state = await f.call("/api/setup", {
+    balance: 1000,
+    paychecks: [
+      {
+        name: "Paie",
+        amount: 1000,
+        frequency: "weekly",
+        start_on: addDays(today(), 1),
+        day_adjust: "none",
+      },
+    ],
+    categories: [
+      {
+        name: "Épicerie",
+        limit: 230,
+        period: "weekly",
+        renewal_day: new Date(today() + "T12:00:00Z").getUTCDay(),
+      },
+    ],
+  });
+  const bank = state.accounts[0].id,
+    cat = state.categories[0].id;
+  state = await f.call("/api/account", { name: "Carte" });
+  const card = state.accounts.find((a) => a.kind === "card").id;
+  const initial = await f.call("/api/export");
+  const a = await f.call("/api/purchase/preview", {
+    amount: 71.69,
+    date: today(),
+    account_id: card,
+    category_id: cat,
+  });
+  assert.equal(a.available_cents, a.baseline_available_cents);
+  const b = await f.call("/api/purchase/preview", {
+    amount: 1500,
+    date: today(),
+    account_id: bank,
+  });
+  assert.equal(b.allowed, false);
+  await f.call(
+    "/api/purchase/preview",
+    { amount: 10, date: addDays(today(), 90), account_id: bank },
+    400,
+  );
+  await f.call(
+    "/api/purchase/preview",
+    { amount: 10, date: addDays(today(), -1), account_id: bank },
+    400,
+  );
+  assert.deepEqual((await f.call("/api/export")).tables, initial.tables);
+  state = await f.call("/api/account", { name: "Épargne", kind: "bank" });
+  const savings = state.accounts.find((a) => a.name === "Épargne");
+  const before = state.simulation.available_cents;
+  state = await f.call("/api/checkpoint", {
+    account_id: savings.id,
+    amount: 5000,
+  });
+  assert.equal(
+    state.account_balances.find((a) => a.id === savings.id).balance_cents,
+    500000,
+  );
+  assert.equal(state.simulation.available_cents, before);
+  await f.call(
+    "/api/purchase/preview",
+    { amount: 1, date: today(), account_id: savings.id },
+    400,
+  );
+});

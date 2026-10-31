@@ -565,3 +565,48 @@ test("name/amount updates without calendar fields do not reset an existing busin
   );
   assert.deepEqual(db.exportData().tables, before);
 });
+
+test("new calendar defaults depend on intent, existing explicit choices survive edits", (t) => {
+  const { db, api, bank } = fixture(t);
+  for (const kind of ["income", "expense", "transfer"]) {
+    const secondary = Number(
+      db.run("INSERT INTO accounts(name,kind) VALUES('Épargne','bank')")
+        .lastInsertRowid,
+    );
+    const id = db.atomic(() =>
+      api.recurrence({
+        name: kind,
+        kind,
+        account_id: bank,
+        to_account_id: secondary,
+        amount: 10,
+        start_on: "2026-11-15",
+        frequency: "monthly",
+      }),
+    );
+    const r = db.state().recurrences.find((r) => r.id === id);
+    assert.equal(r.day_adjust, kind === "income" ? "before" : "after");
+    db.atomic(() => api.recurrence({ ...r, amount: 10, day_adjust: "none" }));
+    db.atomic(() =>
+      api.recurrence({ ...r, amount: 11, day_adjust: undefined }),
+    );
+    assert.equal(
+      db.state().recurrences.find((r) => r.id === id).day_adjust,
+      "none",
+    );
+  }
+});
+test("secondary bank checkpoint changes savings without changing main available", (t) => {
+  const { db, api } = fixture(t);
+  const before = api.snapshot().simulation.available_cents;
+  const id = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Épargne','bank')")
+      .lastInsertRowid,
+  );
+  db.atomic(() => api.checkpoint({ account_id: id, amount: 500 }));
+  assert.equal(
+    api.snapshot().account_balances.find((a) => a.id === id).balance_cents,
+    50000,
+  );
+  assert.equal(api.snapshot().simulation.available_cents, before);
+});

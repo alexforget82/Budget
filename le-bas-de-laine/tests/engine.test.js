@@ -456,3 +456,107 @@ test("unclassified card purchase consumes Autres without deducting its protected
     3000,
   );
 });
+
+test("future purchase simulation respects date and category protection on bank and card", () => {
+  const s = base();
+  const original = JSON.stringify(s),
+    ref = simulate(s, reference);
+  for (const account_id of [1, 2]) {
+    const on = "2026-10-24";
+    const trial = simulate(s, reference, 90, {
+      amount_cents: 7169,
+      date: on,
+      account_id,
+      category_id: 1,
+      period_on: "2026-10-22",
+    });
+    assert.equal(trial.available_cents, ref.available_cents);
+    assert.deepEqual(
+      trial.daily.map((d) => d.safe_cents),
+      ref.daily.map((d) => d.safe_cents),
+    );
+    const unplanned = simulate(s, reference, 90, {
+      amount_cents: 1000,
+      date: on,
+      account_id,
+      category_id: null,
+      period_on: on,
+    });
+    for (let i = 0; i < ref.daily.length; i++)
+      assert.equal(
+        unplanned.daily[i].safe_cents,
+        ref.daily[i].safe_cents - (ref.daily[i].date >= on ? 1000 : 0),
+      );
+  }
+  assert.equal(JSON.stringify(s), original);
+});
+test("secondary savings is excluded from spendable bank balance and tracks transfers independently", () => {
+  const s = base();
+  s.accounts.push({ id: 3, kind: "bank", name: "Épargne", is_main: 0 });
+  s.checkpoints.push({
+    account_id: 3,
+    seq: 2,
+    amount_cents: 50000,
+    date: reference,
+  });
+  assert.equal(bankBalance(s, 3), 50000);
+  assert.equal(bankBalance(s), 100000);
+  s.transfers.push({
+    seq: 3,
+    from_account_id: 1,
+    to_account_id: 3,
+    amount_cents: 10000,
+  });
+  assert.equal(bankBalance(s, 3), 60000);
+  assert.equal(bankBalance(s), 90000);
+});
+
+test("shifted salary and bill enter the forecast exactly once on the effective business day", () => {
+  const s = base();
+  s.categories = [];
+  s.recurrences = [
+    {
+      id: 8,
+      name: "Paie samedi",
+      kind: "income",
+      amount_cents: 10000,
+      account_id: 1,
+      start_on: "2026-10-24",
+      frequency: "monthly",
+      day_adjust: "before",
+      active: 1,
+      one_time: 1,
+    },
+    {
+      id: 9,
+      name: "Facture dimanche",
+      kind: "expense",
+      amount_cents: 4000,
+      account_id: 1,
+      start_on: "2026-10-25",
+      frequency: "monthly",
+      day_adjust: "after",
+      active: 1,
+      one_time: 1,
+    },
+  ];
+  const trial = simulate(s, reference);
+  assert.equal(
+    trial.daily.find((d) => d.date === "2026-10-23").cash_cents,
+    110000,
+  );
+  assert.equal(
+    trial.daily.find((d) => d.date === "2026-10-25").cash_cents,
+    110000,
+  );
+  assert.equal(
+    trial.daily.find((d) => d.date === "2026-10-26").cash_cents,
+    106000,
+  );
+  assert.equal(trial.daily.flatMap((d) => d.events).length, 2);
+  assert.equal(
+    trial.daily.flatMap((d) => d.events).find((e) => e.rule_id === 9)
+      .nominal_on,
+    "2026-10-25",
+  );
+});

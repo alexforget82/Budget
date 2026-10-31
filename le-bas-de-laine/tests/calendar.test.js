@@ -94,3 +94,49 @@ test("a biweekly holiday advance never changes the original two-week cadence", (
     "2027-01-08",
   );
 });
+
+test("Good Friday is skipped in either direction", () => {
+  assert.equal(shiftDate("2027-03-26", "before"), "2027-03-25");
+  assert.equal(shiftDate("2027-03-26", "after"), "2027-03-29");
+});
+test("dates match the separate Sillage calendar on shared supported rules", async (t) => {
+  const fs = await import("node:fs");
+  const { pathToFileURL } = await import("node:url");
+  const path = await import("node:path");
+  const file = path.resolve(
+    import.meta.dirname,
+    "../../recurrence-calendar.js",
+  );
+  if (!fs.existsSync(file)) {
+    t.skip("External Sillage reference program is not bundled.");
+    return;
+  }
+  const old = await import(pathToFileURL(file).href);
+  for (const start of [
+    "2026-11-14",
+    "2026-11-15",
+    "2027-03-26",
+    "2027-12-25",
+    "2027-12-26",
+    "2027-01-31",
+    "2028-01-31",
+    "2028-02-29",
+  ])
+    for (const frequency of [
+      "weekly",
+      "biweekly",
+      "monthly",
+      "last_business_day",
+    ])
+      for (const mode of ["none", "before", "after"])
+        for (let i = 0; i < 12; i++)
+          assert.deepEqual(
+            occurrenceInfo(start, frequency, i, mode),
+            old.occurrenceInfo(start, frequency, i, mode),
+          );
+  for (let year = 2026; year <= 2030; year++)
+    assert.deepEqual(
+      [...holidaySet(year)].sort(),
+      [...old.holidaySet(year)].sort(),
+    );
+});

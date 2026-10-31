@@ -98,7 +98,7 @@ export function chart(days) {
 }
 export function todayView(
   sim,
-  { openBalance, openCategory, act, shared = false } = {},
+  { openBalance, openCategory, act, openPurchase, shared = false } = {},
 ) {
   const root = node("div"),
     heading = node("div", null, "page-heading"),
@@ -107,6 +107,8 @@ export function todayView(
   heading.append(title);
   if (openBalance)
     heading.append(button("Vérifier mon solde", openBalance, "text-button"));
+  if (openPurchase)
+    heading.append(button("Puis-je faire cet achat ?", openPurchase));
   root.append(heading);
   for (const warning of sim.warnings || [])
     root.append(node("p", warning, "warning"));
@@ -305,6 +307,14 @@ export function todayView(
               : "Facture prévue",
       ),
     );
+    if (e.nominal_on && e.nominal_on !== e.date)
+      text.append(
+        node(
+          "small",
+          shortDate(e.nominal_on) + " → " + shortDate(e.date),
+          "calendar-preview-date",
+        ),
+      );
     row.append(
       date,
       text,

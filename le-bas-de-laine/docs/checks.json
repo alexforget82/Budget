@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 74,
+    "passed": 82,
     "failed": 0,
     "skipped": 0
   },
@@ -32,7 +32,10 @@
       "readonly shared page",
       "all three visual directions",
       "self-contained HTML previews",
-      "calendar wizard/editor previews and persisted adjustments at 320/390/768/1440"
+      "calendar wizard/editor previews and persisted adjustments at 320/390/768/1440",
+      "purchase preview without writes, 30 full days",
+      "category report and shifted monthly agenda",
+      "secondary savings creation and checkpoint"
     ]
   },
   "comparison": {
@@ -63,9 +66,9 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 73,
+    "passed": 80,
     "failed": 0,
-    "skipped": 1,
+    "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
   },
   "mockup_pdf_pages": 3,
@@ -88,5 +91,18 @@
     "exact protected-limit explanation",
     "one light palette plus OS-controlled dark mode",
     "90-day Sillage comparison"
-  ]
+  ],
+  "calendar": {
+    "sillage_occurrence_comparisons": 1152,
+    "sillage_holiday_years": [
+      2026,
+      2027,
+      2028,
+      2029,
+      2030
+    ],
+    "payments_canada_verified": false,
+    "official_source_access": "HTTP 403",
+    "status": "provisional; national clearing vs Quebec bank closures still requires review"
+  }
 }

@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.3.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -139,3 +139,16 @@ Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de con
 « Dernier jour du mois » et « Dernier jour ouvrable du mois » sont deux fréquences distinctes. Une récurrence mensuelle au 31 revient au dernier jour des mois plus courts, sans dériver les mois suivants. Les ajustements conservent l’ancrage de la récurrence. Les échéances déjà payées et les reports manuels sont conservés lors d’un changement compatible de calendrier; les dates des achats réels ne changent pas.
 
 Les règles existantes ne sont pas déplacées automatiquement. Les limites de catégorie gardent leur date de renouvellement budgétaire; elles ne sont pas des paiements bancaires. Les dates RRQ demeurent estimées et doivent être confirmées avec le calendrier officiel de Retraite Québec.
+
+## Ajouts 0.4.0
+
+Pour une nouvelle règle, les revenus choisissent par défaut le jour ouvrable précédent, les dépenses et virements le suivant. Le champ « Si la date tombe un week-end ou un férié » reste modifiable. Aucun choix existant n’est remplacé. Les listes montrent la date nominale puis la date déplacée.
+
+- Aujourd’hui → **Puis-je faire cet achat ?** : montant, date, moyen de paiement et catégorie facultative. Vérifie les 30 jours suivant l’achat, après limites et achats sur carte. La date peut aller jusqu’à 60 jours après aujourd’hui pour conserver 30 jours complets dans la prévision de 90 jours. Aucun achat n’est enregistré. Le résultat reste « À vérifier » si l’import est provisoire.
+- Plan → **Bilan par catégorie** : achats réels du mois choisi et total, sans compter les virements comme des achats.
+- Plan → **Calendrier des échéances** : agenda mensuel des échéances ouvertes dans la prévision de 90 jours, avec dates déplacées et actions Payée/Reçue/Reporter.
+- Plan → **Moyens de paiement → + Compte / carte** : ajoutez un compte bancaire ou une épargne, puis saisissez son solde. Les soldes secondaires sont suivis séparément et ne gonflent pas le disponible du compte principal. Un virement vers l’épargne réduit celui-ci.
+
+### Validation du calendrier encore ouverte
+
+La comparaison avec le calendrier Sillage et les tests de dates passent, mais **la liste n’est pas figée comme officiellement validée par Paiements Canada**. La consultation de https://www.payments.ca/payment-resources/support-guides/holiday-schedule le 31 octobre 2026 a été bloquée par HTTP 403 dans l’environnement de travail. Le calendrier local inclut des fermetures bancaires Québec/Canada, dont le 24 juin; cela ne constitue pas une reproduction certifiée du calendrier national de compensation. La vérification officielle doit distinguer ces deux périmètres. Voir [le suivi](docs/CALENDRIER.md).

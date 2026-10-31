@@ -1,3 +1,7 @@
+# 0.4.0 — dates visibles et outils quotidiens
+
+Valeurs par défaut de déplacement selon le type de nouvelle récurrence, sans modifier les règles existantes. Dates nominales/effectives visibles. Simulateur d’achat utilisant la prévision et les limites, bilan réel par catégorie, agenda mensuel des échéances ouvertes et comptes d’épargne séparés du disponible principal. Comparaison des dates avec Sillage sur 1 152 cas et des listes de fériés 2026–2030. Validation officielle Paiements Canada en attente (accès HTTP 403). Aucun changement du schéma SQLite.
+
 # 0.3.0 — calendrier des récurrences
 
 Choix du jour ouvrable précédent/suivant ou de la date inchangée dans l’assistant et les formulaires. Dernier jour calendaire et dernier jour ouvrable du mois distincts. Aperçu des prochaines dates; conservation des échéances réglées et reports manuels lors des changements compatibles. Validation des ajustements et avertissement explicite pour les dates RRQ estimées. Aucun changement de schéma.
