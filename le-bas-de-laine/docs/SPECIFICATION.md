@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.4.5
+# Le bas de laine — contrat du noyau, essai 0.4.6
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -29,3 +29,5 @@
 **Calendrier 0.4.4** : la grille et la liste lisent les journées de simulation sans recalcul parallèle. Les jours hors horizon restent sans valeur. Les renouvellements de limites sont présentés comme protections, pas comme débits. Le raccourci de confirmation d’une échéance utilise aujourd’hui comme date réelle; le formulaire Montant permet un autre montant/date réelle.
 
 **Explorateur 0.4.5** : 30 premières journées de la simulation, sans recalcul. Minimum propre à cette fenêtre; l’alerte de 90 jours demeure distincte. La sélection et le glissement sont strictement en lecture, y compris dans la vue partagée.
+
+**RRQ 0.4.6** : dates fournies 2026-11-30 et 2026-12-30; autres mois estimés au dernier jour ouvrable avec indicateur et avertissement. La liste 2027 de l’utilisateur est estimative, non considérée comme calendrier confirmé. Les anciennes clés du 31 décembre sont converties sans réécrire les transactions.

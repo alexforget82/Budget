@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.5**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.6**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -138,7 +138,7 @@ Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de con
 
 « Dernier jour du mois » et « Dernier jour ouvrable du mois » sont deux fréquences distinctes. Une récurrence mensuelle au 31 revient au dernier jour des mois plus courts, sans dériver les mois suivants. Les ajustements conservent l’ancrage de la récurrence. Les échéances déjà payées et les reports manuels sont conservés lors d’un changement compatible de calendrier; les dates des achats réels ne changent pas.
 
-Les règles existantes ne sont pas déplacées automatiquement. Les limites de catégorie gardent leur date de renouvellement budgétaire; elles ne sont pas des paiements bancaires. Les dates RRQ demeurent estimées et doivent être confirmées avec le calendrier officiel de Retraite Québec.
+Les règles existantes ne sont pas déplacées automatiquement. Les limites de catégorie gardent leur date de renouvellement budgétaire; elles ne sont pas des paiements bancaires. Les dates RRQ hors novembre/décembre 2026 demeurent estimées et doivent être confirmées avec le calendrier officiel de Retraite Québec.
 
 ## Ajouts 0.4.0
 
@@ -188,3 +188,13 @@ Dans **Aujourd’hui → À surveiller**, le graphique affiche les **30 prochain
 Les renouvellements de limites sont distingués des paiements : ils protègent le disponible sans débit bancaire. Les factures en retard restent indiquées avec leur date. L’alerte sur **90 jours** demeure au-dessus du graphique, avec sa portée distincte. Les deux vues lisent les mêmes journées calculées; aucun calcul parallèle ou arrondi n’est appliqué au disponible choisi.
 
 Le graphique est également accessible dans le lien simplifié de lecture : mêmes montants et opérations, sans action d’écriture. Naviguer dans le graphique ne crée aucune transaction. Le jour choisi est conservé lors d’un rafraîchissement automatique tant qu’il reste dans les 30 jours.
+
+## RRQ — 0.4.6
+
+Dans **Plan → Paies et revenus → Modifier**, choisissez **RRQ (calendrier de versement)** pour la rente. La fréquence mensuelle ordinaire et le dernier jour ouvrable restent des choix distincts; une règle simplement nommée RRQ n’est pas convertie automatiquement.
+
+Les dates reçues de l’utilisateur sont intégrées pour **30 novembre 2026** et **30 décembre 2026**. Le 31 décembre n’est donc plus généré pour cette fréquence RRQ. L’aperçu identifie chaque ligne : **date fournie** ou **estimation**. Les dates reçues ne sont pas présentées comme une vérification indépendante d’une publication officielle.
+
+L’utilisateur a indiqué que sa liste 2027 était une estimation à vérifier. Elle n’est pas intégrée comme calendrier confirmé. Pour les mois sans date fournie, l’application conserve l’estimation du dernier jour ouvrable et un avertissement si elle tombe dans la prévision. En particulier, le 30 septembre 2027 est une fermeture bancaire : l’estimation est le 29 septembre, sans prétendre confirmer une date officielle RRQ. Les jours corrects sont mardi 30 novembre et jeudi 30 décembre 2027, mais ces libellés corrigés ne confirment pas les dates de versement.
+
+Une décision déjà associée au 31 décembre 2026 est déplacée vers la même occurrence du 30, en conservant paiement/report/annulation et transaction réelle. Sauvegarde automatique avant conversion effective; les anciennes sauvegardes et imports Sillage restent compatibles.

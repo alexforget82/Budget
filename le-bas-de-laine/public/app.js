@@ -134,7 +134,7 @@ const frequencies = (value) =>
       ["yearly", "Chaque année"],
       ["last_day", "Dernier jour du mois"],
       ["last_business_day", "Dernier jour ouvrable du mois"],
-      ["rrq", "RRQ (dates à confirmer)"],
+      ["rrq", "RRQ (calendrier de versement)"],
     ],
     value || "monthly",
   );
@@ -209,9 +209,14 @@ function calendarFields(
         preview.append(
           node(
             "div",
-            d.shifted
+            (d.shifted
               ? format(d.nominal) + " → " + format(d.date)
-              : format(d.date),
+              : format(d.date)) +
+              (frequency.value === "rrq"
+                ? d.estimated
+                  ? " · estimation"
+                  : " · date fournie"
+                : ""),
             "calendar-preview-date",
           ),
         );
@@ -864,7 +869,7 @@ function planView() {
               yearly: "Chaque année",
               last_day: "Dernier jour du mois",
               last_business_day: "Dernier jour ouvrable du mois",
-              rrq: "RRQ (dates à confirmer)",
+              rrq: "RRQ (calendrier de versement)",
             }[r.frequency] || r.frequency) +
             (r.day_adjust === "before"
               ? " · jour ouvrable précédent"

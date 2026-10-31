@@ -73,14 +73,21 @@ export function shiftDate(date, mode, legacyQuebec = false) {
     d.setUTCDate(d.getUTCDate() + step);
   return iso(d);
 }
+// Dates transcribed from the user's supplied payment schedule; other months remain estimates.
+export const rrqPaymentDates = Object.freeze({
+  "2026-11": "2026-11-30",
+  "2026-12": "2026-12-30",
+});
 export function occurrenceInfo(
   start,
   frequency,
   i,
   adjust = "none",
   legacyQuebec = false,
+  legacyRRQ = legacyQuebec,
 ) {
-  let nominal;
+  let nominal,
+    estimated = false;
   if (frequency === "last_day") {
     const d = dateFrom(start);
     d.setUTCDate(1);
@@ -91,15 +98,22 @@ export function occurrenceInfo(
     const d = dateFrom(start);
     d.setUTCDate(1);
     d.setUTCMonth(d.getUTCMonth() + i);
-    nominal = shiftDate(
-      lastWeekday(d.getUTCFullYear(), d.getUTCMonth() + 1),
-      "before",
-      legacyQuebec,
-    );
+    const supplied =
+      frequency === "rrq" && !legacyRRQ
+        ? rrqPaymentDates[iso(d).slice(0, 7)]
+        : null;
+    nominal =
+      supplied ||
+      shiftDate(
+        lastWeekday(d.getUTCFullYear(), d.getUTCMonth() + 1),
+        "before",
+        legacyQuebec,
+      );
+    estimated = frequency === "rrq" && !legacyRRQ && !supplied;
   } else nominal = nextOccurrence(start, frequency, i);
   return {
     date: shiftDate(nominal, adjust, legacyQuebec),
-    estimated: false,
+    estimated,
     nominal,
   };
 }

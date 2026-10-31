@@ -117,12 +117,16 @@ export function openDatabase(dir) {
   };
   const daily = (date) => backup("quotidienne-" + date);
   function reconcileCalendar() {
-    if (setting("payment_calendar_version") === "canada-2026-2027-v1") return;
-    const changes = calendarStateChanges(state());
+    const calendarVersion = setting("payment_calendar_version");
+    if (calendarVersion === "canada-rrq-2026-v2") return;
+    const changes = calendarStateChanges(state(), null, {
+      legacyQuebec: !calendarVersion,
+      legacyRRQ: true,
+    });
     if (changes.length) backup("avant-calendrier-canadien-" + Date.now());
     atomic(() => {
       applyCalendarStateChanges({ run }, changes);
-      put("payment_calendar_version", "canada-2026-2027-v1");
+      put("payment_calendar_version", "canada-rrq-2026-v2");
     });
   }
   const exportData = () => ({

@@ -1,7 +1,12 @@
 import { occurrenceInfo } from "./calendar.js";
-// Calendar 0.4.0 also closed June 24. Preserve saved decisions by occurrence index,
+// Calendar 0.4.0 also closed June 24; RRQ through 0.4.5 used the last business day.
+// Preserve saved decisions by occurrence index,
 // never by changing the actual purchase date or amount.
-export function calendarStateChanges(state, onlyIds = null) {
+export function calendarStateChanges(
+  state,
+  onlyIds = null,
+  { legacyQuebec = true, legacyRRQ = true } = {},
+) {
   const changes = [];
   for (const rule of state.recurrences) {
     if (onlyIds && !onlyIds.has(rule.id)) continue;
@@ -17,7 +22,8 @@ export function calendarStateChanges(state, onlyIds = null) {
         rule.frequency,
         i,
         rule.day_adjust || "none",
-        true,
+        legacyQuebec,
+        legacyRRQ,
       ).date;
       if (old > last) break;
       const current = occurrenceInfo(
@@ -60,9 +66,10 @@ export function applyCalendarStateChanges(store, changes) {
 export function nationalOccurrenceDate(rule, legacyDate) {
   if (
     !rule ||
-    legacyDate.slice(5, 7) !== "06" ||
-    +legacyDate.slice(8) < 22 ||
-    +legacyDate.slice(8) > 27
+    (rule.frequency !== "rrq" &&
+      (legacyDate.slice(5, 7) !== "06" ||
+        +legacyDate.slice(8) < 22 ||
+        +legacyDate.slice(8) > 27))
   )
     return legacyDate;
   for (let i = 0; i < 30000; i++) {

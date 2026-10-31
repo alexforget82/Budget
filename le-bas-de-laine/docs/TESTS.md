@@ -1,3 +1,11 @@
+# Vérifications — 0.4.6
+
+92 tests Node réussis. Nouveaux cas : dates RRQ novembre/décembre 2026, absence d’effet sur les autres règles de fin de mois, estimation janvier 2027 clairement distinguée, et prévision d’un seul versement le 30 décembre sans revenu additionnel le 31. Une base simulant 0.4.5 est rouverte : un revenu déjà reçu conserve sa transaction et sa date réelle, sa clé devient celle du 30 décembre, une sauvegarde précède le changement et la conversion est idempotente.
+
+Parcours Chromium général et formulaires de calendrier vérifiés. Les données 2027 reçues sont une estimation selon la réponse explicite de l’utilisateur; aucune publication officielle RRQ n’est revendiquée comme consultée. Archive autonome : 90 tests réussis et deux références Sillage externes omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.5
 
 89 tests Node réussis. `tests/forecast-explorer-ui.py` compare chacun des 30 montants affichés aux journées retournées par le moteur, à 320/390/768/1440 pixels et en clair/sombre. Vérifie les détails Bell/Discord à leur date, les limites protégées, le saut au minimum, Home/End/flèches sur le curseur, la sélection directe sur la courbe et la conservation de l’alerte 90 jours pour une facture au-delà du graphique.

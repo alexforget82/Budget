@@ -1,3 +1,7 @@
+# 0.4.6 — dates RRQ fournies de fin 2026
+
+La fréquence RRQ utilise le 30 novembre et le 30 décembre 2026 fournis par l’utilisateur, sans produire un second versement le 31 décembre. Aperçus par date fournie/estimée et avertissement ciblé pour les mois non renseignés. Conversion protégée des décisions déjà enregistrées avec l’ancienne estimation du 31 décembre. Les autres fréquences sont inchangées. Liste 2027 explicitement déclarée estimative par l’utilisateur : non intégrée comme calendrier confirmé.
+
 # 0.4.5 — explorer le disponible jour par jour
 
 Graphique interactif sur 30 jours dans À surveiller : curseur tactile/clavier, sélection directe sur la courbe, axes chiffrés, repère et raccourci vers le minimum. Date choisie, disponible exact, revenus/paiements et renouvellements affichés dessous. Conservation de l’alerte distincte sur 90 jours et du jour choisi lors des rafraîchissements. Même composant en lecture simplifiée. Aucune modification du moteur ou des données.

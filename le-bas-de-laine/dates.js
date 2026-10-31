@@ -79,6 +79,7 @@ export function occurrences(rule, from, to) {
         rule_id: rule.id,
         date: info.date,
         original_on: info.date,
+        ...(rule.frequency === "rrq" ? { estimated: info.estimated } : {}),
         ...(info.nominal !== info.date ? { nominal_on: info.nominal } : {}),
         name: rule.name,
         kind: rule.kind,

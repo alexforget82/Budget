@@ -1,8 +1,8 @@
 {
-  "version": "0.4.5",
+  "version": "0.4.6",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 89,
+    "passed": 92,
     "failed": 0,
     "skipped": 0
   },
@@ -80,7 +80,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 87,
+    "passed": 90,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
@@ -134,5 +134,16 @@
     ],
     "principal_text_pair_minimum_contrast": 5.4,
     "ios_hardware_icon_install_tested": false
+  },
+  "rrq": {
+    "provided_dates": [
+      "2026-11-30",
+      "2026-12-30"
+    ],
+    "independently_authenticated": false,
+    "2027_list_user_classification": "estimation à vérifier",
+    "unprovided_months": "last-business-day estimate, flagged",
+    "duplicate_december_deposit_test": true,
+    "paid_state_conversion_test": true
   }
 }

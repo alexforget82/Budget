@@ -342,9 +342,11 @@ export function simulate(state, reference, horizon = 90, purchase = null) {
       .filter((e) => e.date <= addDays(reference, 13))
       .sort((a, b) => a.date.localeCompare(b.date)),
     warnings: [
-      ...(rules.some((r) => r.frequency === "rrq")
+      ...(events.some(
+        (e) => e.estimated && e.date >= reference && e.date <= last,
+      )
         ? [
-            "Les dates RRQ sont estimées : confirmez le calendrier officiel de Retraite Québec.",
+            "Certaines dates RRQ restent estimées : seules les dates fournies de novembre et décembre 2026 sont intégrées au calendrier.",
           ]
         : []),
       ...(!nextPay

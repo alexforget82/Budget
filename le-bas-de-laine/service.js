@@ -149,6 +149,7 @@ export function createService(store, clock = today) {
             date: actual,
             shifted: info.nominal !== actual,
             manual: !!action?.postponed_on,
+            ...(x.frequency === "rrq" ? { estimated: info.estimated } : {}),
           });
       }
       if (dates.length === 3 || x.one_time) break;
@@ -156,7 +157,7 @@ export function createService(store, clock = today) {
     return {
       dates,
       calendar: "Fermetures du système de paiement canadien",
-      estimated: x.frequency === "rrq",
+      estimated: dates.some((d) => d.estimated),
     };
   }
   function preserveOccurrenceStates(old, next) {
@@ -499,7 +500,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.4.5",
+      version: "0.4.6",
       configured: setting("configured", false),
       theme: "system",
       simulation,
