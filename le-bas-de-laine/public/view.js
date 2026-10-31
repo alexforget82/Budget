@@ -424,41 +424,50 @@ export function todayView(
     "Vos limites",
     openCategory ? button("Gérer", openCategory, "text-button") : null,
   );
+  limits.classList.add("limits-overview");
   for (const c of sim.categories) {
-    const row = node("div", null, "category-row"),
-      top = node("div", null, "category-top"),
-      sub = node("div", null, "category-sub"),
-      current = c.current;
-    top.append(
+    const current = c.current,
+      row = node("div", null, "category-row limit-overview-row"),
+      title = node("div", null, "limit-title"),
+      spent = current?.spent_cents || 0;
+    title.append(
       node("h3", c.name),
-      node(
-        "span",
-        money(current?.remaining_cents || 0),
-        "money" +
-          ((current?.spent_cents || 0) > c.limit_cents ? " negative" : ""),
-      ),
+      node("small", c.period === "weekly" ? "Par semaine" : "Par mois"),
     );
-    sub.append(
-      node("span", "restant sur " + money(c.limit_cents)),
-      node(
-        "span",
-        current?.date > sim.reference
-          ? "Début " + shortDate(current.date)
-          : "Renouvelle " + shortDate(c.next),
-      ),
-    );
-    const bar = node("div", null, "bar"),
-      fill = node("i");
-    fill.style.width =
-      Math.min(
-        100,
-        Math.max(
-          0,
-          ((current?.spent_cents || 0) / Math.max(1, c.limit_cents)) * 100,
+    row.append(title);
+    for (const [label, amount, kind] of [
+      ["Limite", c.limit_cents, "limit"],
+      ["Dépensé", spent, "spent"],
+      ["Restant", current?.remaining_cents || 0, "remaining"],
+    ]) {
+      const cell = node("div", null, "limit-figure " + kind);
+      cell.append(
+        node("small", label),
+        node(
+          "strong",
+          money(amount),
+          kind === "spent" && spent > c.limit_cents ? "negative" : "",
         ),
-      ) + "%";
-    bar.append(fill);
-    row.append(top, sub, bar);
+      );
+      row.append(cell);
+    }
+    const next = node("div", null, "limit-next");
+    next.append(
+      node("small", current?.date > sim.reference ? "Début" : "Renouvelle"),
+      node(
+        "strong",
+        shortDate(current?.date > sim.reference ? current.date : c.next),
+      ),
+    );
+    row.append(next);
+    if (spent > c.limit_cents)
+      row.append(
+        node(
+          "small",
+          "Dépassement : " + money(spent - c.limit_cents),
+          "negative limit-excess",
+        ),
+      );
     limits.append(row);
   }
   if (!sim.categories.length)

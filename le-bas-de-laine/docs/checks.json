@@ -1,8 +1,8 @@
 {
-  "version": "0.4.6",
+  "version": "0.5.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 92,
+    "passed": 96,
     "failed": 0,
     "skipped": 0
   },
@@ -49,7 +49,11 @@
       "slider keyboard and direct SVG pointer selection, minimum jump",
       "selected-day events and protected-limit renewals",
       "90-day warning remains separate from 30-day explorer",
-      "readonly shared explorer parity and identical tables after navigation"
+      "readonly shared explorer parity and identical tables after navigation",
+      "transfer edit/delete with confirmation and persistent filters",
+      "description/category/account accent-insensitive search with category and month filters",
+      "exact limit/spent/remaining/renewal overview",
+      "simple shared purchase decision with optional category/card/date"
     ]
   },
   "comparison": {
@@ -76,11 +80,10 @@
   },
   "known_limits": [
     "Imported Sillage envelope funding/dated payments/schedules may require manual review and keep amounts provisional.",
-    "Transaction edits are available; transfer edit/delete is not yet exposed.",
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 90,
+    "passed": 94,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
@@ -145,5 +148,16 @@
     "unprovided_months": "last-business-day estimate, flagged",
     "duplicate_december_deposit_test": true,
     "paid_state_conversion_test": true
+  },
+  "shared_purchase": {
+    "same_engine_as_owner": true,
+    "writes": false,
+    "result_fields": [
+      "allowed",
+      "provisional"
+    ],
+    "cross_origin_rejected": true,
+    "revoked_token_rejected": true,
+    "private_guest_write_rejected": true
   }
 }

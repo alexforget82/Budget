@@ -1,3 +1,4 @@
+import { purchaseQuote } from "./purchase.js";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -5,8 +6,7 @@ import { fileURLToPath } from "node:url";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { validateState } from "./validation.js";
 import { openDatabase } from "./database.js";
-import { simulate } from "./engine.js";
-import { createService, cents } from "./service.js";
+import { createService } from "./service.js";
 import { today, validDate, addDays } from "./dates.js";
 import { planSillage, applySillage, hash } from "./import.js";
 import { previewCSV } from "./csv.js";
@@ -94,11 +94,14 @@ function handler(isPrivate) {
         return reply(res, 403, { error: "Hôte refusé." });
       const url = new URL(req.url, origin),
         shared = url.pathname.match(
-          /^\/s\/([^/]+)(\/data|\/manifest.webmanifest)?$/,
+          /^\/s\/([^/]+)(\/data|\/manifest.webmanifest|\/purchase)?$/,
         ),
         token = store.setting("share_token");
       const sharedRequest =
-        shared && same(shared[1], token) && req.method === "GET";
+        shared &&
+        same(shared[1], token) &&
+        (req.method === "GET" ||
+          (shared[2] === "/purchase" && req.method === "POST"));
       if (
         isPrivate &&
         !sharedRequest &&
@@ -121,10 +124,39 @@ function handler(isPrivate) {
       if (shared) {
         if (!sharedRequest)
           return reply(res, 404, { error: "Lien indisponible." });
+        if (shared[2] === "/purchase") {
+          if (req.method !== "POST")
+            return reply(res, 404, { error: "Lien indisponible." });
+          if (
+            !req.headers["content-type"]?.startsWith("application/json") ||
+            (req.headers.origin && req.headers.origin !== origin) ||
+            req.headers["sec-fetch-site"] === "cross-site"
+          )
+            return reply(res, 403, { error: "Origine ou format refusé." });
+          const quote = purchaseQuote(store.state(), today(), await body(req), {
+            provisional: !!store
+              .setting("sillage_import")
+              ?.warnings?.some((w) => w.blocking),
+          });
+          return reply(res, 200, {
+            allowed: quote.allowed,
+            provisional: quote.provisional,
+          });
+        }
         if (shared[2] === "/data")
           return reply(res, 200, {
-            version: "0.4.6",
+            version: "0.5.0",
             simulation: currentState().simulation,
+            purchase_options: {
+              accounts: store
+                .state()
+                .accounts.filter((a) => a.is_main || a.kind === "card")
+                .map((a) => ({ id: a.id, name: a.name })),
+              categories: store
+                .state()
+                .categories.filter((c) => c.active && c.limit_cents !== null)
+                .map((c) => ({ id: c.id, name: c.name })),
+            },
           });
         const sharePath = "/s/" + shared[1];
         if (shared[2] === "/manifest.webmanifest") {
@@ -199,52 +231,16 @@ function handler(isPrivate) {
           });
           return reply(res, 200, currentState());
         }
-        if (url.pathname === "/api/purchase/preview") {
-          const data = store.state();
-          const amount = cents(x.amount);
-          if (
-            amount <= 0 ||
-            !validDate(x.date) ||
-            x.date < today() ||
-            x.date > addDays(today(), 60)
-          )
-            throw Error(
-              "Montant positif et date au plus 60 jours après aujourd’hui requis, pour vérifier 30 jours complets.",
-            );
-          const account = data.accounts.find(
-            (a) => a.id === Number(x.account_id),
+        if (url.pathname === "/api/purchase/preview")
+          return reply(
+            res,
+            200,
+            purchaseQuote(store.state(), today(), x, {
+              provisional: !!store
+                .setting("sillage_import")
+                ?.warnings?.some((w) => w.blocking),
+            }),
           );
-          if (!account || !(account.is_main || account.kind === "card"))
-            throw Error("Choisissez le compte principal ou une carte.");
-          const category_id = x.category_id ? Number(x.category_id) : null;
-          if (category_id && !data.categories.some((c) => c.id === category_id))
-            throw Error("Catégorie introuvable.");
-          const baseline = simulate(data, today());
-          const result = simulate(data, today(), 90, {
-            amount_cents: amount,
-            date: x.date,
-            account_id: account.id,
-            category_id,
-            period_on: null,
-          });
-          const window = result.daily.filter(
-            (d) => d.date >= x.date && d.date <= addDays(x.date, 29),
-          );
-          const min = window.reduce((a, b) =>
-            a.safe_cents < b.safe_cents ? a : b,
-          );
-          const provisional = currentState().simulation.provisional;
-          return reply(res, 200, {
-            allowed: !provisional && min.safe_cents >= 0,
-            provisional,
-            minimum_cents: min.safe_cents,
-            minimum_on: min.date,
-            maximum_cents: Math.max(...window.map((d) => d.safe_cents)),
-            days: window.length,
-            available_cents: result.available_cents,
-            baseline_available_cents: baseline.available_cents,
-          });
-        }
         if (url.pathname === "/api/recurrence/preview")
           return reply(res, 200, service.previewRecurrence(x));
         if (url.pathname === "/api/restore") {

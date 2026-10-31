@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.6**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.5.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -198,3 +198,12 @@ Les dates reçues de l’utilisateur sont intégrées pour **30 novembre 2026** 
 L’utilisateur a indiqué que sa liste 2027 était une estimation à vérifier. Elle n’est pas intégrée comme calendrier confirmé. Pour les mois sans date fournie, l’application conserve l’estimation du dernier jour ouvrable et un avertissement si elle tombe dans la prévision. En particulier, le 30 septembre 2027 est une fermeture bancaire : l’estimation est le 29 septembre, sans prétendre confirmer une date officielle RRQ. Les jours corrects sont mardi 30 novembre et jeudi 30 décembre 2027, mais ces libellés corrigés ne confirment pas les dates de versement.
 
 Une décision déjà associée au 31 décembre 2026 est déplacée vers la même occurrence du 30, en conservant paiement/report/annulation et transaction réelle. Sauvegarde automatique avant conversion effective; les anciennes sauvegardes et imports Sillage restent compatibles.
+
+## Quatre améliorations quotidiennes — 0.5.0
+
+1. **Transactions → Modifier sur un virement** : corrigez description, montant, date et comptes, ou supprimez avec confirmation. L’ordre de saisie et l’indicateur « déjà compris dans le solde » sont préservés. Pour un virement lié à une échéance, les comptes restent fixes; supprimer le virement rouvre son échéance et conserve son report/montant particulier. Les points de contrôle bancaires existants restent la référence : une correction historique ne réécrit pas un solde déjà vérifié.
+2. **Filtres Transactions** : recherche sans distinction d’accents dans description/catégorie/comptes, mois, compte, catégorie, Sans catégorie ou Virements seulement. Les filtres restent après modification. Le pied affiche les totaux filtrés; les virements sont indiqués à part, hors revenus/dépenses et hors net. Choisir le compte destinataire affiche le virement entrant.
+3. **Vos limites** : une liste compacte réunit limite par semaine/mois, dépensé, restant et prochain renouvellement. Les périodes restent distinctes, sans équivalent mensuel fictif. Les dépassements sont indiqués. La vue partagée utilise les mêmes montants.
+4. **Lien simplifié → Puis-je faire cet achat ?** : entrez le montant, puis Vérifier. Résultat Oui/Non; si l’import est provisoire, À vérifier remplace toute autorisation. Sous Options, choisissez éventuellement une date, une carte ou une limite pour un achat déjà prévu. Le même moteur vérifie 30 journées complètes que dans la vue propriétaire. Aucune transaction n’est créée. Les champs minimum/maximum restent dans la version complète.
+
+Les liens iPhone existants sont conservés : actualisez la page après installation. Le simulateur partagé n’ouvre aucun accès aux modifications ou exports. Son API renvoie uniquement la décision et le statut provisoire; les choix de carte/limite contiennent nom et identifiant, sans solde secondaire ni historique supplémentaire.

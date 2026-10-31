@@ -1,3 +1,7 @@
+# 0.5.0 — suivi quotidien simplifié
+
+Modification/suppression des virements, protection des liens d’échéance et des soldes vérifiés. Recherche accent-insensible et filtres catégorie/mois/compte, totaux séparant virements et opérations réelles, conservation des filtres après correction. Liste compacte des limites : limite/dépensé/restant/renouvellement. Simulateur Oui/Non dans le lien simplifié, avec options facultatives, même calcul que le propriétaire et API strictement en lecture. Trois écrans et schéma existants conservés.
+
 # 0.4.6 — dates RRQ fournies de fin 2026
 
 La fréquence RRQ utilise le 30 novembre et le 30 décembre 2026 fournis par l’utilisateur, sans produire un second versement le 31 décembre. Aperçus par date fournie/estimée et avertissement ciblé pour les mois non renseignés. Conversion protégée des décisions déjà enregistrées avec l’ancienne estimation du 31 décembre. Les autres fréquences sont inchangées. Liste 2027 explicitement déclarée estimative par l’utilisateur : non intégrée comme calendrier confirmé.

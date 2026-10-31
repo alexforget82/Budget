@@ -19,6 +19,7 @@ let state,
   saveEditor,
   step = 0,
   setupHelpVisible = true,
+  transactionFilters = { search: "", month: null, account: "", category: "" },
   calendarChoice = { mode: "month", month: null, selected: null, open: false },
   wizard = {
     account_name: "Conjoint",
@@ -271,7 +272,12 @@ function render() {
   }
   $("#new-transaction").hidden = !!shared || !state.configured;
   if (shared) {
-    $("#main").replaceChildren(todayView(state.simulation, { shared: true }));
+    $("#main").replaceChildren(
+      todayView(state.simulation, {
+        shared: true,
+        openPurchase: purchaseEditor,
+      }),
+    );
     return;
   }
   if (!state.configured) {
@@ -569,51 +575,181 @@ async function occurrenceAction(o, action) {
     toast(e.message);
   }
 }
+function transferEditor(t) {
+  const amount = amountField("amount", t.amount_cents / 100),
+    description = required(input("description", "text", t.description)),
+    date = required(input("date", "date", t.date)),
+    from = accounts(t.from_account_id, true),
+    to = accounts(t.to_account_id),
+    included = input("included", "checkbox");
+  date.max = dateNow();
+  included.checked = !!t.included;
+  const check = node("label", null, "check");
+  check.append(included, node("span", "Déjà compris dans le solde bancaire"));
+  const linked = state.occurrence_states.some((o) => o.transfer_id === t.id);
+  from.disabled = to.disabled = linked;
+  const content = [
+    field("Description", description),
+    field("Montant", amount),
+    field("Date réelle", date),
+    field("De", from),
+    field("Vers", to),
+    check,
+  ];
+  if (linked)
+    content.push(
+      node(
+        "p",
+        "Ce virement règle une échéance. Son montant et sa date restent modifiables; ses comptes sont conservés.",
+        "muted",
+      ),
+    );
+  const checkpoint = state.checkpoints.some(
+    (c) =>
+      c.seq >= t.seq &&
+      [t.from_account_id, t.to_account_id].includes(c.account_id),
+  );
+  if (checkpoint)
+    content.push(
+      node(
+        "p",
+        "Un solde vérifié inclut déjà ce virement. Sa correction ne réécrit pas ce solde.",
+        "muted",
+      ),
+    );
+  content.push(
+    button(
+      "Supprimer ce virement",
+      () => {
+        modal(
+          "Supprimer ce virement ?",
+          [
+            node(
+              "p",
+              t.description +
+                " · " +
+                money(t.amount_cents) +
+                " · " +
+                shortDate(t.date),
+            ),
+            node(
+              "p",
+              linked
+                ? "L’échéance associée redeviendra à traiter. La prévision sera recalculée."
+                : "Le virement sera retiré et la prévision recalculée. Les soldes déjà vérifiés restent inchangés.",
+              "muted",
+            ),
+          ],
+          () =>
+            send(
+              "/api/transfer",
+              { id: t.id, action: "delete" },
+              "Virement supprimé",
+            ),
+          "Supprimer",
+        );
+      },
+      "text-button negative",
+    ),
+  );
+  modal("Modifier le virement", content, () =>
+    send("/api/transfer", {
+      id: t.id,
+      amount: amount.value,
+      description: description.value,
+      date: date.value,
+      from_account_id: from.value,
+      to_account_id: to.value,
+      included: included.checked,
+    }),
+  );
+}
 function transactionsView() {
   const root = node("div"),
     heading = node("div", null, "page-heading");
   heading.append(node("h1", "Transactions"));
   root.append(heading);
   const filters = node("div", null, "filters"),
-    search = input("search", "search"),
-    month = input("month", "month", dateNow().slice(0, 7)),
-    account = select("filter-account", [
-      ["", "Tous les comptes"],
-      ...state.accounts.map((a) => [a.id, a.name]),
-    ]);
-  search.placeholder = "Rechercher";
+    search = input("search", "search", transactionFilters.search),
+    month = input(
+      "month",
+      "month",
+      transactionFilters.month ?? dateNow().slice(0, 7),
+    ),
+    account = select(
+      "filter-account",
+      [["", "Tous les comptes"], ...state.accounts.map((a) => [a.id, a.name])],
+      transactionFilters.account,
+    ),
+    category = select(
+      "filter-category",
+      [
+        ["", "Toutes les catégories"],
+        ["none", "Sans catégorie"],
+        ["transfers", "Virements seulement"],
+        ...state.categories.map((c) => [c.id, c.name]),
+      ],
+      transactionFilters.category,
+    );
+  search.placeholder = "Description, catégorie ou compte";
   search.setAttribute("aria-label", "Rechercher une transaction");
   month.setAttribute("aria-label", "Mois");
   account.setAttribute("aria-label", "Filtrer par compte");
+  category.setAttribute("aria-label", "Filtrer par catégorie");
   const actions = node("div", null, "actions");
   actions.append(button("Importer un CSV", csvEditor));
-  filters.append(search, month, account, actions);
+  filters.append(search, month, account, category, actions);
   root.append(filters);
   const wrapper = node("div", null, "table-wrap ledger"),
     table = node("table"),
     thead = node("thead"),
     header = node("tr");
-  for (const t of ["Date", "Description", "Catégorie · compte", "Montant", ""])
-    header.append(node("th", t, t === "Montant" ? "amount" : ""));
+  for (const title of [
+    "Date",
+    "Description",
+    "Catégorie · compte",
+    "Montant",
+    "",
+  ])
+    header.append(node("th", title, title === "Montant" ? "amount" : ""));
   thead.append(header);
   const tbody = node("tbody");
   table.append(thead, tbody);
   const foot = node("div", null, "table-foot");
+  foot.setAttribute("aria-live", "polite");
   wrapper.append(table, foot);
   root.append(wrapper);
-  const draw = () => {
+  const norm = (text) =>
+    String(text || "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLocaleLowerCase("fr-CA")
+      .trim();
+  function draw() {
+    transactionFilters = {
+      search: search.value,
+      month: month.value,
+      account: account.value,
+      category: category.value,
+    };
     tbody.replaceChildren();
+    const accountName = (id) =>
+        state.accounts.find((a) => a.id === id)?.name || "",
+      categoryName = (t) =>
+        t.kind === "transfer"
+          ? "Virement"
+          : state.categories.find((c) => c.id === t.category_id)?.name ||
+            "Sans catégorie";
     const list = [
       ...state.transactions.map((t) => ({ ...t, kind: "transaction" })),
       ...state.transfers.map((t) => ({
-        id: t.id,
+        ...t,
         kind: "transfer",
-        seq: t.seq,
-        date: t.date,
-        description: t.description,
-        amount_cents: -t.amount_cents,
         account_id: t.from_account_id,
-        to_account_id: t.to_account_id,
+        amount_cents:
+          account.value && String(t.to_account_id) === account.value
+            ? t.amount_cents
+            : -t.amount_cents,
       })),
     ]
       .filter(
@@ -622,42 +758,54 @@ function transactionsView() {
           (!account.value ||
             String(t.account_id) === account.value ||
             String(t.to_account_id) === account.value) &&
-          t.description
-            .toLocaleLowerCase("fr-CA")
-            .includes(search.value.toLocaleLowerCase("fr-CA")),
+          (!category.value ||
+            (category.value === "transfers"
+              ? t.kind === "transfer"
+              : t.kind === "transaction" &&
+                (category.value === "none"
+                  ? !t.category_id
+                  : String(t.category_id) === category.value))) &&
+          norm(
+            [
+              t.description,
+              categoryName(t),
+              accountName(t.account_id),
+              accountName(t.to_account_id),
+            ].join(" "),
+          ).includes(norm(search.value)),
       )
       .sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq);
     for (const t of list) {
       const row = node("tr"),
-        desc = node("td", t.description, "description"),
-        classification = node("td", null, "classification");
+        classification = node("td", null, "classification"),
+        edit = node("td", null, "edit");
       classification.append(
-        node(
-          "span",
-          t.kind === "transfer"
-            ? "Virement"
-            : state.categories.find((c) => c.id === t.category_id)?.name ||
-                "Sans catégorie",
-        ),
+        node("span", categoryName(t)),
         node(
           "small",
-          (state.accounts.find((a) => a.id === t.account_id)?.name || "") +
-            (t.kind === "transfer"
-              ? " → " +
-                state.accounts.find((a) => a.id === t.to_account_id)?.name
-              : ""),
+          accountName(t.account_id) +
+            (t.kind === "transfer" ? " → " + accountName(t.to_account_id) : ""),
         ),
       );
-      const edit = node("td", null, "edit");
-      if (t.kind === "transaction")
-        edit.append(
-          button("Modifier", () => transactionEditor(t), "text-button"),
-        );
+      edit.append(
+        button(
+          "Modifier",
+          () =>
+            t.kind === "transfer"
+              ? transferEditor(state.transfers.find((v) => v.id === t.id))
+              : transactionEditor(t),
+          "text-button",
+        ),
+      );
       row.append(
         node("td", shortDate(t.date), "date"),
-        desc,
+        node("td", t.description, "description"),
         classification,
-        node("td", money(t.amount_cents), "amount money"),
+        node(
+          "td",
+          (t.kind === "transfer" ? "↔ " : "") + money(t.amount_cents),
+          "amount money",
+        ),
         edit,
       );
       tbody.append(row);
@@ -665,12 +813,15 @@ function transactionsView() {
     const real = list.filter((t) => t.kind === "transaction"),
       income = real
         .filter((t) => t.amount_cents > 0)
-        .reduce((s, t) => s + t.amount_cents, 0),
+        .reduce((n, t) => n + t.amount_cents, 0),
       expense = -real
         .filter((t) => t.amount_cents < 0)
-        .reduce((s, t) => s + t.amount_cents, 0);
+        .reduce((n, t) => n + t.amount_cents, 0),
+      transfers = list
+        .filter((t) => t.kind === "transfer")
+        .reduce((n, t) => n + Math.abs(t.amount_cents), 0);
     foot.replaceChildren(
-      node("span", list.length + " opérations"),
+      node("span", list.length + " opération" + (list.length === 1 ? "" : "s")),
       node(
         "span",
         "Entrées " +
@@ -678,23 +829,24 @@ function transactionsView() {
           " · Sorties " +
           money(expense) +
           " · Net " +
-          money(income - expense),
+          money(income - expense) +
+          (transfers ? " · Virements (hors net) " + money(transfers) : ""),
       ),
     );
     if (!list.length) {
       const row = node("tr"),
-        td = node("td", "Aucune opération pour ces filtres.", "empty");
-      td.colSpan = 5;
-      row.append(td);
+        cell = node("td", "Aucune opération pour ces filtres.", "empty");
+      cell.colSpan = 5;
+      row.append(cell);
       tbody.append(row);
     }
-  };
+  }
   search.oninput = draw;
-  month.onchange = draw;
-  account.onchange = draw;
+  month.onchange = account.onchange = category.onchange = draw;
   draw();
   return root;
 }
+
 function categoryEditor(c) {
   const name = required(input("name", "text", c?.name || "")),
     amount = amountField(
@@ -1758,58 +1910,87 @@ function purchaseEditor() {
     date = required(input("date", "date", dateNow())),
     account = select(
       "account_id",
-      state.accounts
-        .filter((a) => a.is_main || a.kind === "card")
-        .map((a) => [a.id, a.name]),
+      (shared
+        ? state.purchase_options.accounts
+        : state.accounts.filter((a) => a.is_main || a.kind === "card")
+      ).map((a) => [a.id, a.name]),
     ),
     category = select("category_id", [
       ["", "Sans catégorie"],
-      ...state.categories.filter((c) => c.active).map((c) => [c.id, c.name]),
+      ...(shared
+        ? state.purchase_options.categories
+        : state.categories.filter((c) => c.active)
+      ).map((c) => [c.id, c.name]),
     ]),
     result = node("div", null, "purchase-result");
   date.min = dateNow();
   date.max = addDays(dateNow(), 60);
+  let revision = 0;
   for (const el of [amount, date, account, category]) {
-    el.addEventListener("input", () => result.replaceChildren());
-    el.addEventListener("change", () => result.replaceChildren());
+    el.addEventListener("input", () => {
+      revision++;
+      result.replaceChildren();
+    });
+    el.addEventListener("change", () => {
+      revision++;
+      result.replaceChildren();
+    });
   }
+  const options = node("details", null, "details-options");
+  options.append(
+    node("summary", "Options : date, carte ou limite"),
+    field("Date de l’achat", date),
+    field("Moyen de paiement", account),
+    field("Catégorie (si prévue dans une limite)", category),
+  );
   modal(
     "Puis-je faire cet achat ?",
-    [
-      field("Montant", amount),
-      field("Date de l’achat", date),
-      field("Moyen de paiement", account),
-      field("Catégorie (si prévue dans une limite)", category),
-      result,
-    ],
+    shared
+      ? [field("Montant", amount), options, result]
+      : [
+          field("Montant", amount),
+          field("Date de l’achat", date),
+          field("Moyen de paiement", account),
+          field("Catégorie (si prévue dans une limite)", category),
+          result,
+        ],
     async () => {
-      const r = await request("/api/purchase/preview", {
-        amount: amount.value,
-        date: date.value,
-        account_id: account.value,
-        category_id: category.value,
-      });
+      const ticket = revision;
+      const r = await request(
+        shared ? shared[0] + "/purchase" : "/api/purchase/preview",
+        {
+          amount: amount.value,
+          date: date.value,
+          account_id: account.value,
+          category_id: category.value,
+        },
+      );
+      if (ticket !== revision) return false;
       result.replaceChildren(
         node(
           "h2",
           r.provisional ? "À vérifier" : r.allowed ? "Oui" : "Non",
           r.allowed ? "positive" : "negative",
         ),
-        node(
-          "p",
-          "Minimum après achat : " +
-            money(r.minimum_cents) +
-            " · " +
-            shortDate(r.minimum_on),
-        ),
-        node(
-          "p",
-          "Maximum : " +
-            money(r.maximum_cents) +
-            " · " +
-            r.days +
-            " jours vérifiés",
-        ),
+        ...(shared
+          ? []
+          : [
+              node(
+                "p",
+                "Minimum après achat : " +
+                  money(r.minimum_cents) +
+                  " · " +
+                  shortDate(r.minimum_on),
+              ),
+              node(
+                "p",
+                "Maximum : " +
+                  money(r.maximum_cents) +
+                  " · " +
+                  r.days +
+                  " jours vérifiés",
+              ),
+            ]),
         node("small", "Simulation seulement. Aucune transaction enregistrée."),
       );
       return false;

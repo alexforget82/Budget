@@ -1,3 +1,13 @@
+# Vérifications — 0.5.0
+
+96 tests Node réussis. Nouveaux cas : correction de paiements de carte partiels/complets/excédentaires sans seconde déduction, suppression rétablissant les achats à payer, correction des virements d’épargne, conservation de l’ordre et des soldes bancaires vérifiés. La suppression d’un virement lié rouvre l’échéance; les modifications invalides sont refusées atomiquement.
+
+L’API du simulateur partagé donne les mêmes décisions que la version propriétaire (achat non prévu/couvert, compte/carte et date). Elle renvoie seulement allowed/provisional, rejette les origines croisées, les dates/montants invalides et les liens révoqués. Les tables exportées restent identiques après les simulations. Les vérifications Tailscale avec en-têtes simulés confirment que la conjointe peut simuler via son lien, sans modifier un virement ni accéder à l’export.
+
+`tests/daily-tools-ui.py` couvre modification/suppression avec confirmation, filtres accent/catégorie/compte et totaux, conservation des filtres après correction, limites exactes et simulateur partagé avec résultat simple/options. 320/390/768/1440 pixels, clair/sombre, sans débordement. Le parcours général passe aussi. Captures fictives dans `daily-tools/`; aucun test matériel iPhone revendiqué. Archive autonome : 94 tests réussis, deux références Sillage externes omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.6
 
 92 tests Node réussis. Nouveaux cas : dates RRQ novembre/décembre 2026, absence d’effet sur les autres règles de fin de mois, estimation janvier 2027 clairement distinguée, et prévision d’un seul versement le 30 décembre sans revenu additionnel le 31. Une base simulant 0.4.5 est rouverte : un revenu déjà reçu conserve sa transaction et sa date réelle, sa clé devient celle du 30 décembre, une sauvegarde précède le changement et la conversion est idempotente.

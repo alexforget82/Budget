@@ -246,24 +246,31 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
   const f = await launch(t, true);
   await setup(f);
   const share = (await f.call("/api/share", { action: "create" })).result.path;
-  const raw = (url, login) =>
+  const raw = (url, login, data) =>
     new Promise((resolve, reject) => {
-      http
-        .get(
-          "http://127.0.0.1:3041" + url,
-          {
-            headers: {
-              Host: "budget.example.ts.net:8443",
-              ...(login ? { "Tailscale-User-Login": login } : {}),
-            },
+      const req = http.request(
+        "http://127.0.0.1:3041" + url,
+        {
+          method: data ? "POST" : "GET",
+          headers: {
+            Host: "budget.example.ts.net:8443",
+            ...(login ? { "Tailscale-User-Login": login } : {}),
+            ...(data
+              ? {
+                  "Content-Type": "application/json",
+                  Origin: "https://budget.example.ts.net:8443",
+                }
+              : {}),
           },
-          (r) => {
-            let text = "";
-            r.on("data", (b) => (text += b));
-            r.on("end", () => resolve({ status: r.statusCode, text }));
-          },
-        )
-        .on("error", reject);
+        },
+        (res) => {
+          let text = "";
+          res.on("data", (b) => (text += b));
+          res.on("end", () => resolve({ status: res.statusCode, text }));
+        },
+      );
+      req.on("error", reject);
+      req.end(data ? JSON.stringify(data) : undefined);
     });
   assert.equal((await raw("/api/state")).status, 403);
   assert.equal((await raw("/api/state", "wife@example.com")).status, 403);
@@ -271,6 +278,27 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
   assert.equal((await raw(share + "/data", "wife@example.com")).status, 200);
   assert.equal((await raw("/styles.css", "wife@example.com")).status, 200);
   assert.equal((await raw("/api/export", "wife@example.com")).status, 403);
+  const quote = await raw(share + "/purchase", "wife@example.com", {
+    amount: 10,
+  });
+  assert.equal(quote.status, 200);
+  assert.deepEqual(Object.keys(JSON.parse(quote.text)).sort(), [
+    "allowed",
+    "provisional",
+  ]);
+  assert.equal(
+    (
+      await raw("/api/transfer", "wife@example.com", {
+        id: 1,
+        action: "delete",
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await raw(share + "/purchase", null, { amount: 10 })).status,
+    403,
+  );
 });
 test("trial reset requires exact confirmation, preserves a backup and clears only its own eight tables", async (t) => {
   const f = await launch(t);
@@ -358,4 +386,50 @@ test("readonly purchase preview uses limits and does not debit or create anythin
     { amount: 1, date: today(), account_id: savings.id },
     400,
   );
+});
+
+test("shared purchase simulation matches owner decisions and cannot write or expose full projections", async (t) => {
+  const f = await launch(t);
+  let state = await setup(f);
+  state = await f.call("/api/account", { name: "Carte" });
+  const bank = state.accounts.find((a) => a.is_main),
+    card = state.accounts.find((a) => a.kind === "card"),
+    category = state.categories.find((c) => c.limit_cents !== null);
+  const share = (await f.call("/api/share", { action: "create" })).result.path;
+  const before = (await f.call("/api/export")).tables;
+  const data = await f.call(share + "/data");
+  assert.deepEqual(
+    data.purchase_options.accounts.map((a) => Object.keys(a).sort()),
+    [
+      ["id", "name"],
+      ["id", "name"],
+    ],
+  );
+  assert.equal(data.accounts, undefined);
+  for (const x of [
+    { amount: 10 },
+    { amount: 100000 },
+    { amount: 50, category_id: category.id, account_id: card.id },
+    { amount: 50, date: addDays(today(), 2), account_id: bank.id },
+  ]) {
+    const full = await f.call("/api/purchase/preview", x),
+      simple = await f.call(share + "/purchase", x);
+    assert.deepEqual(simple, {
+      allowed: full.allowed,
+      provisional: full.provisional,
+    });
+    assert.equal(simple.minimum_cents, undefined);
+  }
+  await f.call(share + "/purchase", { amount: 10 }, 403, {
+    Origin: "https://elsewhere.example",
+  });
+  await f.call(share + "/purchase", { amount: 10 }, 403, {
+    "Sec-Fetch-Site": "cross-site",
+  });
+  await f.call(share + "/purchase", { amount: -1 }, 400);
+  await f.call(share + "/purchase", undefined, 404);
+  await f.call(share + "/data", { amount: 10 }, 404);
+  assert.deepEqual((await f.call("/api/export")).tables, before);
+  await f.call("/api/share", { action: "revoke" });
+  await f.call(share + "/purchase", { amount: 10 }, 404);
 });

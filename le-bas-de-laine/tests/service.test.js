@@ -658,3 +658,157 @@ test("Sillage June payment imports into its national key and can be reimported w
   );
   assert.equal(db.state().transactions.length, 1);
 });
+
+test("editing and deleting card payments recomputes protection without a second debit", (t) => {
+  const { db, api, bank } = fixture(t);
+  const card = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Carte','card')")
+      .lastInsertRowid,
+  );
+  db.atomic(() =>
+    api.transaction({
+      account_id: card,
+      amount: -100,
+      date,
+      description: "Achat",
+    }),
+  );
+  const baseline = api.snapshot().simulation.available_cents;
+  const id = db.atomic(() =>
+    api.transfer({
+      from_account_id: bank,
+      to_account_id: card,
+      amount: 50,
+      date,
+      description: "Paiement",
+    }),
+  );
+  const seq = db.state().transfers[0].seq;
+  for (const [amount, bankExpected, held, delta] of [
+    [100, 90000, 0, 0],
+    [150, 85000, 0, -5000],
+    [50, 95000, 5000, 0],
+  ]) {
+    db.atomic(() =>
+      api.transfer({
+        id,
+        from_account_id: bank,
+        to_account_id: card,
+        amount,
+        date,
+        description: "Corrigé",
+      }),
+    );
+    const s = api.snapshot();
+    assert.equal(s.simulation.bank_cents, bankExpected);
+    assert.equal(s.simulation.card_cents, held);
+    assert.equal(s.simulation.available_cents, baseline + delta);
+    assert.equal(s.transfers[0].seq, seq);
+    assert.equal(s.transfers[0].dirty, 1);
+  }
+  db.atomic(() => api.transfer({ id, action: "delete" }));
+  const s = api.snapshot();
+  assert.equal(s.transfers.length, 0);
+  assert.equal(s.simulation.bank_cents, 100000);
+  assert.equal(s.simulation.card_cents, 10000);
+  assert.equal(s.simulation.available_cents, baseline);
+});
+test("savings transfer corrections preserve entry order and authoritative checkpoints", (t) => {
+  const { db, api, bank } = fixture(t);
+  const savings = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Épargne','bank')")
+      .lastInsertRowid,
+  );
+  const id = db.atomic(() =>
+    api.transfer({
+      from_account_id: bank,
+      to_account_id: savings,
+      amount: 100,
+      date,
+      description: "Épargne",
+    }),
+  );
+  db.atomic(() =>
+    api.transfer({
+      id,
+      from_account_id: bank,
+      to_account_id: savings,
+      amount: 200,
+      date,
+      description: "Épargne corrigée",
+    }),
+  );
+  assert.equal(api.snapshot().simulation.bank_cents, 80000);
+  db.atomic(() => api.checkpoint({ account_id: bank, amount: 800 }));
+  db.atomic(() =>
+    api.transfer({
+      id,
+      from_account_id: bank,
+      to_account_id: savings,
+      amount: 150,
+      date,
+      description: "Historique corrigé",
+    }),
+  );
+  assert.equal(api.snapshot().simulation.bank_cents, 80000);
+  db.atomic(() => api.transfer({ id, action: "delete" }));
+  assert.equal(api.snapshot().simulation.bank_cents, 80000);
+});
+test("deleting a linked transfer reopens its occurrence; invalid edits are atomic", (t) => {
+  const { db, api, bank } = fixture(t);
+  const card = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Carte','card')")
+      .lastInsertRowid,
+  );
+  const rule = db.atomic(() =>
+    api.recurrence({
+      name: "Paiement prévu",
+      kind: "transfer",
+      account_id: bank,
+      to_account_id: card,
+      amount: 20,
+      frequency: "monthly",
+      start_on: date,
+      day_adjust: "none",
+    }),
+  );
+  db.atomic(() =>
+    api.occurrence({ rule_id: rule, original_on: date, action: "pay", date }),
+  );
+  let s = db.state();
+  const transfer = s.transfers[0];
+  assert.equal(s.occurrence_states[0].status, "paid");
+  const before = db.exportData().tables;
+  assert.throws(() =>
+    db.atomic(() =>
+      api.transfer({
+        action: "update",
+        from_account_id: bank,
+        to_account_id: card,
+        amount: 20,
+        date,
+      }),
+    ),
+  );
+  assert.throws(() =>
+    db.atomic(() =>
+      api.transfer({
+        ...transfer,
+        id: transfer.id,
+        from_account_id: bank,
+        to_account_id: bank,
+        amount: 20,
+        date,
+      }),
+    ),
+  );
+  assert.deepEqual(db.exportData().tables, before);
+  db.atomic(() => api.transfer({ id: transfer.id, action: "delete" }));
+  s = db.state();
+  assert.equal(s.occurrence_states[0].status, "postponed");
+  assert.equal(s.occurrence_states[0].transfer_id, null);
+  assert.equal(
+    api.snapshot().simulation.upcoming.some((o) => o.rule_id === rule),
+    true,
+  );
+});

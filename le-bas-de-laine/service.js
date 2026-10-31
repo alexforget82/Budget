@@ -356,6 +356,21 @@ export function createService(store, clock = today) {
     return id;
   }
   function transfer(x) {
+    if (x.action && !["update", "delete"].includes(x.action))
+      throw Error("Action de virement invalide.");
+    const old = x.id
+      ? q("SELECT * FROM transfers WHERE id=?", Number(x.id))[0]
+      : null;
+    if ((x.id || x.action === "delete" || x.action === "update") && !old)
+      throw Error("Virement introuvable.");
+    if (x.action === "delete") {
+      run(
+        "UPDATE occurrence_states SET status='postponed',transfer_id=NULL WHERE transfer_id=?",
+        old.id,
+      );
+      run("DELETE FROM transfers WHERE id=?", old.id);
+      return old.id;
+    }
     const from = account(x.from_account_id),
       to = account(x.to_account_id),
       amount = cents(x.amount),
@@ -367,6 +382,26 @@ export function createService(store, clock = today) {
       on > clock()
     )
       throw Error("Paiement ou virement invalide.");
+    if (old) {
+      if (
+        (old.from_account_id !== from.id || old.to_account_id !== to.id) &&
+        q("SELECT 1 FROM occurrence_states WHERE transfer_id=?", old.id).length
+      )
+        throw Error(
+          "Ce virement règle une échéance : conservez ses comptes, ou supprimez-le pour rouvrir l’échéance avant de le recréer.",
+        );
+      run(
+        "UPDATE transfers SET from_account_id=?,to_account_id=?,amount_cents=?,date=?,description=?,included=?,dirty=1 WHERE id=?",
+        from.id,
+        to.id,
+        amount,
+        on,
+        name(x.description || old.description),
+        x.included === undefined ? old.included : x.included ? 1 : 0,
+        old.id,
+      );
+      return old.id;
+    }
     return Number(
       run(
         "INSERT INTO transfers(seq,from_account_id,to_account_id,amount_cents,date,description,included) VALUES(?,?,?,?,?,?,?)",
@@ -500,7 +535,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.4.6",
+      version: "0.5.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,
