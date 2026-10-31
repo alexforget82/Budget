@@ -236,7 +236,7 @@ test("host/origin/content type checks and static maquettes expose no budget data
   assert.equal(html.status, 200);
   assert.ok((await html.text()).includes("Données fictives"));
   const demo = await (await fetch(f.base + "/demo.json")).json();
-  assert.equal(demo.simulation.daily.length, 30);
+  assert.equal(demo.simulation.daily.length, 90);
   assert.ok(demo.simulation.available_cents > 0);
   const traversal = await fetch(f.base + "/%2e%2e/package.json");
   assert.equal(traversal.status, 404);

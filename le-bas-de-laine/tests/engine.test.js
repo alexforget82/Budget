@@ -269,14 +269,14 @@ test("income expected today is unavailable until receipt", () => {
     true,
   );
 });
-test("available before payday and minimum on 30 days are separate", () => {
+test("available before payday and minimum on 90 days are separate", () => {
   const s = base();
   s.recurrences[0].amount_cents = 10000;
   const sim = simulate(s, reference);
-  assert.equal(sim.daily.length, 30);
+  assert.equal(sim.daily.length, 90);
   assert.equal(sim.available_cents, 77000);
   assert.ok(sim.minimum_cents < 77000);
-  assert.throws(() => simulate(s, reference, 90));
+  assert.throws(() => simulate(s, reference, 91));
 });
 test("weekly and monthly boundaries include leap year", () => {
   const c = { period: "monthly", renewal_day: 31 };
@@ -332,4 +332,127 @@ test("pure simulation preserves inputs and reconciles every day", () => {
   assert.deepEqual(s, before);
   for (const d of sim.daily)
     assert.equal(d.cash_cents - d.card_cents - d.limits_cents, d.safe_cents);
+});
+test("a bill after day 30 triggers the 90-day warning without changing money available before pay", () => {
+  const s = base();
+  s.categories = [];
+  s.recurrences[0].amount_cents = 20000;
+  s.recurrences[0].one_time = 1;
+  s.recurrences.push({
+    id: 2,
+    name: "Taxes de janvier",
+    kind: "expense",
+    account_id: 1,
+    amount_cents: 200000,
+    frequency: "yearly",
+    one_time: 1,
+    start_on: "2027-01-12",
+    active: 1,
+  });
+  const short = simulate(s, reference, 30),
+    long = simulate(s, reference, 90);
+  assert.equal(long.available_cents, short.available_cents);
+  assert.equal(long.until, short.until);
+  assert.deepEqual(long.breakdown, short.breakdown);
+  assert.equal(long.daily.length, 90);
+  assert.equal(long.minimum_on, "2027-01-12");
+  assert.equal(long.minimum_cents, -80000);
+  assert.equal(long.risk.below_available, true);
+  assert.equal(long.risk.bills[0].name, "Taxes de janvier");
+});
+test("a distant payday still leaves the spending window capped at its unchanged 30 days", () => {
+  const s = base();
+  s.recurrences[0].start_on = "2026-12-15";
+  const short = simulate(s, reference, 30),
+    long = simulate(s, reference);
+  assert.equal(long.until, "2026-11-20");
+  assert.equal(long.available_cents, short.available_cents);
+  assert.deepEqual(long.breakdown, short.breakdown);
+});
+test("protected limit explanation adds current remaining and each renewal, net of assigned early purchases", () => {
+  const s = base();
+  s.recurrences[0].start_on = "2026-11-06";
+  s.transactions.push(buy());
+  const sim = simulate(s, reference),
+    detail = sim.limits_details;
+  assert.equal(detail.total_cents, 61831);
+  assert.equal(detail.total_cents, sim.breakdown.limits_cents);
+  assert.deepEqual(
+    detail.categories[0].periods.map((p) => [p.kind, p.remaining_cents]),
+    [
+      ["current", 15831],
+      ["renewal", 23000],
+      ["renewal", 23000],
+    ],
+  );
+  assert.equal(
+    detail.categories
+      .flatMap((c) => c.periods)
+      .reduce((n, p) => n + p.remaining_cents, 0),
+    detail.total_cents,
+  );
+});
+test("Autres cushions unbudgeted spending but excludes known bills and income without recategorizing purchases", () => {
+  const s = base();
+  s.categories.push(
+    {
+      id: 2,
+      name: "Autres",
+      limit_cents: 5000,
+      period: "monthly",
+      renewal_day: 1,
+      starts_on: "2026-10-01",
+      active: 1,
+    },
+    { id: 3, name: "Maison", limit_cents: null, active: 1 },
+    { id: 4, name: "Factures", limit_cents: null, active: 1 },
+  );
+  s.fallback_category_id = 2;
+  const before = simulate(s, reference);
+  assert.equal(before.available_cents, 72000);
+  s.transactions.push(buy(-2000, 1, { category_id: 3 }));
+  const after = simulate(s, reference);
+  assert.equal(after.available_cents, 72000);
+  assert.equal(
+    after.categories.find((c) => c.id === 2).current.remaining_cents,
+    3000,
+  );
+  assert.equal(s.transactions[0].category_id, 3);
+  s.transactions.push(buy(-1000, 1, { id: 2, seq: 3, category_id: 4 }));
+  s.occurrence_states.push({
+    rule_id: 99,
+    original_on: reference,
+    status: "paid",
+    transaction_id: 2,
+  });
+  s.transactions.push(buy(10000, 1, { id: 3, seq: 4, category_id: null }));
+  assert.equal(
+    simulate(s, reference).categories.find((c) => c.id === 2).current
+      .remaining_cents,
+    3000,
+  );
+});
+test("unclassified card purchase consumes Autres without deducting its protected money twice", () => {
+  const s = base();
+  s.categories.push({
+    id: 2,
+    name: "Autres",
+    limit_cents: 5000,
+    period: "monthly",
+    renewal_day: 1,
+    starts_on: "2026-10-01",
+    active: 1,
+  });
+  s.fallback_category_id = 2;
+  const before = simulate(s, reference);
+  s.transactions.push(buy(-2000, 2, { category_id: null }));
+  const after = simulate(s, reference);
+  assert.equal(before.available_cents, 72000);
+  assert.equal(after.available_cents, 72000);
+  assert.equal(after.bank_cents, 100000);
+  assert.equal(after.card_cents, 2000);
+  assert.equal(
+    after.categories.find((c) => c.id === 2).current.remaining_cents,
+    3000,
+  );
 });

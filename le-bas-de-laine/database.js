@@ -99,6 +99,7 @@ export function openDatabase(dir) {
         .map((t) => [t, q("SELECT * FROM " + t)]),
     ),
     card_baseline_seq: setting("card_baseline_seq", 0),
+    fallback_category_id: setting("fallback_category_id", null),
   });
   const backup = (name) => {
     const folder = path.join(dir, "backups");

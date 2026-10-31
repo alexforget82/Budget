@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
-  "horizon_days": 30,
+  "version": "0.2.0",
+  "horizon_days": 90,
   "node_tests": {
-    "passed": 44,
+    "passed": 63,
     "failed": 0,
     "skipped": 0
   },
@@ -36,8 +36,8 @@
   },
   "comparison": {
     "real_sillage_code_on_temporary_database": true,
-    "canonical_auto_renewing_grocery_case": "30 daily values and both indicators match",
-    "unexplained_differences_never_auto_classified": true,
+    "days": 90,
+    "canonical_auto_renewing_grocery_case": "all daily values and both indicators match",
     "actual_user_finances_used": false
   },
   "installation": {
@@ -62,10 +62,30 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 43,
+    "passed": 62,
     "failed": 0,
     "skipped": 1,
-    "skip_reason": "The external Sillage reference program is not bundled; pure comparison classification remains tested."
+    "skip_reason": "External Sillage reference program is not bundled."
   },
-  "mockup_pdf_pages": 3
+  "mockup_pdf_pages": 3,
+  "forecast_days": 90,
+  "spending_window_max_days": 30,
+  "spending_parity": {
+    "immutable_baseline": "le-bas-de-laine-v0.1.0",
+    "scenarios": 12,
+    "checks": [
+      "available amount",
+      "until date",
+      "four-line breakdown",
+      "first 30 daily results"
+    ],
+    "identical": true
+  },
+  "step_1": [
+    "90-day minimum with unchanged before-pay window",
+    "optional 50 CAD monthly Autres cushion in assistant",
+    "exact protected-limit explanation",
+    "one light palette plus OS-controlled dark mode",
+    "90-day Sillage comparison"
+  ]
 }

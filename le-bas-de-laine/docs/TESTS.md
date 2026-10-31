@@ -1,3 +1,17 @@
+# Vérifications — 0.2.0, étape 1
+
+63 tests Node passent, sans échec ni omission dans cet environnement. Douze scénarios figés depuis le tag 0.1.0 vérifient l’égalité exacte du disponible avant la paie, de sa date limite, des quatre lignes et des 30 premières journées. La nouvelle prévision couvre 90 jours sans étendre la fenêtre de dépense principale au-delà de son plafond existant de 30 jours.
+
+Une facture au 12 janvier, hors des 30 premiers jours, modifie le minimum sur 90 jours et son motif sans modifier le disponible avant la paie. Les tests vérifient aussi une paie distante, les renouvellements successifs et la somme exacte du détail des limites, les achats anticipés, le coussin Autres appliqué aux achats non limités sur banque et sur carte, l’exclusion des factures associées et des revenus, ainsi que la conservation du coussin dans une sauvegarde restaurée. Autres n’est pas activé silencieusement pour les anciens budgets; lui fixer une limite réutilise sa catégorie existante.
+
+Le test exécutant le vrai code Sillage sur une copie SQLite fictive compare désormais 90 journées et les deux indicateurs. Aucune erreur n’est attribuée automatiquement à un moteur. Les différences sans justification empêchent toujours de valider une bascule.
+
+Le parcours Playwright/Chromium couvre les trois écrans, cinq largeurs et les deux apparences émulées. Il vérifie le coussin proposé dans l’assistant, l’ouverture du détail tactile, son total, l’alerte nommant une facture lointaine, la vue partagée, l’import CSV et le changement automatique de thème lorsque la préférence de l’appareil change. Une ancienne préférence manuelle stockée ne prend plus le dessus. Captures fictives dans `step1/`.
+
+L’archive extraite passe aussi 62 tests, avec le seul test externe Sillage omis lorsque le programme source n’est pas disponible à côté de l’archive. Les contrôles systemd et la copie réellement installée restent validés. Aucun test physique Chromebook ou Safari iOS ni aucune migration de finances personnelles n’est présenté comme réalisé. [Résultats](checks.json).
+
+## Référence 0.1.0
+
 # Vérifications — 0.1.0
 
 44 tests Node passent, sans échec ni omission dans cet environnement. Ils portent sur le moteur pur, les services SQLite, l’API HTTP, les contrôles d’accès privé et l’installation.

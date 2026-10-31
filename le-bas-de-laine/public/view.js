@@ -61,7 +61,7 @@ export function chart(days) {
     svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", "0 0 400 94");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", "Évolution du disponible sur 30 jours");
+  svg.setAttribute("aria-label", "Évolution du disponible sur 90 jours");
   const values = days.map((d) => d.safe_cents),
     low = Math.min(...values),
     high = Math.max(...values),
@@ -142,6 +142,56 @@ export function todayView(
     ["Factures et paiements prévus", -sim.breakdown.bills_cents],
     ["Limites protégées", -sim.breakdown.limits_cents],
   ]) {
+    if (label === "Limites protégées" && sim.limits_details) {
+      const detail = node("details", null, "limits-breakdown"),
+        summary = node("summary");
+      summary.append(
+        node("span", "Limites protégées ⌄"),
+        node("strong", money(value)),
+      );
+      detail.append(summary);
+      const content = node("div", null, "limits-explanation");
+      content.append(
+        node(
+          "p",
+          "Montants retenus au " +
+            shortDate(sim.limits_details.through) +
+            ", le jour qui détermine votre disponible avant la paie.",
+        ),
+      );
+      for (const c of sim.limits_details.categories) {
+        content.append(node("h4", c.name));
+        for (const period of c.periods) {
+          const line = node("div", null, "limits-detail-row");
+          line.append(
+            node(
+              "span",
+              (period.kind === "current"
+                ? "Restant actuel · "
+                : "Renouvellement · ") + shortDate(period.date),
+            ),
+            node("strong", money(period.remaining_cents)),
+          );
+          content.append(line);
+          if (period.kind === "renewal" && period.spent_cents > 0)
+            content.append(
+              node(
+                "p",
+                money(period.spent_cents) + " déjà imputés à cette période.",
+              ),
+            );
+        }
+      }
+      const total = node("div", null, "limits-detail-row limits-total");
+      total.append(
+        node("span", "Total protégé"),
+        node("strong", money(sim.limits_details.total_cents)),
+      );
+      content.append(total);
+      detail.append(content);
+      breakdown.append(detail);
+      continue;
+    }
     const row = node("div");
     row.append(node("span", label), node("strong", money(value)));
     breakdown.append(row);
@@ -150,19 +200,40 @@ export function todayView(
   left.append(hero);
   const minimum = node("section", null, "panel minimum"),
     minlabel = node("div");
+  const horizon = sim.minimum_horizon_days || 90;
   minlabel.append(
-    node("h3", "Le point le plus bas"),
-    node("small", "Sur 30 jours · " + shortDate(sim.minimum_on)),
+    node("h3", "À surveiller"),
+    node("small", "Prévision sur " + horizon + " jours"),
   );
-  minimum.append(
-    minlabel,
-    node(
-      "div",
-      money(sim.minimum_cents),
-      "money" + (sim.minimum_cents < 0 ? " negative" : ""),
-    ),
-    chart(sim.daily),
-  );
+  const message = node("p", null, "forecast-message");
+  if (sim.risk?.below_available) {
+    const bills = sim.risk.bills.map((e) => e.name),
+      renewals = sim.risk.renewals.map((c) => c.name);
+    const reason = [
+      ...(bills.length
+        ? ["facture ou paiement " + bills.slice(0, 2).join(", ")]
+        : []),
+      ...(renewals.length
+        ? ["renouvellement " + renewals.slice(0, 2).join(", ")]
+        : []),
+    ].join(" et ");
+    message.append(
+      node(
+        "span",
+        "Le " +
+          shortDate(sim.minimum_on) +
+          (reason ? " : " + reason + ". " : ". "),
+      ),
+      node(
+        "strong",
+        "Disponible prévu : " + money(sim.minimum_cents),
+        sim.minimum_cents < 0 ? "negative" : "",
+      ),
+    );
+  } else
+    message.textContent =
+      "Aucun creux supplémentaire prévu sous votre disponible avant la paie.";
+  minimum.append(minlabel, message, chart(sim.daily));
   left.append(minimum);
   const limits = panel(
     "Vos limites",

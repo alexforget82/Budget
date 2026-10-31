@@ -1,14 +1,14 @@
 # Le bas de laine
 
-Première version d’essai **0.1.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.2.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
-## Voir les trois maquettes
+## Maquettes initiales (0.1.0)
 
 Ouvrez **docs/Trois-maquettes.pdf**, ou les fichiers **docs/maquettes/maquette-laine.html**, **maquette-slate.html** et **maquette-paper.html**. Les HTML sont autonomes et s’ouvrent sans serveur; ils sont des aperçus statiques. Avec le serveur lancé, **http://localhost:3040/maquettes** permet de changer la direction visuelle. Toutes les maquettes et captures utilisent des chiffres fictifs.
 
-La direction appliquée à l’application est **Laine et sapin** : crème et vert profond. Le thème sombre et le choix automatique selon l’appareil sont dans **Plan → Réglages et sauvegardes**.
+La direction appliquée à l’application est **Laine et sapin** : crème et vert profond. Un seul thème sombre suit automatiquement le réglage de l’appareil, sans sélecteur ni préférence manuelle.
 
 ## Installer sur Chromebook
 
@@ -45,7 +45,7 @@ Ajoutez vos cartes dans **Plan → Moyens de paiement**. Il n’y a aucun solde 
 
 ## Le disponible, limites comprises
 
-Le calcul simule chaque journée sur **30 jours maximum**. Le montant principal est le minimum prévu **avant la prochaine paie**, jusqu’à 30 jours. Le second montant est le minimum sur les 30 jours complets. S’il n’y a pas de prochaine paie connue dans ce délai, le montant principal couvre les 30 jours et un message le précise.
+Le calcul simule chaque journée sur **90 jours**. Le montant principal reste le minimum prévu **avant la prochaine paie**, plafonné à 30 jours comme en 0.1.0. L’alerte « À surveiller » signale un creux supplémentaire sur 90 jours, avec date, montant et facture ou renouvellement lorsqu’ils surviennent ce jour-là. Elle n’affiche pas un deuxième grand chiffre identique s’il n’y a pas de creux supplémentaire. S’il n’y a pas de prochaine paie connue dans les 30 jours, le disponible principal couvre 30 jours et le précise.
 
 Les quatre lignes expliquent le montant principal :
 
@@ -61,6 +61,11 @@ Une limite n’est jamais un débit bancaire fictif. Un achat sur carte dans une
 Sans paie entre les renouvellements, chacun des prochains jeudis protège 230 $ supplémentaires. Une prévision n’assume pas que les limites non dépensées auront été consommées sur votre compte bancaire : elle les garde protégées. Une nouvelle période réelle repart de sa limite; il n’y a pas de report de budget inutilisé.
 
 Un achat anticipé peut être imputé à **la prochaine période** à la saisie, en conservant sa vraie date. La prochaine période protège alors sa limite moins cet achat. Les catégories sans limite restent disponibles pour classer les achats.
+
+
+Dans l’assistant, **Autres** propose un coussin modifiable de **50 $ par mois**, que vous pouvez décocher. Il couvre les achats sans catégorie ou dans une catégorie sans limite propre. Les factures associées, les virements et les revenus sans catégorie n’en consomment pas le montant. Les catégories choisies restent visibles dans Transactions. Cette réserve n’est pas ajoutée aux budgets existants automatiquement : dans Plan, ajoutez une limite nommée Autres pour l’activer; la catégorie existante est réutilisée.
+
+Touchez **Limites protégées** dans les quatre lignes : le détail indique le restant actuel et les renouvellements inclus, avec leur date et les achats déjà imputés. Son total correspond exactement à la ligne. Le calcul est daté du jour qui détermine le minimum avant la paie; il ne prétend pas que tous les montants sont débités aujourd’hui.
 
 ## Factures, solde et transactions
 
@@ -94,7 +99,7 @@ node compare.js /chemin/vers/sauvegarde.json --date 2026-10-30 --output comparai
 
 Remplacez la date par celle de votre copie figée. Le programme Sillage est cherché dans `~/.local/share/sillage/app`; sinon utilisez `--sillage-dir /chemin/vers/le/programme/Sillage`. Le rapport reste local et contient vos montants : partagez seulement les éléments que vous souhaitez faire examiner.
 
-Le rapport compare chaque jour sur 30 jours, avec solde, cartes, limites et disponible, puis les deux indicateurs. Il ne désigne jamais automatiquement un moteur fautif. Les écarts non expliqués restent **à examiner** et empêchent la validation. Après analyse, un fichier passé à `--decisions decisions.json` peut les classer en règle volontairement différente, erreur de Sillage ou erreur de la nouvelle application, avec explication obligatoire. Le code de sortie est 0 si validé, 2 s’il reste une différence ou une règle bloquante, 1 si le contrôle ne peut pas s’exécuter.
+Le rapport compare chaque jour sur 90 jours, avec solde, cartes, limites et disponible, puis les deux indicateurs. Il ne désigne jamais automatiquement un moteur fautif. Les écarts non expliqués restent **à examiner** et empêchent la validation. Après analyse, un fichier passé à `--decisions decisions.json` peut les classer en règle volontairement différente, erreur de Sillage ou erreur de la nouvelle application, avec explication obligatoire. Le code de sortie est 0 si validé, 2 s’il reste une différence ou une règle bloquante, 1 si le contrôle ne peut pas s’exécuter.
 
 ## iPhone, pour vous et votre conjointe
 

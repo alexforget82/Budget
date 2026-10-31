@@ -8,6 +8,92 @@
     "available_cents": 95001,
     "minimum_cents": 95001,
     "minimum_on": "2026-10-29",
+    "minimum_horizon_days": 90,
+    "risk": {
+      "below_available": false,
+      "date": "2026-10-29",
+      "amount_cents": 95001,
+      "bills": [],
+      "renewals": [
+        {
+          "id": 1,
+          "name": "Épicerie"
+        }
+      ]
+    },
+    "limits_details": {
+      "through": "2026-10-29",
+      "until": "2026-10-29",
+      "total_cents": 80031,
+      "categories": [
+        {
+          "id": 1,
+          "name": "Épicerie",
+          "periods": [
+            {
+              "date": "2026-10-15",
+              "end": "2026-10-21",
+              "limit_cents": 23000,
+              "spent_cents": 7169,
+              "remaining_cents": 15831,
+              "kind": "current"
+            },
+            {
+              "date": "2026-10-22",
+              "end": "2026-10-28",
+              "limit_cents": 23000,
+              "spent_cents": 0,
+              "remaining_cents": 23000,
+              "kind": "renewal"
+            },
+            {
+              "date": "2026-10-29",
+              "end": "2026-11-04",
+              "limit_cents": 23000,
+              "spent_cents": 0,
+              "remaining_cents": 23000,
+              "kind": "renewal"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Essence",
+          "periods": [
+            {
+              "date": "2026-10-21",
+              "end": "2026-10-27",
+              "limit_cents": 6000,
+              "spent_cents": 2500,
+              "remaining_cents": 3500,
+              "kind": "current"
+            },
+            {
+              "date": "2026-10-28",
+              "end": "2026-11-03",
+              "limit_cents": 6000,
+              "spent_cents": 0,
+              "remaining_cents": 6000,
+              "kind": "renewal"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Restaurant",
+          "periods": [
+            {
+              "date": "2026-10-01",
+              "end": "2026-10-31",
+              "limit_cents": 12500,
+              "spent_cents": 3800,
+              "remaining_cents": 8700,
+              "kind": "current"
+            }
+          ]
+        }
+      ]
+    },
     "breakdown": {
       "bank_cents": 200000,
       "cards_cents": 7169,
@@ -298,6 +384,573 @@
         "limits_cents": 179531,
         "safe_cents": 355501,
         "events": []
+      },
+      {
+        "date": "2026-11-20",
+        "cash_cents": 542201,
+        "card_cents": 7169,
+        "limits_cents": 179531,
+        "safe_cents": 355501,
+        "events": []
+      },
+      {
+        "date": "2026-11-21",
+        "cash_cents": 542201,
+        "card_cents": 7169,
+        "limits_cents": 179531,
+        "safe_cents": 355501,
+        "events": []
+      },
+      {
+        "date": "2026-11-22",
+        "cash_cents": 542201,
+        "card_cents": 7169,
+        "limits_cents": 179531,
+        "safe_cents": 355501,
+        "events": []
+      },
+      {
+        "date": "2026-11-23",
+        "cash_cents": 535602,
+        "card_cents": 7169,
+        "limits_cents": 179531,
+        "safe_cents": 348902,
+        "events": [
+          {
+            "key": "1:2026-11-23",
+            "rule_id": 1,
+            "date": "2026-11-23",
+            "original_on": "2026-11-23",
+            "name": "Cellulaire",
+            "kind": "expense",
+            "amount_cents": 6599,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-11-24",
+        "cash_cents": 535602,
+        "card_cents": 7169,
+        "limits_cents": 179531,
+        "safe_cents": 348902,
+        "events": []
+      },
+      {
+        "date": "2026-11-25",
+        "cash_cents": 535602,
+        "card_cents": 7169,
+        "limits_cents": 185531,
+        "safe_cents": 342902,
+        "events": []
+      },
+      {
+        "date": "2026-11-26",
+        "cash_cents": 535602,
+        "card_cents": 7169,
+        "limits_cents": 208531,
+        "safe_cents": 319902,
+        "events": []
+      },
+      {
+        "date": "2026-11-27",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 208531,
+        "safe_cents": 488702,
+        "events": [
+          {
+            "key": "3:2026-11-27",
+            "rule_id": 3,
+            "date": "2026-11-27",
+            "original_on": "2026-11-27",
+            "name": "Paie Alex",
+            "kind": "income",
+            "amount_cents": 180000,
+            "account_id": 1
+          },
+          {
+            "key": "2:2026-11-27",
+            "rule_id": 2,
+            "date": "2026-11-27",
+            "original_on": "2026-11-27",
+            "name": "Assurance auto",
+            "kind": "expense",
+            "amount_cents": 11200,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-11-28",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 208531,
+        "safe_cents": 488702,
+        "events": []
+      },
+      {
+        "date": "2026-11-29",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 208531,
+        "safe_cents": 488702,
+        "events": []
+      },
+      {
+        "date": "2026-11-30",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 208531,
+        "safe_cents": 488702,
+        "events": []
+      },
+      {
+        "date": "2026-12-01",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 221031,
+        "safe_cents": 476202,
+        "events": []
+      },
+      {
+        "date": "2026-12-02",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 227031,
+        "safe_cents": 470202,
+        "events": []
+      },
+      {
+        "date": "2026-12-03",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-04",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-05",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-06",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-07",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-08",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 250031,
+        "safe_cents": 447202,
+        "events": []
+      },
+      {
+        "date": "2026-12-09",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 256031,
+        "safe_cents": 441202,
+        "events": []
+      },
+      {
+        "date": "2026-12-10",
+        "cash_cents": 704402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 418202,
+        "events": []
+      },
+      {
+        "date": "2026-12-11",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 598202,
+        "events": [
+          {
+            "key": "3:2026-12-11",
+            "rule_id": 3,
+            "date": "2026-12-11",
+            "original_on": "2026-12-11",
+            "name": "Paie Alex",
+            "kind": "income",
+            "amount_cents": 180000,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-12-12",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 598202,
+        "events": []
+      },
+      {
+        "date": "2026-12-13",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 598202,
+        "events": []
+      },
+      {
+        "date": "2026-12-14",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 598202,
+        "events": []
+      },
+      {
+        "date": "2026-12-15",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 279031,
+        "safe_cents": 598202,
+        "events": []
+      },
+      {
+        "date": "2026-12-16",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 285031,
+        "safe_cents": 592202,
+        "events": []
+      },
+      {
+        "date": "2026-12-17",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-18",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-19",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-20",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-21",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-22",
+        "cash_cents": 884402,
+        "card_cents": 7169,
+        "limits_cents": 308031,
+        "safe_cents": 569202,
+        "events": []
+      },
+      {
+        "date": "2026-12-23",
+        "cash_cents": 877803,
+        "card_cents": 7169,
+        "limits_cents": 314031,
+        "safe_cents": 556603,
+        "events": [
+          {
+            "key": "1:2026-12-23",
+            "rule_id": 1,
+            "date": "2026-12-23",
+            "original_on": "2026-12-23",
+            "name": "Cellulaire",
+            "kind": "expense",
+            "amount_cents": 6599,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-12-24",
+        "cash_cents": 877803,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 533603,
+        "events": []
+      },
+      {
+        "date": "2026-12-25",
+        "cash_cents": 1057803,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 713603,
+        "events": [
+          {
+            "key": "3:2026-12-25",
+            "rule_id": 3,
+            "date": "2026-12-25",
+            "original_on": "2026-12-25",
+            "name": "Paie Alex",
+            "kind": "income",
+            "amount_cents": 180000,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-12-26",
+        "cash_cents": 1057803,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 713603,
+        "events": []
+      },
+      {
+        "date": "2026-12-27",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 702403,
+        "events": [
+          {
+            "key": "2:2026-12-27",
+            "rule_id": 2,
+            "date": "2026-12-27",
+            "original_on": "2026-12-27",
+            "name": "Assurance auto",
+            "kind": "expense",
+            "amount_cents": 11200,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2026-12-28",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 702403,
+        "events": []
+      },
+      {
+        "date": "2026-12-29",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 337031,
+        "safe_cents": 702403,
+        "events": []
+      },
+      {
+        "date": "2026-12-30",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 343031,
+        "safe_cents": 696403,
+        "events": []
+      },
+      {
+        "date": "2026-12-31",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 366031,
+        "safe_cents": 673403,
+        "events": []
+      },
+      {
+        "date": "2027-01-01",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 378531,
+        "safe_cents": 660903,
+        "events": []
+      },
+      {
+        "date": "2027-01-02",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 378531,
+        "safe_cents": 660903,
+        "events": []
+      },
+      {
+        "date": "2027-01-03",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 378531,
+        "safe_cents": 660903,
+        "events": []
+      },
+      {
+        "date": "2027-01-04",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 378531,
+        "safe_cents": 660903,
+        "events": []
+      },
+      {
+        "date": "2027-01-05",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 378531,
+        "safe_cents": 660903,
+        "events": []
+      },
+      {
+        "date": "2027-01-06",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 384531,
+        "safe_cents": 654903,
+        "events": []
+      },
+      {
+        "date": "2027-01-07",
+        "cash_cents": 1046603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 631903,
+        "events": []
+      },
+      {
+        "date": "2027-01-08",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 811903,
+        "events": [
+          {
+            "key": "3:2027-01-08",
+            "rule_id": 3,
+            "date": "2027-01-08",
+            "original_on": "2027-01-08",
+            "name": "Paie Alex",
+            "kind": "income",
+            "amount_cents": 180000,
+            "account_id": 1
+          }
+        ]
+      },
+      {
+        "date": "2027-01-09",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 811903,
+        "events": []
+      },
+      {
+        "date": "2027-01-10",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 811903,
+        "events": []
+      },
+      {
+        "date": "2027-01-11",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 811903,
+        "events": []
+      },
+      {
+        "date": "2027-01-12",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 407531,
+        "safe_cents": 811903,
+        "events": []
+      },
+      {
+        "date": "2027-01-13",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 413531,
+        "safe_cents": 805903,
+        "events": []
+      },
+      {
+        "date": "2027-01-14",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 436531,
+        "safe_cents": 782903,
+        "events": []
+      },
+      {
+        "date": "2027-01-15",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 436531,
+        "safe_cents": 782903,
+        "events": []
+      },
+      {
+        "date": "2027-01-16",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 436531,
+        "safe_cents": 782903,
+        "events": []
+      },
+      {
+        "date": "2027-01-17",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 436531,
+        "safe_cents": 782903,
+        "events": []
+      },
+      {
+        "date": "2027-01-18",
+        "cash_cents": 1226603,
+        "card_cents": 7169,
+        "limits_cents": 436531,
+        "safe_cents": 782903,
+        "events": []
       }
     ],
     "categories": [
@@ -348,6 +1001,62 @@
           {
             "date": "2026-11-19",
             "end": "2026-11-25",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-11-26",
+            "end": "2026-12-02",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-12-03",
+            "end": "2026-12-09",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-12-10",
+            "end": "2026-12-16",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-12-17",
+            "end": "2026-12-23",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-12-24",
+            "end": "2026-12-30",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2026-12-31",
+            "end": "2027-01-06",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2027-01-07",
+            "end": "2027-01-13",
+            "limit_cents": 23000,
+            "spent_cents": 0,
+            "remaining_cents": 23000
+          },
+          {
+            "date": "2027-01-14",
+            "end": "2027-01-20",
             "limit_cents": 23000,
             "spent_cents": 0,
             "remaining_cents": 23000
@@ -405,6 +1114,62 @@
             "limit_cents": 6000,
             "spent_cents": 0,
             "remaining_cents": 6000
+          },
+          {
+            "date": "2026-11-25",
+            "end": "2026-12-01",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2026-12-02",
+            "end": "2026-12-08",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2026-12-09",
+            "end": "2026-12-15",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2026-12-16",
+            "end": "2026-12-22",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2026-12-23",
+            "end": "2026-12-29",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2026-12-30",
+            "end": "2027-01-05",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2027-01-06",
+            "end": "2027-01-12",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
+          },
+          {
+            "date": "2027-01-13",
+            "end": "2027-01-19",
+            "limit_cents": 6000,
+            "spent_cents": 0,
+            "remaining_cents": 6000
           }
         ],
         "current": {
@@ -435,6 +1200,20 @@
           {
             "date": "2026-11-01",
             "end": "2026-11-30",
+            "limit_cents": 12500,
+            "spent_cents": 0,
+            "remaining_cents": 12500
+          },
+          {
+            "date": "2026-12-01",
+            "end": "2026-12-31",
+            "limit_cents": 12500,
+            "spent_cents": 0,
+            "remaining_cents": 12500
+          },
+          {
+            "date": "2027-01-01",
+            "end": "2027-01-31",
             "limit_cents": 12500,
             "spent_cents": 0,
             "remaining_cents": 12500

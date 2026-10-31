@@ -70,6 +70,29 @@ export function bankBalance(state) {
   return balance;
 }
 export function categoryPeriods(state, reference, end) {
+  const limitedIds = new Set(
+    state.categories
+      .filter((c) => c.limit_cents !== null && c.active)
+      .map((c) => c.id),
+  );
+  const fallback = state.categories.find(
+    (c) => c.id === state.fallback_category_id && limitedIds.has(c.id),
+  );
+  const fixedTransactions = new Set(
+    state.occurrence_states
+      .filter((o) => o.status === "paid" && o.transaction_id)
+      .map((o) => o.transaction_id),
+  );
+  const fallbackApplies = (t) =>
+    !limitedIds.has(t.category_id) &&
+    !fixedTransactions.has(t.id) &&
+    !["factures", "revenus"].includes(
+      state.categories
+        .find((c) => c.id === t.category_id)
+        ?.name.trim()
+        .toLocaleLowerCase("fr-CA"),
+    ) &&
+    (t.amount_cents < 0 || !!t.category_id);
   return state.categories
     .filter((c) => c.limit_cents !== null && c.active)
     .map((c) => {
@@ -81,8 +104,11 @@ export function categoryPeriods(state, reference, end) {
         const spent = state.transactions
           .filter(
             (t) =>
-              t.category_id === c.id &&
-              (t.period_on || periodStart(c, t.date)) === start,
+              (t.category_id === c.id ||
+                (c.id === fallback?.id && fallbackApplies(t))) &&
+              !(c.id === fallback?.id && fixedTransactions.has(t.id)) &&
+              ((t.category_id === c.id ? t.period_on : null) ||
+                periodStart(c, t.date)) === start,
           )
           .reduce((s, t) => s - t.amount_cents, 0);
         periods.push({
@@ -96,12 +122,12 @@ export function categoryPeriods(state, reference, end) {
       return { ...c, periods };
     });
 }
-export function simulate(state, reference, horizon = 30) {
+export function simulate(state, reference, horizon = 90) {
   if (
     !validDate(reference) ||
     !Number.isInteger(horizon) ||
     horizon < 1 ||
-    horizon > 30
+    horizon > 90
   )
     throw Error("Date ou horizon invalide.");
   const end = addDays(reference, Math.max(horizon, 366)),
@@ -140,12 +166,13 @@ export function simulate(state, reference, horizon = 30) {
       .sort((a, b) => a.date.localeCompare(b.date))[0]?.date || null;
   // Money needed before a same-day paycheck is kept protected through the previous day.
   const last = addDays(reference, horizon - 1),
+    spendingEnd = addDays(reference, Math.min(horizon, 30) - 1),
     until =
-      nextPay && nextPay <= addDays(last, 1)
+      nextPay && nextPay <= addDays(spendingEnd, 1)
         ? nextPay <= reference
           ? reference
           : addDays(nextPay, -1)
-        : last;
+        : spendingEnd;
   const categories = categoryPeriods(state, reference, last),
     lots = cardLots(state),
     cardHeld = new Map();
@@ -242,6 +269,37 @@ export function simulate(state, reference, horizon = 30) {
     available_cents: low.safe_cents,
     minimum_cents: min.safe_cents,
     minimum_on: min.date,
+    minimum_horizon_days: horizon,
+    risk: {
+      below_available: min.safe_cents < low.safe_cents,
+      date: min.date,
+      amount_cents: min.safe_cents,
+      bills: min.events.filter(
+        (e) => e.kind === "expense" || e.kind === "transfer",
+      ),
+      renewals: categories
+        .filter((c) =>
+          c.periods.some((p) => p.date === min.date && p.date > reference),
+        )
+        .map((c) => ({ id: c.id, name: c.name })),
+    },
+    limits_details: {
+      through: low.date,
+      until,
+      total_cents: low.limits_cents,
+      categories: categories
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          periods: c.periods
+            .filter((p) => p.date <= low.date)
+            .map((p) => ({
+              ...p,
+              kind: p.date <= reference ? "current" : "renewal",
+            })),
+        }))
+        .filter((c) => c.periods.length),
+    },
     breakdown: {
       bank_cents: initialCash,
       cards_cents: initialCards,
@@ -262,7 +320,7 @@ export function simulate(state, reference, horizon = 30) {
         ? ["Aucune prochaine paie connue : le disponible couvre 30 jours."]
         : nextPay > addDays(reference, 30)
           ? [
-              "La prochaine paie dépasse 30 jours : la prévision s’arrête à 30 jours.",
+              "La prochaine paie dépasse 30 jours : le disponible avant la paie est plafonné à 30 jours.",
             ]
           : []),
       ...(events.some((e) => e.overdue)

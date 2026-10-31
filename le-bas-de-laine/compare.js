@@ -158,7 +158,7 @@ export function compareForecasts(oldState, newSimulation, decisions = {}) {
       ...oldWindow.map((d) => d.safe_cents),
     ),
     oldMinimum = Math.min(
-      ...oldState.forecast.slice(0, 30).map((d) => d.safe_cents),
+      ...oldState.forecast.slice(0, 90).map((d) => d.safe_cents),
     );
   return {
     indicators: {
@@ -166,7 +166,7 @@ export function compareForecasts(oldState, newSimulation, decisions = {}) {
         sillage_cents: oldAvailable,
         bas_de_laine_cents: newSimulation.available_cents,
       },
-      minimum_30: {
+      minimum_90: {
         sillage_cents: oldMinimum,
         bas_de_laine_cents: newSimulation.minimum_cents,
       },
@@ -196,9 +196,9 @@ export async function compareBackup(
       report = compareForecasts(old, simulation, decisions);
     return {
       application: "Le bas de laine",
-      version: "0.1.0",
+      version: "0.2.0",
       reference,
-      horizon: 30,
+      horizon: 90,
       source_created_at: backup.created_at,
       live_data_touched: false,
       import_warnings: plan.warnings,

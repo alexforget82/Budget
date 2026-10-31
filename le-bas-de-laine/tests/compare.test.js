@@ -10,7 +10,7 @@ import { compareBackup, compareForecasts } from "../compare.js";
 import { today, addDays } from "../dates.js";
 const source = path.resolve(import.meta.dirname, "../..");
 test(
-  "local comparison against real isolated Sillage matches all 30 days on the canonical grocery example",
+  "local comparison against real isolated Sillage matches all 90 days on the canonical grocery example",
   { skip: !fs.existsSync(path.join(source, "server.js")) },
   async (t) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bdl-legacy-test-")),
@@ -101,7 +101,7 @@ test(
         reference: today(),
         sillageDir: source,
       });
-    assert.equal(report.horizon, 30);
+    assert.equal(report.horizon, 90);
     assert.equal(
       report.unclassified,
       0,

@@ -1,0 +1,4526 @@
+{
+  "reference": "2026-10-22",
+  "source": "Le bas de laine 0.1.0 (moteur du tag immuable)",
+  "cases": [
+    {
+      "frequency": "weekly",
+      "offset": 1,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-23",
+            "frequency": "weekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 171000,
+        "until": "2026-10-22",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 0,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": [
+              {
+                "key": "1:2026-10-23",
+                "rule_id": 1,
+                "date": "2026-10-23",
+                "original_on": "2026-10-23",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 380500,
+            "events": [
+              {
+                "key": "1:2026-10-30",
+                "rule_id": 1,
+                "date": "2026-10-30",
+                "original_on": "2026-10-30",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 375500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 375500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 375500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 375500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 375500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": [
+              {
+                "key": "1:2026-11-06",
+                "rule_id": 1,
+                "date": "2026-11-06",
+                "original_on": "2026-11-06",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 472500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": [
+              {
+                "key": "1:2026-11-13",
+                "rule_id": 1,
+                "date": "2026-11-13",
+                "original_on": "2026-11-13",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 569500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 546500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 789500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 666500,
+            "events": [
+              {
+                "key": "1:2026-11-20",
+                "rule_id": 1,
+                "date": "2026-11-20",
+                "original_on": "2026-11-20",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "weekly",
+      "offset": 7,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-29",
+            "frequency": "weekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 163500,
+        "until": "2026-10-28",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": [
+              {
+                "key": "1:2026-10-29",
+                "rule_id": 1,
+                "date": "2026-10-29",
+                "original_on": "2026-10-29",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": [
+              {
+                "key": "1:2026-11-05",
+                "rule_id": 1,
+                "date": "2026-11-05",
+                "original_on": "2026-11-05",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": [
+              {
+                "key": "1:2026-11-12",
+                "rule_id": 1,
+                "date": "2026-11-12",
+                "original_on": "2026-11-12",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 449500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 546500,
+            "events": [
+              {
+                "key": "1:2026-11-19",
+                "rule_id": 1,
+                "date": "2026-11-19",
+                "original_on": "2026-11-19",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 669500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 546500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "weekly",
+      "offset": 30,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-11-21",
+            "frequency": "weekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "weekly",
+      "offset": 45,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-12-06",
+            "frequency": "weekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "biweekly",
+      "offset": 1,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-23",
+            "frequency": "biweekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 171000,
+        "until": "2026-10-22",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 0,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": [
+              {
+                "key": "1:2026-10-23",
+                "rule_id": 1,
+                "date": "2026-10-23",
+                "original_on": "2026-10-23",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": [
+              {
+                "key": "1:2026-11-06",
+                "rule_id": 1,
+                "date": "2026-11-06",
+                "original_on": "2026-11-06",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 352500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 306500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 549500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 426500,
+            "events": [
+              {
+                "key": "1:2026-11-20",
+                "rule_id": 1,
+                "date": "2026-11-20",
+                "original_on": "2026-11-20",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "biweekly",
+      "offset": 7,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-29",
+            "frequency": "biweekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 163500,
+        "until": "2026-10-28",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": [
+              {
+                "key": "1:2026-10-29",
+                "rule_id": 1,
+                "date": "2026-10-29",
+                "original_on": "2026-10-29",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": [
+              {
+                "key": "1:2026-11-12",
+                "rule_id": 1,
+                "date": "2026-11-12",
+                "original_on": "2026-11-12",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 329500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 306500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 429500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 306500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "biweekly",
+      "offset": 30,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-11-21",
+            "frequency": "biweekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "biweekly",
+      "offset": 45,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-12-06",
+            "frequency": "biweekly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "monthly",
+      "offset": 1,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-23",
+            "frequency": "monthly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 171000,
+        "until": "2026-10-22",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 0,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": [
+              {
+                "key": "1:2026-10-23",
+                "rule_id": 1,
+                "date": "2026-10-23",
+                "original_on": "2026-10-23",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 317000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 291000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 283500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 186500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 186500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "monthly",
+      "offset": 7,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-10-29",
+            "frequency": "monthly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 163500,
+        "until": "2026-10-28",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 20831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": [
+              {
+                "key": "1:2026-10-29",
+                "rule_id": 1,
+                "date": "2026-10-29",
+                "original_on": "2026-10-29",
+                "name": "Paie",
+                "kind": "income",
+                "amount_cents": 120000,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 260500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 255500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 232500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 209500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 186500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 309500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 186500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "monthly",
+      "offset": 30,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-11-21",
+            "frequency": "monthly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    },
+    {
+      "frequency": "monthly",
+      "offset": 45,
+      "state": {
+        "accounts": [
+          {
+            "id": 1,
+            "kind": "bank",
+            "is_main": 1
+          },
+          {
+            "id": 2,
+            "kind": "card"
+          }
+        ],
+        "categories": [
+          {
+            "id": 1,
+            "name": "Épicerie",
+            "limit_cents": 23000,
+            "period": "weekly",
+            "renewal_day": 4,
+            "starts_on": "2026-10-01",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "name": "Maison",
+            "limit_cents": 5000,
+            "period": "monthly",
+            "renewal_day": 31,
+            "starts_on": "2026-09-30",
+            "active": 1
+          }
+        ],
+        "transactions": [
+          {
+            "id": 1,
+            "seq": 2,
+            "account_id": 2,
+            "category_id": 1,
+            "amount_cents": -7169,
+            "date": "2026-10-22",
+            "description": "Épicerie"
+          },
+          {
+            "id": 2,
+            "seq": 3,
+            "account_id": 1,
+            "category_id": null,
+            "amount_cents": -1000,
+            "date": "2026-10-22",
+            "description": "Sans limite"
+          }
+        ],
+        "transfers": [
+          {
+            "id": 1,
+            "seq": 4,
+            "from_account_id": 1,
+            "to_account_id": 2,
+            "amount_cents": 2000,
+            "date": "2026-10-22"
+          }
+        ],
+        "checkpoints": [
+          {
+            "id": 1,
+            "seq": 1,
+            "account_id": 1,
+            "amount_cents": 200000,
+            "date": "2026-10-22"
+          }
+        ],
+        "recurrences": [
+          {
+            "id": 1,
+            "kind": "income",
+            "name": "Paie",
+            "account_id": 1,
+            "amount_cents": 120000,
+            "start_on": "2026-12-06",
+            "frequency": "monthly",
+            "active": 1
+          },
+          {
+            "id": 2,
+            "kind": "expense",
+            "name": "Facture",
+            "account_id": 1,
+            "amount_cents": 7500,
+            "start_on": "2026-10-26",
+            "frequency": "monthly",
+            "active": 1
+          }
+        ],
+        "occurrence_states": []
+      },
+      "expected": {
+        "available_cents": 66500,
+        "until": "2026-11-20",
+        "breakdown": {
+          "bank_cents": 197000,
+          "cards_cents": 5169,
+          "bills_cents": 7500,
+          "limits_cents": 117831
+        },
+        "daily": [
+          {
+            "date": "2026-10-22",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-23",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-24",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-25",
+            "cash_cents": 197000,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 171000,
+            "events": []
+          },
+          {
+            "date": "2026-10-26",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": [
+              {
+                "key": "2:2026-10-26",
+                "rule_id": 2,
+                "date": "2026-10-26",
+                "original_on": "2026-10-26",
+                "name": "Facture",
+                "kind": "expense",
+                "amount_cents": 7500,
+                "account_id": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-27",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-28",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 20831,
+            "safe_cents": 163500,
+            "events": []
+          },
+          {
+            "date": "2026-10-29",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-30",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 43831,
+            "safe_cents": 140500,
+            "events": []
+          },
+          {
+            "date": "2026-10-31",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-01",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-02",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-03",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-04",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 48831,
+            "safe_cents": 135500,
+            "events": []
+          },
+          {
+            "date": "2026-11-05",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-06",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-07",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-08",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-09",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-10",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-11",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 71831,
+            "safe_cents": 112500,
+            "events": []
+          },
+          {
+            "date": "2026-11-12",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-13",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-14",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-15",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-16",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-17",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-18",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 94831,
+            "safe_cents": 89500,
+            "events": []
+          },
+          {
+            "date": "2026-11-19",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          },
+          {
+            "date": "2026-11-20",
+            "cash_cents": 189500,
+            "card_cents": 5169,
+            "limits_cents": 117831,
+            "safe_cents": 66500,
+            "events": []
+          }
+        ]
+      }
+    }
+  ]
+}

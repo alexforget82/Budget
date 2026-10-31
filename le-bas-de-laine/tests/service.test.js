@@ -338,3 +338,61 @@ test("editing an imported unpaid card purchase changes protection without a fabr
   assert.equal(api.snapshot().simulation.card_cents, 6000);
   assert.equal(api.snapshot().simulation.available_cents, 77000);
 });
+test("Autres remains opt-in on existing budgets and its catch-all identity survives export/restore", (t) => {
+  const { db, api, bank } = fixture(t);
+  assert.equal(db.state().fallback_category_id, null);
+  assert.equal(api.snapshot().simulation.available_cents, 77000);
+  const other = db.atomic(() =>
+    api.category({
+      name: "Autres",
+      limit: 50,
+      period: "monthly",
+      renewal_day: 1,
+    }),
+  );
+  const house = db.atomic(() => api.category({ name: "Maison" }));
+  assert.equal(db.state().fallback_category_id, other);
+  assert.equal(api.snapshot().simulation.available_cents, 72000);
+  db.atomic(() =>
+    api.transaction({
+      account_id: bank,
+      category_id: house,
+      description: "Maison",
+      amount: -20,
+      date,
+    }),
+  );
+  assert.equal(api.snapshot().simulation.available_cents, 72000);
+  const backup = db.exportData();
+  db.restore(backup);
+  assert.equal(db.state().fallback_category_id, other);
+  assert.equal(
+    api.snapshot().simulation.categories.find((c) => c.id === other).current
+      .remaining_cents,
+    3000,
+  );
+  const bad = structuredClone(backup);
+  bad.tables.settings.find((s) => s.key === "fallback_category_id").value =
+    "999999";
+  assert.throws(() => db.restore(bad));
+  assert.deepEqual(db.exportData().tables, backup.tables);
+});
+test("adding a limit to a legacy Autres category reuses its identity instead of creating a duplicate", (t) => {
+  const { db, api } = fixture(t);
+  const old = db.atomic(() => api.category({ name: "Autres" }));
+  assert.equal(db.state().fallback_category_id, null);
+  const updated = db.atomic(() =>
+    api.category({
+      name: "Autres",
+      limit: 50,
+      period: "monthly",
+      renewal_day: 1,
+    }),
+  );
+  assert.equal(updated, old);
+  assert.equal(
+    db.state().categories.filter((c) => c.name === "Autres").length,
+    1,
+  );
+  assert.equal(db.state().fallback_category_id, old);
+});

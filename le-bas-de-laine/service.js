@@ -40,6 +40,16 @@ export function createService(store, clock = today) {
     return a;
   };
   function category(x) {
+    if (!x.id) {
+      const existing = q("SELECT id,name FROM categories").find(
+        (c) =>
+          c.name.trim().toLocaleLowerCase("fr-CA") ===
+          String(x.name ?? "")
+            .trim()
+            .toLocaleLowerCase("fr-CA"),
+      );
+      if (existing) x = { ...x, id: existing.id };
+    }
     const limit =
         x.limit === "" || x.limit === null || x.limit === undefined
           ? null
@@ -82,14 +92,19 @@ export function createService(store, clock = today) {
         ...Object.values(c),
         Number(x.id),
       );
+      if (c.name.toLocaleLowerCase("fr-CA") === "autres" && limit !== null)
+        put("fallback_category_id", Number(x.id));
       return Number(x.id);
     }
-    return Number(
+    const id = Number(
       run(
         "INSERT INTO categories(name,limit_cents,period,renewal_day,starts_on,active) VALUES(?,?,?,?,?,?)",
         ...Object.values(c),
       ).lastInsertRowid,
     );
+    if (c.name.toLocaleLowerCase("fr-CA") === "autres" && limit !== null)
+      put("fallback_category_id", id);
+    return id;
   }
   function recurrence(x) {
     const a = account(x.account_id),
@@ -371,9 +386,9 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.1.0",
+      version: "0.2.0",
       configured: setting("configured", false),
-      theme: setting("theme", "system"),
+      theme: "system",
       simulation,
       last_import: lastImport,
       shared_enabled: !!setting("share_token"),

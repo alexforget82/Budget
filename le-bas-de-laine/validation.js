@@ -1,5 +1,12 @@
 import { validDate } from "./dates.js";
 export function validateState(s) {
+  if (
+    s.fallback_category_id !== undefined &&
+    s.fallback_category_id !== null &&
+    (!Number.isSafeInteger(s.fallback_category_id) ||
+      !s.categories.some((c) => c.id === s.fallback_category_id))
+  )
+    throw Error("Catégorie coussin invalide.");
   const integer = (n, label) => {
     if (!Number.isSafeInteger(n) || Math.abs(n) > 1e12)
       throw Error("Entier monétaire invalide : " + label);

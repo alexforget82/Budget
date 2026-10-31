@@ -136,14 +136,13 @@ const frequencies = (value) =>
     value || "monthly",
   );
 function theme() {
-  const chosen = state?.theme || localStorage.getItem("bdl-theme") || "system";
-  document.documentElement.dataset.theme =
-    chosen === "system"
-      ? matchMedia("(prefers-color-scheme:dark)").matches
-        ? "dark"
-        : "light"
-      : chosen;
+  document.documentElement.dataset.theme = matchMedia(
+    "(prefers-color-scheme:dark)",
+  ).matches
+    ? "dark"
+    : "light";
 }
+
 function navigate(next) {
   page = ["today", "transactions", "plan"].includes(next) ? next : "today";
   history.replaceState(null, "", "#" + page);
@@ -837,21 +836,14 @@ function planView() {
   settings.append(node("summary", "Réglages et sauvegardes"));
   const content = node("div");
   settings.append(content);
-  const appearance = node("div", null, "settings-card"),
-    themeSelect = select(
-      "theme",
-      [
-        ["system", "Selon l’appareil"],
-        ["light", "Clair"],
-        ["dark", "Sombre"],
-      ],
-      state.theme,
-    );
-  themeSelect.onchange = () => {
-    localStorage.setItem("bdl-theme", themeSelect.value);
-    send("/api/theme", { theme: themeSelect.value });
-  };
-  appearance.append(field("Apparence", themeSelect));
+  const appearance = node("div", null, "settings-card");
+  appearance.append(
+    node("h3", "Laine et sapin"),
+    node(
+      "p",
+      "Fond crème en mode clair. Le mode sombre suit automatiquement le réglage de votre appareil.",
+    ),
+  );
   content.append(appearance);
   const backups = node("div", null, "settings-card");
   backups.append(
@@ -943,7 +935,7 @@ function planView() {
     link,
   );
   content.append(access);
-  const preview = node("a", "Voir les trois maquettes", "text-button");
+  const preview = node("a", "Voir les maquettes initiales", "text-button");
   preview.href = "/maquettes";
   preview.target = "_blank";
   preview.rel = "noopener";
@@ -1338,6 +1330,7 @@ function setupView() {
               renewal_day: 4,
             },
             { name: "Essence", limit: "60", period: "weekly", renewal_day: 2 },
+            { name: "Autres", limit: "50", period: "monthly", renewal_day: 1 },
             {
               name: "Restaurant",
               limit: "125",
@@ -1349,7 +1342,7 @@ function setupView() {
     body.append(
       node(
         "p",
-        "Voici des exemples à ajuster. Décochez une catégorie pour ne pas lui fixer de limite.",
+        "Exemples à ajuster. « Autres », 50 $ par mois, protège les achats sans limite propre; les factures associées sont exclues. Décochez une catégorie pour ne pas lui fixer de limite.",
         "muted",
       ),
     );
@@ -1497,4 +1490,7 @@ setInterval(() => {
   if (!document.hidden && !editor.open && (state?.configured || shared))
     refresh();
 }, 60000);
+window.addEventListener("hashchange", () => {
+  if (state) navigate(location.hash.slice(1));
+});
 await refresh();

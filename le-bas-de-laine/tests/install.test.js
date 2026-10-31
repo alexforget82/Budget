@@ -141,7 +141,7 @@ test("the installed copy opens its own real SQLite schema and serves the applica
           );
           const s = await response.json();
           if (response.ok) {
-            assert.equal(s.version, "0.1.0");
+            assert.equal(s.version, "0.2.0");
             assert.equal(s.configured, false);
             return true;
           }

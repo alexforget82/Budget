@@ -1,8 +1,8 @@
-# Le bas de laine — contrat du noyau, essai 0.1.0
+# Le bas de laine — contrat du noyau, essai 0.2.0
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
-**Fenêtres** : minimum journalier avant la première prochaine paie du compte principal (jour de paie exclu), plafonné à 30 jours; minimum sur les 30 jours complets. Sans paie connue dans la fenêtre, le premier indicateur couvre 30 jours et le précise. La même simulation fournit les deux. Aucun montant à 60 ou 90 jours.
+**Fenêtres** : minimum journalier avant la première prochaine paie du compte principal (jour de paie exclu), plafonné à 30 jours; minimum sur les 90 jours complets. Sans paie connue dans la fenêtre, le premier indicateur couvre 30 jours et le précise. La même simulation fournit les deux. Le disponible avant la paie reste plafonné à 30 jours; la simulation, l’alerte et la comparaison couvrent 90 jours.
 
 **Banque** : dernier point de contrôle réel + opérations bancaires saisies après, sauf historique déjà inclus. L’ordre est une séquence globale persistante; aucune ambiguïté entre opérations du même jour. Les cartes ne sont pas des comptes de trésorerie. Un contrôle bancaire ne réinitialise pas leurs achats à payer.
 
@@ -18,4 +18,6 @@
 
 **Exploitation** : écoute locale 3040, accès privé Tailscale sur 3041 derrière HTTPS 8443, identité propriétaire vérifiée, lien de lecture révocable. Sillage 3030/HTTPS 443 non modifié. Sauvegardes SQLite cohérentes et export/restore JSON. Aucun service bancaire ou IA, aucune dépendance de production.
 
-**Hors périmètre** : enveloppes séparées, sous-catégories, objectifs, scénarios, export ChatGPT, appariement à confirmer après saisie, comparaison à 90 jours. Le calendrier d’essai parallèle réel et la revue des données personnelles restent à faire par l’utilisateur.
+**Hors périmètre** : enveloppes séparées, sous-catégories, objectifs, scénarios, export ChatGPT, appariement à confirmer après saisie, comparaison au-delà de 90 jours. Le calendrier d’essai parallèle réel et la revue des données personnelles restent à faire par l’utilisateur.
+
+**Étape 1** : coussin Autres facultatif de 50 $/mois, sans migration financière silencieuse. Les dépenses hors limite consomment ce coussin sans changer leur classement; les factures associées en sont exclues. Le détail des réservations est dérivé du même jour contraignant que les quatre lignes. Les douze scénarios de référence figés en 0.1.0 doivent conserver exactement leur disponibilité et leurs 30 premières journées.
