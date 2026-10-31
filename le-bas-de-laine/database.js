@@ -1,3 +1,7 @@
+import {
+  calendarStateChanges,
+  applyCalendarStateChanges,
+} from "./calendar-state.js";
 import { validateState } from "./validation.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -112,6 +116,15 @@ export function openDatabase(dir) {
     return target;
   };
   const daily = (date) => backup("quotidienne-" + date);
+  function reconcileCalendar() {
+    if (setting("payment_calendar_version") === "canada-2026-2027-v1") return;
+    const changes = calendarStateChanges(state());
+    if (changes.length) backup("avant-calendrier-canadien-" + Date.now());
+    atomic(() => {
+      applyCalendarStateChanges({ run }, changes);
+      put("payment_calendar_version", "canada-2026-2027-v1");
+    });
+  }
   const exportData = () => ({
     format: "le-bas-de-laine",
     version: 1,
@@ -163,6 +176,7 @@ export function openDatabase(dir) {
           throw Error("Liens invalides.");
       });
       validateState(stage.state());
+      stage.reconcileCalendar();
       const max = Math.max(
         0,
         ...stage.state().transactions.map((t) => t.seq),
@@ -205,7 +219,9 @@ export function openDatabase(dir) {
       fs.rmSync(path.dirname(stage.filename), { recursive: true, force: true });
     }
   }
+  reconcileCalendar();
   return {
+    reconcileCalendar,
     db,
     filename,
     dir,

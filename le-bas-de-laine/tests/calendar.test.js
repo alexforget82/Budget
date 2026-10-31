@@ -26,9 +26,9 @@ test("weekends can keep the date, advance or postpone without changing the recur
     "2026-08-01",
   );
 });
-test("Quebec and federal bank holidays include Christmas/Boxing substitutes and cross-year moves", () => {
-  assert.equal(shiftDate("2026-06-24", "before"), "2026-06-23");
-  assert.equal(shiftDate("2026-06-24", "after"), "2026-06-25");
+test("Canadian payment-system holidays include Christmas/Boxing substitutes and cross-year moves", () => {
+  assert.equal(shiftDate("2026-06-24", "before"), "2026-06-24");
+  assert.equal(shiftDate("2026-06-24", "after"), "2026-06-24");
   assert.equal(shiftDate("2026-07-01", "before"), "2026-06-30");
   assert.equal(shiftDate("2027-01-01", "before"), "2026-12-31");
   assert.equal(shiftDate("2027-01-01", "after"), "2027-01-04");
@@ -131,12 +131,14 @@ test("dates match the separate Sillage calendar on shared supported rules", asyn
       for (const mode of ["none", "before", "after"])
         for (let i = 0; i < 12; i++)
           assert.deepEqual(
-            occurrenceInfo(start, frequency, i, mode),
+            occurrenceInfo(start, frequency, i, mode, true),
             old.occurrenceInfo(start, frequency, i, mode),
           );
   for (let year = 2026; year <= 2030; year++)
     assert.deepEqual(
       [...holidaySet(year)].sort(),
-      [...old.holidaySet(year)].sort(),
+      [...old.holidaySet(year)]
+        .filter((d) => !d.startsWith(year + "-06-"))
+        .sort(),
     );
 });

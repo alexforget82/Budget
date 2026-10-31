@@ -70,6 +70,7 @@ export function occurrences(rule, from, to) {
       rule.frequency,
       i,
       rule.day_adjust || "none",
+      !!rule.calendar_legacy,
     );
     if (info.date > to) break;
     if (info.date >= from)

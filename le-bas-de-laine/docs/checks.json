@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.4.1",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 82,
+    "passed": 89,
     "failed": 0,
     "skipped": 0
   },
@@ -66,7 +66,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 80,
+    "passed": 87,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
@@ -102,7 +102,14 @@
       2030
     ],
     "payments_canada_verified": false,
-    "official_source_access": "HTTP 403",
-    "status": "provisional; national clearing vs Quebec bank closures still requires review"
+    "official_source_access": "HTTP 403; no direct download",
+    "status": "exact match to user-supplied 2026 and 2027 tables; sources not independently authenticated",
+    "user_supplied_years": [
+      2026,
+      2027
+    ],
+    "june_24_national_closure": false,
+    "legacy_state_conversion": "backup before re-keying; paid/cancelled/postponed decisions and actual transactions preserved",
+    "sillage_occurrence_comparison_scope": "legacy compatibility; national list intentionally excludes Quebec June holiday"
   }
 }

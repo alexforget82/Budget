@@ -1,3 +1,4 @@
+import { nationalOccurrenceDate } from "./calendar-state.js";
 import { createHash } from "node:crypto";
 import { cardLots } from "./engine.js";
 import { occurrences, periodStart, addDays } from "./dates.js";
@@ -556,7 +557,13 @@ export function applySillage(store, plan) {
       rawId = Number(row.source_key.split(":").at(-1)),
       raw = source.recurring.find((r) => r.id === rawId);
     for (const o of occurrences(
-      { ...raw, id, name: raw.description, kind: raw.type },
+      {
+        ...raw,
+        id,
+        name: raw.description,
+        kind: raw.type,
+        calendar_legacy: true,
+      },
       raw.start_on,
       plan.reference,
     )) {
@@ -573,7 +580,7 @@ export function applySillage(store, plan) {
         store.run(
           "INSERT OR REPLACE INTO occurrence_states(rule_id,original_on,status,postponed_on,amount_cents) VALUES(?,?,'postponed',?,?)",
           id,
-          o.original_on,
+          nationalOccurrenceDate(raw, o.original_on),
           move.new_on,
           override?.amount_cents ?? null,
         );
@@ -581,7 +588,7 @@ export function applySillage(store, plan) {
         store.run(
           "INSERT OR REPLACE INTO occurrence_states(rule_id,original_on,status) VALUES(?,?,'cancelled')",
           id,
-          o.original_on,
+          nationalOccurrenceDate(raw, o.original_on),
         );
       else if (
         o.date <
@@ -602,7 +609,7 @@ export function applySillage(store, plan) {
         store.run(
           "INSERT OR REPLACE INTO occurrence_states(rule_id,original_on,status) VALUES(?,?,'paid')",
           id,
-          o.original_on,
+          nationalOccurrenceDate(raw, o.original_on),
         );
     }
   }
@@ -617,7 +624,10 @@ export function applySillage(store, plan) {
     store.run(
       "INSERT OR REPLACE INTO occurrence_states(rule_id,original_on,status,postponed_on,amount_cents) VALUES(?,?,?,?,?)",
       id,
-      raw.occurrence_on,
+      nationalOccurrenceDate(
+        source.recurring.find((r) => r.id === raw.recurring_id),
+        raw.occurrence_on,
+      ),
       raw.amount_cents === 0 ? "cancelled" : "postponed",
       moved?.new_on || raw.occurrence_on,
       raw.amount_cents,
@@ -638,7 +648,10 @@ export function applySillage(store, plan) {
     store.run(
       "INSERT OR REPLACE INTO occurrence_states(rule_id,original_on,status,postponed_on) VALUES(?,?,'postponed',?)",
       id,
-      raw.occurrence_on,
+      nationalOccurrenceDate(
+        source.recurring.find((r) => r.id === raw.recurring_id),
+        raw.occurrence_on,
+      ),
       raw.new_on,
     );
   }

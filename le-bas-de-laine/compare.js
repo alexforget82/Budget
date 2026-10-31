@@ -196,7 +196,7 @@ export async function compareBackup(
       report = compareForecasts(old, simulation, decisions);
     return {
       application: "Le bas de laine",
-      version: "0.4.0",
+      version: "0.4.1",
       reference,
       horizon: 90,
       source_created_at: backup.created_at,

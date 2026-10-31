@@ -1,3 +1,15 @@
+# Vérifications — 0.4.1
+
+89 tests Node réussis. Concordance exacte, sans fermeture supplémentaire, avec les tableaux 2026 et 2027 fournis par l’utilisateur. Vérifications des jours provinciaux/sectoriels exclus, de Noël/lendemain et de la frontière janvier 2028. Aucun téléchargement source réussi n’est revendiqué.
+
+Les tests SQLite ouvrent une base simulant l’ancien calendrier, convertissent les clés des échéances sans réécrire les achats, vérifient la sauvegarde automatique avant changement et l’idempotence. Une restauration conserve un report manuel et son montant; un conflit de clé est refusé. La compatibilité historique continue de correspondre à Sillage sur 1 152 occurrences; le calendrier national diffère volontairement par juin.
+
+Les parcours Chromium restent vérifiés : interface générale, formulaires de dates et nouveaux outils. Les tests à date réelle choisissent explicitement l’absence de déplacement pour leur paie fictive « demain »; les valeurs par défaut sont testées séparément, ce qui évite une dépendance au jour de la semaine. Pas de test matériel iOS/Chromebook revendiqué.
+
+Archive autonome : 87 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.0
 
 82 tests Node réussis, sans échec. Comparaison de 1 152 occurrences avec le calendrier du code Sillage, plus les listes de fériés 2026–2030. Les tests supplémentaires vérifient les défauts par intention, la date effective dans les prévisions, la simulation d’un achat sur compte/carte couvert ou hors limite sans écriture, le futur sans effet prématuré, et les soldes/points de contrôle secondaires exclus du disponible principal. Les 12 scénarios financiers figés restent identiques.

@@ -1,19 +1,28 @@
-# Calendrier : état de validation
+# Calendrier de traitement — 0.4.1
 
-31 octobre 2026, version 0.4.0.
+Validation du 31 octobre 2026 à partir des tableaux fournis dans la conversation. Les pages sources n’ont pas été téléchargées avec succès (HTTP 403). Le premier tableau identifie les fermetures 2026; le second distingue, pour 2027, congé légal et « Payment System Closure » et contient des références Powerpay. Les tests comparent les valeurs reçues, sans certifier l’origine ou l’exactitude externe du copier-coller.
 
-## Vérifié automatiquement
+| Fermeture | 2026 | 2027 |
+| --- | --- | --- |
+| Nouvel An | 1 janvier | 1 janvier |
+| Vendredi saint | 3 avril | 26 mars |
+| Fête de la Reine | 18 mai | 24 mai |
+| Fête du Canada | 1 juillet | 1 juillet |
+| Fête du Travail | 7 septembre | 6 septembre |
+| Vérité et réconciliation | 30 septembre | 30 septembre |
+| Action de grâce | 12 octobre | 11 octobre |
+| Souvenir | 11 novembre | 11 novembre |
+| Noël | 25 décembre | 27 décembre |
+| Lendemain de Noël | 28 décembre | 28 décembre |
 
-Week-ends; Vendredi saint; Noël et lendemain avec substitutions distinctes; mois courts et années bissextiles; dernier jour calendaire et dernier jour ouvrable; ancrage conservé aux deux semaines; déplacement entre mois sans duplication; conservation des échéances payées et reportées.
+Les deux listes générées correspondent exactement, sans date supplémentaire. Le tableau 2027 indique aussi le Nouvel An 2028 observé le 3 janvier : cette date est fermée, donc un paiement décalé après le 1 janvier 2028 est traité le 4 janvier.
 
-Comparaison avec le programme Sillage livré séparément : 8 dates × 4 fréquences communes × 3 ajustements × 12 occurrences = 1 152 comparaisons, plus les listes de fériés 2026–2030. Cela établit une cohérence entre programmes, pas une validation externe indépendante.
+## Périmètre
 
-## À vérifier auprès de la source officielle
+Le **24 juin reste férié au Québec**, mais n’est pas une fermeture nationale de paiement. Sont aussi exclus le lundi de Pâques, les congés provinciaux/sectoriels et la fermeture propre à Dayforce le premier lundi d’août. Cela ne prédit pas les décisions de paie particulières d’un employeur. Le champ de déplacement reste modifiable; les dates RRQ demeurent estimées.
 
-Source visée : https://www.payments.ca/payment-resources/support-guides/holiday-schedule
+## Correction des anciennes échéances
 
-L’accès a retourné HTTP 403. Aucune page officielle n’a donc été consultée avec succès. Ne pas marquer cette tâche comme terminée ou figer les règles comme officielles.
+Les versions précédentes ajoutaient le 24 juin et son report observé. La compatibilité historique permet de retrouver les anciennes clés, puis de les convertir par numéro d’occurrence. L’état payé/annulé/reporté, les montants particuliers, reports manuels et liens aux transactions/virements sont conservés. Aucune date de transaction n’est changée. Une collision bloque la conversion. Une sauvegarde SQLite cohérente précède toute modification effective au démarrage. La restauration et l’import Sillage préservent également les décisions utilisant les anciennes clés.
 
-Le calendrier local inclut le Nouvel An, le Vendredi saint, la fête de la Reine, la Saint-Jean-Baptiste, la fête du Canada, la fête du Travail, la Journée nationale de la vérité et de la réconciliation, l’Action de grâce, le jour du Souvenir, Noël et le lendemain de Noël. Vérifier les dates observées, les règles de substitution et le périmètre national de compensation par rapport aux fermetures québécoises, notamment le 24 juin. Les dates d’un employeur ou d’une prestation peuvent avoir leurs propres règles. Les dates RRQ restent explicitement estimées.
-
-Les règles existantes ne changent pas silencieusement. La nouvelle interface permet de conserver une date, de la devancer ou de la reporter. Toute correction future de la liste devra être documentée et tester les échéances déjà réglées.
+Les 1 152 comparaisons avec le code Sillage vérifient désormais le calendrier historique pour cette conversion. Les listes nationales diffèrent volontairement de Sillage par le retrait du férié québécois de juin; cet écart est documenté, sans modifier Sillage. Les règles calculées au-delà des années reçues restent une extrapolation, pas une vérification de tableaux annuels officiels.

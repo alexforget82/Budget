@@ -122,7 +122,7 @@ function handler(isPrivate) {
           return reply(res, 404, { error: "Lien indisponible." });
         if (shared[2] === "/data")
           return reply(res, 200, {
-            version: "0.4.0",
+            version: "0.4.1",
             simulation: currentState().simulation,
           });
         const sharePath = "/s/" + shared[1];

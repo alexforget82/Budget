@@ -1,3 +1,7 @@
+# 0.4.1 — fermetures du système de paiement
+
+Concordance exacte avec les tableaux 2026/2027 reçus de l’utilisateur. Retrait du 24 juin du calendrier national de traitement; les congés provinciaux et propres à un fournisseur ne sont pas des fermetures nationales. Conversion protégée des anciennes décisions d’échéance au démarrage/restauration et des décisions importées de Sillage, sans toucher aux transactions réelles. Sauvegarde cohérente avant une conversion effective. Les sources n’ont pas été consultées directement : contrôle du contenu transmis, pas authentification externe.
+
 # 0.4.0 — dates visibles et outils quotidiens
 
 Valeurs par défaut de déplacement selon le type de nouvelle récurrence, sans modifier les règles existantes. Dates nominales/effectives visibles. Simulateur d’achat utilisant la prévision et les limites, bilan réel par catégorie, agenda mensuel des échéances ouvertes et comptes d’épargne séparés du disponible principal. Comparaison des dates avec Sillage sur 1 152 cas et des listes de fériés 2026–2030. Validation officielle Paiements Canada en attente (accès HTTP 403). Aucun changement du schéma SQLite.

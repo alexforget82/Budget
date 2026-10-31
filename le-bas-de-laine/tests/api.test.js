@@ -72,6 +72,7 @@ async function setup(f) {
         amount: 1000,
         frequency: "biweekly",
         start_on: addDays(today(), 1),
+        day_adjust: "none",
       },
     ],
     categories: [

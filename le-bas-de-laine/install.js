@@ -38,7 +38,7 @@ export async function install({
             signal: AbortSignal.timeout(700),
           }),
           data = await r.json();
-        if (r.ok && data.version === "0.4.0") return true;
+        if (r.ok && data.version === "0.4.1") return true;
       } catch {}
       await new Promise((r) => setTimeout(r, 100));
     }

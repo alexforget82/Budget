@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -134,7 +134,7 @@ Les tests utilisent des données fictives. Le test de comparaison réelle au cod
 
 ## Dates des paies et factures
 
-Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de conserver la date ou de choisir le jour ouvrable précédent ou suivant. Le calendrier bancaire utilisé est Québec/Canada. Un aperçu affiche la prochaine date dans l’assistant et les trois prochaines dans le formulaire complet.
+Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de conserver la date ou de choisir le jour ouvrable précédent ou suivant. Le calendrier utilisé est celui des fermetures du système de paiement canadien. Un aperçu affiche la prochaine date dans l’assistant et les trois prochaines dans le formulaire complet.
 
 « Dernier jour du mois » et « Dernier jour ouvrable du mois » sont deux fréquences distinctes. Une récurrence mensuelle au 31 revient au dernier jour des mois plus courts, sans dériver les mois suivants. Les ajustements conservent l’ancrage de la récurrence. Les échéances déjà payées et les reports manuels sont conservés lors d’un changement compatible de calendrier; les dates des achats réels ne changent pas.
 
@@ -149,6 +149,12 @@ Pour une nouvelle règle, les revenus choisissent par défaut le jour ouvrable p
 - Plan → **Calendrier des échéances** : agenda mensuel des échéances ouvertes dans la prévision de 90 jours, avec dates déplacées et actions Payée/Reçue/Reporter.
 - Plan → **Moyens de paiement → + Compte / carte** : ajoutez un compte bancaire ou une épargne, puis saisissez son solde. Les soldes secondaires sont suivis séparément et ne gonflent pas le disponible du compte principal. Un virement vers l’épargne réduit celui-ci.
 
-### Validation du calendrier encore ouverte
+### Calendrier corrigé en 0.4.1
 
-La comparaison avec le calendrier Sillage et les tests de dates passent, mais **la liste n’est pas figée comme officiellement validée par Paiements Canada**. La consultation de https://www.payments.ca/payment-resources/support-guides/holiday-schedule le 31 octobre 2026 a été bloquée par HTTP 403 dans l’environnement de travail. Le calendrier local inclut des fermetures bancaires Québec/Canada, dont le 24 juin; cela ne constitue pas une reproduction certifiée du calendrier national de compensation. La vérification officielle doit distinguer ces deux périmètres. Voir [le suivi](docs/CALENDRIER.md).
+Les dix fermetures de 2026 et celles de 2027 correspondent exactement aux tableaux transmis par l’utilisateur dans la conversation. Les sources n’ont pas été téléchargées directement (accès HTTP 403); cette validation porte sur le contenu reçu, sans prétendre authentifier les pages sources.
+
+Le 24 juin est férié au Québec, mais n’est pas une fermeture du système de paiement national. Il ne décale donc plus automatiquement les paiements. Le lundi de Pâques, les congés propres à une province ou à une industrie et la fermeture Dayforce en août ne sont pas ajoutés à ce calendrier. Un employeur peut appliquer ses propres dates de paie.
+
+Noël et lendemain : fermetures les 25 et 28 décembre 2026, puis 27 et 28 décembre 2027. Une opération demandée le 25 décembre et reportée au prochain jour de traitement tombe le 29 décembre dans les deux cas.
+
+Si des décisions d’échéance enregistrées utilisaient l’ancien 24 juin, leurs clés sont converties par occurrence en conservant l’état payé/annulé/reporté, le report manuel et les liens aux achats. Une copie SQLite `avant-calendrier-canadien-*.sqlite` précède toute conversion effective. La restauration d’une ancienne sauvegarde applique la même conversion. Pour revenir à l’ancien programme avec ces échéances, reprendre aussi la sauvegarde correspondante d’avant conversion. Aucun changement de schéma. Voir [le suivi du calendrier](docs/CALENDRIER.md).

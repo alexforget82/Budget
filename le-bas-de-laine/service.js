@@ -155,7 +155,7 @@ export function createService(store, clock = today) {
     }
     return {
       dates,
-      calendar: "Calendrier bancaire Québec/Canada",
+      calendar: "Fermetures du système de paiement canadien",
       estimated: x.frequency === "rrq",
     };
   }
@@ -499,7 +499,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.4.0",
+      version: "0.4.1",
       configured: setting("configured", false),
       theme: "system",
       simulation,

@@ -610,3 +610,51 @@ test("secondary bank checkpoint changes savings without changing main available"
   );
   assert.equal(api.snapshot().simulation.available_cents, before);
 });
+
+test("Sillage June payment imports into its national key and can be reimported without duplicates", (t) => {
+  const { db } = importFixture(t),
+    backup = source();
+  backup.tables.envelopes = [];
+  backup.tables.transactions = [
+    {
+      id: 1,
+      account_id: 1,
+      category_id: 1,
+      amount_cents: -1000,
+      description: "Facture juin",
+      happened_on: "2026-06-25",
+      affects_balance: 1,
+    },
+  ];
+  backup.tables.recurring = [
+    {
+      id: 1,
+      description: "Facture juin",
+      type: "expense",
+      amount_cents: 1000,
+      account_id: 1,
+      start_on: "2026-06-24",
+      frequency: "monthly",
+      day_adjust: "after",
+      active: 1,
+    },
+  ];
+  backup.tables.reconciliation_links = [
+    { recurring_id: 1, occurrence_on: "2026-06-25", transaction_id: 1 },
+  ];
+  for (let i = 0; i < 2; i++)
+    db.atomic(() =>
+      applySillage(db, planSillage(backup, "2026-06-26", db.state())),
+    );
+  const states = db.state().occurrence_states;
+  assert.equal(
+    states.filter((s) => s.original_on === "2026-06-24" && s.status === "paid")
+      .length,
+    1,
+  );
+  assert.equal(
+    states.some((s) => s.original_on === "2026-06-25"),
+    false,
+  );
+  assert.equal(db.state().transactions.length, 1);
+});

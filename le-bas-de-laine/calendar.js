@@ -1,4 +1,4 @@
-// Quebec/Canada banking calendar; unadjusted fixed dates retain their nominal date.
+// Canadian payment-system closures; unadjusted fixed dates retain their nominal date.
 const dateFrom = (s) => new Date(s + "T12:00:00Z"),
   iso = (d) => d.toISOString().slice(0, 10);
 export function lastWeekday(y, m) {
@@ -23,7 +23,7 @@ export function easter(y) {
     day = ((h + l - 7 * m + 114) % 31) + 1;
   return new Date(Date.UTC(y, n - 1, day, 12));
 }
-export function holidaySet(y) {
+export function holidaySet(y, legacyQuebec = false) {
   const set = new Set();
   const add = (d) => set.add(iso(d));
   const fixed = (month, day) => new Date(Date.UTC(y, month - 1, day, 12));
@@ -47,7 +47,7 @@ export function holidaySet(y) {
   const victoria = fixed(5, 24);
   victoria.setUTCDate(24 - ((victoria.getUTCDay() + 6) % 7));
   add(victoria);
-  observed(6, 24);
+  if (legacyQuebec) observed(6, 24); // pre-0.4.1 compatibility for saved occurrence states only.
   observed(7, 1);
   nthMonday(9, 1);
   nthMonday(10, 2);
@@ -57,22 +57,29 @@ export function holidaySet(y) {
   observed(12, 26);
   return set;
 }
-export function nonBusiness(date) {
+export function nonBusiness(date, legacyQuebec = false) {
   const d = dateFrom(date);
   return (
-    [0, 6].includes(d.getUTCDay()) || holidaySet(d.getUTCFullYear()).has(date)
+    [0, 6].includes(d.getUTCDay()) ||
+    holidaySet(d.getUTCFullYear(), legacyQuebec).has(date)
   );
 }
-export function shiftDate(date, mode) {
+export function shiftDate(date, mode, legacyQuebec = false) {
   mode = normalizeAdjustment(mode);
   if (mode === "none") return date;
   const d = dateFrom(date),
     step = mode === "before" ? -1 : 1;
-  for (let i = 0; i < 12 && nonBusiness(iso(d)); i++)
+  for (let i = 0; i < 12 && nonBusiness(iso(d), legacyQuebec); i++)
     d.setUTCDate(d.getUTCDate() + step);
   return iso(d);
 }
-export function occurrenceInfo(start, frequency, i, adjust = "none") {
+export function occurrenceInfo(
+  start,
+  frequency,
+  i,
+  adjust = "none",
+  legacyQuebec = false,
+) {
   let nominal;
   if (frequency === "last_day") {
     const d = dateFrom(start);
@@ -87,9 +94,14 @@ export function occurrenceInfo(start, frequency, i, adjust = "none") {
     nominal = shiftDate(
       lastWeekday(d.getUTCFullYear(), d.getUTCMonth() + 1),
       "before",
+      legacyQuebec,
     );
   } else nominal = nextOccurrence(start, frequency, i);
-  return { date: shiftDate(nominal, adjust), estimated: false, nominal };
+  return {
+    date: shiftDate(nominal, adjust, legacyQuebec),
+    estimated: false,
+    nominal,
+  };
 }
 export function nextOccurrence(start, frequency, i) {
   if (["last_day", "last_business_day", "rrq"].includes(frequency))
