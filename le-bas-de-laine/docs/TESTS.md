@@ -1,3 +1,11 @@
+# Vérifications — 0.4.2
+
+89 tests Node réussis; calculs et calendrier inchangés. Le parcours général Chromium et `tests/tutorial-ui.py` passent. Le nouveau parcours vérifie l’affichage automatique aux quatre étapes, la conservation d’un solde saisi après masquage/réaffichage, la configuration complète et la relecture depuis Aujourd’hui/Plan. Navigation précédent/suivant, sortie anticipée et fin du tutoriel laissent les tables de données exactement identiques. Vérifications à 320/390/768/1440 pixels, clair et sombre, sans débordement horizontal. Aucune validation physique Safari iOS revendiquée.
+
+Archive autonome : 87 tests réussis, deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.1
 
 89 tests Node réussis. Concordance exacte, sans fermeture supplémentaire, avec les tableaux 2026 et 2027 fournis par l’utilisateur. Vérifications des jours provinciaux/sectoriels exclus, de Noël/lendemain et de la frontière janvier 2028. Aucun téléchargement source réussi n’est revendiqué.

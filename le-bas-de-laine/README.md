@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -158,3 +158,9 @@ Le 24 juin est férié au Québec, mais n’est pas une fermeture du système de
 Noël et lendemain : fermetures les 25 et 28 décembre 2026, puis 27 et 28 décembre 2027. Une opération demandée le 25 décembre et reportée au prochain jour de traitement tombe le 29 décembre dans les deux cas.
 
 Si des décisions d’échéance enregistrées utilisaient l’ancien 24 juin, leurs clés sont converties par occurrence en conservant l’état payé/annulé/reporté, le report manuel et les liens aux achats. Une copie SQLite `avant-calendrier-canadien-*.sqlite` précède toute conversion effective. La restauration d’une ancienne sauvegarde applique la même conversion. Pour revenir à l’ancien programme avec ces échéances, reprendre aussi la sauvegarde correspondante d’avant conversion. Aucun changement de schéma. Voir [le suivi du calendrier](docs/CALENDRIER.md).
+
+## Tutoriel à l’écran — 0.4.2
+
+À la première configuration, une aide s’affiche automatiquement pour chacune des quatre étapes : solde réel, prochaines paies, factures fixes et limites variables. Elle explique quoi saisir, ce qui est protégé et donne un exemple. « Masquer l’aide » conserve les champs saisis; « Afficher le tutoriel » la rétablit.
+
+Après la configuration, **Tutoriel** dans Aujourd’hui ou Plan permet de revoir les étapes, puis les gestes quotidiens (achat, facture payée, cartes, vérification du solde et sauvegarde). Le parcours peut être quitté à tout moment. Il n’enregistre aucun montant, ne réinitialise rien et ne relance pas l’assistant de configuration sur un budget existant.

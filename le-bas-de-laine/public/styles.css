@@ -335,6 +335,7 @@
   }
   .page-heading {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
@@ -1431,4 +1432,27 @@
 .category-report label,
 .schedule label {
   margin-top: 1rem;
+}
+
+.tutorial-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 0 0 1rem;
+}
+.tutorial-card h3 {
+  margin: 0.4rem 0;
+}
+.tutorial-card p {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.tutorial-example {
+  font-size: 0.9rem;
+}
+.tutorial-review .tutorial-card {
+  margin-bottom: 0.6rem;
 }

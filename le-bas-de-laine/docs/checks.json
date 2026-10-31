@@ -1,5 +1,5 @@
 {
-  "version": "0.4.1",
+  "version": "0.4.2",
   "horizon_days": 90,
   "node_tests": {
     "passed": 89,
@@ -35,7 +35,10 @@
       "calendar wizard/editor previews and persisted adjustments at 320/390/768/1440",
       "purchase preview without writes, 30 full days",
       "category report and shifted monthly agenda",
-      "secondary savings creation and checkpoint"
+      "secondary savings creation and checkpoint",
+      "automatic tutorial at all 4 setup steps",
+      "help visibility preserves unsaved input",
+      "read-only tutorial replay and early exit, 4 widths/2 themes"
     ]
   },
   "comparison": {

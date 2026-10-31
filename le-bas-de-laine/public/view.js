@@ -98,7 +98,14 @@ export function chart(days) {
 }
 export function todayView(
   sim,
-  { openBalance, openCategory, act, openPurchase, shared = false } = {},
+  {
+    openBalance,
+    openCategory,
+    act,
+    openPurchase,
+    openTutorial,
+    shared = false,
+  } = {},
 ) {
   const root = node("div"),
     heading = node("div", null, "page-heading"),
@@ -107,6 +114,8 @@ export function todayView(
   heading.append(title);
   if (openBalance)
     heading.append(button("Vérifier mon solde", openBalance, "text-button"));
+  if (openTutorial)
+    heading.append(button("Tutoriel", () => openTutorial(), "text-button"));
   if (openPurchase)
     heading.append(button("Puis-je faire cet achat ?", openPurchase));
   root.append(heading);

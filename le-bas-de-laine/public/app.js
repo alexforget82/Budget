@@ -18,6 +18,7 @@ let state,
   page = location.hash.slice(1) || "today",
   saveEditor,
   step = 0,
+  setupHelpVisible = true,
   wizard = {
     account_name: "Conjoint",
     balance: "",
@@ -278,6 +279,7 @@ function render() {
           openCategory: () => navigate("plan"),
           act: occurrenceAction,
           openPurchase: purchaseEditor,
+          openTutorial: tutorialEditor,
         })
       : page === "transactions"
         ? transactionsView()
@@ -825,7 +827,10 @@ function ruleEditor(r, kind = "expense") {
 function planView() {
   const root = node("div"),
     heading = node("div", null, "page-heading");
-  heading.append(node("h1", "Votre plan"));
+  heading.append(
+    node("h1", "Votre plan"),
+    button("Tutoriel", () => tutorialEditor(), "text-button"),
+  );
   root.append(heading);
   const grid = node("div", null, "plan-grid");
   root.append(grid);
@@ -1363,7 +1368,24 @@ function setupView() {
   const steps = node("div", null, "setup-steps");
   for (let i = 0; i < 4; i++)
     steps.append(node("span", null, i <= step ? "done" : ""));
+  steps.setAttribute("aria-label", "Étape " + (step + 1) + " sur 4");
   root.append(steps);
+  const helpToggle = button(
+    setupHelpVisible ? "Masquer l’aide" : "Afficher le tutoriel",
+    () => {},
+    "text-button",
+  );
+  // Toggle only the help card: rebuilding the form would discard unsaved inputs.
+  helpToggle.onclick = () => {
+    setupHelpVisible = !setupHelpVisible;
+    help.hidden = !setupHelpVisible;
+    helpToggle.textContent = setupHelpVisible
+      ? "Masquer l’aide"
+      : "Afficher le tutoriel";
+  };
+  const help = tutorialCard(step);
+  help.hidden = !setupHelpVisible;
+  root.append(helpToggle, help);
   const box = panel(
       [
         "Votre point de départ",
@@ -1658,6 +1680,42 @@ setInterval(() => {
 window.addEventListener("hashchange", () => {
   if (state) navigate(location.hash.slice(1));
 });
+const tutorialSteps = [
+  {
+    title: "Partir du solde réel",
+    text: "Ouvrez votre banque et entrez le solde actuel du compte qui paie les dépenses du ménage.",
+    tip: "Ce solde inclut les opérations déjà passées. N’ajoutez pas le solde de vos cartes ou de votre épargne.",
+    example: "Exemple : si le compte conjoint affiche 1 000 $, entrez 1 000 $.",
+  },
+  {
+    title: "Inscrire les prochaines paies",
+    text: "Ajoutez chaque source de revenu avec son montant, sa fréquence et la prochaine date à recevoir.",
+    tip: "Vérifiez l’aperçu des dates : par défaut, une paie tombe au jour ouvrable précédent si sa date est un week-end ou un férié bancaire. Vous pouvez changer ce choix.",
+    example:
+      "Exemple : une paie toutes les deux semaines reste aux deux semaines; elle n’est pas transformée en moyenne mensuelle.",
+  },
+  {
+    title: "Ajouter les factures fixes",
+    text: "Inscrivez les factures à venir : montant, fréquence et prochaine échéance. Vous pouvez passer cette étape si vous n’en avez pas encore.",
+    tip: "Ne mettez pas aussi une limite pour la même dépense. Pour un achat variable comme l’épicerie, utilisez plutôt l’étape suivante.",
+    example:
+      "Exemple : Internet, 65 $ par mois. Par défaut, une date non ouvrable est reportée au prochain jour ouvrable.",
+  },
+  {
+    title: "Protéger les dépenses variables",
+    text: "Choisissez un montant, une période et un jour de renouvellement pour chaque catégorie. Ajustez les exemples ou décochez ceux qui ne vous servent pas.",
+    tip: "Les montants restants et les renouvellements à venir réduisent le disponible automatiquement. Aucun argent à déplacer dans une enveloppe.",
+    example:
+      "Exemple : Épicerie, 230 $ par semaine, renouvellement jeudi. Si une seule période de 230 $ est à protéger sur un solde de 1 000 $, le disponible est 770 $. Un achat de 71,69 $ couvert par cette limite laisse le même disponible.",
+  },
+  {
+    title: "Utiliser le budget au quotidien",
+    text: "Saisissez chaque achat une seule fois, avec sa catégorie et son moyen de paiement. Une facture peut être enregistrée avec Payée dans les échéances.",
+    tip: "Ajoutez vos cartes et votre épargne dans Plan. Les achats sur carte restent protégés jusqu’au paiement. Vérifier mon solde permet de repartir du solde bancaire réel.",
+    example:
+      "Aujourd’hui : consultez le disponible ou testez un achat. Plan : modifiez les montants, consultez le calendrier et exportez une sauvegarde. Ce tutoriel reste accessible ici sans recommencer la configuration.",
+  },
+];
 await refresh();
 
 function scheduleDate(e) {
@@ -1837,4 +1895,51 @@ function scheduleView() {
   month.onchange = render;
   render();
   return host;
+}
+
+function tutorialCard(index) {
+  const item = tutorialSteps[index],
+    card = node("section", null, "tutorial-card");
+  card.setAttribute("aria-label", "Tutoriel de configuration");
+  card.append(
+    node(
+      "p",
+      index < 4 ? "Étape " + (index + 1) + " sur 4" : "Après la configuration",
+      "eyebrow",
+    ),
+    node("h3", item.title),
+    node("p", item.text),
+    node("p", item.tip, "muted"),
+    node("p", item.example, "tutorial-example"),
+  );
+  return card;
+}
+function tutorialEditor() {
+  let index = 0;
+  const content = node("div", null, "tutorial-review"),
+    progress = node("p", null, "muted");
+  const previous = button("Précédent", () => {
+    index--;
+    draw();
+  });
+  function draw() {
+    content.replaceChildren(progress, tutorialCard(index), previous);
+    progress.textContent =
+      "Tutoriel · " + (index + 1) + " / " + tutorialSteps.length;
+    previous.hidden = index === 0;
+    $("#editor-save").textContent =
+      index === tutorialSteps.length - 1 ? "Terminer" : "Suivant";
+  }
+  modal(
+    "Bien démarrer",
+    content,
+    () => {
+      if (index === tutorialSteps.length - 1) return true;
+      index++;
+      draw();
+      return false;
+    },
+    "Suivant",
+  );
+  draw();
 }

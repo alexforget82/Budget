@@ -1,3 +1,7 @@
+# 0.4.2 — tutoriel de configuration
+
+Aide contextuelle affichée automatiquement aux quatre étapes de la configuration initiale. Masquer/afficher conserve les saisies. Tutoriel consultable depuis Aujourd’hui et Plan, avec navigation précédent/suivant et une dernière fiche sur l’usage quotidien, sans modifier la configuration existante. En-tête adaptatif sur petits écrans. Aucun changement de calcul, de calendrier ou de schéma.
+
 # 0.4.1 — fermetures du système de paiement
 
 Concordance exacte avec les tableaux 2026/2027 reçus de l’utilisateur. Retrait du 24 juin du calendrier national de traitement; les congés provinciaux et propres à un fournisseur ne sont pas des fermetures nationales. Conversion protégée des anciennes décisions d’échéance au démarrage/restauration et des décisions importées de Sillage, sans toucher aux transactions réelles. Sauvegarde cohérente avant une conversion effective. Les sources n’ont pas été consultées directement : contrôle du contenu transmis, pas authentification externe.
