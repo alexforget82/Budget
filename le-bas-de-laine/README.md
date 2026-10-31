@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.2.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.3.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -131,3 +131,11 @@ python3 tests/ui.py  # développeur : Playwright et Chromium requis
 ```
 
 Les tests utilisent des données fictives. Le test de comparaison réelle au code Sillage peut être omis si ce programme n’est pas disponible. Les tests systemd vérifient le vrai analyseur, mais pas un Chromebook physique. Le parcours responsive a été vérifié dans Chromium; pas de test matériel Safari iOS, de connexion bancaire ou de validation sur vos données réelles. Voir `docs/TESTS.md` et `docs/SPECIFICATION.md`.
+
+## Dates des paies et factures
+
+Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de conserver la date ou de choisir le jour ouvrable précédent ou suivant. Le calendrier bancaire utilisé est Québec/Canada. Un aperçu affiche la prochaine date dans l’assistant et les trois prochaines dans le formulaire complet.
+
+« Dernier jour du mois » et « Dernier jour ouvrable du mois » sont deux fréquences distinctes. Une récurrence mensuelle au 31 revient au dernier jour des mois plus courts, sans dériver les mois suivants. Les ajustements conservent l’ancrage de la récurrence. Les échéances déjà payées et les reports manuels sont conservés lors d’un changement compatible de calendrier; les dates des achats réels ne changent pas.
+
+Les règles existantes ne sont pas déplacées automatiquement. Les limites de catégorie gardent leur date de renouvellement budgétaire; elles ne sont pas des paiements bancaires. Les dates RRQ demeurent estimées et doivent être confirmées avec le calendrier officiel de Retraite Québec.

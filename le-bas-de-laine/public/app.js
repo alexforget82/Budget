@@ -130,11 +130,110 @@ const frequencies = (value) =>
       ["quarterly", "Aux trois mois"],
       ["semiannual", "Aux six mois"],
       ["yearly", "Chaque année"],
-      ["last_business_day", "Dernier jour ouvrable"],
-      ["rrq", "Calendrier RRQ"],
+      ["last_day", "Dernier jour du mois"],
+      ["last_business_day", "Dernier jour ouvrable du mois"],
+      ["rrq", "RRQ (dates à confirmer)"],
     ],
     value || "monthly",
   );
+function calendarFields(
+  frequency,
+  start,
+  startLabel,
+  initial = {},
+  compact = false,
+) {
+  const container = node("div", null, "calendar-fields"),
+    options = node("details", null, "details-options"),
+    summary = node("summary", "Week-ends et jours fériés");
+  const adjustment = select(
+    "day_adjust",
+    [
+      ["none", "Conserver la date"],
+      ["before", "Jour ouvrable précédent"],
+      ["after", "Jour ouvrable suivant"],
+    ],
+    initial.day_adjust || "none",
+  );
+  const preview = node("div", null, "calendar-preview");
+  preview.setAttribute("aria-live", "polite");
+  options.append(summary, field("Si la date n’est pas ouvrable", adjustment));
+  options.open = adjustment.value !== "none";
+  container.append(options, preview);
+  const originalLabel = startLabel.firstChild.textContent;
+  let serial = 0,
+    timer;
+  const format = (d) =>
+    new Date(d + "T12:00:00").toLocaleDateString("fr-CA", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  async function refresh() {
+    const ticket = ++serial,
+      monthEnd = ["last_day", "last_business_day", "rrq"].includes(
+        frequency.value,
+      ),
+      label = monthEnd ? "Date dans le premier mois" : originalLabel;
+    startLabel.firstChild.textContent = label;
+    start.setAttribute("aria-label", label);
+    preview.replaceChildren(
+      node("p", "Vérification des prochaines dates…", "muted"),
+    );
+    if (!start.value) {
+      preview.replaceChildren();
+      return;
+    }
+    try {
+      const out = await request("/api/recurrence/preview", {
+        id: initial.id,
+        start_on: start.value,
+        frequency: frequency.value,
+        day_adjust: adjustment.value,
+        one_time: !!initial.one_time,
+      });
+      if (ticket !== serial) return;
+      preview.replaceChildren(
+        node(
+          "strong",
+          compact ? "Prochaine date prévue" : "Prochaines dates prévues",
+        ),
+      );
+      for (const d of compact ? out.dates.slice(0, 1) : out.dates)
+        preview.append(
+          node(
+            "div",
+            d.shifted
+              ? format(d.nominal) + " → " + format(d.date)
+              : format(d.date),
+            "calendar-preview-date",
+          ),
+        );
+      if (!out.dates.length)
+        preview.append(node("p", "Échéance déjà réglée.", "muted"));
+      preview.append(node("p", out.calendar, "muted"));
+      if (out.estimated)
+        preview.append(
+          node(
+            "p",
+            "RRQ : estimation selon le dernier jour ouvrable. Confirmez les dates auprès de Retraite Québec.",
+            "warning",
+          ),
+        );
+    } catch (e) {
+      if (ticket === serial)
+        preview.replaceChildren(node("p", e.message, "error"));
+    }
+  }
+  frequency.addEventListener("change", refresh);
+  adjustment.addEventListener("change", refresh);
+  start.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, 150);
+  });
+  refresh();
+  return { container, adjustment };
+}
 function theme() {
   document.documentElement.dataset.theme = matchMedia(
     "(prefers-color-scheme:dark)",
@@ -616,7 +715,11 @@ function categoryEditor(c) {
           ].map((s, i) => new Option(s, i))
         : Array.from(
             { length: 31 },
-            (_, i) => new Option("Le " + (i + 1), i + 1),
+            (_, i) =>
+              new Option(
+                i === 30 ? "Dernier jour du mois" : "Le " + (i + 1),
+                i + 1,
+              ),
           )),
     );
     day.value = c?.renewal_day ?? (period.value === "weekly" ? 4 : 1);
@@ -671,6 +774,8 @@ function ruleEditor(r, kind = "expense") {
       r?.to_account_id || state.accounts.find((a) => a.kind === "card")?.id,
     ),
     destLabel = field("Vers", destination);
+  const startLabel = field("Prochaine date / début", start),
+    calendar = calendarFields(frequency, start, startLabel, r || {});
   type.onchange = () => (destLabel.hidden = type.value !== "transfer");
   type.onchange();
   modal(
@@ -682,7 +787,8 @@ function ruleEditor(r, kind = "expense") {
       field("Compte", account),
       destLabel,
       field("Fréquence", frequency),
-      field("Prochaine date / début", start),
+      startLabel,
+      calendar.container,
     ],
     () =>
       send("/api/recurrence", {
@@ -694,6 +800,7 @@ function ruleEditor(r, kind = "expense") {
         account_id: account.value,
         to_account_id: destination.value,
         frequency: frequency.value,
+        day_adjust: calendar.adjustment.value,
         start_on: start.value,
         active: r?.active !== 0,
       }),
@@ -732,9 +839,15 @@ function planView() {
               quarterly: "Aux trois mois",
               semiannual: "Aux six mois",
               yearly: "Chaque année",
-              last_business_day: "Dernier jour ouvrable",
-              rrq: "RRQ",
-            }[r.frequency] || r.frequency),
+              last_day: "Dernier jour du mois",
+              last_business_day: "Dernier jour ouvrable du mois",
+              rrq: "RRQ (dates à confirmer)",
+            }[r.frequency] || r.frequency) +
+            (r.day_adjust === "before"
+              ? " · jour ouvrable précédent"
+              : r.day_adjust === "after"
+                ? " · jour ouvrable suivant"
+                : ""),
         ),
       );
       right.append(
@@ -1282,7 +1395,10 @@ function setupView() {
           start,
         ),
       );
-      const rec = { card, name, amount, freq, start };
+      const startLabel = card.lastElementChild,
+        calendar = calendarFields(freq, start, startLabel, item, true);
+      card.append(calendar.container);
+      const rec = { card, name, amount, freq, start, calendar };
       fields.push(rec);
       card.append(
         button(
@@ -1313,6 +1429,7 @@ function setupView() {
         name: f.name.value,
         amount: f.amount.value,
         frequency: f.freq.value,
+        day_adjust: f.calendar.adjustment.value,
         start_on: f.start.value,
       }));
       if (isPay && !data.length) throw Error("Ajoutez une prochaine paie.");
@@ -1376,7 +1493,11 @@ function setupView() {
                 ].map((s, i) => new Option(s, i))
               : Array.from(
                   { length: 31 },
-                  (_, i) => new Option("Le " + (i + 1), i + 1),
+                  (_, i) =>
+                    new Option(
+                      i === 30 ? "Dernier jour du mois" : "Le " + (i + 1),
+                      i + 1,
+                    ),
                 )),
           );
           day.value =

@@ -1,3 +1,7 @@
+# 0.3.0 — calendrier des récurrences
+
+Choix du jour ouvrable précédent/suivant ou de la date inchangée dans l’assistant et les formulaires. Dernier jour calendaire et dernier jour ouvrable du mois distincts. Aperçu des prochaines dates; conservation des échéances réglées et reports manuels lors des changements compatibles. Validation des ajustements et avertissement explicite pour les dates RRQ estimées. Aucun changement de schéma.
+
 # Historique
 
 ## 0.2.0 — noyau, étape 1

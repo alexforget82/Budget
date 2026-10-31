@@ -63,7 +63,7 @@ export function nextPeriod(category, start) {
 }
 export function occurrences(rule, from, to) {
   const result = [];
-  // Nominal occurrence keys remain stable when a date is shifted.
+  // Keep the existing scheduled-date key format; rule edits remap saved states atomically.
   for (let i = 0; i < 30000; i++) {
     const info = occurrenceInfo(
       rule.start_on,

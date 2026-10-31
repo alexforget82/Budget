@@ -396,3 +396,172 @@ test("adding a limit to a legacy Autres category reuses its identity instead of 
   );
   assert.equal(db.state().fallback_category_id, old);
 });
+test("date previews are read-only and show adjusted month-end dates", (t) => {
+  const { db, api } = fixture(t),
+    before = db.exportData().tables;
+  const p = api.previewRecurrence({
+    frequency: "last_day",
+    start_on: "2027-01-12",
+    day_adjust: "after",
+  });
+  assert.equal(p.dates.length, 3);
+  assert.deepEqual(p.dates[0], {
+    nominal: "2027-01-31",
+    date: "2027-02-01",
+    shifted: true,
+    manual: false,
+  });
+  assert.deepEqual(db.exportData().tables, before);
+});
+test("changing a weekend rule preserves paid occurrence identity and actual transaction date", (t) => {
+  const { db, api, bank } = fixture(t);
+  const id = db.atomic(() =>
+    api.recurrence({
+      name: "Facture dimanche",
+      kind: "expense",
+      amount: 50,
+      account_id: bank,
+      start_on: "2026-10-25",
+      frequency: "monthly",
+      day_adjust: "none",
+    }),
+  );
+  db.atomic(() =>
+    api.occurrence({ rule_id: id, original_on: "2026-10-25", action: "pay" }),
+  );
+  const original = db.state().transactions[0];
+  const safe = api.snapshot().simulation.available_cents;
+  for (const [mode, key] of [
+    ["before", "2026-10-23"],
+    ["after", "2026-10-26"],
+    ["none", "2026-10-25"],
+  ]) {
+    db.atomic(() =>
+      api.recurrence({
+        id,
+        name: "Facture dimanche",
+        kind: "expense",
+        amount: 50,
+        account_id: bank,
+        start_on: "2026-10-25",
+        frequency: "monthly",
+        day_adjust: mode,
+      }),
+    );
+    assert.equal(
+      db.state().occurrence_states.find((s) => s.rule_id === id).original_on,
+      key,
+    );
+    assert.equal(db.state().transactions.length, 1);
+    assert.equal(db.state().transactions[0].date, original.date);
+    assert.equal(api.snapshot().simulation.available_cents, safe);
+    assert.ok(
+      !api
+        .previewRecurrence({
+          id,
+          start_on: "2026-10-25",
+          frequency: "monthly",
+          day_adjust: mode,
+        })
+        .dates.some((d) => d.date === key),
+    );
+  }
+});
+test("month-end edits preserve a manually postponed occurrence and cancellation", (t) => {
+  const { db, api, bank } = fixture(t);
+  const id = db.atomic(() =>
+    api.recurrence({
+      name: "Mensuel",
+      kind: "expense",
+      amount: 50,
+      account_id: bank,
+      start_on: "2027-01-15",
+      frequency: "monthly",
+    }),
+  );
+  db.atomic(() =>
+    api.occurrence({
+      rule_id: id,
+      original_on: "2027-01-15",
+      action: "postpone",
+      date: "2027-02-03",
+    }),
+  );
+  db.atomic(() =>
+    api.occurrence({
+      rule_id: id,
+      original_on: "2027-02-15",
+      action: "cancel",
+    }),
+  );
+  db.atomic(() =>
+    api.recurrence({
+      id,
+      name: "Mensuel",
+      kind: "expense",
+      amount: 50,
+      account_id: bank,
+      start_on: "2027-01-15",
+      frequency: "last_day",
+      day_adjust: "after",
+    }),
+  );
+  const rows = db.state().occurrence_states.filter((s) => s.rule_id === id);
+  assert.equal(
+    rows.find((s) => s.status === "postponed").original_on,
+    "2027-02-01",
+  );
+  assert.equal(
+    rows.find((s) => s.status === "postponed").postponed_on,
+    "2027-02-03",
+  );
+  assert.equal(
+    rows.find((s) => s.status === "cancelled").original_on,
+    "2027-03-01",
+  );
+});
+test("name/amount updates without calendar fields do not reset an existing business-day adjustment", (t) => {
+  const { db, api, bank } = fixture(t);
+  const id = db.atomic(() =>
+    api.recurrence({
+      name: "A",
+      kind: "expense",
+      amount: 50,
+      account_id: bank,
+      start_on: "2026-10-25",
+      frequency: "monthly",
+      day_adjust: "before",
+      one_time: true,
+    }),
+  );
+  db.atomic(() =>
+    api.recurrence({
+      id,
+      name: "B",
+      kind: "expense",
+      amount: 55,
+      account_id: bank,
+      start_on: "2026-10-25",
+      frequency: "monthly",
+    }),
+  );
+  const rule = db.state().recurrences.find((r) => r.id === id);
+  assert.equal(rule.day_adjust, "before");
+  assert.equal(rule.one_time, 1);
+  const before = db.exportData().tables;
+  assert.throws(() =>
+    db.atomic(() =>
+      api.recurrence({
+        id,
+        name: "B",
+        kind: "expense",
+        amount: 55,
+        account_id: bank,
+        start_on: "2026-10-25",
+        frequency: "monthly",
+        day_adjust: "invalid",
+      }),
+    ),
+  );
+  assert.deepEqual(db.exportData().tables, before);
+});

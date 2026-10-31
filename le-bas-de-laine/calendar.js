@@ -64,6 +64,7 @@ export function nonBusiness(date) {
   );
 }
 export function shiftDate(date, mode) {
+  mode = normalizeAdjustment(mode);
   if (mode === "none") return date;
   const d = dateFrom(date),
     step = mode === "before" ? -1 : 1;
@@ -73,7 +74,13 @@ export function shiftDate(date, mode) {
 }
 export function occurrenceInfo(start, frequency, i, adjust = "none") {
   let nominal;
-  if (frequency === "last_business_day" || frequency === "rrq") {
+  if (frequency === "last_day") {
+    const d = dateFrom(start);
+    d.setUTCDate(1);
+    d.setUTCMonth(d.getUTCMonth() + i + 1);
+    d.setUTCDate(0);
+    nominal = iso(d);
+  } else if (frequency === "last_business_day" || frequency === "rrq") {
     const d = dateFrom(start);
     d.setUTCDate(1);
     d.setUTCMonth(d.getUTCMonth() + i);
@@ -85,6 +92,8 @@ export function occurrenceInfo(start, frequency, i, adjust = "none") {
   return { date: shiftDate(nominal, adjust), estimated: false, nominal };
 }
 export function nextOccurrence(start, frequency, i) {
+  if (["last_day", "last_business_day", "rrq"].includes(frequency))
+    return occurrenceInfo(start, frequency, i, "none").date;
   const d = dateFrom(start);
   if (frequency === "weekly") d.setUTCDate(d.getUTCDate() + i * 7);
   else if (frequency === "biweekly") d.setUTCDate(d.getUTCDate() + i * 14);
@@ -101,4 +110,22 @@ export function nextOccurrence(start, frequency, i) {
     d.setUTCDate(Math.min(day, last));
   }
   return iso(d);
+}
+
+export const supportedFrequencies = [
+  "weekly",
+  "biweekly",
+  "monthly",
+  "quarterly",
+  "semiannual",
+  "yearly",
+  "last_day",
+  "last_business_day",
+  "rrq",
+];
+export function normalizeAdjustment(value = "none") {
+  const mode = { previous: "before", next: "after" }[value] || value;
+  if (!["none", "before", "after"].includes(mode))
+    throw Error("Choisissez une règle de déplacement valide.");
+  return mode;
 }

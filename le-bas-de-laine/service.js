@@ -1,3 +1,8 @@
+import {
+  occurrenceInfo,
+  supportedFrequencies,
+  normalizeAdjustment,
+} from "./calendar.js";
 import { simulate, bankBalance } from "./engine.js";
 import {
   validDate,
@@ -106,23 +111,126 @@ export function createService(store, clock = today) {
       put("fallback_category_id", id);
     return id;
   }
+  function previewRecurrence(x) {
+    const start = date(x.start_on),
+      mode = normalizeAdjustment(x.day_adjust);
+    if (!supportedFrequencies.includes(x.frequency))
+      throw Error("Fréquence invalide.");
+    const dates = [],
+      old = x.id
+        ? q("SELECT * FROM recurrences WHERE id=?", Number(x.id))[0]
+        : null;
+    const saved = old
+      ? q("SELECT * FROM occurrence_states WHERE rule_id=?", old.id)
+      : [];
+    const monthly = ["monthly", "last_day", "last_business_day", "rrq"];
+    const remappable =
+      old &&
+      ((old.frequency === x.frequency && old.start_on === start) ||
+        (monthly.includes(old.frequency) &&
+          monthly.includes(x.frequency) &&
+          old.start_on.slice(0, 7) === start.slice(0, 7)));
+    for (let i = 0; i < 30000; i++) {
+      const info = occurrenceInfo(start, x.frequency, i, mode);
+      const original = remappable
+        ? occurrenceInfo(
+            old.start_on,
+            old.frequency,
+            i,
+            old.day_adjust || "none",
+          ).date
+        : info.date;
+      const action = saved.find((row) => row.original_on === original);
+      if (!["paid", "cancelled"].includes(action?.status)) {
+        const actual = action?.postponed_on || info.date;
+        if (actual >= clock() || x.one_time)
+          dates.push({
+            nominal: info.nominal,
+            date: actual,
+            shifted: info.nominal !== actual,
+            manual: !!action?.postponed_on,
+          });
+      }
+      if (dates.length === 3 || x.one_time) break;
+    }
+    return {
+      dates,
+      calendar: "Calendrier bancaire Québec/Canada",
+      estimated: x.frequency === "rrq",
+    };
+  }
+  function preserveOccurrenceStates(old, next) {
+    if (!old) return;
+    const monthly = ["monthly", "last_day", "last_business_day", "rrq"];
+    const compatible =
+      (old.frequency === next.frequency && old.start_on === next.start_on) ||
+      (monthly.includes(old.frequency) &&
+        monthly.includes(next.frequency) &&
+        old.start_on.slice(0, 7) === next.start_on.slice(0, 7));
+    if (
+      !compatible ||
+      (old.frequency === next.frequency &&
+        old.start_on === next.start_on &&
+        old.day_adjust === next.day_adjust)
+    )
+      return;
+    const states = q(
+      "SELECT * FROM occurrence_states WHERE rule_id=? ORDER BY original_on",
+      old.id,
+    );
+    if (!states.length) return;
+    const remapped = new Map(),
+      last = states.at(-1).original_on;
+    for (let i = 0; i < 30000; i++) {
+      const before = occurrenceInfo(
+        old.start_on,
+        old.frequency,
+        i,
+        old.day_adjust || "none",
+      ).date;
+      if (before > last) break;
+      if (states.some((row) => row.original_on === before))
+        remapped.set(
+          before,
+          occurrenceInfo(next.start_on, next.frequency, i, next.day_adjust)
+            .date,
+        );
+      if (old.one_time) break;
+    }
+    if (
+      states.some((row) => !remapped.has(row.original_on)) ||
+      new Set(remapped.values()).size !== states.length
+    )
+      throw Error(
+        "Des échéances historiques demandent une vérification. Aucun déplacement effectué.",
+      );
+    run("DELETE FROM occurrence_states WHERE rule_id=?", old.id);
+    for (const row of states)
+      run(
+        "INSERT INTO occurrence_states(rule_id,original_on,status,postponed_on,amount_cents,transaction_id,transfer_id) VALUES(?,?,?,?,?,?,?)",
+        old.id,
+        remapped.get(row.original_on),
+        row.status,
+        row.postponed_on,
+        row.amount_cents,
+        row.transaction_id,
+        row.transfer_id,
+      );
+  }
   function recurrence(x) {
+    const old = x.id
+      ? q("SELECT * FROM recurrences WHERE id=?", Number(x.id))[0]
+      : null;
+    const adjustment = normalizeAdjustment(
+      x.day_adjust === undefined ? old?.day_adjust : x.day_adjust,
+    );
     const a = account(x.account_id),
       kind = x.kind,
       amount = cents(x.amount);
     if (
       !["expense", "income", "transfer"].includes(kind) ||
       amount <= 0 ||
-      ![
-        "weekly",
-        "biweekly",
-        "monthly",
-        "quarterly",
-        "semiannual",
-        "yearly",
-        "last_business_day",
-        "rrq",
-      ].includes(x.frequency)
+      !supportedFrequencies.includes(x.frequency)
     )
       throw Error("Récurrence invalide.");
     if (kind === "transfer" && account(x.to_account_id).id === a.id)
@@ -145,15 +253,18 @@ export function createService(store, clock = today) {
       cat,
       date(x.start_on),
       x.frequency,
-      ["none", "before", "after"].includes(x.day_adjust)
-        ? x.day_adjust
-        : { previous: "before", next: "after" }[x.day_adjust] || "none",
-      x.one_time ? 1 : 0,
+      adjustment,
+      x.one_time === undefined ? old?.one_time || 0 : x.one_time ? 1 : 0,
       x.active === false ? 0 : 1,
     ];
     if (x.id) {
       if (!q("SELECT id FROM recurrences WHERE id=?", +x.id).length)
         throw Error("Récurrence introuvable.");
+      preserveOccurrenceStates(old, {
+        frequency: x.frequency,
+        start_on: x.start_on,
+        day_adjust: adjustment,
+      });
       run(
         "UPDATE recurrences SET name=?,kind=?,amount_cents=?,account_id=?,to_account_id=?,category_id=?,start_on=?,frequency=?,day_adjust=?,one_time=?,active=?,dirty=1 WHERE id=?",
         ...fields,
@@ -386,7 +497,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.2.0",
+      version: "0.3.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,
@@ -420,6 +531,7 @@ export function createService(store, clock = today) {
     transfer,
     category,
     recurrence,
+    previewRecurrence,
     occurrence,
     checkpoint,
     matches,

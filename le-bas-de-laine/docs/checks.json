@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 63,
+    "passed": 74,
     "failed": 0,
     "skipped": 0
   },
@@ -31,7 +31,8 @@
       "CSV resolved mapping preview/commit agree",
       "readonly shared page",
       "all three visual directions",
-      "self-contained HTML previews"
+      "self-contained HTML previews",
+      "calendar wizard/editor previews and persisted adjustments at 320/390/768/1440"
     ]
   },
   "comparison": {
@@ -62,7 +63,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 62,
+    "passed": 73,
     "failed": 0,
     "skipped": 1,
     "skip_reason": "External Sillage reference program is not bundled."

@@ -75,6 +75,7 @@ export function validateState(s) {
         "quarterly",
         "semiannual",
         "yearly",
+        "last_day",
         "last_business_day",
         "rrq",
       ].includes(r.frequency) ||

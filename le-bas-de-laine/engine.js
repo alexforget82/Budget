@@ -316,6 +316,11 @@ export function simulate(state, reference, horizon = 90) {
       .filter((e) => e.date <= addDays(reference, 13))
       .sort((a, b) => a.date.localeCompare(b.date)),
     warnings: [
+      ...(rules.some((r) => r.frequency === "rrq")
+        ? [
+            "Les dates RRQ sont estimées : confirmez le calendrier officiel de Retraite Québec.",
+          ]
+        : []),
       ...(!nextPay
         ? ["Aucune prochaine paie connue : le disponible couvre 30 jours."]
         : nextPay > addDays(reference, 30)

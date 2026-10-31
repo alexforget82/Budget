@@ -121,7 +121,7 @@ function handler(isPrivate) {
           return reply(res, 404, { error: "Lien indisponible." });
         if (shared[2] === "/data")
           return reply(res, 200, {
-            version: "0.2.0",
+            version: "0.3.0",
             simulation: currentState().simulation,
           });
         const sharePath = "/s/" + shared[1];
@@ -197,6 +197,8 @@ function handler(isPrivate) {
           });
           return reply(res, 200, currentState());
         }
+        if (url.pathname === "/api/recurrence/preview")
+          return reply(res, 200, service.previewRecurrence(x));
         if (url.pathname === "/api/restore") {
           if (x.confirm !== "REMPLACER")
             throw Error("Confirmation REMPLACER requise.");

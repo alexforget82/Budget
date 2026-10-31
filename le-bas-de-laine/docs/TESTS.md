@@ -1,3 +1,11 @@
+# Vérifications — 0.3.0
+
+74 tests Node réussis. Les nouveaux cas couvrent week-ends, jours fériés bancaires Québec/Canada, substitutions de Noël, années bissextiles, fin de mois calendaire et ouvrable, ancrage aux deux semaines et déplacements entre mois sans doublon. Les services vérifient les aperçus sans écriture, la conservation des échéances déjà payées et reports manuels, et le rejet atomique des ajustements invalides.
+
+Le parcours supplémentaire `tests/calendar-ui.py` vérifie les choix dans l’assistant et le formulaire, leurs aperçus et leur sauvegarde aux largeurs 320, 390, 768 et 1440. Le parcours général Chromium passe aussi. Aucun test physique iOS n’est revendiqué. L’archive autonome passe 73 tests avec un seul test externe Sillage omis.
+
+## Référence précédente
+
 # Vérifications — 0.2.0, étape 1
 
 63 tests Node passent, sans échec ni omission dans cet environnement. Douze scénarios figés depuis le tag 0.1.0 vérifient l’égalité exacte du disponible avant la paie, de sa date limite, des quatre lignes et des 30 premières journées. La nouvelle prévision couvre 90 jours sans étendre la fenêtre de dépense principale au-delà de son plafond existant de 30 jours.

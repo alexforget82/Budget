@@ -1385,3 +1385,31 @@
     margin-top: 5px;
   }
 }
+
+@layer components {
+  .calendar-fields {
+    display: grid;
+    gap: 10px;
+  }
+  .calendar-fields .details-options > label {
+    padding: 8px 0;
+  }
+  .calendar-preview {
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--soft);
+    font-size: 12px;
+  }
+  .calendar-preview-date {
+    margin: 5px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .calendar-preview p {
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  .calendar-preview:empty {
+    display: none;
+  }
+}
