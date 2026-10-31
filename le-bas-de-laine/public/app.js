@@ -19,6 +19,7 @@ let state,
   saveEditor,
   step = 0,
   setupHelpVisible = true,
+  calendarChoice = { mode: "month", month: null, selected: null, open: false },
   wizard = {
     account_name: "Conjoint",
     balance: "",
@@ -527,7 +528,7 @@ async function occurrenceAction(o, action) {
     if (action === "pay") {
       await send(
         "/api/occurrence",
-        { ...o, action: "pay" },
+        { ...o, action: "pay", date: dateNow() },
         o.kind === "income" ? "Paie enregistrée" : "Paiement enregistré",
       );
       return;
@@ -1849,51 +1850,287 @@ function categoryReport() {
   return host;
 }
 function scheduleView() {
+  const sim = state.simulation,
+    days = new Map(sim.daily.map((d) => [d.date, d]));
+  const firstMonth = sim.reference.slice(0, 7),
+    lastMonth = sim.daily.at(-1).date.slice(0, 7);
+  if (
+    !calendarChoice.month ||
+    calendarChoice.month < firstMonth ||
+    calendarChoice.month > lastMonth
+  )
+    calendarChoice.month = firstMonth;
   const host = node("details", null, "panel schedule");
-  host.append(node("summary", "Calendrier des échéances"));
-  const month = input("schedule_month", "month", dateNow().slice(0, 7)),
-    list = node("div");
-  host.append(
-    field("Mois", month),
-    node(
-      "small",
-      "Échéances ouvertes dans les 90 jours de prévision. Les reports utilisent leur date choisie.",
-    ),
-    list,
-  );
-  const render = () => {
-    list.replaceChildren();
-    const events = state.simulation.daily
-      .flatMap((d) => d.events)
-      .filter((e) => e.date.startsWith(month.value));
-    for (const e of events) {
-      const row = node("div", null, "schedule-row");
-      row.append(
-        node("strong", scheduleDate(e)),
-        node("span", e.name),
-        node("span", money(e.amount_cents)),
-      );
-      row.append(
-        button(
-          e.kind === "income" ? "Reçue" : "Payée",
-          () => occurrenceAction(e, "pay"),
-          "text-button",
-        ),
-        button(
-          "Reporter",
-          () => occurrenceAction(e, "postpone"),
-          "text-button",
-        ),
-      );
-      list.append(row);
-    }
-    if (!events.length)
-      list.append(
-        node("p", "Aucune échéance ouverte dans ce mois de la prévision."),
-      );
+  host.open = calendarChoice.open;
+  host.ontoggle = () => {
+    calendarChoice.open = host.open;
   };
-  month.onchange = render;
-  render();
+  host.append(node("summary", "Calendrier des échéances"));
+  const toolbar = node("div", null, "calendar-toolbar"),
+    month = input("schedule_month", "month", calendarChoice.month),
+    modes = node("div", null, "calendar-modes"),
+    content = node("div", null, "calendar-content"),
+    detail = node("section", null, "calendar-day-detail");
+  month.min = firstMonth;
+  month.max = lastMonth;
+  const previous = button("←", () => moveMonth(-1)),
+    next = button("→", () => moveMonth(1));
+  previous.setAttribute("aria-label", "Mois précédent");
+  next.setAttribute("aria-label", "Mois suivant");
+  const monthButton = button("Mois", () => {
+      calendarChoice.mode = "month";
+      draw();
+    }),
+    listButton = button("Liste", () => {
+      calendarChoice.mode = "list";
+      draw();
+    });
+  modes.setAttribute("aria-label", "Affichage du calendrier");
+  modes.append(monthButton, listButton);
+  toolbar.append(previous, field("Mois", month), next, modes);
+  host.append(
+    toolbar,
+    node(
+      "p",
+      "Disponible prévu après les limites et les cartes. Touchez une journée pour le détail. Les cases hors prévision n’ont pas de montant.",
+      "muted calendar-help",
+    ),
+    content,
+    detail,
+  );
+  function renewals(day) {
+    return sim.categories.flatMap((c) =>
+      c.periods
+        .filter((p) => p.date === day && p.date >= sim.reference)
+        .map((p) => ({ name: c.name, amount_cents: p.remaining_cents })),
+    );
+  }
+  function eventRow(e) {
+    const row = node("div", null, "schedule-row"),
+      text = node("div");
+    text.append(
+      node("strong", e.name),
+      node(
+        "small",
+        (e.overdue ? "En retard · " : "") + scheduleDate(e),
+        "calendar-event-date",
+      ),
+    );
+    const actions = node("div", null, "actions");
+    for (const [label, action] of [
+      [
+        e.kind === "income"
+          ? "Reçue"
+          : e.kind === "transfer"
+            ? "Effectué"
+            : "Payée",
+        "pay",
+      ],
+      ["Montant…", "amount"],
+      ["Reporter", "postpone"],
+    ])
+      actions.append(
+        button(label, () => occurrenceAction(e, action), "text-button"),
+      );
+    row.append(
+      text,
+      node(
+        "strong",
+        (e.kind === "income" ? "+" : e.kind === "expense" ? "−" : "↔ ") +
+          money(e.amount_cents),
+        e.kind === "income" ? "positive" : "",
+      ),
+      actions,
+    );
+    return row;
+  }
+  function dayContents(parent, d) {
+    for (const e of d.events) parent.append(eventRow(e));
+    for (const r of renewals(d.date)) {
+      const row = node("div", null, "calendar-renewal");
+      row.append(
+        node("strong", "Renouvellement · " + r.name),
+        node("span", money(r.amount_cents) + " protégés"),
+        node("small", "Inclus dans le disponible, sans débit bancaire."),
+      );
+      parent.append(row);
+    }
+    if (!d.events.length && !renewals(d.date).length)
+      parent.append(node("p", "Aucun mouvement prévu.", "muted"));
+  }
+  function showDay(date) {
+    const d = days.get(date);
+    if (!d) return;
+    calendarChoice.selected = date;
+    for (const cell of content.querySelectorAll("[data-calendar-date]"))
+      cell.setAttribute(
+        "aria-pressed",
+        String(cell.dataset.calendarDate === date),
+      );
+    detail.replaceChildren(
+      node("h3", longDate(date)),
+      node("p", "Disponible prévu en fin de journée", "muted"),
+      node(
+        "strong",
+        money(d.safe_cents),
+        "calendar-selected-balance" + (d.safe_cents < 0 ? " negative" : ""),
+      ),
+    );
+    if (date === sim.minimum_on)
+      detail.append(node("small", "Minimum prévu sur 90 jours", "muted"));
+    detail.dataset.date = date;
+    dayContents(detail, d);
+  }
+  function moveMonth(delta) {
+    const d = new Date(month.value + "-01T12:00:00Z");
+    d.setUTCMonth(d.getUTCMonth() + delta);
+    month.value = d.toISOString().slice(0, 7);
+    draw();
+  }
+  function draw() {
+    const value = month.value;
+    content.replaceChildren();
+    detail.replaceChildren();
+    monthButton.setAttribute(
+      "aria-pressed",
+      String(calendarChoice.mode === "month"),
+    );
+    listButton.setAttribute(
+      "aria-pressed",
+      String(calendarChoice.mode === "list"),
+    );
+    previous.disabled = !value || value <= firstMonth;
+    next.disabled = !value || value >= lastMonth;
+    if (
+      !/^\d{4}-\d{2}$/.test(value) ||
+      value < firstMonth ||
+      value > lastMonth
+    ) {
+      content.append(
+        node("p", "Choisissez un mois compris dans les 90 jours de prévision."),
+      );
+      detail.hidden = true;
+      return;
+    }
+    calendarChoice.month = value;
+    const visible = sim.daily.filter((d) => d.date.startsWith(value));
+    const heading = node(
+      "h3",
+      new Date(value + "-01T12:00:00").toLocaleDateString("fr-CA", {
+        month: "long",
+        year: "numeric",
+      }),
+      "calendar-month-title",
+    );
+    content.append(heading);
+    detail.hidden = calendarChoice.mode !== "month";
+    if (calendarChoice.mode === "list") {
+      for (const d of visible) {
+        const row = node("section", null, "calendar-list-day"),
+          head = node("div", null, "daily-row");
+        head.append(
+          node("h4", longDate(d.date)),
+          node(
+            "strong",
+            money(d.safe_cents),
+            "money" + (d.safe_cents < 0 ? " negative" : ""),
+          ),
+        );
+        row.append(head);
+        dayContents(row, d);
+        content.append(row);
+      }
+      return;
+    }
+    const grid = node("div", null, "calendar-grid");
+    grid.setAttribute("aria-label", "Calendrier de " + heading.textContent);
+    for (const day of ["Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam.", "Dim."])
+      grid.append(node("div", day, "calendar-weekday"));
+    const first = new Date(value + "-01T12:00:00Z"),
+      offset = (first.getUTCDay() + 6) % 7,
+      total = new Date(
+        Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0),
+      ).getUTCDate();
+    for (let i = 0; i < offset; i++) {
+      const blank = node("div", null, "calendar-blank");
+      blank.setAttribute("aria-hidden", "true");
+      grid.append(blank);
+    }
+    for (let n = 1; n <= total; n++) {
+      const date = value + "-" + String(n).padStart(2, "0"),
+        d = days.get(date),
+        cell = button("", () => showDay(date), "calendar-cell");
+      cell.dataset.calendarDate = date;
+      const top = node("span", null, "calendar-cell-top");
+      top.append(node("span", String(n), "calendar-date-number"));
+      if (date === sim.reference) {
+        cell.setAttribute("aria-current", "date");
+        top.append(node("span", "●", "calendar-today-dot"));
+      }
+      cell.append(top);
+      if (!d) {
+        cell.disabled = true;
+        cell.setAttribute("aria-label", longDate(date) + " · hors prévision");
+        cell.append(node("span", "—", "calendar-balance"));
+      } else {
+        cell.setAttribute(
+          "aria-label",
+          longDate(date) +
+            " · Disponible prévu " +
+            money(d.safe_cents) +
+            " · " +
+            d.events.length +
+            " mouvement(s)",
+        );
+        cell.setAttribute("aria-pressed", "false");
+        cell.append(
+          node(
+            "strong",
+            money(d.safe_cents),
+            "calendar-balance" + (d.safe_cents < 0 ? " negative" : ""),
+          ),
+        );
+        const items = [
+          ...d.events.map((e) => ({
+            name:
+              (e.kind === "income"
+                ? "+ "
+                : e.kind === "transfer"
+                  ? "↔ "
+                  : "− ") + e.name,
+            kind: e.kind,
+          })),
+          ...renewals(date).map((r) => ({
+            name: "◇ " + r.name,
+            kind: "renewal",
+          })),
+        ];
+        for (const item of items.slice(0, 2))
+          cell.append(node("span", item.name, "calendar-chip " + item.kind));
+        if (items.length)
+          cell.append(
+            node("small", "● " + String(items.length), "calendar-count"),
+          );
+        if (d.safe_cents < 0) cell.classList.add("calendar-negative");
+        if (date === sim.minimum_on) {
+          cell.classList.add("calendar-low");
+          cell.setAttribute(
+            "aria-label",
+            cell.getAttribute("aria-label") + " · Minimum prévu sur 90 jours",
+          );
+        }
+        cell.title = cell.getAttribute("aria-label");
+      }
+      grid.append(cell);
+    }
+    content.append(grid);
+    const selected = visible.some((d) => d.date === calendarChoice.selected)
+      ? calendarChoice.selected
+      : visible[0]?.date;
+    if (selected) showDay(selected);
+  }
+  month.onchange = draw;
+  draw();
   return host;
 }
 

@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.4.3**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.4.4**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -170,3 +170,13 @@ Après la configuration, **Tutoriel** dans Aujourd’hui ou Plan permet de revoi
 Le logo représente un bas de laine traditionnel écru à bandes rouges et grises, avec des pièces d’épargne et une fleur de lys sur fond bleu. Il est appliqué au menu, au navigateur, au lanceur Linux, au manifeste de l’application et à l’icône iPhone. Le fichier PNG généré est conservé sans modification; un SVG incorporant ce même PNG assure la compatibilité des anciens aperçus.
 
 Palette crème, bleu profond et touches dorées; mode sombre bleu nuit selon le réglage de l’appareil. Les revenus et alertes gardent leurs couleurs de sens. Aucun changement de calcul. Après mise à jour, actualisez la page. Si l’ancienne icône reste sur l’écran d’accueil iPhone, retirez seulement le raccourci puis recréez-le depuis Safari avec le même lien. Les données restent sur le serveur.
+
+## Calendrier Mois / Liste — 0.4.4
+
+Ouvrez **Plan → Calendrier des échéances**, puis choisissez **Mois** ou **Liste**. Les flèches changent de mois dans la prévision de 90 jours. La semaine commence le lundi; une case hors prévision n’affiche aucun montant.
+
+Sur ordinateur, chaque case affiche le disponible exact en fin de journée et les premières opérations. Sur iPhone, les cases montrent la date et le nombre de mouvements; touchez une journée pour lire son disponible exact et toutes ses opérations sous la grille. Les dates négatives sont signalées en rouge. Le minimum prévu sur 90 jours porte un repère doré et une indication dans le détail.
+
+Les revenus, paiements/virements et renouvellements de limites sont distingués. Un renouvellement est une protection incluse dans le disponible, sans débit bancaire fictif. Les factures en retard sont regroupées aujourd’hui, avec leur date d’origine et l’indication « En retard ».
+
+La vue Liste affiche les journées et leur disponible, y compris sans opération. Les actions Reçue/Payée/Effectué, Montant et Reporter réutilisent les formulaires existants. Un clic direct sur Payée/Reçue/Effectué enregistre l’opération réelle aujourd’hui; pour saisir un autre montant ou une autre date réelle, utilisez Montant. Le mois choisi reste ouvert après l’enregistrement. La navigation seule ne modifie aucune donnée.

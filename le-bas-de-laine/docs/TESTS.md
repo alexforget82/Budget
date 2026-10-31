@@ -1,3 +1,11 @@
+# Vérifications — 0.4.4
+
+89 tests Node réussis; moteur financier inchangé. `tests/calendar-grid-ui.py` configure une vraie base temporaire fictive et compare les montants des cases avec les journées du moteur. Vérifie Mois/Liste, lundi comme premier jour, journées hors horizon sans montant, navigation aux bornes, retard et renouvellement de limite. La navigation laisse l’export des tables identique. Une facture future marquée Payée crée exactement une transaction à la date réelle d’aujourd’hui et conserve l’ouverture du calendrier et le mois sélectionné.
+
+Quatre largeurs (320, 390, 768, 1440), clair/sombre, aucun débordement horizontal. Parcours général et tests des outils quotidiens également réussis. Captures fictives dans `calendar-grid/`. Aucun test physique iOS revendiqué. Archive autonome : 87 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.4.3
 
 89 tests Node réussis. Interface générale à cinq largeurs et deux thèmes, ainsi que tutoriel mobile vérifiés sous Chromium. Contrastes des paires principales texte/surface, texte secondaire/surface, accent/fond et texte du disponible/fond du disponible : tous supérieurs à 4,5:1 dans les deux thèmes; ce contrôle ne constitue pas un audit complet d’accessibilité.

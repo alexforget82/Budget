@@ -499,7 +499,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.4.3",
+      version: "0.4.4",
       configured: setting("configured", false),
       theme: "system",
       simulation,

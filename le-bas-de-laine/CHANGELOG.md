@@ -1,3 +1,7 @@
+# 0.4.4 — calendrier Mois / Liste
+
+Grille mensuelle dans Plan, disponible quotidien issu de la simulation, revenus/paiements/renouvellements et détail au clic. Vue Liste quotidienne; navigation limitée aux 90 jours calculés; dates hors prévision sans montant; semaine du lundi au dimanche. Adaptation mobile avec détail exact sous la grille, dates négatives et repère du minimum. Conservation du mois ouvert après une action. Correction du raccourci Payée/Reçue/Effectué : la date réelle est aujourd’hui, plutôt que la date future de l’échéance; Montant conserve le choix de date explicite. Aucun changement du moteur financier ou du schéma.
+
 # 0.4.3 — bas de laine québécois
 
 Nouveau logo : bas traditionnel, pièces d’épargne et fleur de lys. PNG commun au menu, favicon, manifeste et icône iPhone; lanceur Linux mis à jour. Palette bleu québécois/crème/doré, thème sombre bleu nuit. Couleurs de revenus et alertes conservées. Contrastes principaux vérifiés; aucun changement de calcul ou de données.

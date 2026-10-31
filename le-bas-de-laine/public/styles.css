@@ -1459,3 +1459,196 @@
 .tutorial-review .tutorial-card {
   margin-bottom: 0.6rem;
 }
+
+.schedule {
+  grid-column: 1 / -1;
+}
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+  margin: 1rem 0;
+}
+.calendar-toolbar label {
+  flex: 1 1 10rem;
+}
+.calendar-modes {
+  display: flex;
+  gap: 0.3rem;
+}
+.calendar-modes [aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.calendar-help {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.calendar-month-title {
+  text-transform: capitalize;
+  margin: 1rem 0;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.calendar-weekday {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+.calendar-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+  min-width: 0;
+  min-height: 120px;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.calendar-cell:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.calendar-cell[aria-pressed="true"] {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+.calendar-cell:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.calendar-cell:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+.calendar-cell-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.2rem;
+}
+.calendar-date-number {
+  font-weight: 650;
+}
+.calendar-today-dot {
+  color: var(--accent);
+}
+.calendar-balance {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.calendar-chip {
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.calendar-chip.income {
+  color: var(--positive);
+}
+.calendar-chip.renewal {
+  color: var(--warning);
+}
+.calendar-count {
+  display: none;
+  font-size: 0.55rem;
+  color: var(--muted);
+}
+.calendar-low {
+  box-shadow: inset 0 -3px var(--gold);
+}
+.calendar-day-detail {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  scroll-margin-bottom: 100px;
+}
+.calendar-selected-balance {
+  display: block;
+  font-size: 1.8rem;
+  margin: 0.5rem 0 1rem;
+}
+.calendar-event-date {
+  display: block;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+.calendar-renewal {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.calendar-renewal small {
+  color: var(--muted);
+}
+.calendar-list-day {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.calendar-list-day .daily-row {
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.calendar-list-day h4 {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .calendar-grid {
+    gap: 3px;
+  }
+  .calendar-cell {
+    min-height: 65px;
+    padding: 0.3rem;
+    gap: 0.4rem;
+  }
+  .calendar-balance,
+  .calendar-chip {
+    display: none;
+  }
+  .calendar-count {
+    display: block;
+  }
+  .calendar-weekday {
+    font-size: 0.6rem;
+  }
+  .calendar-cell-top {
+    font-size: 0.8rem;
+  }
+  .calendar-toolbar {
+    gap: 0.4rem;
+  }
+  .calendar-toolbar label {
+    flex: 1 1 8rem;
+  }
+  .calendar-modes {
+    width: 100%;
+  }
+  .calendar-modes button {
+    flex: 1;
+  }
+}
+
+.calendar-negative {
+  border-color: var(--danger);
+}
+.calendar-negative .calendar-date-number {
+  color: var(--danger);
+}
+.schedule-row > div:first-child {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.calendar-count {
+  white-space: nowrap;
+}

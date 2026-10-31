@@ -1,5 +1,5 @@
 {
-  "version": "0.4.3",
+  "version": "0.4.4",
   "horizon_days": 90,
   "node_tests": {
     "passed": 89,
@@ -40,7 +40,11 @@
       "help visibility preserves unsaved input",
       "read-only tutorial replay and early exit, 4 widths/2 themes",
       "Quebec sock logo PNG served with correct MIME and touch-icon link",
-      "blue/cream/gold palette in light and dark OS themes"
+      "blue/cream/gold palette in light and dark OS themes",
+      "month/list calendar exact daily simulation amounts",
+      "Monday-first alignment and 90-day horizon boundaries",
+      "overdue bills and protected-limit renewals",
+      "calendar navigation is read-only; payment retains open month and uses actual current date"
     ]
   },
   "comparison": {
