@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 110,
+    "passed": 119,
     "failed": 0,
     "skipped": 0
   },

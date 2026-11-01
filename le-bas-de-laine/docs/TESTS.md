@@ -1,3 +1,11 @@
+# Vérifications — 0.7.0
+
+119 tests Node réussis, aucun échec. Neuf nouveaux tests couvrent les mois à deux/trois paies et quatre/cinq allocations, dates déplacées, exceptions, échéances payées/annulées, remboursement et paiement de carte sans double compte, reports séparés, fréquences longues et validation des mois. L’API de budget est réservée au propriétaire et sa lecture ne modifie ni les tables ni la simulation.
+
+`tests/budget-ui.py` vérifie les totaux mensuels, changement de mois, écart négatif, report séparé, classement facultatif, absence de champs de montants éditables et de mutations. Quatre largeurs (320/390/768/1440), deux thèmes, sans débordement horizontal. Captures fictives dans `budget/`. Parcours général, calendrier et outils quotidiens également réussis. Aucun test matériel iPhone revendiqué. Archive autonome : 117 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.6.0
 
 110 tests Node réussis. Huit nouveaux scénarios : 230−180 puis report 50 et budget 280; premier jour du mois sans reset prématuré; premier renouvellement avec allocation entière; février bissextile, quatre/cinq renouvellements et changement d’année; dépenses sur carte et simulation d’achat sans deuxième protection; achats anticipés y compris au-dessus de leur allocation, sans report emprunté entre mois; dépassements/remboursements bornés; activation non rétroactive, nouvelles catégories et restauration de la date d’activation. Le détail des protections égale toujours le total, les allocations futures restent protégées sans anticiper une non-dépense.

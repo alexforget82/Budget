@@ -1843,3 +1843,123 @@
   line-height: 1.5;
   margin: 0 0 1rem;
 }
+
+.budget-report {
+  grid-column: 1 / -1;
+}
+.budget-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+.budget-stat {
+  background: var(--soft);
+  padding: 0.8rem;
+  border-radius: 10px;
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.budget-stat > span,
+.budget-stat small {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.budget-stat strong {
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.budget-table-wrap {
+  overflow: auto;
+}
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.budget-table th,
+.budget-table td {
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.budget-table th:first-child {
+  text-align: left;
+}
+.budget-table .budget-group {
+  background: var(--soft);
+  font-weight: 650;
+}
+.budget-table .budget-row th {
+  font-weight: 500;
+}
+.budget-table small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+.budget-note {
+  line-height: 1.5;
+  font-size: 0.75rem;
+  margin-top: 1rem;
+}
+.budget-carry {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  font-size: 0.8rem;
+}
+.budget-carry p {
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .budget-stats {
+    grid-template-columns: 1fr;
+  }
+  .budget-stat {
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+  }
+  .budget-stat small {
+    grid-column: 1 / -1;
+  }
+  .budget-table,
+  .budget-table tbody {
+    display: block;
+  }
+  .budget-table thead {
+    display: none;
+  }
+  .budget-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-bottom: 1px solid var(--line);
+    padding: 0.65rem 0;
+  }
+  .budget-table th,
+  .budget-table td {
+    border: 0;
+    padding: 0.4rem 0.2rem;
+    min-width: 0;
+  }
+  .budget-table tr th {
+    grid-column: 1 / -1;
+    padding-left: 0.4rem;
+  }
+  .budget-table td {
+    text-align: left;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .budget-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+}

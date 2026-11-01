@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.6.0
+# Le bas de laine — contrat du noyau, essai 0.7.0
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -39,3 +39,5 @@
 **Montant unique 0.5.2** : override positif en centimes dans occurrence_states, clé rule_id/original_on. Mise à jour du seul montant, sans toucher au report ni à la règle. Reset remet amount_cents à null pour hériter du montant habituel. L’échéance reste ouverte jusqu’à paiement; paiement/liaison réels clôturent la prévision existante, sans double déduction. Les états déjà payés/annulés ne sont pas réouverts par une modification de montant.
 
 **Reports 0.6.0** : date globale weekly_rollover_from persistée dans settings; chaque catégorie commence au plus tôt dans sa période courante à l’activation ou à sa propre date de début. Le report réel est recalculé à partir des achats imputés, sans solde d’enveloppe écrit. Début de mois déterminé par la date du renouvellement, pas par le jour 1 civil. Les achats anticipés consomment leur allocation puis les fonds antérieurs inutilisés du même mois; ces montants sont signalés comme déjà utilisés pour une prochaine période. Le restant courant n’est protégé qu’une fois et chaque allocation future reste protégée, sans supposer une future non-dépense ni créer une rentrée fictive à l’expiration. La remise à zéro réelle se constate lors du renouvellement du nouveau mois.
+
+**Budget mensuel** : vue de lecture des règles actuelles et des transactions, distincte de la simulation du disponible. Prévu par dates effectives et allocations de base, réel par date réelle; virements et reports affichés séparément. Aucun budget supplémentaire ni écriture financière.

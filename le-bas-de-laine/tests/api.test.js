@@ -278,6 +278,10 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
   assert.equal((await raw(share + "/data", "wife@example.com")).status, 200);
   assert.equal((await raw("/styles.css", "wife@example.com")).status, 200);
   assert.equal((await raw("/api/export", "wife@example.com")).status, 403);
+  assert.equal(
+    (await raw("/api/budget?month=2027-01", "wife@example.com")).status,
+    403,
+  );
   const quote = await raw(share + "/purchase", "wife@example.com", {
     amount: 10,
   });
@@ -488,4 +492,37 @@ test("a damaged daily copy is reported as failed rather than assigned a fresh su
     saved.tables.accounts.some((a) => a.name === "Carte valide"),
     true,
   );
+});
+
+test("monthly budget GET is readonly, includes actual card expenses once and rejects invalid months", async (t) => {
+  const f = await launch(t);
+  let state = await setup(f);
+  state = await f.call("/api/account", { name: "Carte" });
+  const card = state.accounts.find((a) => a.kind === "card").id,
+    cat = state.categories[0].id;
+  await f.call("/api/transaction", {
+    account_id: card,
+    category_id: cat,
+    description: "Épicerie",
+    amount: -50,
+    date: today(),
+  });
+  await f.call("/api/transfer", {
+    from_account_id: state.accounts[0].id,
+    to_account_id: card,
+    amount: 50,
+    date: today(),
+    description: "Paiement",
+  });
+  const share = (await f.call("/api/share", { action: "create" })).result.path,
+    before = await f.call("/api/state"),
+    tables = (await f.call("/api/export")).tables;
+  const budget = await f.call("/api/budget?month=" + today().slice(0, 7));
+  assert.equal(budget.expense.actual_cents, 5000);
+  assert.equal(budget.transfers.actual_cents, 5000);
+  await f.call("/api/budget?month=2027-13", undefined, 400);
+  await f.call(share + "/budget", undefined, 404);
+  await f.call("/api/budget", {}, 404);
+  assert.deepEqual((await f.call("/api/export")).tables, tables);
+  assert.deepEqual((await f.call("/api/state")).simulation, before.simulation);
 });

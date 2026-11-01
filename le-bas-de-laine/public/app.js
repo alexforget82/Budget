@@ -19,6 +19,7 @@ let state,
   saveEditor,
   step = 0,
   setupHelpVisible = true,
+  budgetChoice = { month: null, open: false },
   transactionFilters = { search: "", month: null, account: "", category: "" },
   calendarChoice = { mode: "month", month: null, selected: null, open: false },
   wizard = {
@@ -1009,7 +1010,24 @@ function ruleEditor(r, kind = "expense") {
       startLabel,
       r || { kind: type.value },
     );
+  const ruleCategory = select(
+      "category_id",
+      [
+        ["", "Garder le nom de la règle"],
+        ...state.categories
+          .filter((c) => c.limit_cents === null)
+          .map((c) => [c.id, c.name]),
+      ],
+      r?.category_id || "",
+    ),
+    classification = node("details", null, "details-options");
+  classification.append(
+    node("summary", "Catégorie facultative"),
+    field("Catégorie de la règle", ruleCategory),
+  );
+  classification.open = !!r?.category_id;
   type.onchange = () => {
+    classification.hidden = type.value === "transfer";
     destLabel.hidden = type.value !== "transfer";
     if (!r) {
       calendar.adjustment.value = type.value === "income" ? "before" : "after";
@@ -1036,6 +1054,7 @@ function ruleEditor(r, kind = "expense") {
       destLabel,
       field("Fréquence", frequency),
       startLabel,
+      classification,
       calendar.container,
     ],
     () =>
@@ -1044,6 +1063,8 @@ function ruleEditor(r, kind = "expense") {
         id: r?.id,
         name: name.value,
         kind: type.value,
+        category_id:
+          type.value === "transfer" ? null : ruleCategory.value || null,
         amount: amount.value,
         account_id: account.value,
         to_account_id: destination.value,
@@ -2095,42 +2116,223 @@ function purchaseEditor() {
   );
 }
 function categoryReport() {
-  const host = node("details", null, "panel category-report");
-  host.append(node("summary", "Bilan par catégorie"));
-  const month = input("report_month", "month", dateNow().slice(0, 7)),
-    table = node("div", null, "report-table");
-  host.append(field("Mois", month), table);
-  const render = () => {
-    table.replaceChildren();
-    let total = 0;
-    for (const c of [
-      ...state.categories,
-      { id: null, name: "Sans catégorie" },
-    ]) {
-      const rows = state.transactions.filter(
-        (t) =>
-          t.date.startsWith(month.value) &&
-          t.category_id === c.id &&
-          t.amount_cents < 0,
-      );
-      const spent = -rows.reduce((n, t) => n + t.amount_cents, 0);
-      if (!spent) continue;
-      total += spent;
-      const row = node("div", null, "daily-row");
-      row.append(node("span", c.name), node("strong", money(spent)));
-      table.append(row);
-    }
-    const sum = node("div", null, "daily-row");
-    sum.append(
-      node("strong", "Total des achats"),
-      node("strong", money(total)),
+  const host = node("details", null, "panel category-report budget-report");
+  host.open = budgetChoice.open;
+  host.append(node("summary", "Budget mensuel"));
+  const toolbar = node("div", null, "calendar-toolbar"),
+    month = input(
+      "report_month",
+      "month",
+      budgetChoice.month || dateNow().slice(0, 7),
+    ),
+    stats = node("div", null, "budget-stats"),
+    wrapper = node("div", null, "report-table budget-table-wrap"),
+    reports = node("div"),
+    note = node(
+      "p",
+      "Prévu selon les règles actuelles et les dates des échéances. Réel selon les dates des transactions. Les virements restent hors revenus et dépenses.",
+      "muted budget-note",
     );
-    table.append(sum);
+  month.min = "1900-01";
+  month.max = "2200-12";
+  const prev = button("←", () => move(-1)),
+    next = button("→", () => move(1));
+  prev.setAttribute("aria-label", "Budget : mois précédent");
+  next.setAttribute("aria-label", "Budget : mois suivant");
+  toolbar.append(prev, field("Mois", month), next);
+  host.append(toolbar, stats, wrapper, reports, note);
+  let serial = 0;
+  function move(delta) {
+    if (!month.value) return;
+    const d = new Date(month.value + "-01T12:00:00Z");
+    d.setUTCMonth(d.getUTCMonth() + delta);
+    month.value = d.toISOString().slice(0, 7);
+    draw();
+  }
+  async function draw() {
+    const ticket = ++serial;
+    stats.replaceChildren();
+    reports.replaceChildren();
+    wrapper.replaceChildren(node("p", "Calcul du budget…", "muted"));
+    prev.disabled = !month.value || month.value <= "1900-01";
+    next.disabled = !month.value || month.value >= "2200-12";
+    if (!/^\d{4}-\d{2}$/.test(month.value)) {
+      wrapper.replaceChildren(node("p", "Choisissez un mois."));
+      return;
+    }
+    budgetChoice.month = month.value;
+    try {
+      const data = await request(
+        "/api/budget?month=" + encodeURIComponent(month.value),
+      );
+      if (ticket !== serial || !host.isConnected) return;
+      for (const [label, planned, actual, actualLabel] of [
+        [
+          "Revenus prévus",
+          data.income.planned_cents,
+          data.income.actual_cents,
+          "Reçus",
+        ],
+        [
+          "Dépenses prévues",
+          data.expense.planned_cents,
+          data.expense.actual_cents,
+          "Dépensées",
+        ],
+        [
+          "Équilibre prévu",
+          data.net_planned_cents,
+          data.net_actual_cents,
+          "Équilibre réel",
+        ],
+      ]) {
+        const card = node("div", null, "budget-stat");
+        card.append(
+          node("span", label),
+          node("strong", money(planned), planned < 0 ? "negative" : ""),
+          node("small", actualLabel + " : " + money(actual)),
+        );
+        stats.append(card);
+      }
+      const table = node("table", null, "budget-table"),
+        thead = node("thead"),
+        head = node("tr"),
+        body = node("tbody");
+      table.setAttribute("aria-label", "Budget mensuel prévu, réel et écart");
+      for (const title of ["Catégorie", "Prévu", "Réel", "Écart"])
+        head.append(node("th", title));
+      thead.append(head);
+      table.append(thead, body);
+      const cells = (row, planned, actual, variance) => {
+        for (const [label, value] of [
+          ["Prévu", planned],
+          ["Réel", actual],
+          ["Écart", variance],
+        ]) {
+          const cell = node(
+            "td",
+            money(value),
+            "amount" +
+              (label === "Écart"
+                ? value < 0
+                  ? " negative"
+                  : value > 0
+                    ? " positive"
+                    : ""
+                : ""),
+          );
+          cell.dataset.label = label;
+          row.append(cell);
+        }
+      };
+      for (const [kind, label] of [
+        ["income", "Revenus"],
+        ["expense", "Dépenses"],
+      ]) {
+        const group = data[kind],
+          total = node("tr", null, "budget-group"),
+          title = node("th", label);
+        title.scope = "rowgroup";
+        total.append(title);
+        cells(
+          total,
+          group.planned_cents,
+          group.actual_cents,
+          group.variance_cents,
+        );
+        body.append(total);
+        for (const item of group.rows) {
+          const row = node("tr", null, "budget-row"),
+            name = node("th", item.name);
+          name.scope = "row";
+          name.dataset.rowId = item.id;
+          const count = item.allocation_count
+            ? item.allocation_count +
+              " allocation" +
+              (item.allocation_count > 1 ? "s" : "")
+            : item.occurrence_count
+              ? item.occurrence_count +
+                " " +
+                (kind === "income" ? "versement" : "échéance") +
+                (item.occurrence_count > 1 ? "s" : "")
+              : "";
+          if (count) name.append(node("small", count));
+          row.append(name);
+          cells(
+            row,
+            item.planned_cents,
+            item.actual_cents,
+            item.variance_cents,
+          );
+          body.append(row);
+        }
+      }
+      wrapper.replaceChildren(table);
+      if (data.transfers.planned_cents || data.transfers.actual_cents)
+        reports.append(
+          node(
+            "p",
+            "Virements à part · Prévus " +
+              money(data.transfers.planned_cents) +
+              " · Effectués " +
+              money(data.transfers.actual_cents),
+            "budget-note muted",
+          ),
+        );
+      if (data.reports.items.length) {
+        const panel = node("details", null, "budget-carry");
+        panel.append(
+          node(
+            "summary",
+            "Reports encore disponibles au " +
+              shortDate(data.reports.observed_on) +
+              " · " +
+              money(data.reports.total_cents),
+          ),
+        );
+        panel.append(
+          node(
+            "p",
+            "Déjà issus d’allocations antérieures : ces reports ne sont pas ajoutés au prévu du mois.",
+            "muted",
+          ),
+        );
+        for (const c of data.reports.items) {
+          const row = node("div", null, "daily-row");
+          row.append(
+            node("span", c.name),
+            node("strong", money(c.amount_cents)),
+          );
+          panel.append(row);
+        }
+        reports.append(panel);
+      } else
+        reports.append(
+          node(
+            "p",
+            data.reports.observed_on
+              ? "Reports : aucun montant supplémentaire ajouté au budget mensuel."
+              : "Les reports futurs dépendront des achats : aucune estimation n’est ajoutée au budget.",
+            "muted budget-note",
+          ),
+        );
+      for (const warning of data.warnings)
+        reports.append(node("p", warning, "warning"));
+      note.textContent =
+        "Prévu selon les règles actuelles, reports de date et exceptions inclus. Réel selon les dates des transactions. Les règles sans catégorie gardent leur nom. Les virements sont exclus; cette vue n’ajoute aucune réserve.";
+    } catch (e) {
+      if (ticket === serial)
+        wrapper.replaceChildren(node("p", e.message, "error"));
+    }
+  }
+  host.ontoggle = () => {
+    budgetChoice.open = host.open;
+    if (host.open) draw();
   };
-  month.onchange = render;
-  render();
+  month.onchange = draw;
   return host;
 }
+
 function scheduleView() {
   const sim = state.simulation,
     days = new Map(sim.daily.map((d) => [d.date, d]));

@@ -1,3 +1,7 @@
+# 0.7.0 — budget mensuel simple
+
+Plan accueille une vue mensuelle automatique Prévu/Réel/Écart, groupée par catégorie. Comptage des dates effectives, sans mensualisation moyenne; exceptions et reports de dates conservés. Totaux revenus, dépenses et équilibre, virements séparés, reports de limites distincts. Classement facultatif des règles, sans nouvelle configuration obligatoire. Tableau adapté aux petits écrans. Lecture seule, aucun changement du moteur de disponible, des données ou du lien simplifié.
+
 # 0.6.0 — reports hebdomadaires dans le mois
 
 Restant reporté de semaine en semaine dans le même mois; remise à zéro des reports au premier renouvellement du nouveau mois, sans réduire l’allocation. Activation à partir de la période courante, avec sauvegarde sur budget existant. Affichage Budget/Allocation/Report dans les limites, identique en lecture partagée. Protection unique des reports et des achats anticipés, sans emprunt de report entre mois. Prévision conservatrice des dépenses et allocations futures; limites mensuelles inchangées. Schéma à huit tables conservé.

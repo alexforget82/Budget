@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.6.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.7.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -239,3 +239,9 @@ La liste Vos limites affiche Budget quand un report est présent, le Dépensé d
 **Prévision prudente** : elle protège le restant actuel (report compris une fois) et les allocations futures. Elle ne suppose pas à l’avance que les sommes utilisables avant le renouvellement resteront inutilisées. Les reports réellement inutilisés sont libérés quand le premier renouvellement du nouveau mois est atteint; aucun revenu ni débit fictif n’est créé. Les achats restant à payer sur carte continuent d’être protégés.
 
 **Activation** : la période courante sert de point de départ, sans recréer des reports pour les anciennes semaines potentiellement incomplètes. Une sauvegarde précède l’activation sur une base existante. La date d’activation est conservée dans l’export; restaurer une ancienne sauvegarde sans cette date active les reports à partir de la période courante. Aucune table supplémentaire.
+
+## Budget mensuel (0.7.0)
+
+Dans **Plan → Budget mensuel**, choisissez le mois pour comparer Prévu, Réel et Écart par catégorie. Le prévu compte les dates effectives des paies, factures et allocations : deux ou trois paies, quatre ou cinq semaines, sans moyenne annuelle. Les montants exceptionnels et dates reportées sont pris en compte; une échéance payée reste dans le prévu. Le réel suit la date réelle des transactions.
+
+Les virements restent séparés pour éviter de compter à nouveau un achat lors du paiement de carte. Les reports de limites sont présentés à part, sans les additionner aux allocations mensuelles. Le prévu utilise les règles actuelles, sans historique figé des anciens réglages. Une catégorie facultative peut regrouper les règles; sinon leur nom suffit. Cette vue ne réserve aucun argent et ne change pas le disponible. Le lien simplifié iPhone reste inchangé.

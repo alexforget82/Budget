@@ -1,4 +1,5 @@
 import { purchaseQuote } from "./purchase.js";
+import { monthlyBudget } from "./budget.js";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -155,7 +156,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.6.0",
+            version: "0.7.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -206,6 +207,16 @@ function handler(isPrivate) {
           res,
           200,
           service.matches(Object.fromEntries(url.searchParams)),
+        );
+      if (req.method === "GET" && url.pathname === "/api/budget")
+        return reply(
+          res,
+          200,
+          monthlyBudget(
+            store.state(),
+            url.searchParams.get("month") || today().slice(0, 7),
+            today(),
+          ),
         );
       if (req.method === "GET" && url.pathname === "/api/export") {
         res.setHeader(
