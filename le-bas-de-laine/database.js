@@ -12,7 +12,7 @@ export function openDatabase(dir) {
   const filename = path.join(dir, "budget.sqlite"),
     db = new DatabaseSync(filename);
   const version = db.prepare("PRAGMA user_version").get().user_version;
-  if (version > 2) throw Error("Cette base exige une version plus récente.");
+  if (version > 3) throw Error("Cette base exige une version plus récente.");
   if (version === 0) {
     if (
       db
@@ -29,7 +29,7 @@ export function openDatabase(dir) {
       ),
     );
   }
-  if (version === 1 || version === 2) {
+  if ([1, 2, 3].includes(version)) {
     const names = db
       .prepare(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
@@ -48,6 +48,7 @@ export function openDatabase(dir) {
         "occurrence_states",
         "checkpoints",
         "settings",
+        ...(version === 3 ? ["rules"] : []),
       ]
         .sort()
         .join()
@@ -81,6 +82,28 @@ export function openDatabase(dir) {
     if (db.prepare("PRAGMA foreign_key_check").all().length) {
       db.close();
       throw Error("Migration : liens invalides.");
+    }
+  }
+  if (db.prepare("PRAGMA user_version").get().user_version === 2) {
+    const folder = path.join(dir, "backups");
+    fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
+    const target = path.join(
+      folder,
+      "avant-schema-3-" + Date.now() + ".sqlite",
+    );
+    db.prepare("VACUUM INTO ?").run(target);
+    fs.chmodSync(target, 0o600);
+    try {
+      db.exec(
+        fs.readFileSync(
+          new URL("./migrations/003-classification.sql", import.meta.url),
+          "utf8",
+        ),
+      );
+    } catch (error) {
+      if (db.isTransaction) db.exec("ROLLBACK");
+      db.close();
+      throw error;
     }
   }
   db.exec(
@@ -123,6 +146,7 @@ export function openDatabase(dir) {
     "occurrence_states",
     "checkpoints",
     "settings",
+    "rules",
   ];
   const state = () => ({
     ...Object.fromEntries(
@@ -149,7 +173,7 @@ export function openDatabase(dir) {
       const copy = new DatabaseSync(target, { readOnly: true });
       try {
         if (
-          ![1, 2].includes(
+          ![1, 2, 3].includes(
             copy.prepare("PRAGMA user_version").get().user_version,
           ) ||
           copy.prepare("PRAGMA quick_check").get().quick_check !== "ok"
@@ -184,18 +208,30 @@ export function openDatabase(dir) {
   }
   const exportData = () => ({
     format: "le-bas-de-laine",
-    version: 2,
+    version: 3,
     created_at: new Date().toISOString(),
     tables: Object.fromEntries(tables.map((t) => [t, q("SELECT * FROM " + t)])),
   });
   function restore(payload) {
     if (
       payload?.format !== "le-bas-de-laine" ||
-      ![1, 2].includes(payload.version) ||
+      ![1, 2, 3].includes(payload.version) ||
       !payload.tables ||
-      Object.keys(payload.tables).sort().join() !== [...tables].sort().join()
+      Object.keys(payload.tables).sort().join() !==
+        tables
+          .filter((t) => payload.version === 3 || t !== "rules")
+          .sort()
+          .join()
     )
       throw Error("Sauvegarde incompatible.");
+    payload = structuredClone(payload);
+    if (payload.version < 3) {
+      payload.tables.rules = [];
+      payload.tables.transactions = payload.tables.transactions.map((row) => ({
+        ...row,
+        reviewed: 1,
+      }));
+    }
     const stage = openDatabase(path.join(dir, ".validation-" + Date.now()));
     try {
       stage.db.exec("PRAGMA foreign_keys=OFF");

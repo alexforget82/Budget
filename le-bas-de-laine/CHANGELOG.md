@@ -1,3 +1,7 @@
+# 0.9.0 — classement et révision des transactions
+
+Règles prioritaires de correspondance avec conditions compte/sens/montant, normalisation conservant les chiffres significatifs, propositions modifiables à la saisie et par ligne CSV, mémorisation facultative du commerçant. File de révision, compteur, validation individuelle et des lignes déjà classées par une règle. Sélection et changement de catégorie en lot avec aperçu exact du disponible, jeton anti-aperçu périmé et sauvegarde préalable; opérations liées à une échéance protégées. Aucun changement de calcul pour les règles ou marqueurs seuls. Schéma 3 et JSON 3, restauration JSON 1/2 maintenue, interface simplifiée partagée inchangée.
+
 # 0.8.0 — deux fois par mois
 
 Limites et programmations à deux jours fixes du mois. Montant par passage, fin de mois adaptée à février, ajustements bancaires et montant exceptionnel conservés. Calcul de périodes commun au navigateur et au serveur pour les achats anticipés. Budget mensuel et partage utilisent les deux dates réelles. Migration numérotée 002 avec sauvegarde préalable, schéma 2 et export JSON 2; restauration des anciens JSON 1 maintenue. Données et liens existants conservés, aucune conversion automatique de montant.

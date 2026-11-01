@@ -1,3 +1,4 @@
+import { matchingRule } from "./classification.js";
 import { cents } from "./service.js";
 import { validDate } from "./dates.js";
 import { hash } from "./import.js";
@@ -94,7 +95,16 @@ export function previewCSV(text, options, state, service) {
         amount: n / 100,
         description,
       });
+      const rule = matchingRule(state, {
+        description,
+        account_id: Number(options.account_id),
+        amount_cents: n,
+      });
       return {
+        category_id: options.category_id
+          ? Number(options.category_id)
+          : rule?.category_id || null,
+        classification_rule_id: rule?.id || null,
         row: index,
         date,
         amount_cents: n,

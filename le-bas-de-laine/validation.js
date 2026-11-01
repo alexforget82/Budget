@@ -1,3 +1,4 @@
+import { normalizeMerchant } from "./classification.js";
 import { validDate } from "./dates.js";
 export function validateState(s) {
   if (s.weekly_rollover_from != null && !validDate(s.weekly_rollover_from))
@@ -41,7 +42,8 @@ export function validateState(s) {
       !t.amount_cents ||
       t.settled_cents < 0 ||
       t.settled_cents > Math.abs(t.amount_cents) ||
-      ![0, 1].includes(t.included)
+      ![0, 1].includes(t.included) ||
+      (t.reviewed !== undefined && ![0, 1].includes(t.reviewed))
     )
       throw Error("Transaction invalide.");
     if (t.period_on) date(t.period_on, "période");
@@ -110,6 +112,33 @@ export function validateState(s) {
       !["none", "before", "after"].includes(r.day_adjust)
     )
       throw Error("Récurrence invalide.");
+  }
+  for (const r of s.rules || []) {
+    if (
+      !Number.isSafeInteger(r.priority) ||
+      r.priority < 0 ||
+      r.priority > 100000 ||
+      !["contains", "starts", "equals"].includes(r.match_type) ||
+      typeof r.pattern !== "string" ||
+      !normalizeMerchant(r.pattern) ||
+      r.pattern.length > 200 ||
+      !["expense", "income"].includes(r.direction) ||
+      ![0, 1].includes(r.active) ||
+      !s.categories.some((c) => c.id === r.category_id) ||
+      (r.account_id !== null && !s.accounts.some((a) => a.id === r.account_id))
+    )
+      throw Error("Règle de classement invalide.");
+    for (const value of [r.min_cents, r.max_cents])
+      if (value !== null) {
+        integer(value, "borne de règle");
+        if (value < 0) throw Error("Borne négative.");
+      }
+    if (
+      r.min_cents !== null &&
+      r.max_cents !== null &&
+      r.min_cents > r.max_cents
+    )
+      throw Error("Bornes inversées.");
   }
   for (const o of s.occurrence_states) {
     date(o.original_on, "échéance");

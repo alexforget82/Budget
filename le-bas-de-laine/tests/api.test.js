@@ -282,6 +282,28 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
     (await raw("/api/budget?month=2027-01", "wife@example.com")).status,
     403,
   );
+  assert.equal(
+    (
+      await raw(
+        "/api/classify?description=IGA&amount=-10&account_id=1",
+        "wife@example.com",
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await raw("/api/rule", "wife@example.com", { pattern: "IGA" })).status,
+    403,
+  );
+  assert.equal(
+    (
+      await raw("/api/review/apply", "wife@example.com", {
+        action: "review",
+        ids: [1],
+      })
+    ).status,
+    403,
+  );
   const quote = await raw(share + "/purchase", "wife@example.com", {
     amount: 10,
   });
@@ -525,4 +547,73 @@ test("monthly budget GET is readonly, includes actual card expenses once and rej
   await f.call("/api/budget", {}, 404);
   assert.deepEqual((await f.call("/api/export")).tables, tables);
   assert.deepEqual((await f.call("/api/state")).simulation, before.simulation);
+});
+
+test("classification and CSV review workflow stays owner-only and supports explicit row overrides", async (t) => {
+  const { call } = await launch(t);
+  await call("/api/setup", {
+    balance: 1000,
+    paychecks: [
+      {
+        name: "Paie",
+        amount: 1000,
+        start_on: addDays(today(), 1),
+        frequency: "monthly",
+        day_adjust: "none",
+      },
+    ],
+    categories: [
+      { name: "Épicerie", limit: 100, period: "monthly", renewal_day: 1 },
+    ],
+  });
+  let state = await call("/api/state");
+  const cat = state.categories[0].id,
+    bank = state.accounts[0].id;
+  await call("/api/rule", {
+    pattern: "IGA",
+    match_type: "contains",
+    direction: "expense",
+    category_id: cat,
+  });
+  const classification = await call(
+    "/api/classify?" +
+      new URLSearchParams({
+        description: "IGA #1234",
+        account_id: bank,
+        amount: "-20",
+      }),
+  );
+  assert.equal(classification.category_id, cat);
+  const csv = `Date;Description;Montant\n${today()};IGA #1234;-20,00`,
+    options = { account_id: bank, included: true };
+  const preview = await call("/api/csv/preview", { csv, options });
+  assert.equal(preview.rows[0].category_id, cat);
+  state = await call("/api/csv/apply", {
+    csv,
+    options,
+    token: preview.token,
+    selected: [{ row: 0, category_id: null }],
+  });
+  assert.equal(state.transactions[0].category_id, null);
+  assert.equal(state.transactions[0].reviewed, 0);
+  assert.equal(state.review_count, 1);
+  const id = state.transactions[0].id,
+    req = { action: "category", ids: [id], category_id: cat };
+  const impact = await call("/api/review/preview", req);
+  state = await call("/api/review/apply", { ...req, token: impact.token });
+  assert.equal(state.transactions[0].category_id, cat);
+  assert.ok(state.review_rule_ids.includes(id));
+  const financial = state.simulation;
+  state = await call("/api/review/apply", {
+    action: "review_rules",
+    ids: [id],
+  });
+  assert.equal(state.review_count, 0);
+  assert.deepEqual(state.simulation, financial);
+  const share = await call("/api/share", { action: "create" });
+  const path = share.result.path;
+  const shared = await call(path + "/data");
+  assert.equal(shared.rules, undefined);
+  assert.equal(shared.transactions, undefined);
+  await call(path + "/review", undefined, 404);
 });

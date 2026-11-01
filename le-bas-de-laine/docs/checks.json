@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.9.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 130,
+    "passed": 137,
     "failed": 0,
     "skipped": 0
   },
@@ -69,7 +69,8 @@
       "shared rollover parity and readonly purchase",
       "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates",
       "remove limits and recurring bills with confirmation, preserved history and responsive controls",
-      "two fixed monthly dates in wizard, limit/bill editors, transaction period selection and shared view"
+      "two fixed monthly dates in wizard, limit/bill editors, transaction period selection and shared view",
+      "classification rules, manual/CSV overrides, review counter/filter, bulk category preview, private shared interface"
     ]
   },
   "comparison": {

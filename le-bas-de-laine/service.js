@@ -1,3 +1,5 @@
+import { matchingRule, normalizeMerchant } from "./classification.js";
+import { createHash } from "node:crypto";
 import {
   occurrenceInfo,
   supportedFrequencies,
@@ -329,6 +331,148 @@ export function createService(store, clock = today) {
       ).lastInsertRowid,
     );
   }
+  function classify(x) {
+    return matchingRule(store.state(), {
+      id: x.id ? Number(x.id) : null,
+      description: x.description,
+      account_id: Number(x.account_id),
+      amount_cents: cents(x.amount),
+    });
+  }
+  function classificationRule(x) {
+    const cat = Number(x.category_id),
+      priority = Number(x.priority ?? 100),
+      pattern = String(x.pattern || "").trim(),
+      accountId = x.account_id ? Number(x.account_id) : null,
+      min =
+        x.min_amount == null || x.min_amount === ""
+          ? null
+          : cents(x.min_amount),
+      max =
+        x.max_amount == null || x.max_amount === ""
+          ? null
+          : cents(x.max_amount);
+    if (
+      !q("SELECT id FROM categories WHERE id=?", cat).length ||
+      !normalizeMerchant(pattern) ||
+      pattern.length > 200 ||
+      !Number.isSafeInteger(priority) ||
+      priority < 0 ||
+      priority > 100000 ||
+      !["contains", "starts", "equals"].includes(x.match_type) ||
+      !["expense", "income"].includes(x.direction) ||
+      (min !== null && min < 0) ||
+      (max !== null && max < 0) ||
+      (min !== null && max !== null && min > max)
+    )
+      throw Error("Règle de classement invalide.");
+    if (accountId) account(accountId);
+    const values = [
+      priority,
+      x.match_type,
+      pattern,
+      accountId,
+      x.direction,
+      min,
+      max,
+      cat,
+      x.active === false ? 0 : 1,
+    ];
+    if (x.id) {
+      if (!q("SELECT id FROM rules WHERE id=?", Number(x.id)).length)
+        throw Error("Règle introuvable.");
+      run(
+        "UPDATE rules SET priority=?,match_type=?,pattern=?,account_id=?,direction=?,min_cents=?,max_cents=?,category_id=?,active=? WHERE id=?",
+        ...values,
+        Number(x.id),
+      );
+      return Number(x.id);
+    }
+    return Number(
+      run(
+        "INSERT INTO rules(priority,match_type,pattern,account_id,direction,min_cents,max_cents,category_id,active) VALUES(?,?,?,?,?,?,?,?,?)",
+        ...values,
+      ).lastInsertRowid,
+    );
+  }
+  function deleteClassificationRule(x) {
+    if (!q("SELECT id FROM rules WHERE id=?", Number(x.id)).length)
+      throw Error("Règle introuvable.");
+    run("DELETE FROM rules WHERE id=?", Number(x.id));
+  }
+  function reviewBatch(x, apply = false) {
+    if (
+      !["category", "review", "review_rules"].includes(x.action) ||
+      !Array.isArray(x.ids) ||
+      !x.ids.length ||
+      x.ids.length > 5000
+    )
+      throw Error("Sélection ou action invalide.");
+    const data = store.state(),
+      ids = [...new Set(x.ids.map(Number))],
+      cat = x.category_id ? Number(x.category_id) : null,
+      target = data.categories.find((c) => c.id === cat);
+    if (x.action === "category" && cat && !target)
+      throw Error("Catégorie introuvable.");
+    const rows = ids.map((id) => {
+      const row = data.transactions.find((t) => t.id === id);
+      if (!row) throw Error("Transaction introuvable.");
+      return row;
+    });
+    const linked = new Set(
+      data.occurrence_states
+        .filter((o) => o.status === "paid")
+        .map((o) => o.transaction_id),
+    );
+    if (x.action === "category" && rows.some((t) => linked.has(t.id)))
+      throw Error(
+        "Retirez les opérations liées à une facture de la sélection.",
+      );
+    const changes = rows.filter(
+      (t) =>
+        x.action !== "review_rules" ||
+        (!t.reviewed && matchingRule(data, t)?.category_id === t.category_id),
+    );
+    const changeIds = new Set(changes.map((c) => c.id));
+    const planned = structuredClone(data);
+    for (const t of planned.transactions.filter((t) => changeIds.has(t.id))) {
+      if (x.action === "category") {
+        if (t.category_id !== cat)
+          t.period_on =
+            target?.limit_cents != null ? periodStart(target, t.date) : null;
+        t.category_id = cat;
+      } else t.reviewed = 1;
+    }
+    const before = simulate(data, clock()).spending_30.amount_cents,
+      after = simulate(planned, clock()).spending_30.amount_cents,
+      token = createHash("sha256")
+        .update(JSON.stringify([data, x.action, ids, cat]))
+        .digest("hex");
+    if (apply) {
+      if (x.action === "category" && x.token !== token)
+        throw Error("L’aperçu a changé. Recommencez.");
+      for (const row of planned.transactions.filter((t) =>
+        changeIds.has(t.id),
+      )) {
+        if (x.action === "category")
+          transaction({
+            ...row,
+            id: row.id,
+            amount: row.amount_cents / 100,
+            category_id: row.category_id,
+            reviewed: !!row.reviewed,
+          });
+        else run("UPDATE transactions SET reviewed=1 WHERE id=?", row.id);
+      }
+    }
+    return {
+      count: changes.length,
+      before_cents: before,
+      after_cents: after,
+      difference_cents: after - before,
+      token,
+    };
+  }
   function removeRecurrence(x) {
     const id = Number(x.id);
     if (
@@ -372,6 +516,38 @@ export function createService(store, clock = today) {
       throw Error(
         "Retirez d’abord le lien de facture avant de changer son compte ou son type.",
       );
+    if (x.remember_rule) {
+      if (
+        x.occurrence ||
+        (old &&
+          q(
+            "SELECT 1 FROM occurrence_states WHERE status='paid' AND transaction_id=?",
+            old.id,
+          ).length)
+      )
+        throw Error(
+          "Créez les règles depuis une opération sans lien de facture.",
+        );
+      const remembered = q(
+        "SELECT * FROM rules WHERE active=1 AND match_type='contains' AND account_id IS NULL AND category_id=? AND direction=?",
+        cat,
+        amount < 0 ? "expense" : "income",
+      ).some(
+        (r) =>
+          r.min_cents === null &&
+          r.max_cents === null &&
+          normalizeMerchant(r.pattern) === normalizeMerchant(x.description),
+      );
+      if (!remembered)
+        classificationRule({
+          pattern: x.description,
+          match_type: "contains",
+          priority: 100,
+          direction: amount < 0 ? "expense" : "income",
+          category_id: cat,
+          active: true,
+        });
+    }
     const values = [
       a.id,
       cat,
@@ -388,19 +564,21 @@ export function createService(store, clock = today) {
         : 0;
     if (old) {
       run(
-        "UPDATE transactions SET account_id=?,category_id=?,description=?,amount_cents=?,date=?,period_on=?,included=?,settled_cents=?,dirty=1 WHERE id=?",
+        "UPDATE transactions SET account_id=?,category_id=?,description=?,amount_cents=?,date=?,period_on=?,included=?,settled_cents=?,reviewed=?,dirty=1 WHERE id=?",
         ...values,
         settled,
+        x.reviewed === undefined ? old.reviewed : x.reviewed ? 1 : 0,
         old.id,
       );
       return old.id;
     }
     const id = Number(
       run(
-        "INSERT INTO transactions(seq,account_id,category_id,description,amount_cents,date,period_on,included,settled_cents) VALUES(?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO transactions(seq,account_id,category_id,description,amount_cents,date,period_on,included,settled_cents,reviewed) VALUES(?,?,?,?,?,?,?,?,?,?)",
         sequence(),
         ...values,
         settled,
+        x.reviewed === false ? 0 : 1,
       ).lastInsertRowid,
     );
     if (x.occurrence) {
@@ -609,7 +787,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.8.0",
+      version: "0.9.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,
@@ -623,6 +801,13 @@ export function createService(store, clock = today) {
         .filter((a) => a.kind === "bank")
         .map((a) => ({ id: a.id, balance_cents: bankBalance(data, a.id) })),
       last_import: lastImport,
+      review_count: data.transactions.filter((t) => !t.reviewed).length,
+      review_rule_ids: data.transactions
+        .filter(
+          (t) =>
+            !t.reviewed && matchingRule(data, t)?.category_id === t.category_id,
+        )
+        .map((t) => t.id),
       shared_enabled: !!setting("share_token"),
       removed_recurrence_ids: setting("removed_recurrence_ids", []),
     };
@@ -655,6 +840,10 @@ export function createService(store, clock = today) {
     recurrence,
     previewRecurrence,
     removeRecurrence,
+    classify,
+    classificationRule,
+    deleteClassificationRule,
+    reviewBatch,
     occurrence,
     checkpoint,
     matches,

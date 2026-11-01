@@ -21,7 +21,13 @@ let state,
   step = 0,
   setupHelpVisible = true,
   budgetChoice = { month: null, open: false },
-  transactionFilters = { search: "", month: null, account: "", category: "" },
+  transactionFilters = {
+    search: "",
+    month: null,
+    account: "",
+    category: "",
+    review: false,
+  },
   calendarChoice = { mode: "month", month: null, selected: null, open: false },
   wizard = {
     account_name: "Conjoint",
@@ -326,6 +332,26 @@ function render() {
         ? transactionsView()
         : planView(),
   );
+  if (page === "today" && state.review_count)
+    $("#main").prepend(
+      button(
+        state.review_count +
+          " transaction" +
+          (state.review_count > 1 ? "s" : "") +
+          " à réviser",
+        () => {
+          transactionFilters = {
+            search: "",
+            month: "",
+            account: "",
+            category: "",
+            review: true,
+          };
+          navigate("transactions");
+        },
+        "review-notice",
+      ),
+    );
 }
 async function refresh() {
   try {
@@ -382,6 +408,21 @@ function transactionEditor(old) {
   matchBox.hidden = true;
   periodLabel.hidden = true;
   destinationLabel.hidden = true;
+  const ruleHint = node("small", "", "muted"),
+    remember = input("remember_rule", "checkbox"),
+    rememberLabel = node("label", null, "check");
+  rememberLabel.append(
+    remember,
+    node("span", "Toujours proposer cette catégorie pour ce commerçant"),
+  );
+  const linked =
+    old &&
+    state.occurrence_states.some(
+      (o) => o.status === "paid" && o.transaction_id === old.id,
+    );
+  rememberLabel.hidden = !!linked;
+  let userCategory = false,
+    autoCategory = "";
   let suggestions = [],
     timer,
     ticket = 0;
@@ -393,6 +434,29 @@ function transactionEditor(old) {
     periodLabel.hidden = true;
     matchBox.hidden = true;
     if (isTransfer) return;
+    if (!old && !userCategory && amount.value && description.value) {
+      try {
+        const proposal = await request(
+          "/api/classify?" +
+            new URLSearchParams({
+              description: description.value,
+              account_id: account.value,
+              amount: (direction.value === "expense" ? "-" : "") + amount.value,
+            }),
+        );
+        if (t !== ticket || userCategory) return;
+        if (proposal) {
+          category.value = String(proposal.category_id);
+          autoCategory = category.value;
+          ruleHint.textContent =
+            "Proposition : " + proposal.pattern + ". Vous pouvez la modifier.";
+        } else {
+          if (category.value === autoCategory) category.value = "";
+          autoCategory = "";
+          ruleHint.textContent = "";
+        }
+      } catch {}
+    }
     const c = state.simulation.categories.find(
       (c) => String(c.id) === category.value,
     );
@@ -431,15 +495,36 @@ function transactionEditor(old) {
       clearTimeout(timer);
       timer = setTimeout(update, 180);
     });
+  match.onchange = () => {
+    const linkedChoice = match.value !== "";
+    rememberLabel.hidden = !!linked || linkedChoice;
+    if (linkedChoice) {
+      remember.checked = false;
+      if (!userCategory && autoCategory && category.value === autoCategory) {
+        category.value = String(
+          suggestions[Number(match.value)]?.category_id || "",
+        );
+        autoCategory = "";
+        ruleHint.textContent = "";
+        periodLabel.hidden = true;
+      }
+    }
+  };
   direction.onchange = update;
   account.onchange = update;
-  category.onchange = update;
+  category.onchange = () => {
+    userCategory = true;
+    ruleHint.textContent = "";
+    update();
+  };
   date.onchange = update;
   const content = [
     field("Type", direction),
     field("Montant", amount),
     field("Description", description),
     group,
+    ruleHint,
+    rememberLabel,
     destinationLabel,
     periodLabel,
     matchBox,
@@ -464,6 +549,8 @@ function transactionEditor(old) {
       } else
         await send("/api/transaction", {
           id: old?.id,
+          remember_rule: remember.checked && !linked && match.value === "",
+          reviewed: true,
           account_id: account.value,
           category_id: category.value,
           amount: (direction.value === "expense" ? "-" : "") + amount.value,
@@ -697,6 +784,181 @@ function transferEditor(t) {
     }),
   );
 }
+function classificationEditor(rule = {}, seed = {}) {
+  const pattern = required(
+      input("pattern", "text", rule.pattern || seed.description || ""),
+    ),
+    kind = select(
+      "match_type",
+      [
+        ["contains", "Contient"],
+        ["starts", "Commence par"],
+        ["equals", "Égal à"],
+      ],
+      rule.match_type || "contains",
+    ),
+    cat = categories(rule.category_id || seed.category_id),
+    priority = input("priority", "number", rule.priority ?? 100),
+    direction = select(
+      "rule_direction",
+      [
+        ["expense", "Dépense"],
+        ["income", "Revenu"],
+      ],
+      rule.direction || "expense",
+    ),
+    account = select(
+      "rule_account",
+      [["", "Tous les comptes"], ...state.accounts.map((a) => [a.id, a.name])],
+      rule.account_id || "",
+    ),
+    min = input(
+      "min_amount",
+      "number",
+      rule.min_cents == null ? "" : rule.min_cents / 100,
+    ),
+    max = input(
+      "max_amount",
+      "number",
+      rule.max_cents == null ? "" : rule.max_cents / 100,
+    ),
+    advanced = node("details");
+  cat.required = true;
+  priority.min = "0";
+  priority.max = "100000";
+  priority.step = "1";
+  min.step = max.step = ".01";
+  min.min = max.min = "0";
+  advanced.append(
+    node("summary", "Conditions facultatives"),
+    field("Compte de la règle", account),
+    field("Sens", direction),
+    field("Montant minimum", min),
+    field("Montant maximum", max),
+    field("Priorité (le plus petit nombre gagne)", priority),
+  );
+  modal(
+    rule.id ? "Modifier la règle" : "Une règle de classement",
+    [
+      field("Commerçant ou motif", pattern),
+      field("Correspondance", kind),
+      field("Catégorie proposée", cat),
+      advanced,
+      node(
+        "p",
+        "S’applique aux prochaines saisies et imports. Aucune transaction existante ne sera modifiée.",
+        "muted",
+      ),
+    ],
+    () =>
+      send("/api/rule", {
+        id: rule.id,
+        pattern: pattern.value,
+        match_type: kind.value,
+        category_id: cat.value,
+        priority: priority.value,
+        account_id: account.value,
+        direction: direction.value,
+        min_amount: min.value,
+        max_amount: max.value,
+        active: rule.active !== 0,
+      }),
+  );
+}
+function classificationManager() {
+  const content = node("div", null, "classification-rules");
+  content.append(button("+ Une règle", () => classificationEditor()));
+  for (const r of [...(state.rules || [])].sort(
+    (a, b) => a.priority - b.priority || a.id - b.id,
+  )) {
+    const row = node("div", null, "classification-rule");
+    row.append(
+      node("strong", r.pattern + (r.active ? "" : " · En pause")),
+      node(
+        "small",
+        (state.categories.find((c) => c.id === r.category_id)?.name || "") +
+          " · priorité " +
+          r.priority,
+      ),
+      button("Modifier", () => classificationEditor(r), "text-button"),
+      button(
+        r.active ? "Pause" : "Activer",
+        async () => {
+          await send("/api/rule", {
+            ...r,
+            min_amount: r.min_cents == null ? null : r.min_cents / 100,
+            max_amount: r.max_cents == null ? null : r.max_cents / 100,
+            active: !r.active,
+          });
+          classificationManager();
+        },
+        "text-button",
+      ),
+      button(
+        "Supprimer",
+        () =>
+          modal(
+            "Supprimer la règle ?",
+            [
+              node("p", r.pattern),
+              node("p", "Les transactions existantes seront conservées."),
+            ],
+            () => send("/api/rule/delete", { id: r.id }),
+            "Supprimer",
+          ),
+        "text-button",
+      ),
+    );
+    content.append(row);
+  }
+  if (!state.rules?.length)
+    content.append(
+      node(
+        "p",
+        "Aucune règle. Créez-en une ou cochez l’option lors de la saisie d’un achat.",
+        "muted",
+      ),
+    );
+  modal("Règles de classement", content);
+}
+function batchCategory(ids) {
+  const cat = categories(),
+    info = node("div");
+  let preview = null;
+  cat.onchange = () => {
+    preview = null;
+    info.replaceChildren();
+    $("#editor-save").textContent = "Voir l’effet sur le disponible";
+  };
+  modal(
+    "Catégorie · " + ids.length + " opération(s)",
+    [field("Nouvelle catégorie", cat), info],
+    async () => {
+      const data = { action: "category", ids, category_id: cat.value };
+      if (!preview) {
+        preview = await request("/api/review/preview", data);
+        info.replaceChildren(
+          node(
+            "p",
+            "Disponible sur 30 jours : " +
+              money(preview.before_cents) +
+              " → " +
+              money(preview.after_cents),
+          ),
+          node(
+            "p",
+            "Une sauvegarde sera faite avant application. Dates, comptes et montants restent identiques.",
+            "muted",
+          ),
+        );
+        $("#editor-save").textContent = "Appliquer à la sélection";
+        return false;
+      }
+      await send("/api/review/apply", { ...data, token: preview.token });
+    },
+    "Voir l’effet sur le disponible",
+  );
+}
 function transactionsView() {
   const root = node("div"),
     heading = node("div", null, "page-heading");
@@ -730,13 +992,33 @@ function transactionsView() {
   account.setAttribute("aria-label", "Filtrer par compte");
   category.setAttribute("aria-label", "Filtrer par catégorie");
   const actions = node("div", null, "actions");
-  actions.append(button("Importer un CSV", csvEditor));
+  const reviewFilter = button(
+    "À réviser (" + (state.review_count || 0) + ")",
+    () => {
+      transactionFilters.review = !transactionFilters.review;
+      draw();
+    },
+    "secondary",
+  );
+  actions.append(
+    reviewFilter,
+    button("Règles de classement", classificationManager),
+    button("Importer un CSV", csvEditor),
+  );
   filters.append(search, month, account, category, actions);
   root.append(filters);
+  const selectedIds = new Set(),
+    batch = node("div", null, "review-batch");
+  root.append(batch);
+  const all = input("select_all", "checkbox");
+  all.setAttribute("aria-label", "Sélectionner les opérations affichées");
   const wrapper = node("div", null, "table-wrap ledger"),
     table = node("table"),
     thead = node("thead"),
     header = node("tr");
+  const selectHeader = node("th");
+  selectHeader.append(all);
+  header.append(selectHeader);
   for (const title of [
     "Date",
     "Description",
@@ -764,6 +1046,7 @@ function transactionsView() {
       month: month.value,
       account: account.value,
       category: category.value,
+      review: !!transactionFilters.review,
     };
     tbody.replaceChildren();
     const accountName = (id) =>
@@ -787,6 +1070,8 @@ function transactionsView() {
     ]
       .filter(
         (t) =>
+          (!transactionFilters.review ||
+            (t.kind === "transaction" && !t.reviewed)) &&
           (!month.value || t.date.startsWith(month.value)) &&
           (!account.value ||
             String(t.account_id) === account.value ||
@@ -808,10 +1093,74 @@ function transactionsView() {
           ).includes(norm(search.value)),
       )
       .sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq);
+    const realIds = list
+      .filter((t) => t.kind === "transaction")
+      .map((t) => t.id);
+    for (const id of selectedIds)
+      if (!realIds.includes(id)) selectedIds.delete(id);
+    reviewFilter.setAttribute(
+      "aria-pressed",
+      String(!!transactionFilters.review),
+    );
+    function drawBatch() {
+      batch.replaceChildren();
+      all.checked =
+        !!realIds.length && realIds.every((id) => selectedIds.has(id));
+      all.indeterminate = selectedIds.size > 0 && !all.checked;
+      if (selectedIds.size)
+        batch.append(
+          node("span", selectedIds.size + " sélectionnée(s)"),
+          button("Changer la catégorie", () => batchCategory([...selectedIds])),
+          button("Valider la sélection", () =>
+            send("/api/review/apply", {
+              action: "review",
+              ids: [...selectedIds],
+            }),
+          ),
+        );
+      const ruled = realIds.filter((id) =>
+        (state.review_rule_ids || []).includes(id),
+      );
+      if (ruled.length)
+        batch.append(
+          button(
+            "Valider celles qui ont une règle (" + ruled.length + ")",
+            () =>
+              send("/api/review/apply", { action: "review_rules", ids: ruled }),
+            "text-button",
+          ),
+        );
+      batch.hidden = !batch.children.length;
+    }
+    all.onchange = () => {
+      for (const id of realIds)
+        all.checked ? selectedIds.add(id) : selectedIds.delete(id);
+      draw();
+    };
     for (const t of list) {
       const row = node("tr"),
         classification = node("td", null, "classification"),
         edit = node("td", null, "edit");
+      const choice = node("td", null, "selection-cell");
+      if (t.kind === "transaction") {
+        const check = input("selected_transaction", "checkbox");
+        check.checked = selectedIds.has(t.id);
+        check.setAttribute("aria-label", "Sélectionner " + t.description);
+        check.onchange = () => {
+          check.checked ? selectedIds.add(t.id) : selectedIds.delete(t.id);
+          drawBatch();
+        };
+        choice.append(check);
+        if (!t.reviewed)
+          edit.append(
+            button(
+              "Valider",
+              () =>
+                send("/api/review/apply", { action: "review", ids: [t.id] }),
+              "text-button",
+            ),
+          );
+      }
       classification.append(
         node("span", categoryName(t)),
         node(
@@ -831,6 +1180,7 @@ function transactionsView() {
         ),
       );
       row.append(
+        choice,
         node("td", shortDate(t.date), "date"),
         node("td", t.description, "description"),
         classification,
@@ -869,10 +1219,11 @@ function transactionsView() {
     if (!list.length) {
       const row = node("tr"),
         cell = node("td", "Aucune opération pour ces filtres.", "empty");
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       row.append(cell);
       tbody.append(row);
     }
+    drawBatch();
   }
   search.oninput = draw;
   month.onchange = account.onchange = category.onchange = draw;
@@ -1663,7 +2014,25 @@ function csvEditor() {
             node("span", shortDate(row.date) + " · " + row.description),
             node("strong", money(row.amount_cents), "money"),
           );
-          line.append(label);
+          const rowCategory = categories(row.category_id);
+          rowCategory.setAttribute(
+            "aria-label",
+            "Catégorie ligne " + (row.row + 2),
+          );
+          line.append(
+            label,
+            field("Catégorie ligne " + (row.row + 2), rowCategory),
+          );
+          if (row.classification_rule_id)
+            line.append(
+              node(
+                "small",
+                "Règle : " +
+                  state.rules.find((r) => r.id === row.classification_rule_id)
+                    ?.pattern,
+                "muted",
+              ),
+            );
           const match = select("match", [
             ["", "Choisir…"],
             ["new", "Nouvelle opération"],
@@ -1677,7 +2046,11 @@ function csvEditor() {
           } else match.value = "new";
           if (row.duplicate)
             line.append(node("small", "Déjà présent : ligne ignorée."));
-          choices.push({ row, check, match });
+          match.onchange = () => {
+            rowCategory.disabled = match.value !== "new";
+            if (rowCategory.disabled) rowCategory.value = category.value;
+          };
+          choices.push({ row, check, match, rowCategory });
           previewHost.append(line);
         }
         $("#editor-save").textContent = "Importer les lignes choisies";
@@ -1692,6 +2065,7 @@ function csvEditor() {
             );
           return {
             row: c.row.row,
+            category_id: c.rowCategory.value,
             ...(c.match.value !== "new"
               ? { occurrence: c.row.matches[+c.match.value] }
               : {}),

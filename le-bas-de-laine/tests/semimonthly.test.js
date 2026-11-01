@@ -272,7 +272,7 @@ test("monthly budget uses two allocations and two bills; backup restores second 
     2,
   );
   const backup = db.exportData();
-  assert.equal(backup.version, 2);
+  assert.equal(backup.version, 3);
   db.restore(backup);
   assert.equal(db.state().categories[0].renewal_day2, 15);
   assert.equal(db.state().recurrences[1].second_day, 15);
@@ -311,7 +311,7 @@ test("schema 1 migration backs up intact database and preserves foreign keys, am
   old.close();
   const db = openDatabase(dir);
   t.after(() => db.db.close());
-  assert.equal(db.q("PRAGMA user_version")[0].user_version, 2);
+  assert.equal(db.q("PRAGMA user_version")[0].user_version, 3);
   assert.equal(db.q("PRAGMA foreign_key_check").length, 0);
   assert.equal(db.setting("share_token"), "fake-test-token");
   for (const table of tables) {
@@ -319,6 +319,7 @@ test("schema 1 migration backs up intact database and preserves foreign keys, am
       const c = { ...r };
       if (table === "categories") delete c.renewal_day2;
       if (table === "recurrences") delete c.second_day;
+      if (table === "transactions") delete c.reviewed;
       return c;
     });
     assert.deepEqual(

@@ -1986,3 +1986,28 @@
   max-width: 100%;
   white-space: normal;
 }
+
+.review-batch, .review-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.review-batch[hidden] { display: none; }
+.selection-cell { width: 42px; }
+.classification-rules { display: grid; gap: 12px; }
+.classification-rule { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.classification-rule strong, .classification-rule small { display: block; overflow-wrap: anywhere; }
+.classification-rule button { margin: 6px 8px 0 0; }
+.csv-row select { max-width: 100%; }
+@media (max-width: 600px) {
+  .review-batch button { flex: 1 1 140px; white-space: normal; }
+  .ledger .edit { white-space: normal; }
+}
+@media (max-width: 800px) {
+  .ledger tr { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .ledger td.selection-cell { grid-column: 1; grid-row: 1/4; align-self: center; width: 24px; }
+  .ledger td.date, .ledger td.description, .ledger td.classification { grid-column: 2; overflow-wrap: anywhere; }
+  .ledger td.amount, .ledger td.edit { grid-column: 3; }
+}

@@ -1,3 +1,11 @@
+# Vérifications — 0.9.0
+
+137 tests Node réussis. Nouvelles vérifications : normalisation avec conservation des chiffres significatifs, opérateurs/priorité/conditions, exclusion des échéances payées, parité financière après création/pause/suppression de règle et validation, mémorisation atomique, CSV proposé et remplacement explicite, aperçu de classement en lot/jeton périmé/préservation banque-carte-soldes, JSON 3 et restauration JSON 2, migration réelle du schéma 2 avec copie originale intacte. Migration depuis le schéma 1 et JSON 1 également conservée dans les tests existants. Routes privées de classement/révision refusées à l’utilisateur partagé.
+
+`tests/classification-ui.py` : règles depuis l’interface, proposition manuelle remplaçable, mémorisation, CSV avec catégories par ligne, file et compteur de révision, validation par règle, classement en lot avec confirmation d’effet, pause/suppression sans effet financier, parité du lien simplifié; 320/390/768/1440 et deux thèmes sans débordement. Parcours général, outils quotidiens et minimum sur 30 jours également réussis. Données fictives seulement; aucun test matériel iPhone revendiqué. Archive autonome : 135 réussites et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.8.0
 
 130 tests Node réussis. Six nouveaux scénarios : exactement 24 allocations annuelles, février bissextile et fin de mois; protection des deux périodes, achats anticipés banque/carte et paiement sans deuxième déduction; deux dates de facture, jours fériés et refus des dates déplacées trop proches; aperçu, montant exceptionnel et remappage d’un état sauvegardé; budget mensuel et restauration des seconds jours; migration d’une vraie base SQLite schéma 1 avec copie intacte, références et lien privé conservés, restauration JSON ancien format.

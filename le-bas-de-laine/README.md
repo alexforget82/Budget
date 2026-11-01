@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.8.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.9.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine, au mois ou deux fois par mois. Pas d’enveloppes à alimenter.
 
@@ -267,3 +267,17 @@ Les limites, factures, revenus et virements programmés proposent **Deux fois pa
 Les limites sont protégées à chacune des deux dates dans le disponible; les achats anticipés peuvent choisir la prochaine période. Les factures conservent leurs options week-end/férié et leurs montants exceptionnels. Pour éviter que deux passages se confondent au même jour ouvrable, les dates déplacées doivent être suffisamment espacées (au moins sept jours, y compris entre les mois); choisissez Conserver la date pour des passages plus proches.
 
 L’installation adapte automatiquement la base (schéma 2), avec une copie SQLite préalable dans data/backups/avant-schema-2-….sqlite. Les catégories, transactions, paiements et liens privés sont conservés. Les anciennes sauvegardes JSON au format 1 restent restaurables; les nouvelles utilisent le format 2. Une ancienne application ne peut pas ouvrir directement le schéma 2 : utilisez sa copie préalable en cas de retour en arrière.
+
+## Classement et révision (0.9.0)
+
+Dans **Transactions → Règles de classement**, créez un motif Contient, Commence par ou Égal à et sa catégorie cible. Les conditions facultatives limitent la règle à un compte, un sens et une fourchette de montants. La priorité numérique la plus basse gagne; à égalité, la règle la plus ancienne gagne. Une règle spécifique doit recevoir une priorité plus basse que la règle générale.
+
+La comparaison ignore les accents et la casse, retire les numéros explicitement étiquetés terminal/succursale et les suffixes #1234, mais conserve les nombres sans étiquette. Un motif Contient IGA peut donc reconnaître IGA 0873 sans supprimer arbitrairement ce nombre.
+
+À la saisie, la catégorie est proposée et reste modifiable. Une sélection manuelle ne sera pas écrasée. L’option Toujours proposer cette catégorie crée une règle pour les prochaines opérations, sans modifier l’historique. Dans l’aperçu CSV, chaque ligne affiche sa catégorie proposée, modifiable avant import; le choix d’une échéance garde le chemin d’association existant, sans classement automatique par règle.
+
+Les imports CSV arrivent **À réviser**. La saisie manuelle et l’historique existant sont déjà validés. Ce marqueur ne change aucun calcul. Le compteur d’Aujourd’hui ouvre la file; le filtre de Transactions, les boutons Valider et Valider celles qui ont une règle permettent de la traiter. Cette dernière action valide seulement les lignes dont la catégorie correspond déjà à leur règle, sans reclasser l’historique.
+
+Cochez plusieurs opérations pour changer leur catégorie en lot : l’aperçu montre le disponible avant/après, puis une confirmation et une sauvegarde précèdent l’application. Les opérations liées à une facture payée sont exclues de ce changement en lot. Dates, comptes, montants, soldes vérifiés et protections de carte restent conservés. La validation d’une sélection ne change que le marqueur de révision.
+
+Trois écrans principaux conservés. Aucune nouvelle fonction dans le lien simplifié; règles et révision restent privées. Schéma 3 avec copie SQLite préalable, neuf tables; JSON 3 restaure les règles et marqueurs, JSON 1 et 2 restent acceptés (historique validé, sans règles). Aucune application automatique des règles à l’historique.

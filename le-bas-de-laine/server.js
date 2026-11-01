@@ -157,7 +157,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.8.0",
+            version: "0.9.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -218,6 +218,12 @@ function handler(isPrivate) {
             url.searchParams.get("month") || today().slice(0, 7),
             today(),
           ),
+        );
+      if (req.method === "GET" && url.pathname === "/api/classify")
+        return reply(
+          res,
+          200,
+          service.classify(Object.fromEntries(url.searchParams)),
         );
       if (req.method === "GET" && url.pathname === "/api/export") {
         res.setHeader(
@@ -331,7 +337,12 @@ function handler(isPrivate) {
                 throw Error("Suggestion de facture invalide.");
               service.transaction({
                 account_id: x.options.account_id,
-                category_id: x.options.category_id,
+                category_id: occurrence
+                  ? x.options.category_id
+                  : Object.hasOwn(choice, "category_id")
+                    ? choice.category_id
+                    : row.category_id,
+                reviewed: false,
                 description: row.description,
                 amount: row.amount_cents / 100,
                 date: row.date,
@@ -343,6 +354,20 @@ function handler(isPrivate) {
             }
             return { imported: count };
           });
+        } else if (url.pathname === "/api/rule")
+          store.atomic(() => service.classificationRule(x));
+        else if (url.pathname === "/api/rule/delete")
+          store.atomic(() => service.deleteClassificationRule(x));
+        else if (url.pathname === "/api/review/preview")
+          return reply(res, 200, service.reviewBatch(x));
+        else if (url.pathname === "/api/review/apply") {
+          const preview = service.reviewBatch(x);
+          if (x.action === "category") {
+            if (x.token !== preview.token)
+              throw Error("L’aperçu a changé. Recommencez.");
+            store.backup("avant-classement-lot-" + Date.now());
+          }
+          store.atomic(() => service.reviewBatch(x, true));
         } else if (url.pathname === "/api/setup")
           store.atomic(() => service.setup(x));
         else if (url.pathname === "/api/transaction")
