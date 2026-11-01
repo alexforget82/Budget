@@ -1,3 +1,11 @@
+# Vérifications — 0.7.2
+
+124 tests Node réussis. Retrait d’une limite après achat sur carte : catégorie et transaction conservées, protection de carte intacte, limite retirée du disponible et rattachement Autres nettoyé. Retrait d’une facture après paiement : transaction, lien d’échéance et solde vérifié inchangés; échéances futures retirées; marqueur conservé après sauvegarde/restauration; identifiant invalide refusé.
+
+`tests/remove-plan-ui.py` utilise une base fictive : actions dans liste/éditeur, confirmation et annulation, mise à jour immédiate et persistante de Plan, recalcul de prévision, historique conservé et absence de débordement à 320/390/768/1440 pixels. Vérifie aussi les écrans propriétaire/partagé en clair/sombre. Archive autonome : 122 tests réussis, deux références externes Sillage omises. Aucun test matériel iPhone revendiqué.
+
+## Référence précédente
+
 # Vérifications — 0.7.1
 
 122 tests Node réussis. Nouveaux tests : première facture avancée avant son début nominal (compte bancaire et carte, retard, report avec montant exceptionnel, payée/annulée); calendrier indépendant des protections sur 90 jours pour chaque jour de renouvellement hebdomadaire, avec/sans reports et limite mensuelle; petit revenu avant grosse facture, minimum 30 jours distinct du disponible avant revenu, égalité des quatre lignes, achats banque/carte et remboursement de carte sans double déduction.

@@ -963,3 +963,83 @@ test("a one-off planned card expense is protected once and its actual payment do
   assert.equal(actual.simulation.card_cents, 2500);
   assert.equal(actual.simulation.bank_cents, 100000);
 });
+
+test("removing a limit preserves category, purchases and card protection; clears fallback", (t) => {
+  const { db, api, cat } = fixture(t);
+  const card = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Carte','card')")
+      .lastInsertRowid,
+  );
+  db.atomic(() =>
+    api.transaction({
+      account_id: card,
+      category_id: cat,
+      description: "Achat",
+      amount: -70,
+      date,
+    }),
+  );
+  db.put("fallback_category_id", cat);
+  const before = db.state();
+  const protectedBefore = api.snapshot().simulation.spending_30.amount_cents;
+  db.atomic(() =>
+    api.category({ id: cat, name: "Épicerie", limit: null, active: true }),
+  );
+  const after = db.state();
+  const sim = api.snapshot().simulation;
+  assert.equal(after.categories.find((c) => c.id === cat).limit_cents, null);
+  assert.equal(after.categories.find((c) => c.id === cat).active, 1);
+  assert.deepEqual(after.transactions, before.transactions);
+  assert.deepEqual(after.checkpoints, before.checkpoints);
+  assert.equal(after.fallback_category_id, null);
+  assert.equal(sim.categories.length, 0);
+  assert.equal(sim.card_cents, 7000);
+  assert.ok(sim.spending_30.amount_cents > protectedBefore);
+  assert.equal(sim.daily[0].safe_cents, 93000);
+});
+
+test("removing a scheduled bill keeps paid history, category coverage and checkpoints", (t) => {
+  const { db, api, bank } = fixture(t);
+  const cat = api.category({ name: "Factures" });
+  const rule = api.recurrence({
+    name: "Internet",
+    kind: "expense",
+    amount: 100,
+    account_id: bank,
+    category_id: cat,
+    start_on: date,
+    frequency: "monthly",
+    day_adjust: "none",
+  });
+  db.atomic(() =>
+    api.occurrence({ rule_id: rule, original_on: date, action: "pay", date }),
+  );
+  const before = db.state();
+  assert.ok(
+    api
+      .snapshot()
+      .simulation.daily.flatMap((d) => d.events)
+      .some((e) => e.rule_id === rule),
+  );
+  db.atomic(() => api.removeRecurrence({ id: rule }));
+  const after = db.state();
+  assert.equal(after.recurrences.find((r) => r.id === rule).active, 0);
+  assert.deepEqual(after.transactions, before.transactions);
+  assert.deepEqual(after.occurrence_states, before.occurrence_states);
+  assert.deepEqual(after.checkpoints, before.checkpoints);
+  assert.ok(api.snapshot().removed_recurrence_ids.includes(rule));
+  assert.ok(
+    !api
+      .snapshot()
+      .simulation.daily.flatMap((d) => d.events)
+      .some((e) => e.rule_id === rule),
+  );
+  assert.throws(
+    () => db.atomic(() => api.removeRecurrence({ id: 99999 })),
+    /introuvable/,
+  );
+  const backup = db.exportData();
+  db.restore(backup);
+  assert.ok(api.snapshot().removed_recurrence_ids.includes(rule));
+  assert.deepEqual(db.state().occurrence_states, before.occurrence_states);
+});

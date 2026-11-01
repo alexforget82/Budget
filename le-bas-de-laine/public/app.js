@@ -911,6 +911,25 @@ function transactionsView() {
   return root;
 }
 
+function removeLimit(c) {
+  modal(
+    "Supprimer la limite ?",
+    [
+      node("p", c.name + " · " + money(c.limit_cents)),
+      node(
+        "p",
+        "Ce montant ne sera plus réservé dans le disponible. La catégorie et ses transactions seront conservées.",
+      ),
+    ],
+    () =>
+      send(
+        "/api/category",
+        { id: c.id, name: c.name, limit: null, active: true },
+        "Limite supprimée",
+      ),
+    "Supprimer la limite",
+  );
+}
 function categoryEditor(c) {
   const name = required(input("name", "text", c?.name || "")),
     amount = amountField(
@@ -963,6 +982,15 @@ function categoryEditor(c) {
       field("Période", period),
       field("Renouvellement", day),
       field("À partir du", start),
+      ...(c?.limit_cents !== null && c?.limit_cents !== undefined
+        ? [
+            button(
+              "Supprimer la limite",
+              () => removeLimit(c),
+              "text-button negative",
+            ),
+          ]
+        : []),
       node(
         "p",
         "À la semaine, le restant se reporte jusqu’au premier renouvellement du nouveau mois. Le montant habituel revient alors sans report. Les allocations restent protégées automatiquement.",
@@ -978,6 +1006,27 @@ function categoryEditor(c) {
         renewal_day: day.value,
         starts_on: start.value,
       }),
+  );
+}
+function removeRule(r) {
+  const label =
+    r.kind === "income"
+      ? "le revenu"
+      : r.kind === "transfer"
+        ? "le virement prévu"
+        : "la facture";
+  modal(
+    "Supprimer " + label + " ?",
+    [
+      node("p", r.name + " · " + money(r.amount_cents)),
+      node(
+        "p",
+        "Ses échéances non réglées seront retirées de la prévision. Les transactions et paiements déjà enregistrés seront conservés.",
+      ),
+    ],
+    () =>
+      send("/api/recurrence/delete", { id: r.id }, "Programmation supprimée"),
+    "Supprimer " + label,
   );
 }
 function ruleEditor(r, kind = "expense") {
@@ -1056,6 +1105,19 @@ function ruleEditor(r, kind = "expense") {
       startLabel,
       classification,
       calendar.container,
+      ...(r
+        ? [
+            button(
+              r.kind === "income"
+                ? "Supprimer le revenu"
+                : r.kind === "transfer"
+                  ? "Supprimer le virement prévu"
+                  : "Supprimer la facture",
+              () => removeRule(r),
+              "text-button negative",
+            ),
+          ]
+        : []),
     ],
     () =>
       send("/api/recurrence", {
@@ -1094,8 +1156,10 @@ function planView() {
       label,
       button("+ Ajouter", () => ruleEditor(null, kind), "text-button"),
     );
-    for (const r of state.recurrences.filter((r) =>
-      kind === "income" ? r.kind === "income" : r.kind !== "income",
+    for (const r of state.recurrences.filter(
+      (r) =>
+        !(state.removed_recurrence_ids || []).includes(r.id) &&
+        (kind === "income" ? r.kind === "income" : r.kind !== "income"),
     )) {
       const row = node("div", null, "rule"),
         left = node("div"),
@@ -1131,6 +1195,15 @@ function planView() {
       right.append(
         node("strong", money(r.amount_cents), "money"),
         button("Modifier", () => ruleEditor(r), "text-button"),
+        button(
+          r.kind === "income"
+            ? "Supprimer le revenu"
+            : r.kind === "transfer"
+              ? "Supprimer le virement prévu"
+              : "Supprimer la facture",
+          () => removeRule(r),
+          "text-button negative",
+        ),
         button(
           r.active ? "Pause" : "Activer",
           () =>
@@ -1187,6 +1260,11 @@ function planView() {
             active: !c.active,
           }),
         "text-button",
+      ),
+      button(
+        "Supprimer la limite",
+        () => removeLimit(c),
+        "text-button negative",
       ),
     );
     limits.append(row);

@@ -1963,3 +1963,26 @@
     margin-bottom: 0.3rem;
   }
 }
+
+/* Plan actions wrap instead of widening the viewport on a phone. */
+.plan-grid .rule {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.plan-grid .rule > div:first-child {
+  min-width: 0;
+  flex: 1 1 160px;
+  overflow-wrap: anywhere;
+}
+.plan-grid .rule > div:last-child:not(:first-child) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.plan-grid .rule button {
+  max-width: 100%;
+  white-space: normal;
+}

@@ -1,8 +1,8 @@
 {
-  "version": "0.7.1",
+  "version": "0.7.2",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 122,
+    "passed": 124,
     "failed": 0,
     "skipped": 0
   },
@@ -67,7 +67,8 @@
       "no reset on calendar day 1 before renewal",
       "full allocation with zero carry at first renewal of new month",
       "shared rollover parity and readonly purchase",
-      "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates"
+      "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates",
+      "remove limits and recurring bills with confirmation, preserved history and responsive controls"
     ]
   },
   "comparison": {

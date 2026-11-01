@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.7.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.7.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -253,3 +253,7 @@ Le montant principal est désormais le **minimum prévu des 30 prochains jours**
 Les quatre lignes sous le montant expliquent ce minimum à sa date : solde de départ, cartes à payer, prévisions nettes (revenus moins paiements) et limites protégées. Une prévision nette positive peut donc augmenter le montant. La projection sur 90 jours reste accessible. Le curseur permet aussi au lien simplifié de consulter chacune des 30 journées, avec les mêmes montants que le propriétaire.
 
 Correction : la toute première échéance avancée avant sa date nominale par un ajustement de jour ouvrable reste protégée tant qu’elle est ouverte, même après sa date ou un report. Aucun changement des transactions enregistrées ni des liens privés.
+
+## Retirer une limite ou une facture (0.7.2)
+
+Dans Plan, choisissez **Supprimer la limite** ou **Supprimer la facture**, dans la liste ou son formulaire de modification, puis confirmez. Une limite retirée cesse de protéger de l’argent : sa catégorie et ses achats restent disponibles. Une facture retirée cesse de générer des échéances non réglées dans la prévision; ses paiements réels et leurs liens sont conservés. Les revenus et virements programmés proposent la même action. Pause reste disponible pour une interruption temporaire. Ces actions sont réservées au propriétaire; le lien simplifié reçoit les montants recalculés.

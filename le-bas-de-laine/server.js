@@ -156,7 +156,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.7.1",
+            version: "0.7.2",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -352,6 +352,8 @@ function handler(isPrivate) {
           result = store.atomic(() => service.checkpoint(x));
         else if (url.pathname === "/api/category")
           store.atomic(() => service.category(x));
+        else if (url.pathname === "/api/recurrence/delete")
+          store.atomic(() => service.removeRecurrence(x));
         else if (url.pathname === "/api/recurrence")
           store.atomic(() => service.recurrence(x));
         else if (url.pathname === "/api/occurrence")

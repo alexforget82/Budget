@@ -99,6 +99,8 @@ export function createService(store, clock = today) {
       );
       if (c.name.toLocaleLowerCase("fr-CA") === "autres" && limit !== null)
         put("fallback_category_id", Number(x.id));
+      if (limit === null && setting("fallback_category_id") === Number(x.id))
+        put("fallback_category_id", null);
       return Number(x.id);
     }
     const id = Number(
@@ -281,6 +283,19 @@ export function createService(store, clock = today) {
         ...fields,
       ).lastInsertRowid,
     );
+  }
+  function removeRecurrence(x) {
+    const id = Number(x.id);
+    if (
+      !Number.isSafeInteger(id) ||
+      !q("SELECT id FROM recurrences WHERE id=?", id).length
+    )
+      throw Error("Récurrence introuvable.");
+    // Keep paid-occurrence links: removing them can change historical category coverage.
+    run("UPDATE recurrences SET active=0,dirty=1 WHERE id=?", id);
+    put("removed_recurrence_ids", [
+      ...new Set([...setting("removed_recurrence_ids", []), id]),
+    ]);
   }
   function transaction(x) {
     const a = account(x.account_id),
@@ -549,7 +564,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.7.1",
+      version: "0.7.2",
       configured: setting("configured", false),
       theme: "system",
       simulation,
@@ -564,6 +579,7 @@ export function createService(store, clock = today) {
         .map((a) => ({ id: a.id, balance_cents: bankBalance(data, a.id) })),
       last_import: lastImport,
       shared_enabled: !!setting("share_token"),
+      removed_recurrence_ids: setting("removed_recurrence_ids", []),
     };
   }
   function matches(x) {
@@ -593,6 +609,7 @@ export function createService(store, clock = today) {
     category,
     recurrence,
     previewRecurrence,
+    removeRecurrence,
     occurrence,
     checkpoint,
     matches,

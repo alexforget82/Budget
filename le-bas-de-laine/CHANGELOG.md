@@ -1,3 +1,7 @@
+# 0.7.2 — retirer une limite ou une facture
+
+Actions avec confirmation dans Plan et les éditeurs. Limite retirée sans supprimer la catégorie ni les achats; nettoyage du rattachement automatique Autres si nécessaire. Facture/revenu/virement programmé retiré de la liste et de la prévision par désactivation et marqueur d’archivage, sans casser les liens d’échéances déjà payées, les transactions ou les soldes vérifiés. Sauvegarde/restauration conserve le marqueur. Boutons adaptés aux petits écrans. Schéma inchangé.
+
 # 0.7.1 — minimum sur 30 jours au premier plan
 
 Minimum des 30 prochains jours comme montant principal, sur les écrans propriétaire et partagé; montant avant prochain revenu conservé dans le détail. Explication chiffrée et limites au jour exact du minimum, prévisions nettes incluant les revenus. Exploration quotidienne partagée conservée et vérifiée pour les 30 dates. Correction de la première échéance avancée avant la date nominale, auparavant omise une fois passée. Aucun changement de schéma ou de lien privé.
