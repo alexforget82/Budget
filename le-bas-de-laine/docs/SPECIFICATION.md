@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.5.2
+# Le bas de laine — contrat du noyau, essai 0.6.0
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -6,7 +6,7 @@
 
 **Banque** : dernier point de contrôle réel + opérations bancaires saisies après, sauf historique déjà inclus. L’ordre est une séquence globale persistante; aucune ambiguïté entre opérations du même jour. Les cartes ne sont pas des comptes de trésorerie. Un contrôle bancaire ne réinitialise pas leurs achats à payer.
 
-**Limites** : une catégorie, un montant, semaine ou mois, renouvellement. Le restant vaut limite moins achats nets imputés, avec plancher zéro; un remboursement ne crée pas une réserve supérieure à la limite. Chaque période commençant avant la paie est protégée, dans les 30 jours. Les périodes futures s’accumulent dans la prévision sans débiter fictivement la banque. Le mois utilise ses dates réelles, y compris fins de mois et années bissextiles. Aucun report de budget inutilisé.
+**Limites** : une catégorie, un montant, semaine ou mois, renouvellement. Le restant vaut budget de période moins achats nets imputés, avec plancher zéro; un remboursement ne crée pas une réserve supérieure au budget alloué. À la semaine, le budget comprend l’allocation et les restants des semaines précédentes du même mois de renouvellement, depuis l’activation. Chaque période commençant avant la paie est protégée, dans les 30 jours. Les périodes futures s’accumulent dans la prévision sans débiter fictivement la banque. Le mois utilise ses dates réelles, y compris fins de mois et années bissextiles. Les limites mensuelles ne reportent pas leur restant. À la semaine, les reports sont annulés seulement au premier renouvellement du nouveau mois; l’allocation n’est pas diminuée.
 
 **Anticipation** : date réelle conservée; période actuelle ou suivante à la saisie. Le prochain restant tient compte des achats déjà imputés. Une limite peut commencer à une date future, sans protéger la période antérieure.
 
@@ -20,7 +20,7 @@
 
 **Hors périmètre** : enveloppes séparées, sous-catégories, objectifs, scénarios, export ChatGPT, appariement à confirmer après saisie, comparaison au-delà de 90 jours. Le calendrier d’essai parallèle réel et la revue des données personnelles restent à faire par l’utilisateur.
 
-**Étape 1** : coussin Autres facultatif de 50 $/mois, sans migration financière silencieuse. Les dépenses hors limite consomment ce coussin sans changer leur classement; les factures associées en sont exclues. Le détail des réservations est dérivé du même jour contraignant que les quatre lignes. Les douze scénarios de référence figés en 0.1.0 doivent conserver exactement leur disponibilité et leurs 30 premières journées.
+**Étape 1** : coussin Autres facultatif de 50 $/mois, sans migration financière silencieuse. Les dépenses hors limite consomment ce coussin sans changer leur classement; les factures associées en sont exclues. Le détail des réservations est dérivé du même jour contraignant que les quatre lignes. Les douze scénarios de référence figés en 0.1.0 conservent exactement leur disponibilité et leurs 30 premières journées en mode sans reports. La règle de report hebdomadaire est vérifiée séparément.
 
 **Outils 0.4.0** : un achat hypothétique est injecté dans le même moteur à sa date réelle; la consommation de sa limite ne commence qu’à cette date. Aucun effet avant l’achat, aucune seconde protection si sa limite le couvre. La réponse vérifie 30 jours complets, avec minimum/maximum et date du minimum. L’épargne a son propre point de contrôle, et ne rejoint jamais automatiquement le compte principal. Le bilan mensuel additionne les dépenses réelles, sans virements. L’agenda ne couvre que les échéances ouvertes des 90 jours simulés.
 
@@ -37,3 +37,5 @@
 **Repères 0.5.1** : date du dernier point de contrôle principal, sans rafraîchissement artificiel après transaction. Les retards sont déjà protégés et le rappel ne crée pas une deuxième réserve. La date de copie vient du fichier quotidien validé, non de la dernière requête; le JSON exporté reflète l’état courant. Les métadonnées n’entrent pas dans les calculs.
 
 **Montant unique 0.5.2** : override positif en centimes dans occurrence_states, clé rule_id/original_on. Mise à jour du seul montant, sans toucher au report ni à la règle. Reset remet amount_cents à null pour hériter du montant habituel. L’échéance reste ouverte jusqu’à paiement; paiement/liaison réels clôturent la prévision existante, sans double déduction. Les états déjà payés/annulés ne sont pas réouverts par une modification de montant.
+
+**Reports 0.6.0** : date globale weekly_rollover_from persistée dans settings; chaque catégorie commence au plus tôt dans sa période courante à l’activation ou à sa propre date de début. Le report réel est recalculé à partir des achats imputés, sans solde d’enveloppe écrit. Début de mois déterminé par la date du renouvellement, pas par le jour 1 civil. Les achats anticipés consomment leur allocation puis les fonds antérieurs inutilisés du même mois; ces montants sont signalés comme déjà utilisés pour une prochaine période. Le restant courant n’est protégé qu’une fois et chaque allocation future reste protégée, sans supposer une future non-dépense ni créer une rentrée fictive à l’expiration. La remise à zéro réelle se constate lors du renouvellement du nouveau mois.

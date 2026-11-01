@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.5.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.6.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -227,3 +227,15 @@ Dans **Aujourd’hui → Les 14 jours à venir**, ou **Plan → Calendrier → u
 Quand l’opération passe, utilisez Reçue/Payée/Effectué. Pour saisir un autre montant ou une date réelle particulière, le lien Saisir le revenu/paiement réel dans le formulaire ouvre le formulaire existant. Une seule transaction réelle est créée. Une échéance déjà réglée n’est plus modifiable comme prévision; corrigez sa transaction dans **Transactions → Modifier**.
 
 Le bouton Modifier d’une règle dans Plan reste destiné au montant habituel; son formulaire le précise. Les modifications ponctuelles restent réservées au propriétaire. Aucun changement de schéma.
+
+## Reports hebdomadaires — 0.6.0
+
+Toutes les limites **à la semaine**, existantes ou créées plus tard, reportent le restant au renouvellement suivant dans le même mois. Au **premier renouvellement dont la date appartient au nouveau mois**, le report est effacé et l’allocation habituelle reste entière. Le 1er du mois ne fait rien si le renouvellement n’a pas encore eu lieu. Les limites mensuelles gardent leur fonctionnement.
+
+Exemple, allocation de 230 $ le jeudi : 180 $ dépensés la première semaine laissent 50 $. Le jeudi suivant du même mois, le budget devient 280 $. Au premier jeudi du mois suivant, le nouveau budget repart à 230 $, sans les anciens reports.
+
+La liste Vos limites affiche Budget quand un report est présent, le Dépensé de cette période, le Restant, puis le détail Allocation / Report reçu. Un achat imputé en avance utilise d’abord l’allocation de sa période; s’il la dépasse, le disponible non utilisé des périodes précédentes du même mois peut être réservé une fois pour cet achat. L’indication « déjà utilisés pour une prochaine période » explique ce cas. Les allocations et achats sur carte ne sont pas protégés deux fois.
+
+**Prévision prudente** : elle protège le restant actuel (report compris une fois) et les allocations futures. Elle ne suppose pas à l’avance que les sommes utilisables avant le renouvellement resteront inutilisées. Les reports réellement inutilisés sont libérés quand le premier renouvellement du nouveau mois est atteint; aucun revenu ni débit fictif n’est créé. Les achats restant à payer sur carte continuent d’être protégés.
+
+**Activation** : la période courante sert de point de départ, sans recréer des reports pour les anciennes semaines potentiellement incomplètes. Une sauvegarde précède l’activation sur une base existante. La date d’activation est conservée dans l’export; restaurer une ancienne sauvegarde sans cette date active les reports à partir de la période courante. Aucune table supplémentaire.

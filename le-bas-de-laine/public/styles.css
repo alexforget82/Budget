@@ -1833,3 +1833,13 @@
   display: block;
   margin-top: 0.4rem;
 }
+
+.limit-carry {
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+.limit-rollover-help {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}

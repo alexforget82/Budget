@@ -964,7 +964,7 @@ function categoryEditor(c) {
       field("À partir du", start),
       node(
         "p",
-        "Le restant et les prochaines périodes sont protégés automatiquement, sans transfert d’argent.",
+        "À la semaine, le restant se reporte jusqu’au premier renouvellement du nouveau mois. Le montant habituel revient alors sans report. Les allocations restent protégées automatiquement.",
         "muted",
       ),
     ],
@@ -1131,6 +1131,13 @@ function planView() {
   const limits = panel(
     "Limites variables",
     button("+ Ajouter", () => categoryEditor(), "text-button"),
+  );
+  limits.append(
+    node(
+      "p",
+      "À la semaine : le restant se reporte dans le même mois. Au premier renouvellement du nouveau mois, les reports s’effacent et l’allocation reste entière.",
+      "muted limit-rollover-help",
+    ),
   );
   for (const c of state.categories.filter((c) => c.limit_cents !== null)) {
     const row = node("div", null, "rule"),
@@ -1951,7 +1958,7 @@ const tutorialSteps = [
   {
     title: "Protéger les dépenses variables",
     text: "Choisissez un montant, une période et un jour de renouvellement pour chaque catégorie. Ajustez les exemples ou décochez ceux qui ne vous servent pas.",
-    tip: "Les montants restants et les renouvellements à venir réduisent le disponible automatiquement. Aucun argent à déplacer dans une enveloppe.",
+    tip: "Le restant hebdomadaire se reporte jusqu’au premier renouvellement du nouveau mois. Les montants restants et les allocations à venir protègent le disponible, sans argent à déplacer.",
     example:
       "Exemple : Épicerie, 230 $ par semaine, renouvellement jeudi. Si une seule période de 230 $ est à protéger sur un solde de 1 000 $, le disponible est 770 $. Un achat de 71,69 $ couvert par cette limite laisse le même disponible.",
   },

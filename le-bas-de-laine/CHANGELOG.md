@@ -1,3 +1,7 @@
+# 0.6.0 — reports hebdomadaires dans le mois
+
+Restant reporté de semaine en semaine dans le même mois; remise à zéro des reports au premier renouvellement du nouveau mois, sans réduire l’allocation. Activation à partir de la période courante, avec sauvegarde sur budget existant. Affichage Budget/Allocation/Report dans les limites, identique en lecture partagée. Protection unique des reports et des achats anticipés, sans emprunt de report entre mois. Prévision conservatrice des dépenses et allocations futures; limites mensuelles inchangées. Schéma à huit tables conservé.
+
 # 0.5.2 — montant prévu pour une seule échéance
 
 Action Modifier cette fois sur les opérations à venir, le calendrier et les retards. Montant positif spécifique à l’échéance, sans changer la règle ni créer une transaction. Retour au montant habituel sans perdre un report de date. Accès conservé à la saisie du montant/date réels depuis ce formulaire. Clarification du formulaire de modification de la règle. Schéma et moteur inchangés : utilisation des états d’échéance existants.

@@ -1,5 +1,7 @@
 import { validDate } from "./dates.js";
 export function validateState(s) {
+  if (s.weekly_rollover_from != null && !validDate(s.weekly_rollover_from))
+    throw Error("Date d’activation des reports invalide.");
   if (
     s.fallback_category_id !== undefined &&
     s.fallback_category_id !== null &&

@@ -528,6 +528,7 @@ export function createService(store, clock = today) {
       ).lastInsertRowid,
     );
     checkpoint({ account_id: id, amount: x.balance });
+    put("weekly_rollover_from", clock());
     for (const pay of x.paychecks || [])
       recurrence({ ...pay, kind: "income", account_id: id });
     for (const bill of x.bills || [])
@@ -548,7 +549,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.5.2",
+      version: "0.6.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,

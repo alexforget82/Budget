@@ -2,6 +2,7 @@ import {
   calendarStateChanges,
   applyCalendarStateChanges,
 } from "./calendar-state.js";
+import { today } from "./dates.js";
 import { validateState } from "./validation.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -104,6 +105,7 @@ export function openDatabase(dir) {
     ),
     card_baseline_seq: setting("card_baseline_seq", 0),
     fallback_category_id: setting("fallback_category_id", null),
+    weekly_rollover_from: setting("weekly_rollover_from", null),
   });
   const verifiedBackups = new Map();
   const backup = (name) => {
@@ -144,6 +146,12 @@ export function openDatabase(dir) {
       applyCalendarStateChanges({ run }, changes);
       put("payment_calendar_version", "canada-rrq-2026-v2");
     });
+  }
+  function initializeWeeklyRollover() {
+    if (setting("weekly_rollover_from")) return;
+    if (setting("configured", false))
+      backup("avant-report-hebdomadaire-" + Date.now());
+    put("weekly_rollover_from", today());
   }
   const exportData = () => ({
     format: "le-bas-de-laine",
@@ -197,6 +205,7 @@ export function openDatabase(dir) {
       });
       validateState(stage.state());
       stage.reconcileCalendar();
+      stage.initializeWeeklyRollover();
       const max = Math.max(
         0,
         ...stage.state().transactions.map((t) => t.seq),
@@ -240,8 +249,10 @@ export function openDatabase(dir) {
     }
   }
   reconcileCalendar();
+  initializeWeeklyRollover();
   return {
     reconcileCalendar,
+    initializeWeeklyRollover,
     db,
     filename,
     dir,

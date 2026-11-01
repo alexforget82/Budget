@@ -478,7 +478,11 @@ export function todayView(
     );
     row.append(title);
     for (const [label, amount, kind] of [
-      ["Limite", c.limit_cents, "limit"],
+      [
+        c.current?.carry_cents > 0 ? "Budget" : "Limite",
+        c.current?.budget_cents ?? c.limit_cents,
+        "limit",
+      ],
       ["Dépensé", spent, "spent"],
       ["Restant", current?.remaining_cents || 0, "remaining"],
     ]) {
@@ -493,6 +497,26 @@ export function todayView(
       );
       row.append(cell);
     }
+    if (current?.carry_cents > 0)
+      row.append(
+        node(
+          "small",
+          "Allocation : " +
+            money(c.limit_cents) +
+            " · Report reçu : " +
+            money(current.carry_cents),
+          "limit-carry",
+        ),
+      );
+    if (current?.advanced_cents > 0)
+      row.append(
+        node(
+          "small",
+          money(current.advanced_cents) +
+            " déjà utilisés pour une prochaine période.",
+          "limit-carry",
+        ),
+      );
     const next = node("div", null, "limit-next");
     next.append(
       node("small", current?.date > sim.reference ? "Début" : "Renouvelle"),

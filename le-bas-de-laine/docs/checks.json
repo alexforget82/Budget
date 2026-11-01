@@ -1,8 +1,8 @@
 {
-  "version": "0.5.2",
+  "version": "0.6.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 102,
+    "passed": 110,
     "failed": 0,
     "skipped": 0
   },
@@ -62,7 +62,11 @@
       "one-off income/expense amount without changing base or next occurrence",
       "reset amount preserves postponed date",
       "actual payment of adjusted card expense is deducted once",
-      "calendar access and owner-only forecast edits"
+      "calendar access and owner-only forecast edits",
+      "weekly carry: 230 minus 180 then budget 280",
+      "no reset on calendar day 1 before renewal",
+      "full allocation with zero carry at first renewal of new month",
+      "shared rollover parity and readonly purchase"
     ]
   },
   "comparison": {
@@ -92,7 +96,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 100,
+    "passed": 108,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
@@ -109,7 +113,8 @@
       "four-line breakdown",
       "first 30 daily results"
     ],
-    "identical": true
+    "identical": true,
+    "scope": "Historical no-rollover fixtures; explicit weekly-rollover scenarios are a separately tested intentional behavior change."
   },
   "step_1": [
     "90-day minimum with unchanged before-pay window",
@@ -174,5 +179,13 @@
     "timestamp_source": "daily SQLite file mtime",
     "integrity_check": "read-only PRAGMA user_version and quick_check; cache invalidated by size/mtime",
     "download_contents": "current JSON state, not the earlier daily snapshot"
+  },
+  "weekly_rollover": {
+    "activation": "current period, not retroactive",
+    "reset": "first renewal whose month differs",
+    "monthly_limits_changed": false,
+    "future_forecast": "protect allocations and potential spending, without assuming amounts will remain unused",
+    "early_purchases": "assigned allocation first; earlier available funds in same month only",
+    "schema_tables": 8
   }
 }

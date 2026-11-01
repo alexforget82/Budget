@@ -101,25 +101,80 @@ export function categoryPeriods(state, reference, end) {
       let first = periodStart(c, reference);
       if (c.starts_on && first < c.starts_on)
         first = periodStart(c, c.starts_on);
+      const spentByPeriod = new Map();
+      for (const t of state.transactions) {
+        if (
+          !(
+            (t.category_id === c.id ||
+              (c.id === fallback?.id && fallbackApplies(t))) &&
+            !(c.id === fallback?.id && fixedTransactions.has(t.id))
+          )
+        )
+          continue;
+        const key =
+          (t.category_id === c.id ? t.period_on : null) ||
+          periodStart(c, t.date);
+        spentByPeriod.set(key, (spentByPeriod.get(key) || 0) - t.amount_cents);
+      }
+      const rollover =
+        c.period === "weekly" &&
+        !!state.weekly_rollover_from &&
+        reference >= state.weekly_rollover_from;
+      let carry = 0;
+      if (rollover && first <= reference) {
+        const month = first.slice(0, 8) + "01";
+        let history = periodStart(c, month);
+        if (history < month) history = nextPeriod(c, history);
+        const activated = periodStart(c, state.weekly_rollover_from);
+        if (history < activated) history = activated;
+        if (c.starts_on && history < c.starts_on)
+          history = periodStart(c, c.starts_on);
+        for (let date = history; date < first; date = nextPeriod(c, date))
+          carry = Math.max(
+            0,
+            c.limit_cents + carry - Math.max(0, spentByPeriod.get(date) || 0),
+          );
+      }
       const periods = [];
       for (let start = first; start <= end; start = nextPeriod(c, start)) {
-        const spent = state.transactions
-          .filter(
-            (t) =>
-              (t.category_id === c.id ||
-                (c.id === fallback?.id && fallbackApplies(t))) &&
-              !(c.id === fallback?.id && fixedTransactions.has(t.id)) &&
-              ((t.category_id === c.id ? t.period_on : null) ||
-                periodStart(c, t.date)) === start,
-          )
-          .reduce((s, t) => s - t.amount_cents, 0);
+        const spent = spentByPeriod.get(start) || 0;
+        // Only the current real balance carries past unused allocations. Future allocations
+        // stay protected as potential spending; never assume future weeks will go unspent.
+        const carried = start === first ? carry : 0,
+          budget = c.limit_cents + carried;
         periods.push({
           date: start,
           end: addDays(nextPeriod(c, start), -1),
           limit_cents: c.limit_cents,
           spent_cents: spent,
-          remaining_cents: Math.max(0, c.limit_cents - Math.max(0, spent)),
+          remaining_cents: Math.max(0, budget - Math.max(0, spent)),
+          ...(rollover ? { carry_cents: carried, budget_cents: budget } : {}),
         });
+      }
+      if (rollover) {
+        let pool = [],
+          month = null;
+        for (let i = 0; i < periods.length; i++) {
+          const p = periods[i];
+          if (month !== p.date.slice(0, 7)) {
+            pool = [];
+            month = p.date.slice(0, 7);
+          }
+          pool.push(p);
+          if (i === 0) continue;
+          // An early purchase uses its assigned allocation first, then prior unspent
+          // allocations in that same month. Earmark those funds now, never twice.
+          p.remaining_cents = c.limit_cents;
+          let pending = Math.max(0, p.spent_cents);
+          for (let j = pool.length - 1; j >= 0 && pending > 0; j--) {
+            const lot = pool[j],
+              used = Math.min(lot.remaining_cents, pending);
+            lot.remaining_cents -= used;
+            pending -= used;
+            if (lot !== p && used)
+              lot.advanced_cents = (lot.advanced_cents || 0) + used;
+          }
+        }
       }
       return { ...c, periods };
     });

@@ -1,3 +1,13 @@
+# Vérifications — 0.6.0
+
+110 tests Node réussis. Huit nouveaux scénarios : 230−180 puis report 50 et budget 280; premier jour du mois sans reset prématuré; premier renouvellement avec allocation entière; février bissextile, quatre/cinq renouvellements et changement d’année; dépenses sur carte et simulation d’achat sans deuxième protection; achats anticipés y compris au-dessus de leur allocation, sans report emprunté entre mois; dépassements/remboursements bornés; activation non rétroactive, nouvelles catégories et restauration de la date d’activation. Le détail des protections égale toujours le total, les allocations futures restent protégées sans anticiper une non-dépense.
+
+`tests/weekly-rollover-ui.py` utilise une base fictive et une horloge de serveur isolée au test. Vérifie le budget 280/report 50 le 8 avril, le maintien du report au 1er mai avant renouvellement, puis 230 sans report au 6 mai. Même résultat dans la vue partagée et le simulateur, sans écriture de navigation. Quatre largeurs, clair/sombre; captures de limites fictives dans `weekly-rollover/`. Parcours général et outils quotidiens réussis. Aucun test matériel iOS ou données personnelles utilisé.
+
+Les 12 scénarios historiques figés vérifient le mode sans reports; la nouvelle règle est un changement volontaire distinct de Sillage. Archive autonome : 108 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.5.2
 
 102 tests Node réussis. Nouveaux scénarios : revenu unique ajusté sans toucher à la paie suivante, dépense unique avec report/reset de montant et refus atomique de valeurs invalides, dépense sur carte protégée une fois. La saisie réelle utilise le montant modifié sans seconde déduction; aucune transaction avant confirmation, et une échéance déjà réglée refuse la modification de prévision.
