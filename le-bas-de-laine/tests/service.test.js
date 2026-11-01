@@ -827,3 +827,139 @@ test("last verified balance date follows the main checkpoint sequence, not a sec
   db.atomic(() => later.checkpoint({ account_id: bank, amount: 1000 }));
   assert.equal(later.snapshot().balance_verified_on, "2026-10-24");
 });
+
+test("one-off income amount changes only its chosen occurrence without creating an actual receipt", (t) => {
+  const { db, api } = fixture(t),
+    r = db.state().recurrences[0];
+  db.atomic(() => api.recurrence({ ...r, frequency: "weekly", amount: 1000 }));
+  db.atomic(() =>
+    api.occurrence({
+      rule_id: r.id,
+      original_on: "2026-10-23",
+      action: "set_amount",
+      amount: 500,
+    }),
+  );
+  const s = api.snapshot(),
+    events = s.simulation.daily
+      .flatMap((d) => d.events)
+      .filter((e) => e.rule_id === r.id);
+  assert.equal(
+    events.find((e) => e.original_on === "2026-10-23").amount_cents,
+    50000,
+  );
+  assert.equal(
+    events.find((e) => e.original_on === "2026-10-30").amount_cents,
+    100000,
+  );
+  assert.equal(s.recurrences[0].amount_cents, 100000);
+  assert.equal(s.transactions.length, 0);
+  assert.equal(s.simulation.bank_cents, 100000);
+  db.atomic(() =>
+    api.occurrence({
+      rule_id: r.id,
+      original_on: "2026-10-23",
+      action: "reset_amount",
+    }),
+  );
+  assert.equal(
+    api.snapshot().simulation.upcoming.find((e) => e.rule_id === r.id)
+      .amount_cents,
+    100000,
+  );
+  assert.equal(db.state().occurrence_states[0].amount_cents, null);
+});
+test("one-off expense survives postponement and reset; paying it creates exactly the adjusted amount", (t) => {
+  const { db, api, bank } = fixture(t);
+  const id = db.atomic(() =>
+      api.recurrence({
+        name: "Facture variable",
+        kind: "expense",
+        account_id: bank,
+        amount: 20,
+        start_on: "2026-10-24",
+        frequency: "weekly",
+        day_adjust: "none",
+      }),
+    ),
+    ref = { rule_id: id, original_on: "2026-10-24" };
+  db.atomic(() =>
+    api.occurrence({ ...ref, action: "postpone", date: "2026-10-25" }),
+  );
+  db.atomic(() => api.occurrence({ ...ref, action: "set_amount", amount: 50 }));
+  let s = api.snapshot(),
+    first = s.simulation.upcoming.find((e) => e.rule_id === id);
+  assert.equal(first.date, "2026-10-25");
+  assert.equal(first.amount_cents, 5000);
+  assert.equal(
+    s.simulation.upcoming.find(
+      (e) => e.rule_id === id && e.original_on === "2026-10-31",
+    ).amount_cents,
+    2000,
+  );
+  assert.equal(s.transactions.length, 0);
+  db.atomic(() => api.occurrence({ ...ref, action: "reset_amount" }));
+  first = api.snapshot().simulation.upcoming.find((e) => e.rule_id === id);
+  assert.equal(first.date, "2026-10-25");
+  assert.equal(first.amount_cents, 2000);
+  const before = db.exportData().tables;
+  for (const amount of [0, -1, "1.005"])
+    assert.throws(() =>
+      db.atomic(() => api.occurrence({ ...ref, action: "set_amount", amount })),
+    );
+  assert.deepEqual(db.exportData().tables, before);
+  db.atomic(() => api.occurrence({ ...ref, action: "set_amount", amount: 50 }));
+  db.atomic(() => api.occurrence({ ...ref, action: "pay", date }));
+  s = api.snapshot();
+  assert.equal(s.transactions.length, 1);
+  assert.equal(s.transactions[0].amount_cents, -5000);
+  assert.equal(s.recurrences.find((r) => r.id === id).amount_cents, 2000);
+  assert.equal(
+    s.simulation.upcoming.some(
+      (e) => e.rule_id === id && e.original_on === ref.original_on,
+    ),
+    false,
+  );
+  assert.throws(
+    () =>
+      db.atomic(() =>
+        api.occurrence({ ...ref, action: "set_amount", amount: 10 }),
+      ),
+    /déjà réglée/,
+  );
+});
+test("a one-off planned card expense is protected once and its actual payment does not deduct it twice", (t) => {
+  const { db, api } = fixture(t);
+  const card = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Carte','card')")
+      .lastInsertRowid,
+  );
+  const id = db.atomic(() =>
+      api.recurrence({
+        name: "Abonnement",
+        kind: "expense",
+        account_id: card,
+        amount: 10,
+        start_on: date,
+        frequency: "weekly",
+        day_adjust: "none",
+      }),
+    ),
+    ref = { rule_id: id, original_on: date };
+  const before = api.snapshot().simulation.available_cents;
+  db.atomic(() => api.occurrence({ ...ref, action: "set_amount", amount: 25 }));
+  const planned = api.snapshot();
+  assert.equal(planned.simulation.available_cents, before - 1500);
+  assert.equal(planned.transactions.length, 0);
+  assert.equal(planned.simulation.bank_cents, 100000);
+  db.atomic(() => api.occurrence({ ...ref, action: "pay", date }));
+  const actual = api.snapshot();
+  assert.equal(actual.transactions.length, 1);
+  assert.equal(actual.transactions[0].amount_cents, -2500);
+  assert.equal(
+    actual.simulation.available_cents,
+    planned.simulation.available_cents,
+  );
+  assert.equal(actual.simulation.card_cents, 2500);
+  assert.equal(actual.simulation.bank_cents, 100000);
+});

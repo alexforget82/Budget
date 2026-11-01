@@ -1,3 +1,11 @@
+# Vérifications — 0.5.2
+
+102 tests Node réussis. Nouveaux scénarios : revenu unique ajusté sans toucher à la paie suivante, dépense unique avec report/reset de montant et refus atomique de valeurs invalides, dépense sur carte protégée une fois. La saisie réelle utilise le montant modifié sans seconde déduction; aucune transaction avant confirmation, et une échéance déjà réglée refuse la modification de prévision.
+
+`tests/oneoff-ui.py` couvre revenu/dépense, échéance suivante inchangée, reset, date reportée conservée, accès depuis le calendrier et formulaire du paiement réel créant une seule transaction. Quatre largeurs et deux thèmes, sans débordement. La vue partagée ne propose pas ces actions. Parcours général et rappel des retards vérifiés également. Captures fictives dans `oneoff/`; pas de test matériel iPhone revendiqué. Archive autonome : 100 tests réussis, deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.5.1
 
 99 tests Node réussis. Nouveaux cas : date du solde principal déterminée par séquence, indépendance d’un point de contrôle d’épargne, statut de copie quotidienne égal à l’heure réelle du fichier, export sans mutation, et copie endommagée signalée sans date de succès. L’export de la base active reste disponible en cas d’échec de copie. Les contrôles SQLite sont mis en cache avec taille/date du fichier et réexécutés quand il change.

@@ -1,8 +1,8 @@
 {
-  "version": "0.5.1",
+  "version": "0.5.2",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 99,
+    "passed": 102,
     "failed": 0,
     "skipped": 0
   },
@@ -58,7 +58,11 @@
       "overdue pay/postpone shortcuts remove the reminder",
       "actual JSON backup download matches all tables",
       "local backup timestamp matches the file, damaged copy has no success date",
-      "shared status indicators have no treatment/export controls"
+      "shared status indicators have no treatment/export controls",
+      "one-off income/expense amount without changing base or next occurrence",
+      "reset amount preserves postponed date",
+      "actual payment of adjusted card expense is deducted once",
+      "calendar access and owner-only forecast edits"
     ]
   },
   "comparison": {
@@ -88,7 +92,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 97,
+    "passed": 100,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."

@@ -1,3 +1,7 @@
+# 0.5.2 — montant prévu pour une seule échéance
+
+Action Modifier cette fois sur les opérations à venir, le calendrier et les retards. Montant positif spécifique à l’échéance, sans changer la règle ni créer une transaction. Retour au montant habituel sans perdre un report de date. Accès conservé à la saisie du montant/date réels depuis ce formulaire. Clarification du formulaire de modification de la règle. Schéma et moteur inchangés : utilisation des états d’échéance existants.
+
 # 0.5.1 — fraîcheur et sauvegarde visibles
 
 Date du dernier solde principal près du disponible. Rappel compact des échéances en retard avec accès à leurs actions existantes. Date/heure réelle de la copie quotidienne et téléchargement JSON du budget courant depuis Aujourd’hui; repère ajouté dans Plan. Vérification des copies SQLite avant annonce de réussite, avec cache par taille/date et signalement d’une copie endommagée. Indicateurs en lecture dans le lien simplifié, actions et export réservés au propriétaire. Aucun changement de calcul ou de schéma.

@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.5.1
+# Le bas de laine — contrat du noyau, essai 0.5.2
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -35,3 +35,5 @@
 **Suivi 0.5.0** : corriger un virement conserve sa séquence et son état d’inclusion; un point de contrôle reste autoritatif. Les comptes d’un paiement lié sont protégés. Supprimer un virement lié rouvre l’échéance sans perdre son report/montant. Les sommes de virements restent hors du net de revenus/dépenses. La simulation partagée réutilise la même fonction pure que le propriétaire, avec accès par lien valide et contrôle d’origine, sans écriture.
 
 **Repères 0.5.1** : date du dernier point de contrôle principal, sans rafraîchissement artificiel après transaction. Les retards sont déjà protégés et le rappel ne crée pas une deuxième réserve. La date de copie vient du fichier quotidien validé, non de la dernière requête; le JSON exporté reflète l’état courant. Les métadonnées n’entrent pas dans les calculs.
+
+**Montant unique 0.5.2** : override positif en centimes dans occurrence_states, clé rule_id/original_on. Mise à jour du seul montant, sans toucher au report ni à la règle. Reset remet amount_cents à null pour hériter du montant habituel. L’échéance reste ouverte jusqu’à paiement; paiement/liaison réels clôturent la prévision existante, sans double déduction. Les états déjà payés/annulés ne sont pas réouverts par une modification de montant.

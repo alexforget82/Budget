@@ -570,7 +570,11 @@ export function todayView(
           () => act(e, "pay"),
           "text-button",
         ),
-        button("Montant…", () => act(e, "amount"), "text-button"),
+        button(
+          "Modifier cette fois",
+          () => act(e, "edit_amount"),
+          "text-button",
+        ),
         button("Reporter", () => act(e, "postpone"), "text-button"),
       );
       row.append(actions);

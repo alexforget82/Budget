@@ -449,7 +449,20 @@ export function createService(store, clock = today) {
   }
   function occurrence(x) {
     const o = openOccurrence(x);
-    if (x.action === "postpone") {
+    if (x.action === "set_amount" || x.action === "reset_amount") {
+      const base = q(
+        "SELECT amount_cents FROM recurrences WHERE id=?",
+        o.rule_id,
+      )[0].amount_cents;
+      const amount = x.action === "reset_amount" ? base : cents(x.amount);
+      if (amount <= 0) throw Error("Indiquez un montant prévu positif.");
+      run(
+        "INSERT INTO occurrence_states(rule_id,original_on,status,amount_cents) VALUES(?,?,'postponed',?) ON CONFLICT(rule_id,original_on) DO UPDATE SET amount_cents=excluded.amount_cents",
+        o.rule_id,
+        o.original_on,
+        amount === base ? null : amount,
+      );
+    } else if (x.action === "postpone") {
       const on = date(x.date);
       if (on < clock())
         throw Error("Choisissez aujourd’hui ou une date à venir.");
@@ -535,7 +548,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.5.1",
+      version: "0.5.2",
       configured: setting("configured", false),
       theme: "system",
       simulation,

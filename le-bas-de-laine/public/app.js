@@ -548,6 +548,65 @@ async function occurrenceAction(o, action) {
       );
       return;
     }
+    if (action === "edit_amount") {
+      const amount = amountField("amount", o.amount_cents / 100),
+        base = state.recurrences.find((r) => r.id === o.rule_id)?.amount_cents;
+      amount.min = ".01";
+      const fields = [
+        node("p", scheduleDate(o)),
+        field("Montant prévu cette fois", amount),
+        node(
+          "p",
+          "Prévision seulement : le montant habituel de la récurrence est conservé.",
+          "muted",
+        ),
+      ];
+      if (base !== undefined)
+        fields.push(node("p", "Montant habituel : " + money(base), "muted"));
+      if (
+        state.occurrence_states.some(
+          (s) =>
+            s.rule_id === o.rule_id &&
+            s.original_on === o.original_on &&
+            s.amount_cents !== null,
+        )
+      )
+        fields.push(
+          button(
+            "Revenir au montant habituel",
+            () => {
+              send(
+                "/api/occurrence",
+                { ...o, action: "reset_amount" },
+                "Montant habituel rétabli",
+              )
+                .then(() => editor.close())
+                .catch((e) => toast(e.message));
+            },
+            "text-button",
+          ),
+        );
+      fields.push(
+        button(
+          o.kind === "income"
+            ? "Saisir le revenu réel…"
+            : "Saisir le paiement réel…",
+          () => {
+            editor.close();
+            occurrenceAction(o, "amount");
+          },
+          "text-button",
+        ),
+      );
+      modal("Modifier cette fois · " + o.name, fields, () =>
+        send(
+          "/api/occurrence",
+          { ...o, action: "set_amount", amount: amount.value },
+          "Montant modifié pour cette échéance",
+        ),
+      );
+      return;
+    }
     const date = input(
         "date",
         "date",
@@ -561,7 +620,7 @@ async function occurrenceAction(o, action) {
       );
     } else
       modal(
-        "Payer " + o.name,
+        (o.kind === "income" ? "Encaisser " : "Payer ") + o.name,
         [
           field("Montant réel", amount),
           field("Date réelle", date),
@@ -961,6 +1020,15 @@ function ruleEditor(r, kind = "expense") {
   modal(
     r ? "Modifier " + r.name : "Une nouvelle récurrence",
     [
+      ...(r
+        ? [
+            node(
+              "p",
+              "Ce formulaire définit le montant habituel. Pour une exception, choisissez « Modifier cette fois » dans les opérations à venir ou le calendrier.",
+              "muted",
+            ),
+          ]
+        : []),
       field("Type", type),
       field("Nom", name),
       field("Montant", amount),
@@ -2133,7 +2201,7 @@ function scheduleView() {
             : "Payée",
         "pay",
       ],
-      ["Montant…", "amount"],
+      ["Modifier cette fois", "edit_amount"],
       ["Reporter", "postpone"],
     ])
       actions.append(
@@ -2407,7 +2475,7 @@ function overdueEditor() {
     const actions = node("div", null, "actions");
     for (const [label, action] of [
       [e.kind === "transfer" ? "Effectué" : "Payée", "pay"],
-      ["Montant…", "amount"],
+      ["Modifier cette fois", "edit_amount"],
       ["Reporter", "postpone"],
     ])
       actions.append(

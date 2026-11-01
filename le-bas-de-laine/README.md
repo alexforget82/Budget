@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.5.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.5.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -217,3 +217,13 @@ Les liens iPhone existants sont conservés : actualisez la page après installat
 Les copies SQLite réutilisées sont contrôlées (version et quick_check; nouveau contrôle si leur taille/date de modification change). Une copie invalide n’est pas annoncée comme réussie. L’export JSON de la base active reste disponible pour récupérer le budget. Ni l’affichage ni le téléchargement ne modifient les transactions.
 
 Le lien simplifié affiche la date du solde et les retards, sans bouton d’administration ni téléchargement de sauvegarde. Aucun nouvel écran; calculs inchangés.
+
+## Modifier un montant une seule fois — 0.5.2
+
+Dans **Aujourd’hui → Les 14 jours à venir**, ou **Plan → Calendrier → une journée**, cliquez sur **Modifier cette fois** pour le revenu ou paiement concerné. Entrez le montant prévu pour cette échéance et enregistrez. La prévision est recalculée; aucun revenu ou paiement réel n’est créé à ce stade. Le montant habituel de la récurrence et les échéances suivantes sont conservés. Les virements programmés utilisent le même mécanisme.
+
+**Revenir au montant habituel** retire l’exception de montant sans annuler un report de date. Vous pouvez modifier plusieurs fois la même échéance : une seule exception est conservée. Les montants doivent être positifs, avec au plus deux décimales.
+
+Quand l’opération passe, utilisez Reçue/Payée/Effectué. Pour saisir un autre montant ou une date réelle particulière, le lien Saisir le revenu/paiement réel dans le formulaire ouvre le formulaire existant. Une seule transaction réelle est créée. Une échéance déjà réglée n’est plus modifiable comme prévision; corrigez sa transaction dans **Transactions → Modifier**.
+
+Le bouton Modifier d’une règle dans Plan reste destiné au montant habituel; son formulaire le précise. Les modifications ponctuelles restent réservées au propriétaire. Aucun changement de schéma.
