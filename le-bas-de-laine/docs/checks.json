@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.7.1",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 119,
+    "passed": 122,
     "failed": 0,
     "skipped": 0
   },
@@ -66,7 +66,8 @@
       "weekly carry: 230 minus 180 then budget 280",
       "no reset on calendar day 1 before renewal",
       "full allocation with zero carry at first renewal of new month",
-      "shared rollover parity and readonly purchase"
+      "shared rollover parity and readonly purchase",
+      "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates"
     ]
   },
   "comparison": {

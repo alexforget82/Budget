@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.7.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.7.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -245,3 +245,11 @@ La liste Vos limites affiche Budget quand un report est présent, le Dépensé d
 Dans **Plan → Budget mensuel**, choisissez le mois pour comparer Prévu, Réel et Écart par catégorie. Le prévu compte les dates effectives des paies, factures et allocations : deux ou trois paies, quatre ou cinq semaines, sans moyenne annuelle. Les montants exceptionnels et dates reportées sont pris en compte; une échéance payée reste dans le prévu. Le réel suit la date réelle des transactions.
 
 Les virements restent séparés pour éviter de compter à nouveau un achat lors du paiement de carte. Les reports de limites sont présentés à part, sans les additionner aux allocations mensuelles. Le prévu utilise les règles actuelles, sans historique figé des anciens réglages. Une catégorie facultative peut regrouper les règles; sinon leur nom suffit. Cette vue ne réserve aucun argent et ne change pas le disponible. Le lien simplifié iPhone reste inchangé.
+
+## Disponible sur 30 jours (0.7.1)
+
+Le montant principal est désormais le **minimum prévu des 30 prochains jours**, limites et renouvellements compris. Il utilise la même simulation que le graphique, le curseur et le lien simplifié iPhone. Le montant avant le prochain revenu reste dans le détail : un petit revenu ne raccourcit plus la fenêtre du chiffre principal.
+
+Les quatre lignes sous le montant expliquent ce minimum à sa date : solde de départ, cartes à payer, prévisions nettes (revenus moins paiements) et limites protégées. Une prévision nette positive peut donc augmenter le montant. La projection sur 90 jours reste accessible. Le curseur permet aussi au lien simplifié de consulter chacune des 30 journées, avec les mêmes montants que le propriétaire.
+
+Correction : la toute première échéance avancée avant sa date nominale par un ajustement de jour ouvrable reste protégée tant qu’elle est ouverte, même après sa date ou un report. Aucun changement des transactions enregistrées ni des liens privés.

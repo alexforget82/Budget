@@ -1,3 +1,7 @@
+# 0.7.1 — minimum sur 30 jours au premier plan
+
+Minimum des 30 prochains jours comme montant principal, sur les écrans propriétaire et partagé; montant avant prochain revenu conservé dans le détail. Explication chiffrée et limites au jour exact du minimum, prévisions nettes incluant les revenus. Exploration quotidienne partagée conservée et vérifiée pour les 30 dates. Correction de la première échéance avancée avant la date nominale, auparavant omise une fois passée. Aucun changement de schéma ou de lien privé.
+
 # 0.7.0 — budget mensuel simple
 
 Plan accueille une vue mensuelle automatique Prévu/Réel/Écart, groupée par catégorie. Comptage des dates effectives, sans mensualisation moyenne; exceptions et reports de dates conservés. Totaux revenus, dépenses et équilibre, virements séparés, reports de limites distincts. Classement facultatif des règles, sans nouvelle configuration obligatoire. Tableau adapté aux petits écrans. Lecture seule, aucun changement du moteur de disponible, des données ou du lien simplifié.

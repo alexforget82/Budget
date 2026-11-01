@@ -329,34 +329,42 @@ export function todayView(
     right = node("div", null, "right-stack");
   grid.append(left, right);
   root.append(grid);
-  const hero = node("section", null, "panel hero");
+  const hero = node("section", null, "panel hero"),
+    spending = sim.spending_30 || {
+      amount_cents: sim.available_cents,
+      days: 30,
+      minimum_on: sim.minimum_on,
+      breakdown: sim.breakdown,
+      limits_details: sim.limits_details,
+    };
+
   hero.append(
     node(
       "p",
       sim.provisional ? "Disponible à vérifier" : "Disponible à dépenser",
       "eyebrow",
     ),
-    node("div", money(sim.available_cents), "hero-amount money"),
+    node("div", money(spending.amount_cents), "hero-amount money"),
     node(
       "p",
-      sim.next_pay && sim.next_pay <= sim.until
-        ? "Prévision jusqu’au " + shortDate(sim.until)
-        : sim.next_pay
-          ? "Avant la paie du " +
-            shortDate(sim.next_pay) +
-            " · au plus 30 jours"
-          : "Pour les 30 prochains jours",
+      "Minimum sur " +
+        spending.days +
+        " jours · le " +
+        shortDate(spending.minimum_on),
       "hero-caption",
     ),
   );
   const breakdown = node("div", null, "breakdown");
   for (const [label, value] of [
-    ["Solde du compte", sim.breakdown.bank_cents],
-    ["Cartes à payer", -sim.breakdown.cards_cents],
-    ["Factures et paiements prévus", -sim.breakdown.bills_cents],
-    ["Limites protégées", -sim.breakdown.limits_cents],
+    ["Solde du compte", spending.breakdown.bank_cents],
+    ["Cartes à payer", -spending.breakdown.cards_cents],
+    [
+      "Prévisions nettes (revenus − paiements)",
+      -spending.breakdown.bills_cents,
+    ],
+    ["Limites protégées", -spending.breakdown.limits_cents],
   ]) {
-    if (label === "Limites protégées" && sim.limits_details) {
+    if (label === "Limites protégées" && spending.limits_details) {
       const detail = node("details", null, "limits-breakdown"),
         summary = node("summary");
       summary.append(
@@ -369,11 +377,13 @@ export function todayView(
         node(
           "p",
           "Montants retenus au " +
-            shortDate(sim.limits_details.through) +
-            ", le jour qui détermine votre disponible avant la paie.",
+            shortDate(spending.limits_details.through) +
+            ", le jour qui détermine le minimum sur " +
+            spending.days +
+            " jours.",
         ),
       );
-      for (const c of sim.limits_details.categories) {
+      for (const c of spending.limits_details.categories) {
         content.append(node("h4", c.name));
         for (const period of c.periods) {
           const line = node("div", null, "limits-detail-row");
@@ -399,7 +409,7 @@ export function todayView(
       const total = node("div", null, "limits-detail-row limits-total");
       total.append(
         node("span", "Total protégé"),
-        node("strong", money(sim.limits_details.total_cents)),
+        node("strong", money(spending.limits_details.total_cents)),
       );
       content.append(total);
       detail.append(content);
@@ -423,7 +433,19 @@ export function todayView(
   );
   balanceNote.title =
     "Date du dernier solde saisi ou repris dans une sauvegarde.";
-  hero.append(balanceNote, breakdown);
+  const beforeIncome = node("details", null, "before-income-detail");
+  beforeIncome.append(
+    node("summary", "Avant le prochain revenu : " + money(sim.available_cents)),
+    node(
+      "p",
+      "Période jusqu’au " +
+        shortDate(sim.until) +
+        (sim.next_pay
+          ? ", avant le revenu prévu le " + shortDate(sim.next_pay) + "."
+          : ". Aucun revenu connu dans cette fenêtre."),
+    ),
+  );
+  hero.append(balanceNote, breakdown, beforeIncome);
   left.append(hero);
   const minimum = node("section", null, "panel minimum"),
     minlabel = node("div");
@@ -433,7 +455,7 @@ export function todayView(
     node("small", "Prévision sur " + horizon + " jours"),
   );
   const message = node("p", null, "forecast-message");
-  if (sim.risk?.below_available) {
+  if (sim.minimum_cents < spending.amount_cents) {
     const bills = sim.risk.bills.map((e) => e.name),
       renewals = sim.risk.renewals.map((c) => c.name);
     const reason = [
@@ -459,7 +481,7 @@ export function todayView(
     );
   } else
     message.textContent =
-      "Aucun creux supplémentaire prévu sous votre disponible avant la paie.";
+      "Aucun creux supplémentaire prévu sous le minimum des 30 prochains jours.";
   minimum.append(minlabel, message, forecastExplorer(sim));
   left.append(minimum);
   const limits = panel(

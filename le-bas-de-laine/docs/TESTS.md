@@ -1,3 +1,13 @@
+# Vérifications — 0.7.1
+
+122 tests Node réussis. Nouveaux tests : première facture avancée avant son début nominal (compte bancaire et carte, retard, report avec montant exceptionnel, payée/annulée); calendrier indépendant des protections sur 90 jours pour chaque jour de renouvellement hebdomadaire, avec/sans reports et limite mensuelle; petit revenu avant grosse facture, minimum 30 jours distinct du disponible avant revenu, égalité des quatre lignes, achats banque/carte et remboursement de carte sans double déduction.
+
+`tests/spending-window-ui.py` : minimum 30 jours prioritaire, montant avant revenu secondaire, détail des limites cohérent, parité propriétaire/partage pour chacune des 30 dates au curseur, absence d’écriture, quatre largeurs et deux thèmes. Parcours général et reports hebdomadaires également vérifiés. Tests sur données fictives; pas de validation matérielle iPhone. Archive autonome : 120 réussites, deux références externes Sillage omises.
+
+Un export fourni a été recalculé hors dépôt, sur une copie : comparaison des 90 lignes avec un grand livre indépendant. Aucune donnée personnelle ni lien privé n’est livré dans l’archive ou les tests.
+
+## Référence précédente
+
 # Vérifications — 0.7.0
 
 119 tests Node réussis, aucun échec. Neuf nouveaux tests couvrent les mois à deux/trois paies et quatre/cinq allocations, dates déplacées, exceptions, échéances payées/annulées, remboursement et paiement de carte sans double compte, reports séparés, fréquences longues et validation des mois. L’API de budget est réservée au propriétaire et sa lecture ne modifie ni les tables ni la simulation.

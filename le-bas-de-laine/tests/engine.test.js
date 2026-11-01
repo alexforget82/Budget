@@ -560,3 +560,194 @@ test("shifted salary and bill enter the forecast exactly once on the effective b
     "2026-10-25",
   );
 });
+
+test("first bill adjusted before nominal start remains protected when overdue or postponed", () => {
+  for (const account_id of [1, 2]) {
+    const s = base();
+    s.categories = [];
+    s.recurrences = [
+      {
+        id: 9,
+        name: "Facture",
+        kind: "expense",
+        account_id,
+        amount_cents: 10000,
+        frequency: "monthly",
+        start_on: "2026-11-01",
+        day_adjust: "before",
+        one_time: 1,
+        active: 1,
+      },
+    ];
+    const overdue = simulate(s, "2026-11-02");
+    assert.equal(overdue.available_cents, 90000);
+    assert.equal(overdue.daily[0].events[0].original_on, "2026-10-30");
+    s.occurrence_states = [
+      {
+        rule_id: 9,
+        original_on: "2026-10-30",
+        status: "postponed",
+        postponed_on: "2026-11-04",
+        amount_cents: 12000,
+      },
+    ];
+    const postponed = simulate(s, "2026-11-02");
+    assert.equal(postponed.available_cents, 88000);
+    assert.equal(at(postponed, "2026-11-04").events.length, 1);
+    for (const status of ["paid", "cancelled"]) {
+      s.occurrence_states[0].status = status;
+      assert.equal(simulate(s, "2026-11-02").available_cents, 100000);
+    }
+  }
+});
+
+test("audit every weekly renewal and monthly limit remains protected with and without carry", () => {
+  for (const carry of [false, true])
+    for (let weekday = 0; weekday < 7; weekday++) {
+      const s = base();
+      s.recurrences = [];
+      s.categories[0].renewal_day = weekday;
+      s.categories[0].starts_on = periodStart(s.categories[0], "2026-11-01");
+      s.categories.push({
+        id: 2,
+        name: "Maison",
+        limit_cents: 12000,
+        period: "monthly",
+        renewal_day: 1,
+        active: 1,
+        starts_on: "2026-11-01",
+      });
+      if (carry) s.weekly_rollover_from = "2026-11-01";
+      const result = simulate(s, "2026-11-01", 90);
+      let expected = 0;
+      const allocations = new Map();
+      for (const c of s.categories) {
+        let day = periodStart(c, "2026-11-01");
+        while (day <= "2027-01-29") {
+          const applied = day < "2026-11-01" ? "2026-11-01" : day;
+          allocations.set(
+            applied,
+            (allocations.get(applied) || 0) + c.limit_cents,
+          );
+          day = nextPeriod(c, day);
+        }
+      }
+      for (const day of result.daily) {
+        expected += allocations.get(day.date) || 0;
+        assert.equal(
+          day.limits_cents,
+          expected,
+          `${weekday}/${carry}/${day.date}`,
+        );
+        assert.equal(day.safe_cents, 100000 - expected);
+      }
+      assert.equal(
+        result.available_cents,
+        Math.min(...result.daily.slice(0, 30).map((d) => d.safe_cents)),
+      );
+      assert.equal(
+        result.minimum_cents,
+        Math.min(...result.daily.map((d) => d.safe_cents)),
+      );
+    }
+});
+
+test("30-day headline protects bills after a small next income and exposes an exact breakdown", () => {
+  const s = base();
+  s.categories = [
+    {
+      id: 1,
+      name: "Maison",
+      limit_cents: 10000,
+      period: "monthly",
+      renewal_day: 1,
+      starts_on: "2026-11-01",
+      active: 1,
+    },
+    {
+      id: 2,
+      name: "Épicerie",
+      limit_cents: 5000,
+      period: "weekly",
+      renewal_day: 4,
+      starts_on: "2026-11-05",
+      active: 1,
+    },
+  ];
+  s.recurrences = [
+    {
+      id: 1,
+      name: "Allocation",
+      kind: "income",
+      account_id: 1,
+      amount_cents: 10000,
+      frequency: "monthly",
+      start_on: "2026-11-02",
+      one_time: 1,
+      active: 1,
+    },
+    {
+      id: 2,
+      name: "Paie",
+      kind: "income",
+      account_id: 1,
+      amount_cents: 100000,
+      frequency: "monthly",
+      start_on: "2026-11-08",
+      one_time: 1,
+      active: 1,
+    },
+    {
+      id: 3,
+      name: "Facture",
+      kind: "expense",
+      account_id: 1,
+      amount_cents: 50000,
+      frequency: "monthly",
+      start_on: "2026-11-04",
+      one_time: 1,
+      active: 1,
+    },
+  ];
+  const before = simulate(s, "2026-11-01");
+  assert.equal(before.available_cents, 90000);
+  assert.equal(before.spending_30.amount_cents, 45000);
+  assert.equal(before.spending_30.minimum_on, "2026-11-05");
+  assert.equal(before.spending_30.days, 30);
+  assert.equal(before.spending_30.until, "2026-11-30");
+  for (const account_id of [1, 2]) {
+    const state = structuredClone(s);
+    state.transactions.push(
+      buy(-7000, account_id, { date: "2026-11-01", period_on: "2026-11-01" }),
+    );
+    const result = simulate(state, "2026-11-01").spending_30;
+    assert.equal(result.amount_cents, 45000);
+    const b = result.breakdown;
+    assert.equal(
+      b.bank_cents - b.cards_cents - b.bills_cents - b.limits_cents,
+      result.amount_cents,
+    );
+    assert.equal(
+      result.limits_details.categories
+        .flatMap((c) => c.periods)
+        .reduce((n, p) => n + p.remaining_cents, 0),
+      b.limits_cents,
+    );
+    if (account_id === 2) {
+      state.transfers.push({
+        id: 1,
+        seq: 3,
+        from_account_id: 1,
+        to_account_id: 2,
+        amount_cents: 7000,
+        date: "2026-11-01",
+        included: 0,
+      });
+      assert.equal(
+        simulate(state, "2026-11-01").spending_30.amount_cents,
+        45000,
+      );
+    }
+  }
+  assert.equal(simulate(s, "2026-11-01", 1).spending_30.days, 1);
+});

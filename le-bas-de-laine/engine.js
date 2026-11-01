@@ -199,8 +199,9 @@ export function simulate(state, reference, horizon = 90, purchase = null) {
     events = [];
   for (const r of rules) {
     // Past unresolved bills remain obligations; past unreceived income never finances spending.
-    const start = r.start_on < reference ? r.start_on : reference;
-    for (const o of occurrences(r, start, end)) {
+    // The first effective date can precede start_on after a business-day adjustment.
+    // Enumerate from the beginning so unresolved or postponed first occurrences survive.
+    for (const o of occurrences(r, "0001-01-01", end)) {
       const action = actions.get(o.key);
       if (action?.status === "paid" || action?.status === "cancelled") continue;
       if (action?.postponed_on && action.postponed_on !== o.date)
@@ -338,11 +339,48 @@ export function simulate(state, reference, horizon = 90, purchase = null) {
       (a, b) => (b.safe_cents < a.safe_cents ? b : a),
       daily[0],
     );
+  const low30 = daily
+    .slice(0, 30)
+    .reduce((a, b) => (b.safe_cents < a.safe_cents ? b : a), daily[0]);
+  const detailsAt = (day, through) => ({
+    through: day.date,
+    until: through,
+    total_cents: day.limits_cents,
+    categories: categories
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        periods: c.periods
+          .filter((p) => p.date <= day.date)
+          .map((p) => ({
+            ...p,
+            kind: p.date <= reference ? "current" : "renewal",
+          })),
+      }))
+      .filter((c) => c.periods.length),
+  });
   // The last line includes all dated obligations and other cash movements up to the limiting day.
   const projectedObligations =
     initialCash - initialCards - low.safe_cents - low.limits_cents;
   return {
     reference,
+    spending_30: {
+      amount_cents: low30.safe_cents,
+      minimum_on: low30.date,
+      days: Math.min(30, daily.length),
+      until: daily[Math.min(30, daily.length) - 1].date,
+      breakdown: {
+        bank_cents: initialCash,
+        cards_cents: initialCards,
+        bills_cents:
+          initialCash - initialCards - low30.safe_cents - low30.limits_cents,
+        limits_cents: low30.limits_cents,
+      },
+      limits_details: detailsAt(
+        low30,
+        daily[Math.min(30, daily.length) - 1].date,
+      ),
+    },
     next_pay: nextPay,
     until,
     bank_cents: initialCash,
@@ -364,23 +402,7 @@ export function simulate(state, reference, horizon = 90, purchase = null) {
         )
         .map((c) => ({ id: c.id, name: c.name })),
     },
-    limits_details: {
-      through: low.date,
-      until,
-      total_cents: low.limits_cents,
-      categories: categories
-        .map((c) => ({
-          id: c.id,
-          name: c.name,
-          periods: c.periods
-            .filter((p) => p.date <= low.date)
-            .map((p) => ({
-              ...p,
-              kind: p.date <= reference ? "current" : "renewal",
-            })),
-        }))
-        .filter((c) => c.periods.length),
-    },
+    limits_details: detailsAt(low, until),
     breakdown: {
       bank_cents: initialCash,
       cards_cents: initialCards,
