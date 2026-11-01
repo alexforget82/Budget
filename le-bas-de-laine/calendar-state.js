@@ -24,6 +24,7 @@ export function calendarStateChanges(
         rule.day_adjust || "none",
         legacyQuebec,
         legacyRRQ,
+        rule.second_day,
       ).date;
       if (old > last) break;
       const current = occurrenceInfo(
@@ -31,6 +32,9 @@ export function calendarStateChanges(
         rule.frequency,
         i,
         rule.day_adjust || "none",
+        false,
+        false,
+        rule.second_day,
       ).date;
       if (old !== current) keys.set(old, current);
       if (rule.one_time) break;
@@ -79,6 +83,8 @@ export function nationalOccurrenceDate(rule, legacyDate) {
       i,
       rule.day_adjust || "none",
       true,
+      true,
+      rule.second_day,
     ).date;
     if (old === legacyDate)
       return occurrenceInfo(
@@ -86,6 +92,9 @@ export function nationalOccurrenceDate(rule, legacyDate) {
         rule.frequency,
         i,
         rule.day_adjust || "none",
+        false,
+        false,
+        rule.second_day,
       ).date;
     if (old > legacyDate || rule.one_time) break;
   }

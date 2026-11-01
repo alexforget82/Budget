@@ -118,6 +118,7 @@ function handler(isPrivate) {
         ![
           "/app.js",
           "/view.js",
+          "/periods.js",
           "/styles.css",
           "/logo.svg",
           "/logo.png",
@@ -156,7 +157,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.7.2",
+            version: "0.8.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -402,6 +403,7 @@ function handler(isPrivate) {
         "/": "index.html",
         "/app.js": "app.js",
         "/view.js": "view.js",
+        "/periods.js": "periods.js",
         "/demo.json": "demo.json",
         "/styles.css": "styles.css",
         "/logo.svg": "logo.svg",

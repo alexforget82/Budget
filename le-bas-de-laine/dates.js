@@ -15,52 +15,7 @@ export const today = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-export function periodStart(category, date) {
-  if (category.period === "weekly") {
-    const weekday = new Date(date + "T12:00:00Z").getUTCDay();
-    return addDays(date, -((weekday - category.renewal_day + 7) % 7));
-  }
-  if (category.period === "monthly") {
-    const day = Math.min(
-      category.renewal_day,
-      new Date(
-        Date.UTC(+date.slice(0, 4), +date.slice(5, 7), 0, 12),
-      ).getUTCDate(),
-    );
-    const start = date.slice(0, 8) + String(day).padStart(2, "0");
-    if (start <= date) return start;
-    const d = new Date(date.slice(0, 8) + "01T12:00:00Z");
-    d.setUTCMonth(d.getUTCMonth() - 1);
-    return (
-      d.toISOString().slice(0, 8) +
-      String(
-        Math.min(
-          category.renewal_day,
-          new Date(
-            Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
-          ).getUTCDate(),
-        ),
-      ).padStart(2, "0")
-    );
-  }
-  return null;
-}
-export function nextPeriod(category, start) {
-  if (category.period === "weekly") return addDays(start, 7);
-  const d = new Date(start.slice(0, 8) + "01T12:00:00Z");
-  d.setUTCMonth(d.getUTCMonth() + 1);
-  return (
-    d.toISOString().slice(0, 8) +
-    String(
-      Math.min(
-        category.renewal_day,
-        new Date(
-          Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
-        ).getUTCDate(),
-      ),
-    ).padStart(2, "0")
-  );
-}
+export { periodStart, nextPeriod } from "./public/periods.js";
 export function occurrences(rule, from, to) {
   const result = [];
   // Keep the existing scheduled-date key format; rule edits remap saved states atomically.
@@ -71,6 +26,8 @@ export function occurrences(rule, from, to) {
       i,
       rule.day_adjust || "none",
       !!rule.calendar_legacy,
+      !!rule.calendar_legacy,
+      rule.second_day,
     );
     if (info.date > to) break;
     if (info.date >= from)

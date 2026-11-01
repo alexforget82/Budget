@@ -64,7 +64,7 @@ export function createService(store, clock = today) {
     if (
       limit !== null &&
       (limit < 0 ||
-        !["weekly", "monthly"].includes(period) ||
+        !["weekly", "monthly", "semimonthly"].includes(period) ||
         !Number.isInteger(day) ||
         day < (period === "weekly" ? 0 : 1) ||
         day > (period === "weekly" ? 6 : 31))
@@ -75,9 +75,20 @@ export function createService(store, clock = today) {
       limit_cents: limit,
       period,
       renewal_day: day,
+      renewal_day2: period === "semimonthly" ? Number(x.renewal_day2) : null,
       starts_on: limit === null ? null : date(x.starts_on || clock()),
       active: x.active === false ? 0 : 1,
     };
+    if (
+      period === "semimonthly" &&
+      (day > 27 ||
+        !Number.isInteger(c.renewal_day2) ||
+        c.renewal_day2 <= day ||
+        c.renewal_day2 > 31)
+    )
+      throw Error(
+        "Choisissez deux jours distincts : premier du 1 au 27, second jusqu’au 31.",
+      );
     if (c.starts_on) c.starts_on = periodStart(c, c.starts_on);
     if (x.id) {
       if (!q("SELECT id FROM categories WHERE id=?", Number(x.id)).length)
@@ -93,7 +104,7 @@ export function createService(store, clock = today) {
           "Cette catégorie contient une facture programmée. Évitez de protéger la même dépense par une facture et une limite.",
         );
       run(
-        "UPDATE categories SET name=?,limit_cents=?,period=?,renewal_day=?,starts_on=?,active=?,dirty=1 WHERE id=?",
+        "UPDATE categories SET name=?,limit_cents=?,period=?,renewal_day=?,renewal_day2=?,starts_on=?,active=?,dirty=1 WHERE id=?",
         ...Object.values(c),
         Number(x.id),
       );
@@ -105,7 +116,7 @@ export function createService(store, clock = today) {
     }
     const id = Number(
       run(
-        "INSERT INTO categories(name,limit_cents,period,renewal_day,starts_on,active) VALUES(?,?,?,?,?,?)",
+        "INSERT INTO categories(name,limit_cents,period,renewal_day,renewal_day2,starts_on,active) VALUES(?,?,?,?,?,?,?)",
         ...Object.values(c),
       ).lastInsertRowid,
     );
@@ -133,13 +144,24 @@ export function createService(store, clock = today) {
           monthly.includes(x.frequency) &&
           old.start_on.slice(0, 7) === start.slice(0, 7)));
     for (let i = 0; i < 30000; i++) {
-      const info = occurrenceInfo(start, x.frequency, i, mode);
+      const info = occurrenceInfo(
+        start,
+        x.frequency,
+        i,
+        mode,
+        false,
+        false,
+        x.frequency === "semimonthly" ? Number(x.second_day) : null,
+      );
       const original = remappable
         ? occurrenceInfo(
             old.start_on,
             old.frequency,
             i,
             old.day_adjust || "none",
+            false,
+            false,
+            old.second_day,
           ).date
         : info.date;
       const action = saved.find((row) => row.original_on === original);
@@ -174,7 +196,8 @@ export function createService(store, clock = today) {
       !compatible ||
       (old.frequency === next.frequency &&
         old.start_on === next.start_on &&
-        old.day_adjust === next.day_adjust)
+        old.day_adjust === next.day_adjust &&
+        old.second_day === next.second_day)
     )
       return;
     const states = q(
@@ -190,13 +213,23 @@ export function createService(store, clock = today) {
         old.frequency,
         i,
         old.day_adjust || "none",
+        false,
+        false,
+        old.second_day,
       ).date;
       if (before > last) break;
       if (states.some((row) => row.original_on === before))
         remapped.set(
           before,
-          occurrenceInfo(next.start_on, next.frequency, i, next.day_adjust)
-            .date,
+          occurrenceInfo(
+            next.start_on,
+            next.frequency,
+            i,
+            next.day_adjust,
+            false,
+            false,
+            next.second_day,
+          ).date,
         );
       if (old.one_time) break;
     }
@@ -249,6 +282,16 @@ export function createService(store, clock = today) {
       throw Error(
         "Une facture ne doit pas faire double emploi avec une limite variable.",
       );
+    if (x.frequency === "semimonthly")
+      occurrenceInfo(
+        date(x.start_on),
+        x.frequency,
+        0,
+        adjustment,
+        false,
+        false,
+        Number(x.second_day),
+      );
     const fields = [
       name(x.name),
       kind,
@@ -258,6 +301,7 @@ export function createService(store, clock = today) {
       cat,
       date(x.start_on),
       x.frequency,
+      x.frequency === "semimonthly" ? Number(x.second_day) : null,
       adjustment,
       x.one_time === undefined ? old?.one_time || 0 : x.one_time ? 1 : 0,
       x.active === false ? 0 : 1,
@@ -267,11 +311,12 @@ export function createService(store, clock = today) {
         throw Error("Récurrence introuvable.");
       preserveOccurrenceStates(old, {
         frequency: x.frequency,
+        second_day: x.frequency === "semimonthly" ? Number(x.second_day) : null,
         start_on: x.start_on,
         day_adjust: adjustment,
       });
       run(
-        "UPDATE recurrences SET name=?,kind=?,amount_cents=?,account_id=?,to_account_id=?,category_id=?,start_on=?,frequency=?,day_adjust=?,one_time=?,active=?,dirty=1 WHERE id=?",
+        "UPDATE recurrences SET name=?,kind=?,amount_cents=?,account_id=?,to_account_id=?,category_id=?,start_on=?,frequency=?,second_day=?,day_adjust=?,one_time=?,active=?,dirty=1 WHERE id=?",
         ...fields,
         +x.id,
       );
@@ -279,7 +324,7 @@ export function createService(store, clock = today) {
     }
     return Number(
       run(
-        "INSERT INTO recurrences(name,kind,amount_cents,account_id,to_account_id,category_id,start_on,frequency,day_adjust,one_time,active) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO recurrences(name,kind,amount_cents,account_id,to_account_id,category_id,start_on,frequency,second_day,day_adjust,one_time,active) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
         ...fields,
       ).lastInsertRowid,
     );
@@ -564,7 +609,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.7.2",
+      version: "0.8.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,

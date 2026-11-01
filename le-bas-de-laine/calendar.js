@@ -85,10 +85,37 @@ export function occurrenceInfo(
   adjust = "none",
   legacyQuebec = false,
   legacyRRQ = legacyQuebec,
+  secondDay = null,
 ) {
   let nominal,
     estimated = false;
-  if (frequency === "last_day") {
+  if (frequency === "semimonthly") {
+    const d = dateFrom(start),
+      first = d.getUTCDate();
+    if (
+      !Number.isInteger(secondDay) ||
+      first > 27 ||
+      secondDay <= first ||
+      secondDay > 31
+    )
+      throw Error(
+        "Choisissez deux jours distincts : premier du 1 au 27, second jusqu’au 31.",
+      );
+    if (
+      adjust !== "none" &&
+      (secondDay - first < 7 || 28 - secondDay + first < 7)
+    )
+      throw Error(
+        "Avec le déplacement des jours fériés, espacez les deux jours d’au moins 7 jours, y compris entre deux mois, ou choisissez Conserver la date.",
+      );
+    d.setUTCDate(1);
+    d.setUTCMonth(d.getUTCMonth() + Math.floor(i / 2));
+    const last = new Date(
+      Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    d.setUTCDate(Math.min(i % 2 ? secondDay : first, last));
+    nominal = iso(d);
+  } else if (frequency === "last_day") {
     const d = dateFrom(start);
     d.setUTCDate(1);
     d.setUTCMonth(d.getUTCMonth() + i + 1);
@@ -141,6 +168,7 @@ export function nextOccurrence(start, frequency, i) {
 export const supportedFrequencies = [
   "weekly",
   "biweekly",
+  "semimonthly",
   "monthly",
   "quarterly",
   "semiannual",

@@ -93,6 +93,9 @@ export function monthlyBudget(state, month, reference) {
         r.frequency,
         i,
         r.day_adjust || "none",
+        false,
+        false,
+        r.second_day,
       );
       if (info.date > scanEnd) break;
       const action = actions.get(info.date),

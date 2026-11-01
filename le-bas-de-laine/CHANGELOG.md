@@ -1,3 +1,7 @@
+# 0.8.0 — deux fois par mois
+
+Limites et programmations à deux jours fixes du mois. Montant par passage, fin de mois adaptée à février, ajustements bancaires et montant exceptionnel conservés. Calcul de périodes commun au navigateur et au serveur pour les achats anticipés. Budget mensuel et partage utilisent les deux dates réelles. Migration numérotée 002 avec sauvegarde préalable, schéma 2 et export JSON 2; restauration des anciens JSON 1 maintenue. Données et liens existants conservés, aucune conversion automatique de montant.
+
 # 0.7.2 — retirer une limite ou une facture
 
 Actions avec confirmation dans Plan et les éditeurs. Limite retirée sans supprimer la catégorie ni les achats; nettoyage du rattachement automatique Autres si nécessaire. Facture/revenu/virement programmé retiré de la liste et de la prévision par désactivation et marqueur d’archivage, sans casser les liens d’échéances déjà payées, les transactions ou les soldes vérifiés. Sauvegarde/restauration conserve le marqueur. Boutons adaptés aux petits écrans. Schéma inchangé.

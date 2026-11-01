@@ -1,3 +1,11 @@
+# Vérifications — 0.8.0
+
+130 tests Node réussis. Six nouveaux scénarios : exactement 24 allocations annuelles, février bissextile et fin de mois; protection des deux périodes, achats anticipés banque/carte et paiement sans deuxième déduction; deux dates de facture, jours fériés et refus des dates déplacées trop proches; aperçu, montant exceptionnel et remappage d’un état sauvegardé; budget mensuel et restauration des seconds jours; migration d’une vraie base SQLite schéma 1 avec copie intacte, références et lien privé conservés, restauration JSON ancien format.
+
+`tests/semimonthly-ui.py` : assistant initial et éditeurs de limite/facture, second jour sauvegardé, aperçu, deux allocations/deux factures au budget, choix de période anticipée, parité propriétaire/partage, quatre largeurs et deux thèmes. Parcours général, calendrier et exceptions ponctuelles également réussis. Données fictives seulement; pas de test matériel iPhone revendiqué. Archive autonome : 128 tests réussis et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.7.2
 
 124 tests Node réussis. Retrait d’une limite après achat sur carte : catégorie et transaction conservées, protection de carte intacte, limite retirée du disponible et rattachement Autres nettoyé. Retrait d’une facture après paiement : transaction, lien d’échéance et solde vérifié inchangés; échéances futures retirées; marqueur conservé après sauvegarde/restauration; identifiant invalide refusé.

@@ -1,3 +1,4 @@
+import { periodStart, nextPeriod } from "./periods.js";
 import {
   $,
   node,
@@ -131,6 +132,7 @@ const frequencies = (value) =>
       ["weekly", "Chaque semaine"],
       ["biweekly", "Aux deux semaines"],
       ["monthly", "Chaque mois"],
+      ["semimonthly", "Deux fois par mois"],
       ["quarterly", "Aux trois mois"],
       ["semiannual", "Aux six mois"],
       ["yearly", "Chaque année"],
@@ -159,6 +161,21 @@ function calendarFields(
     ],
     initial.day_adjust ?? (initial.kind === "income" ? "before" : "after"),
   );
+  const second = select(
+      "second_day",
+      Array.from({ length: 30 }, (_, i) => [
+        i + 2,
+        i === 29 ? "Dernier jour du mois" : "Le " + (i + 2),
+      ]),
+      initial.second_day || 15,
+    ),
+    secondField = field("Deuxième jour du mois", second);
+  const semiHelp = node(
+    "p",
+    "Le montant s’applique à chaque passage. Le premier jour vient de la date de début; le second est choisi ci-dessus. Le 31 devient le dernier jour des mois plus courts.",
+    "muted",
+  );
+  container.append(secondField, semiHelp);
   const preview = node("div", null, "calendar-preview");
   preview.setAttribute("aria-live", "polite");
   options.append(
@@ -183,8 +200,12 @@ function calendarFields(
         frequency.value,
       ),
       label = monthEnd ? "Date dans le premier mois" : originalLabel;
-    startLabel.firstChild.textContent = label;
-    start.setAttribute("aria-label", label);
+    semiHelp.hidden = secondField.hidden = frequency.value !== "semimonthly";
+    startLabel.firstChild.textContent =
+      frequency.value === "semimonthly"
+        ? "Première date du mois (du 1 au 27)"
+        : label;
+    start.setAttribute("aria-label", startLabel.firstChild.textContent);
     preview.replaceChildren(
       node("p", "Vérification des prochaines dates…", "muted"),
     );
@@ -199,6 +220,8 @@ function calendarFields(
         frequency: frequency.value,
         day_adjust: adjustment.value,
         one_time: !!initial.one_time,
+        second_day:
+          frequency.value === "semimonthly" ? Number(second.value) : null,
       });
       if (ticket !== serial) return;
       preview.replaceChildren(
@@ -239,13 +262,14 @@ function calendarFields(
     }
   }
   frequency.addEventListener("change", refresh);
+  second.addEventListener("change", refresh);
   adjustment.addEventListener("change", refresh);
   start.addEventListener("input", () => {
     clearTimeout(timer);
     timer = setTimeout(refresh, 150);
   });
   refresh();
-  return { container, adjustment };
+  return { container, second, adjustment };
 }
 function theme() {
   document.documentElement.dataset.theme = matchMedia(
@@ -373,63 +397,8 @@ function transactionEditor(old) {
       (c) => String(c.id) === category.value,
     );
     if (c) {
-      const currentDate = new Date(date.value + "T12:00:00Z");
-      let start;
-      if (c.period === "weekly")
-        start = addDays(
-          date.value,
-          -((currentDate.getUTCDay() - c.renewal_day + 7) % 7),
-        );
-      else {
-        start =
-          date.value.slice(0, 8) +
-          String(
-            Math.min(
-              c.renewal_day,
-              new Date(
-                Date.UTC(
-                  currentDate.getUTCFullYear(),
-                  currentDate.getUTCMonth() + 1,
-                  0,
-                ),
-              ).getUTCDate(),
-            ),
-          ).padStart(2, "0");
-        if (start > date.value) {
-          currentDate.setUTCDate(1);
-          currentDate.setUTCMonth(currentDate.getUTCMonth() - 1);
-          start =
-            currentDate.toISOString().slice(0, 8) +
-            String(
-              Math.min(
-                c.renewal_day,
-                new Date(
-                  Date.UTC(
-                    currentDate.getUTCFullYear(),
-                    currentDate.getUTCMonth() + 1,
-                    0,
-                  ),
-                ).getUTCDate(),
-              ),
-            ).padStart(2, "0");
-        }
-      }
-      let next;
-      if (c.period === "weekly") next = addDays(start, 7);
-      else {
-        const d = new Date(start.slice(0, 8) + "01T12:00:00Z");
-        d.setUTCMonth(d.getUTCMonth() + 1);
-        next =
-          d.toISOString().slice(0, 8) +
-          String(
-            Math.min(
-              c.renewal_day,
-              new Date(
-                Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
-              ).getUTCDate(),
-            ),
-          ).padStart(2, "0");
-      }
+      const start = periodStart(c, date.value),
+        next = nextPeriod(c, start);
       period.replaceChildren(
         new Option("Cette période · " + shortDate(start), start),
         new Option("La prochaine · " + shortDate(next), next),
@@ -943,13 +912,24 @@ function categoryEditor(c) {
       [
         ["weekly", "Par semaine"],
         ["monthly", "Par mois"],
+        ["semimonthly", "Deux fois par mois"],
       ],
       c?.period || "weekly",
     ),
     day = select("renewal_day", []),
+    day2 = select(
+      "renewal_day2",
+      Array.from({ length: 30 }, (_, i) => [
+        i + 2,
+        i === 29 ? "Dernier jour du mois" : "Le " + (i + 2),
+      ]),
+      c?.renewal_day2 || 15,
+    ),
+    secondField = field("Deuxième renouvellement", day2),
     start = input("starts_on", "date", c?.starts_on || dateNow());
   amount.min = "0";
   const update = () => {
+    secondField.hidden = period.value !== "semimonthly";
     day.replaceChildren(
       ...(period.value === "weekly"
         ? [
@@ -962,7 +942,7 @@ function categoryEditor(c) {
             "Samedi",
           ].map((s, i) => new Option(s, i))
         : Array.from(
-            { length: 31 },
+            { length: period.value === "semimonthly" ? 27 : 31 },
             (_, i) =>
               new Option(
                 i === 30 ? "Dernier jour du mois" : "Le " + (i + 1),
@@ -981,6 +961,12 @@ function categoryEditor(c) {
       field("Montant par période", amount),
       field("Période", period),
       field("Renouvellement", day),
+      secondField,
+      node(
+        "p",
+        "Montant par renouvellement : 75 $ deux fois par mois = 150 $ par mois. Les périodes deux fois par mois ne reportent pas le restant.",
+        "muted",
+      ),
       field("À partir du", start),
       ...(c?.limit_cents !== null && c?.limit_cents !== undefined
         ? [
@@ -1004,6 +990,8 @@ function categoryEditor(c) {
         limit: amount.value,
         period: period.value,
         renewal_day: day.value,
+        renewal_day2:
+          period.value === "semimonthly" ? Number(day2.value) : null,
         starts_on: start.value,
       }),
   );
@@ -1132,6 +1120,10 @@ function ruleEditor(r, kind = "expense") {
         to_account_id: destination.value,
         frequency: frequency.value,
         day_adjust: calendar.adjustment.value,
+        second_day:
+          frequency.value === "semimonthly"
+            ? Number(calendar.second.value)
+            : null,
         start_on: start.value,
         active: r?.active !== 0,
       }),
@@ -1172,6 +1164,7 @@ function planView() {
             ({
               weekly: "Chaque semaine",
               biweekly: "Aux deux semaines",
+              semimonthly: "Deux fois par mois",
               monthly: "Chaque mois",
               quarterly: "Aux trois mois",
               semiannual: "Aux six mois",
@@ -1241,7 +1234,11 @@ function planView() {
       node(
         "small",
         money(c.limit_cents) +
-          (c.period === "weekly" ? " / semaine" : " / mois"),
+          (c.period === "weekly"
+            ? " / semaine"
+            : c.period === "semimonthly"
+              ? " / renouvellement (2 fois par mois)"
+              : " / mois"),
       ),
     );
     row.append(
@@ -1849,6 +1846,10 @@ function setupView() {
         amount: f.amount.value,
         frequency: f.freq.value,
         day_adjust: f.calendar.adjustment.value,
+        second_day:
+          f.freq.value === "semimonthly"
+            ? Number(f.calendar.second.value)
+            : null,
         start_on: f.start.value,
       }));
       if (isPay && !data.length) throw Error("Ajoutez une prochaine paie.");
@@ -1894,11 +1895,22 @@ function setupView() {
           [
             ["weekly", "Par semaine"],
             ["monthly", "Par mois"],
+            ["semimonthly", "Deux fois par mois"],
           ],
           c.period,
         ),
         day = select("renewal_day", []),
+        day2 = select(
+          "renewal_day2",
+          Array.from({ length: 30 }, (_, i) => [
+            i + 2,
+            i === 29 ? "Dernier jour du mois" : "Le " + (i + 2),
+          ]),
+          c.renewal_day2 || 15,
+        ),
+        secondField = field("Deuxième renouvellement", day2),
         update = () => {
+          secondField.hidden = period.value !== "semimonthly";
           day.replaceChildren(
             ...(period.value === "weekly"
               ? [
@@ -1911,7 +1923,7 @@ function setupView() {
                   "Samedi",
                 ].map((s, i) => new Option(s, i))
               : Array.from(
-                  { length: 31 },
+                  { length: period.value === "semimonthly" ? 27 : 31 },
                   (_, i) =>
                     new Option(
                       i === 30 ? "Dernier jour du mois" : "Le " + (i + 1),
@@ -1930,12 +1942,16 @@ function setupView() {
       update();
       const group = node("div", null, "two-fields");
       group.append(field("Montant", amount), field("Période", period));
-      item.append(label, group, field("Renouvellement", day));
+      item.append(label, group, field("Renouvellement", day), secondField);
       check.onchange = () => {
-        amount.disabled = period.disabled = day.disabled = !check.checked;
+        amount.disabled =
+          period.disabled =
+          day.disabled =
+          day2.disabled =
+            !check.checked;
       };
       body.append(item);
-      fields.push({ c, check, amount, period, day });
+      fields.push({ c, check, amount, period, day, day2 });
     }
     capture = () => {
       wizard.categories = fields
@@ -1945,6 +1961,8 @@ function setupView() {
           limit: f.amount.value,
           period: f.period.value,
           renewal_day: +f.day.value,
+          renewal_day2:
+            f.period.value === "semimonthly" ? Number(f.day2.value) : null,
           starts_on: dateNow(),
         }));
     };

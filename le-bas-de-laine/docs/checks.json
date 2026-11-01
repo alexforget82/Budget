@@ -1,8 +1,8 @@
 {
-  "version": "0.7.2",
+  "version": "0.8.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 124,
+    "passed": 130,
     "failed": 0,
     "skipped": 0
   },
@@ -68,7 +68,8 @@
       "full allocation with zero carry at first renewal of new month",
       "shared rollover parity and readonly purchase",
       "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates",
-      "remove limits and recurring bills with confirmation, preserved history and responsive controls"
+      "remove limits and recurring bills with confirmation, preserved history and responsive controls",
+      "two fixed monthly dates in wizard, limit/bill editors, transaction period selection and shared view"
     ]
   },
   "comparison": {

@@ -1,4 +1,4 @@
-# Le bas de laine — contrat du noyau, essai 0.7.2
+# Le bas de laine — contrat du noyau, essai 0.8.0
 
 **But** : une seule saisie par achat, pas de financement manuel, trois écrans, disponible explicable en quatre lignes. Application et données séparées de Sillage. Le 30 octobre 2026 sert de date fixe dans l’exemple de comparaison; chaque rapport enregistre sa date de référence explicite. Les aperçus utilisent le 21 octobre 2026 et des chiffres fictifs.
 
@@ -45,3 +45,5 @@
 **Priorité d’affichage (0.7.1)** : le minimum sur les 30 premiers jours de la simulation est le chiffre principal, identique propriétaire/partage. Le montant avant prochain revenu et le minimum 90 jours restent disponibles. Les quatre lignes principales et les périodes de limites correspondent au jour déterminant le minimum 30 jours, sans autre retenue ni nouveau moteur. La première échéance peut avoir une date effective avant le début nominal de sa règle et doit rester énumérée.
 
 **Retrait du plan** : retirer une limite efface sa configuration de protection, en conservant la catégorie et les transactions. Retirer une programmation la désactive et masque sa ligne au propriétaire; les états payés restent liés aux transactions et virements. Le marqueur interne est sauvegardé avec les réglages, sans nouvelle table.
+
+**Deux fois par mois (0.8.0)** : deux dates nominales fixes, premier jour 1–27 et second postérieur jusqu’au 31, ramené au dernier jour des mois courts. Chaque période protège le montant configuré moins les achats imputés; pas de report dans ce mode. Les factures utilisent le jour de la date de début et second_day, avec les mêmes ajustements bancaires et états par occurrence. Les dates très proches nécessitent Conserver la date pour éviter les collisions d’identifiants d’échéance. Le budget compte les occurrences effectives, jamais une moyenne annualisée. Schéma 2 ajoute renewal_day2 aux catégories et second_day aux récurrences; migration 002 précédée d’une copie SQLite, clés et historique conservés. Format JSON 2, import des formats 1 et 2.

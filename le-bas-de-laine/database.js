@@ -12,7 +12,7 @@ export function openDatabase(dir) {
   const filename = path.join(dir, "budget.sqlite"),
     db = new DatabaseSync(filename);
   const version = db.prepare("PRAGMA user_version").get().user_version;
-  if (version > 1) throw Error("Cette base exige une version plus récente.");
+  if (version > 2) throw Error("Cette base exige une version plus récente.");
   if (version === 0) {
     if (
       db
@@ -29,7 +29,7 @@ export function openDatabase(dir) {
       ),
     );
   }
-  if (version === 1) {
+  if (version === 1 || version === 2) {
     const names = db
       .prepare(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
@@ -55,6 +55,33 @@ export function openDatabase(dir) {
       throw Error(
         "Cette base n’est pas une base du Bas de laine. Aucun changement.",
       );
+  }
+  if (db.prepare("PRAGMA user_version").get().user_version === 1) {
+    const folder = path.join(dir, "backups");
+    fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
+    const target = path.join(
+      folder,
+      "avant-schema-2-" + Date.now() + ".sqlite",
+    );
+    db.prepare("VACUUM INTO ?").run(target);
+    fs.chmodSync(target, 0o600);
+    db.exec("PRAGMA foreign_keys=OFF");
+    try {
+      db.exec(
+        fs.readFileSync(
+          new URL("./migrations/002-semimonthly.sql", import.meta.url),
+          "utf8",
+        ),
+      );
+    } catch (error) {
+      if (db.isTransaction) db.exec("ROLLBACK");
+      db.close();
+      throw error;
+    }
+    if (db.prepare("PRAGMA foreign_key_check").all().length) {
+      db.close();
+      throw Error("Migration : liens invalides.");
+    }
   }
   db.exec(
     "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000",
@@ -122,7 +149,9 @@ export function openDatabase(dir) {
       const copy = new DatabaseSync(target, { readOnly: true });
       try {
         if (
-          copy.prepare("PRAGMA user_version").get().user_version !== 1 ||
+          ![1, 2].includes(
+            copy.prepare("PRAGMA user_version").get().user_version,
+          ) ||
           copy.prepare("PRAGMA quick_check").get().quick_check !== "ok"
         )
           throw Error("Copie SQLite invalide.");
@@ -155,14 +184,14 @@ export function openDatabase(dir) {
   }
   const exportData = () => ({
     format: "le-bas-de-laine",
-    version: 1,
+    version: 2,
     created_at: new Date().toISOString(),
     tables: Object.fromEntries(tables.map((t) => [t, q("SELECT * FROM " + t)])),
   });
   function restore(payload) {
     if (
       payload?.format !== "le-bas-de-laine" ||
-      payload.version !== 1 ||
+      ![1, 2].includes(payload.version) ||
       !payload.tables ||
       Object.keys(payload.tables).sort().join() !== [...tables].sort().join()
     )
@@ -182,7 +211,13 @@ export function openDatabase(dir) {
           const columns = stage
             .q("PRAGMA table_info(" + table + ")")
             .map((c) => c.name);
-          for (const row of payload.tables[table]) {
+          for (const original of payload.tables[table]) {
+            const row =
+              payload.version === 1 && table === "categories"
+                ? { ...original, renewal_day2: null }
+                : payload.version === 1 && table === "recurrences"
+                  ? { ...original, second_day: null }
+                  : original;
             if (
               !row ||
               Object.keys(row).sort().join() !== [...columns].sort().join()

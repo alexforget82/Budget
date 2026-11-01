@@ -1,8 +1,8 @@
 # Le bas de laine
 
-Première version d’essai **0.7.2**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.8.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
-Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
+Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine, au mois ou deux fois par mois. Pas d’enveloppes à alimenter.
 
 ## Maquettes initiales (0.1.0)
 
@@ -257,3 +257,13 @@ Correction : la toute première échéance avancée avant sa date nominale par u
 ## Retirer une limite ou une facture (0.7.2)
 
 Dans Plan, choisissez **Supprimer la limite** ou **Supprimer la facture**, dans la liste ou son formulaire de modification, puis confirmez. Une limite retirée cesse de protéger de l’argent : sa catégorie et ses achats restent disponibles. Une facture retirée cesse de générer des échéances non réglées dans la prévision; ses paiements réels et leurs liens sont conservés. Les revenus et virements programmés proposent la même action. Pause reste disponible pour une interruption temporaire. Ces actions sont réservées au propriétaire; le lien simplifié reçoit les montants recalculés.
+
+## Deux fois par mois (0.8.0)
+
+Les limites, factures, revenus et virements programmés proposent **Deux fois par mois**, distinct d’Aux deux semaines. Dans une limite, choisissez les deux jours du mois; dans une facture, la date de début fixe le premier jour et un champ fixe le second. Le premier jour peut aller du 1 au 27, le second est postérieur et peut être le dernier jour du mois. Le 31 est ramené au dernier jour des mois courts.
+
+**Montant par passage** : 75 $ le 1er et le 15 = 150 $ par mois. Pour diviser une ancienne limite mensuelle de 150 $, modifiez son montant à 75 $ et sa période à Deux fois par mois. Aucune conversion automatique des limites existantes. Pas de report du restant entre les périodes de ce nouveau mode; les reports hebdomadaires existants restent inchangés.
+
+Les limites sont protégées à chacune des deux dates dans le disponible; les achats anticipés peuvent choisir la prochaine période. Les factures conservent leurs options week-end/férié et leurs montants exceptionnels. Pour éviter que deux passages se confondent au même jour ouvrable, les dates déplacées doivent être suffisamment espacées (au moins sept jours, y compris entre les mois); choisissez Conserver la date pour des passages plus proches.
+
+L’installation adapte automatiquement la base (schéma 2), avec une copie SQLite préalable dans data/backups/avant-schema-2-….sqlite. Les catégories, transactions, paiements et liens privés sont conservés. Les anciennes sauvegardes JSON au format 1 restent restaurables; les nouvelles utilisent le format 2. Une ancienne application ne peut pas ouvrir directement le schéma 2 : utilisez sa copie préalable en cas de retour en arrière.

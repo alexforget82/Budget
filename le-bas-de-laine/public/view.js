@@ -496,7 +496,14 @@ export function todayView(
       spent = current?.spent_cents || 0;
     title.append(
       node("h3", c.name),
-      node("small", c.period === "weekly" ? "Par semaine" : "Par mois"),
+      node(
+        "small",
+        c.period === "weekly"
+          ? "Par semaine"
+          : c.period === "semimonthly"
+            ? "Deux fois par mois"
+            : "Par mois",
+      ),
     );
     row.append(title);
     for (const [label, amount, kind] of [

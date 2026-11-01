@@ -57,22 +57,48 @@ export function validateState(s) {
       integer(c.limit_cents, "limite");
       if (
         c.limit_cents < 0 ||
-        !["weekly", "monthly"].includes(c.period) ||
+        !["weekly", "monthly", "semimonthly"].includes(c.period) ||
         !Number.isInteger(c.renewal_day) ||
         c.renewal_day < (c.period === "weekly" ? 0 : 1) ||
         c.renewal_day > (c.period === "weekly" ? 6 : 31)
       )
         throw Error("Limite invalide.");
+      if (
+        c.period === "semimonthly" &&
+        (c.renewal_day > 27 ||
+          !Number.isInteger(c.renewal_day2) ||
+          c.renewal_day2 <= c.renewal_day ||
+          c.renewal_day2 > 31)
+      )
+        throw Error("Deuxième renouvellement invalide.");
       if (c.starts_on) date(c.starts_on, "début");
     }
   for (const r of s.recurrences) {
     integer(r.amount_cents, "facture");
     date(r.start_on, "récurrence");
     if (
+      r.frequency === "semimonthly" &&
+      (+r.start_on.slice(8) > 27 ||
+        !Number.isInteger(r.second_day) ||
+        r.second_day <= +r.start_on.slice(8) ||
+        r.second_day > 31)
+    )
+      throw Error("Deuxième jour de facture invalide.");
+    if (
+      r.frequency === "semimonthly" &&
+      r.day_adjust !== "none" &&
+      (r.second_day - +r.start_on.slice(8) < 7 ||
+        28 - r.second_day + +r.start_on.slice(8) < 7)
+    )
+      throw Error(
+        "Jours de facture trop proches pour le déplacement des fériés.",
+      );
+    if (
       r.amount_cents <= 0 ||
       ![
         "weekly",
         "biweekly",
+        "semimonthly",
         "monthly",
         "quarterly",
         "semiannual",
