@@ -1,6 +1,6 @@
 # Le bas de laine
 
-Première version d’essai **0.5.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Première version d’essai **0.5.1**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
 
 Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine ou au mois. Pas d’enveloppes à alimenter.
 
@@ -207,3 +207,13 @@ Une décision déjà associée au 31 décembre 2026 est déplacée vers la même
 4. **Lien simplifié → Puis-je faire cet achat ?** : entrez le montant, puis Vérifier. Résultat Oui/Non; si l’import est provisoire, À vérifier remplace toute autorisation. Sous Options, choisissez éventuellement une date, une carte ou une limite pour un achat déjà prévu. Le même moteur vérifie 30 journées complètes que dans la vue propriétaire. Aucune transaction n’est créée. Les champs minimum/maximum restent dans la version complète.
 
 Les liens iPhone existants sont conservés : actualisez la page après installation. Le simulateur partagé n’ouvre aucun accès aux modifications ou exports. Son API renvoie uniquement la décision et le statut provisoire; les choix de carte/limite contiennent nom et identifiant, sans solde secondaire ni historique supplémentaire.
+
+## Trois repères — 0.5.1
+
+- **Solde de référence** : sa date apparaît sous le disponible. Il s’agit du dernier solde principal saisi ou repris depuis une sauvegarde, sélectionné par ordre de saisie. Une vérification du compte d’épargne ne change pas cette date. Le bouton Vérifier mon solde conserve son fonctionnement.
+- **Échéances en retard** : un rappel discret rassemble leur nombre et leurs noms. Traiter ouvre leurs actions existantes : Payée/Effectué, Montant et Reporter. Une fois traitées ou reportées, elles quittent le rappel. Leurs montants restent déjà inclus dans la prévision.
+- **Sauvegarde** : Aujourd’hui affiche la date et l’heure réelles de la copie quotidienne locale, avec un bouton Télécharger une sauvegarde. Le même repère se trouve dans Plan → Réglages et sauvegardes. Le téléchargement JSON contient le budget actuel, alors que la copie quotidienne reste celle créée au premier usage de la journée; sa date n’est pas renouvelée à chaque opération. L’affichage des heures utilise America/Toronto.
+
+Les copies SQLite réutilisées sont contrôlées (version et quick_check; nouveau contrôle si leur taille/date de modification change). Une copie invalide n’est pas annoncée comme réussie. L’export JSON de la base active reste disponible pour récupérer le budget. Ni l’affichage ni le téléchargement ne modifient les transactions.
+
+Le lien simplifié affiche la date du solde et les retards, sans bouton d’administration ni téléchargement de sauvegarde. Aucun nouvel écran; calculs inchangés.

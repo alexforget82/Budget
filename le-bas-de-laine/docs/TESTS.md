@@ -1,3 +1,11 @@
+# Vérifications — 0.5.1
+
+99 tests Node réussis. Nouveaux cas : date du solde principal déterminée par séquence, indépendance d’un point de contrôle d’épargne, statut de copie quotidienne égal à l’heure réelle du fichier, export sans mutation, et copie endommagée signalée sans date de succès. L’export de la base active reste disponible en cas d’échec de copie. Les contrôles SQLite sont mis en cache avec taille/date du fichier et réexécutés quand il change.
+
+`tests/status-ui.py` vérifie le repère du solde, le téléchargement réel d’un JSON et son contenu exact, puis Payée et Reporter depuis le rappel. Le compteur disparaît une fois les retards traités. La vue partagée garde la date et l’indication des retards, sans actions de traitement ni lien d’export. 320/390/768/1440 pixels, clair/sombre, sans débordement horizontal. Parcours général et outils quotidiens également réussis. Captures fictives dans `status/`; aucun test matériel iOS revendiqué. Archive autonome : 97 tests réussis et deux références Sillage externes omises.
+
+## Référence précédente
+
 # Vérifications — 0.5.0
 
 96 tests Node réussis. Nouveaux cas : correction de paiements de carte partiels/complets/excédentaires sans seconde déduction, suppression rétablissant les achats à payer, correction des virements d’épargne, conservation de l’ordre et des soldes bancaires vérifiés. La suppression d’un virement lié rouvre l’échéance; les modifications invalides sont refusées atomiquement.

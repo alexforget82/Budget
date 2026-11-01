@@ -812,3 +812,18 @@ test("deleting a linked transfer reopens its occurrence; invalid edits are atomi
     true,
   );
 });
+
+test("last verified balance date follows the main checkpoint sequence, not a secondary account", (t) => {
+  const { db, api, bank } = fixture(t);
+  assert.equal(api.snapshot().balance_verified_on, date);
+  const savings = Number(
+    db.run("INSERT INTO accounts(name,kind) VALUES('Épargne','bank')")
+      .lastInsertRowid,
+  );
+  const tomorrow = createService(db, () => "2026-10-23");
+  db.atomic(() => tomorrow.checkpoint({ account_id: savings, amount: 500 }));
+  assert.equal(tomorrow.snapshot().balance_verified_on, date);
+  const later = createService(db, () => "2026-10-24");
+  db.atomic(() => later.checkpoint({ account_id: bank, amount: 1000 }));
+  assert.equal(later.snapshot().balance_verified_on, "2026-10-24");
+});

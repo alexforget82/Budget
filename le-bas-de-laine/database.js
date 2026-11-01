@@ -105,6 +105,7 @@ export function openDatabase(dir) {
     card_baseline_seq: setting("card_baseline_seq", 0),
     fallback_category_id: setting("fallback_category_id", null),
   });
+  const verifiedBackups = new Map();
   const backup = (name) => {
     const folder = path.join(dir, "backups");
     fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
@@ -112,6 +113,21 @@ export function openDatabase(dir) {
     if (!fs.existsSync(target)) {
       db.prepare("VACUUM INTO ?").run(target);
       fs.chmodSync(target, 0o600);
+    }
+    const stat = fs.statSync(target),
+      fingerprint = stat.size + ":" + stat.mtimeMs;
+    if (verifiedBackups.get(target) !== fingerprint) {
+      const copy = new DatabaseSync(target, { readOnly: true });
+      try {
+        if (
+          copy.prepare("PRAGMA user_version").get().user_version !== 1 ||
+          copy.prepare("PRAGMA quick_check").get().quick_check !== "ok"
+        )
+          throw Error("Copie SQLite invalide.");
+      } finally {
+        copy.close();
+      }
+      verifiedBackups.set(target, fingerprint);
     }
     return target;
   };

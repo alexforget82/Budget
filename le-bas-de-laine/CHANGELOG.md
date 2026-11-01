@@ -1,3 +1,7 @@
+# 0.5.1 — fraîcheur et sauvegarde visibles
+
+Date du dernier solde principal près du disponible. Rappel compact des échéances en retard avec accès à leurs actions existantes. Date/heure réelle de la copie quotidienne et téléchargement JSON du budget courant depuis Aujourd’hui; repère ajouté dans Plan. Vérification des copies SQLite avant annonce de réussite, avec cache par taille/date et signalement d’une copie endommagée. Indicateurs en lecture dans le lien simplifié, actions et export réservés au propriétaire. Aucun changement de calcul ou de schéma.
+
 # 0.5.0 — suivi quotidien simplifié
 
 Modification/suppression des virements, protection des liens d’échéance et des soldes vérifiés. Recherche accent-insensible et filtres catégorie/mois/compte, totaux séparant virements et opérations réelles, conservation des filtres après correction. Liste compacte des limites : limite/dépensé/restant/renouvellement. Simulateur Oui/Non dans le lien simplifié, avec options facultatives, même calcul que le propriétaire et API strictement en lecture. Trois écrans et schéma existants conservés.

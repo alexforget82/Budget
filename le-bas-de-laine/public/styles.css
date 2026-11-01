@@ -1797,3 +1797,39 @@
 .filters select[name="filter-category"] {
   min-width: 0;
 }
+
+.balance-verified-note {
+  font-size: 0.76rem;
+  opacity: 0.85;
+  margin: -0.8rem 0 1rem;
+  line-height: 1.5;
+}
+.overdue-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 1rem;
+  border-left: 3px solid var(--gold);
+  background: var(--soft);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.overdue-reminder > span {
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+}
+.backup-summary p {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0.7rem 0;
+}
+.backup-summary .button-link {
+  margin: 0.4rem 0;
+}
+.overdue-list small {
+  display: block;
+  margin-top: 0.4rem;
+}

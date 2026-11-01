@@ -278,6 +278,9 @@ export function todayView(
     act,
     openPurchase,
     openTutorial,
+    balanceVerifiedOn,
+    backupInfo,
+    openOverdue,
     shared = false,
   } = {},
 ) {
@@ -293,8 +296,34 @@ export function todayView(
   if (openPurchase)
     heading.append(button("Puis-je faire cet achat ?", openPurchase));
   root.append(heading);
-  for (const warning of sim.warnings || [])
+  const overdue = sim.upcoming.filter((e) => e.overdue && e.kind !== "income");
+  for (const warning of sim.warnings || []) {
+    if (
+      overdue.length &&
+      warning === "Des factures en retard restent à couvrir."
+    )
+      continue;
     root.append(node("p", warning, "warning"));
+  }
+  if (overdue.length) {
+    const reminder = node("div", null, "overdue-reminder");
+    reminder.append(
+      node(
+        "span",
+        overdue.length +
+          " échéance" +
+          (overdue.length > 1 ? "s" : "") +
+          " en retard · " +
+          overdue
+            .slice(0, 2)
+            .map((e) => e.name)
+            .join(", "),
+      ),
+    );
+    if (openOverdue && !shared)
+      reminder.append(button("Traiter", openOverdue, "text-button"));
+    root.append(reminder);
+  }
   const grid = node("div", null, "today-grid"),
     left = node("div", null, "left-stack"),
     right = node("div", null, "right-stack");
@@ -381,7 +410,20 @@ export function todayView(
     row.append(node("span", label), node("strong", money(value)));
     breakdown.append(row);
   }
-  hero.append(breakdown);
+  const balanceNote = node(
+    "p",
+    balanceVerifiedOn
+      ? "Solde de référence du " +
+          new Date(balanceVerifiedOn + "T12:00:00").toLocaleDateString(
+            "fr-CA",
+            { day: "numeric", month: "long", year: "numeric" },
+          )
+      : "Solde de référence à vérifier",
+    "balance-verified-note",
+  );
+  balanceNote.title =
+    "Date du dernier solde saisi ou repris dans une sauvegarde.";
+  hero.append(balanceNote, breakdown);
   left.append(hero);
   const minimum = node("section", null, "panel minimum"),
     minlabel = node("div");
@@ -557,5 +599,40 @@ export function todayView(
   }
   daily.append(list);
   left.append(daily);
+  if (!shared && backupInfo) {
+    const backup = panel("Sauvegarde"),
+      date = node(
+        "p",
+        backupInfo.error
+          ? "Copie quotidienne à vérifier."
+          : backupInfo.last_daily_at
+            ? "Copie quotidienne locale : " +
+              new Date(backupInfo.last_daily_at).toLocaleString("fr-CA", {
+                timeZone: "America/Toronto",
+                dateStyle: "medium",
+                timeStyle: "short",
+              })
+            : "Aucune copie quotidienne disponible.",
+        "backup-date",
+      );
+    if (backupInfo.error)
+      backup.append(
+        node("p", "La copie automatique demande une vérification.", "warning"),
+      );
+    const link = node("a", "Télécharger une sauvegarde", "button-link");
+    link.href = "/api/export";
+    link.download = "";
+    backup.append(
+      date,
+      link,
+      node(
+        "p",
+        "La copie quotidienne reste sur ce Chromebook. Téléchargez le budget actuel pour le conserver ailleurs.",
+        "muted",
+      ),
+    );
+    backup.classList.add("backup-summary");
+    left.append(backup);
+  }
   return root;
 }

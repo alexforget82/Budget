@@ -433,3 +433,59 @@ test("shared purchase simulation matches owner decisions and cannot write or exp
   await f.call("/api/share", { action: "revoke" });
   await f.call(share + "/purchase", { amount: 10 }, 404);
 });
+
+test("daily backup status uses the actual copy time and exporting stays read-only; shared date has no export access", async (t) => {
+  const f = await launch(t);
+  let state = await setup(f);
+  assert.equal(state.balance_verified_on, today());
+  assert.equal(state.backup_status.error, null);
+  const file = path.join(
+    f.dir,
+    "backups",
+    "quotidienne-" + today() + ".sqlite",
+  );
+  assert.equal(
+    state.backup_status.last_daily_at,
+    fs.statSync(file).mtime.toISOString(),
+  );
+  state = await f.call("/api/account", { name: "Autre carte" });
+  assert.equal(
+    state.backup_status.last_daily_at,
+    fs.statSync(file).mtime.toISOString(),
+  );
+  const share = (await f.call("/api/share", { action: "create" })).result.path;
+  const before = (await f.call("/api/export")).tables;
+  const response = await fetch(f.base + "/api/export");
+  assert.match(response.headers.get("Content-Disposition"), /attachment/);
+  const saved = await response.json();
+  assert.equal(saved.format, "le-bas-de-laine");
+  assert.deepEqual(saved.tables, before);
+  const shared = await f.call(share + "/data");
+  assert.equal(shared.balance_verified_on, today());
+  assert.equal(shared.backup_status, undefined);
+  assert.deepEqual((await f.call("/api/export")).tables, before);
+});
+
+test("a damaged daily copy is reported as failed rather than assigned a fresh success date", async (t) => {
+  const f = await launch(t);
+  await setup(f);
+  const file = path.join(
+    f.dir,
+    "backups",
+    "quotidienne-" + today() + ".sqlite",
+  );
+  fs.writeFileSync(file, "copie interrompue");
+  const state = await f.call("/api/account", { name: "Carte valide" });
+  assert.ok(state.backup_status.error);
+  assert.equal(state.backup_status.last_daily_at, null);
+  assert.equal(
+    state.accounts.some((a) => a.name === "Carte valide"),
+    true,
+  );
+  const saved = await f.call("/api/export");
+  assert.equal(saved.format, "le-bas-de-laine");
+  assert.equal(
+    saved.tables.accounts.some((a) => a.name === "Carte valide"),
+    true,
+  );
+});

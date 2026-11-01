@@ -535,10 +535,16 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "0.5.0",
+      version: "0.5.1",
       configured: setting("configured", false),
       theme: "system",
       simulation,
+      balance_verified_on:
+        data.checkpoints
+          .filter(
+            (c) => c.account_id === data.accounts.find((a) => a.is_main)?.id,
+          )
+          .sort((a, b) => b.seq - a.seq)[0]?.date || null,
       account_balances: data.accounts
         .filter((a) => a.kind === "bank")
         .map((a) => ({ id: a.id, balance_cents: bankBalance(data, a.id) })),

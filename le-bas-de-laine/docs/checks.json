@@ -1,8 +1,8 @@
 {
-  "version": "0.5.0",
+  "version": "0.5.1",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 96,
+    "passed": 99,
     "failed": 0,
     "skipped": 0
   },
@@ -53,7 +53,12 @@
       "transfer edit/delete with confirmation and persistent filters",
       "description/category/account accent-insensitive search with category and month filters",
       "exact limit/spent/remaining/renewal overview",
-      "simple shared purchase decision with optional category/card/date"
+      "simple shared purchase decision with optional category/card/date",
+      "last main balance reference date",
+      "overdue pay/postpone shortcuts remove the reminder",
+      "actual JSON backup download matches all tables",
+      "local backup timestamp matches the file, damaged copy has no success date",
+      "shared status indicators have no treatment/export controls"
     ]
   },
   "comparison": {
@@ -83,7 +88,7 @@
     "Real data parity and a two-to-four-week parallel trial remain necessary before switching."
   ],
   "standalone_archive_tests": {
-    "passed": 94,
+    "passed": 97,
     "failed": 0,
     "skipped": 2,
     "skip_reason": "External Sillage reference program is not bundled."
@@ -159,5 +164,11 @@
     "cross_origin_rejected": true,
     "revoked_token_rejected": true,
     "private_guest_write_rejected": true
+  },
+  "backup_status": {
+    "timezone": "America/Toronto",
+    "timestamp_source": "daily SQLite file mtime",
+    "integrity_check": "read-only PRAGMA user_version and quick_check; cache invalidated by size/mtime",
+    "download_contents": "current JSON state, not the earlier daily snapshot"
   }
 }

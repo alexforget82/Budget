@@ -276,6 +276,7 @@ function render() {
       todayView(state.simulation, {
         shared: true,
         openPurchase: purchaseEditor,
+        balanceVerifiedOn: state.balance_verified_on,
       }),
     );
     return;
@@ -292,6 +293,9 @@ function render() {
           act: occurrenceAction,
           openPurchase: purchaseEditor,
           openTutorial: tutorialEditor,
+          balanceVerifiedOn: state.balance_verified_on,
+          backupInfo: state.backup_status,
+          openOverdue: overdueEditor,
         })
       : page === "transactions"
         ? transactionsView()
@@ -1162,6 +1166,23 @@ function planView() {
   const backups = node("div", null, "settings-card");
   backups.append(
     node("h3", "Vos données"),
+    node(
+      "p",
+      state.backup_status?.error
+        ? "Copie quotidienne à vérifier."
+        : state.backup_status?.last_daily_at
+          ? "Copie quotidienne locale : " +
+            new Date(state.backup_status.last_daily_at).toLocaleString(
+              "fr-CA",
+              {
+                timeZone: "America/Toronto",
+                dateStyle: "medium",
+                timeStyle: "short",
+              },
+            )
+          : "Aucune copie quotidienne disponible.",
+      "backup-date muted",
+    ),
     node(
       "p",
       "Une copie SQLite quotidienne est conservée sur cet appareil. Gardez aussi un export hors du Chromebook.",
@@ -2365,4 +2386,42 @@ function tutorialEditor() {
     "Suivant",
   );
   draw();
+}
+
+function overdueEditor() {
+  const events = state.simulation.upcoming.filter(
+      (e) => e.overdue && e.kind !== "income",
+    ),
+    content = node("div", null, "overdue-list");
+  if (!events.length) {
+    toast("Aucune échéance en retard.");
+    return;
+  }
+  for (const e of events) {
+    const row = node("div", null, "schedule-row"),
+      text = node("div");
+    text.append(
+      node("strong", e.name),
+      node("small", scheduleDate(e), "muted"),
+    );
+    const actions = node("div", null, "actions");
+    for (const [label, action] of [
+      [e.kind === "transfer" ? "Effectué" : "Payée", "pay"],
+      ["Montant…", "amount"],
+      ["Reporter", "postpone"],
+    ])
+      actions.append(
+        button(
+          label,
+          () => {
+            editor.close();
+            occurrenceAction(e, action);
+          },
+          "text-button",
+        ),
+      );
+    row.append(text, node("strong", money(e.amount_cents)), actions);
+    content.append(row);
+  }
+  modal("Échéances à traiter", content, null);
 }

@@ -31,12 +31,17 @@ if (
     !privateConfig.login)
 )
   throw Error("Configuration privée invalide.");
-let backupError = null;
+let backupError = null,
+  lastDailyBackupAt = null;
 function backupToday() {
   try {
-    if (store.setting("configured")) store.daily(today());
+    if (store.setting("configured")) {
+      const file = store.daily(today());
+      lastDailyBackupAt = fs.statSync(file).mtime.toISOString();
+    }
     backupError = null;
   } catch (e) {
+    lastDailyBackupAt = null;
     backupError =
       "Sauvegarde automatique impossible. Exportez une copie et vérifiez l’espace disque.";
     console.error(backupError + " " + e.message);
@@ -45,6 +50,10 @@ function backupToday() {
 function currentState() {
   const state = service.snapshot();
   if (backupError) state.simulation.warnings.push(backupError);
+  state.backup_status = {
+    last_daily_at: lastDailyBackupAt,
+    error: backupError,
+  };
   return state;
 }
 backupToday();
@@ -143,21 +152,22 @@ function handler(isPrivate) {
             provisional: quote.provisional,
           });
         }
-        if (shared[2] === "/data")
+        if (shared[2] === "/data") {
+          const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.5.0",
-            simulation: currentState().simulation,
+            version: "0.5.1",
+            simulation: snapshot.simulation,
+            balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
-              accounts: store
-                .state()
-                .accounts.filter((a) => a.is_main || a.kind === "card")
+              accounts: snapshot.accounts
+                .filter((a) => a.is_main || a.kind === "card")
                 .map((a) => ({ id: a.id, name: a.name })),
-              categories: store
-                .state()
-                .categories.filter((c) => c.active && c.limit_cents !== null)
+              categories: snapshot.categories
+                .filter((c) => c.active && c.limit_cents !== null)
                 .map((c) => ({ id: c.id, name: c.name })),
             },
           });
+        }
         const sharePath = "/s/" + shared[1];
         if (shared[2] === "/manifest.webmanifest") {
           const manifest = JSON.parse(
