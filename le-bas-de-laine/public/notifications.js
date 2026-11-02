@@ -140,7 +140,7 @@ export async function notificationsEditor({ request, modal }) {
           const wanted = details.checked,
             key = await request("/api/notifications/key", {}),
             registration = await navigator.serviceWorker.register(
-              "/sw.js?v=1.1.0",
+              "/sw.js?v=1.2.0",
               { scope: "/", updateViaCache: "none" },
             );
           await navigator.serviceWorker.ready;
@@ -175,10 +175,47 @@ export async function notificationsEditor({ request, modal }) {
         current = await request("/api/notifications/test", {
           endpoint: subscription.endpoint,
         });
+        render();
         error.className = "muted";
         error.textContent =
           "Test accepté par le service de notifications. Vérifiez votre iPhone.";
       });
+      if (current.device.last_test_sent_at) {
+        if (current.device.last_test_confirmed_at)
+          pane.append(
+            node(
+              "p",
+              "Réception du dernier test confirmée par vous.",
+              "notification-confirmed",
+            ),
+          );
+        else
+          action("J’ai reçu le test", async () => {
+            current = await request("/api/notifications/confirm", {
+              endpoint: subscription.endpoint,
+              kind: "test",
+            });
+            render();
+          });
+      }
+      if (current.device.last_sent_at) {
+        if (current.device.last_morning_confirmed_at)
+          pane.append(
+            node(
+              "p",
+              "Réception du dernier résumé confirmée par vous.",
+              "notification-confirmed",
+            ),
+          );
+        else
+          action("J’ai reçu le résumé", async () => {
+            current = await request("/api/notifications/confirm", {
+              endpoint: subscription.endpoint,
+              kind: "morning",
+            });
+            render();
+          });
+      }
       action("Désactiver sur cet appareil", async () => {
         await request("/api/notifications/unsubscribe", {
           endpoint: subscription.endpoint,
@@ -245,6 +282,17 @@ export async function notificationsEditor({ request, modal }) {
         "muted",
       ),
     );
+    const help = node("details"),
+      checks = node("ol");
+    for (const text of [
+      "Ouvrez l’icône de la version complète sur l’écran d’accueil (iOS 16.4 ou plus récent).",
+      "Vérifiez les autorisations iOS et le mode Concentration. Un envoi accepté n’est pas une preuve de réception.",
+      "Pour 7 h, gardez le Chromebook, Linux et le serveur éveillés et connectés. Tailscale est nécessaire pour ouvrir le budget.",
+    ]) {
+      checks.append(node("li", text));
+    }
+    help.append(node("summary", "Si rien n’arrive"), checks);
+    pane.append(help);
     if (current.devices_count) {
       const other = node("details"),
         pause = button("Suspendre tous les rappels", () =>

@@ -4,7 +4,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 ROOT=Path(__file__).resolve().parents[1]
 folder=tempfile.TemporaryDirectory(prefix='bdl-ui-');sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1];sock.close();base=f'http://127.0.0.1:{port}'
-log=open(Path(folder.name)/'server.log','w');server=subprocess.Popen(['node',str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_DATA':str(Path(folder.name)/'data'),'PORT':str(port)},stdout=log,stderr=log)
+log=open(Path(folder.name)/'server.log','w');server=subprocess.Popen(['node',str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(Path(folder.name)/'data'),'PORT':str(port)},stdout=log,stderr=log)
 def api(route,data=None):
  req=urllib.request.Request(base+route,data=None if data is None else json.dumps(data).encode(),headers={} if data is None else {'Content-Type':'application/json'})
  with urllib.request.urlopen(req) as r:return json.load(r)
@@ -35,7 +35,7 @@ try:
   token=api('/api/share',{'action':'create'})['result']['path'];page.goto(base+token);expect(page.locator('.hero-amount')).to_contain_text('770,00');expect(page.locator('#new-transaction')).to_be_hidden();expect(page.locator('.bottom-nav')).to_be_hidden();assert not page.get_by_role('button',name='Payée',exact=True).count()
   # Import preview and commit use the same resolved CSV mapping (no stale-token false alarm).
   page.goto(base+'/#transactions');page.get_by_role('button',name='Importer un CSV',exact=True).click();dialog=page.locator('#editor');bank=next(a for a in s['accounts'] if a['is_main']);dialog.get_by_label('Fichier CSV',exact=True).set_input_files({'name':'historique.csv','mimeType':'text/csv','buffer':('Date;Description;Montant\n'+reference+';Achat historique;-5,00').encode()});dialog.get_by_label('Compte',exact=True).select_option(str(bank['id']));dialog.get_by_label('Catégorie',exact=True).select_option(str(cat['id']));dialog.get_by_role('button',name='Voir l’aperçu',exact=True).click();expect(dialog.locator('.csv-row')).to_have_count(1);dialog.get_by_role('button',name='Importer les lignes choisies',exact=True).click();expect(dialog).not_to_be_visible();updated=api('/api/state');assert updated['simulation']['bank_cents']==100000 and updated['simulation']['available_cents']==77500
-  api('/api/recurrence',{'name':'Facture lointaine','kind':'expense','amount':10000,'account_id':bank['id'],'start_on':(datetime.date.fromisoformat(reference)+datetime.timedelta(days=89)).isoformat(),'frequency':'yearly','one_time':True});page.goto(base+'/#today');page.locator('#refresh').click();expect(page.locator('.forecast-message')).to_contain_text('Facture lointaine');assert api('/api/state')['simulation']['available_cents']==77500
+  api('/api/recurrence',{'name':'Facture lointaine','kind':'expense','amount':100000,'account_id':bank['id'],'start_on':(datetime.date.fromisoformat(reference)+datetime.timedelta(days=89)).isoformat(),'frequency':'yearly','day_adjust':'none','one_time':True});page.goto(base+'/#today');page.locator('#refresh').click();expect(page.locator('.forecast-message')).to_contain_text('Facture lointaine');assert api('/api/state')['simulation']['available_cents']==77500
   for mode in ['laine','slate','paper']:
    page.goto(base+'/maquettes?direction='+mode);expect(page.locator('.hero-amount')).to_be_visible()
    for width in [390,1440]:

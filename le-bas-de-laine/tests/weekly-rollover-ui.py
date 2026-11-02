@@ -12,7 +12,7 @@ def start(date):
  global server
  if server is not None:server.terminate();server.wait(timeout=5)
  clock.write_text("const Original=Date;const value="+json.dumps(date+'T16:00:00Z')+";globalThis.Date=class extends Original{constructor(...a){super(...(a.length?a:[value]));}static now(){return Original.parse(value);}};")
- server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
+ server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
  for _ in range(100):
   try:
    state=call('/api/state')

@@ -1,3 +1,11 @@
+# Vérifications — 1.2.0
+
+**157 tests Node réussis**. Neuf nouveaux scénarios couvrent les revenus échus et leur confirmation sans double ajout au solde, les suggestions sans mutation, la confirmation explicite d’un push par envoi, les versions numériques, la source et l’archive fixes, cache quotidien/concurrence, absence de réseau, réponses invalides et préférences sans effet financier.
+
+**Interface** : les 18 parcours Chromium passent, dont `usability-ui.py` (revenu nouveau ou déjà inclus, commerçant récent, priorité manuelle, période anticipée, mise à jour guidée et vue partagée) et `notifications-ui.py` (réception déclarée, permissions et réglages simulés). Contrôles mobiles à quatre largeurs et deux thèmes. Les tests désactivent les vérifications réseau automatiques; aucun budget réel utilisé.
+
+Le moteur financier n’est pas modifié. Les notifications nécessitent encore un test sur l’iPhone physique et l’observation des résumés de 7 h; une acceptation technique ne garantit pas leur affichage.
+
 # Vérifications — 1.1.0
 
 **148 tests Node réussis** : les 139 précédents et neuf scénarios supplémentaires. Chiffrement authentifié et déchiffrement récepteur, signature/audience/expiration VAPID, destinations/redirects/TTL, 7 h été/hiver, réservation persistante et concurrence, trois reprises maximum/expiration, scope propriétaire/adresse et suspension, confidentialité et seuil 79/80/85 %, corruption locale sans effet financier, service worker sans fetch et clic local, API privée/permissions/JSON financier inchangé/effacement suspendant les rappels. Aucun message réel envoyé par les tests.

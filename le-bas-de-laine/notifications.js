@@ -189,6 +189,15 @@ export function createNotifications({
             enabled: d.enabled,
             details: d.details,
             last_sent_at: d.last_sent_at || null,
+            last_test_sent_at: d.last_test_sent_at || null,
+            last_test_confirmed_at:
+              d.last_test_confirmed_for === d.last_test_sent_at
+                ? d.last_test_confirmed_at || null
+                : null,
+            last_morning_confirmed_at:
+              d.last_morning_confirmed_for === d.last_sent_at
+                ? d.last_morning_confirmed_at || null
+                : null,
             last_status: d.last_status || null,
             last_error: d.last_error || null,
           }
@@ -299,7 +308,24 @@ export function createNotifications({
       throw Error(result.message);
     }
     d.last_error = null;
+    d.last_test_sent_at = clock().toISOString();
+    d.last_test_confirmed_at = null;
+    d.last_test_confirmed_for = null;
     save();
+    return status(input.endpoint);
+  }
+  function confirm(input) {
+    const d = find(input.endpoint);
+    if (!d?.enabled || !["test", "morning"].includes(input.kind))
+      throw Error("Confirmation de réception invalide.");
+    const sent = input.kind === "test" ? d.last_test_sent_at : d.last_sent_at;
+    if (!sent) throw Error("Aucun envoi accepté à confirmer.");
+    const field = input.kind === "test" ? "last_test" : "last_morning";
+    if (d[field + "_confirmed_for"] !== sent) {
+      d[field + "_confirmed_for"] = sent;
+      d[field + "_confirmed_at"] = clock().toISOString();
+      save();
+    }
     return status(input.endpoint);
   }
   async function tick(now = clock()) {
@@ -382,6 +408,7 @@ export function createNotifications({
     unsubscribe,
     disableAll,
     test,
+    confirm,
     tick,
   };
 }

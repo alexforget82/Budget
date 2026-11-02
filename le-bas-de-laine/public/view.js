@@ -285,6 +285,7 @@ export function todayView(
     balanceVerifiedOn,
     backupInfo,
     openOverdue,
+    pendingIncome,
     shared = false,
   } = {},
 ) {
@@ -327,6 +328,61 @@ export function todayView(
     if (openOverdue && !shared)
       reminder.append(button("Traiter", openOverdue, "text-button"));
     root.append(reminder);
+  }
+  const unconfirmed =
+      pendingIncome ||
+      sim.daily[0].events.filter(
+        (e) => e.kind === "income" && e.awaiting_receipt,
+      ),
+    todayIncome = unconfirmed.filter((e) => e.date === sim.reference),
+    olderIncome = unconfirmed.filter((e) => e.date < sim.reference);
+  if (unconfirmed.length) {
+    const box = node("section", null, "income-awaiting"),
+      total = todayIncome.reduce((n, e) => n + e.amount_cents, 0);
+    box.append(
+      node(
+        "strong",
+        todayIncome.length
+          ? money(total) + " attendus aujourd’hui"
+          : "Revenus à confirmer",
+      ),
+      node(
+        "p",
+        "Ces revenus du jour ou passés n’ajoutent pas d’argent au disponible avant confirmation. Un revenu futur reste inclus dans la prévision.",
+      ),
+    );
+    const row = (e) => {
+      const r = node("div", null, "income-awaiting-row");
+      r.append(
+        node(
+          "span",
+          e.name + " · " + shortDate(e.date) + " · " + money(e.amount_cents),
+        ),
+      );
+      if (act && !shared)
+        r.append(button("Reçue", () => act(e, "pay"), "text-button"));
+      return r;
+    };
+    for (const e of todayIncome) box.append(row(e));
+    if (olderIncome.length) {
+      const details = node("details");
+      details.append(
+        node(
+          "summary",
+          olderIncome.length + " revenu(s) antérieur(s) à vérifier",
+        ),
+      );
+      for (const e of olderIncome) details.append(row(e));
+      box.append(details);
+    }
+    if (act && !shared)
+      box.append(
+        node(
+          "small",
+          "Si le dépôt figure déjà dans votre solde de référence, cochez cette option en le confirmant pour éviter un double ajout.",
+        ),
+      );
+    root.append(box);
   }
   const grid = node("div", null, "today-grid"),
     left = node("div", null, "left-stack"),

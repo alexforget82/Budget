@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory(prefix='bdl-real-recovery-') as tmp:
  node(f"import {{openDatabase}} from {json.dumps((root/'app/database.js').as_uri())};import {{createService}} from {json.dumps((root/'app/service.js').as_uri())};const db=openDatabase({json.dumps(str(data))});const api=createService(db,()=> '2026-11-10');db.atomic(()=>api.setup({{balance:1000,paychecks:[{{name:'Paie',amount:1000,start_on:'2026-11-25',frequency:'monthly',day_adjust:'none'}}],categories:[{{name:'Maison',limit:100,period:'monthly',renewal_day:1}}]}}));db.put('share_token','fake-recovery-token');db.db.close();")
  def run_app(expected,change=False):
   sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1];sock.close();base=f'http://127.0.0.1:{port}'
-  server=subprocess.Popen(['node','--import',str(clock),str(root/'app/server.js')],env={**os.environ,'BDL_DATA':str(data),'PORT':str(port)},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  server=subprocess.Popen(['node','--import',str(clock),str(root/'app/server.js')],env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(data),'PORT':str(port)},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   def call(path,payload=None):
    req=urllib.request.Request(base+path,data=None if payload is None else json.dumps(payload).encode(),headers={} if payload is None else {'Content-Type':'application/json'})
    with urllib.request.urlopen(req) as response:return json.load(response)

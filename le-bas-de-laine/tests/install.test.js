@@ -128,7 +128,7 @@ test("the installed copy opens its own real SQLite schema and serves the applica
       child = spawn(process.execPath, [path.join(root, "app/server.js")], {
         cwd: root,
         env: {
-          ...process.env,
+          ...process.env, BDL_UPDATE_CHECKS:"off",
           PORT: String(port),
           BDL_DATA: path.join(root, "data"),
         },
@@ -141,7 +141,7 @@ test("the installed copy opens its own real SQLite schema and serves the applica
           );
           const s = await response.json();
           if (response.ok) {
-            assert.equal(s.version, "1.1.0");
+            assert.equal(s.version, "1.2.0");
             assert.equal(s.configured, false);
             return true;
           }

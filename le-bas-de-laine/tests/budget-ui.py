@@ -11,7 +11,7 @@ def call(url,payload=None):
  with urllib.request.urlopen(req) as response:return json.load(response)
 captures=Path(os.environ.get('BDL_BUDGET_CAPTURES',tempfile.mkdtemp(prefix='bdl-budget-captures-')));captures.mkdir(parents=True,exist_ok=True)
 try:
- server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
+ server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
  for _ in range(100):
   try:state=call('/api/state');break
   except Exception:time.sleep(.05)

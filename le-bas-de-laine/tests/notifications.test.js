@@ -413,3 +413,49 @@ test("service worker displays push without fetching finances and notification cl
   assert.match(target.searchParams.get("rappel"), /^\d+$/);
   assert.equal(handlers.fetch, undefined);
 });
+
+test("test and morning reception confirmations are explicit, per-send and have no financial effect", async (t) => {
+  let now = new Date("2026-11-02T12:00:00Z");
+  const f = fixture(t, { clock: () => now }),
+    r = receiver();
+  f.controller.subscribe({ subscription: r.subscription });
+  const before = JSON.stringify(f.data);
+  assert.throws(
+    () =>
+      f.controller.confirm({ endpoint: r.subscription.endpoint, kind: "test" }),
+    /Aucun/,
+  );
+  await f.controller.test({ endpoint: r.subscription.endpoint });
+  let device = f.controller.status(r.subscription.endpoint).device;
+  assert.ok(device.last_test_sent_at);
+  assert.equal(device.last_test_confirmed_at, null);
+  device = f.controller.confirm({
+    endpoint: r.subscription.endpoint,
+    kind: "test",
+  }).device;
+  assert.ok(device.last_test_confirmed_at);
+  await f.controller.test({ endpoint: r.subscription.endpoint });
+  assert.equal(
+    f.controller.status(r.subscription.endpoint).device.last_test_confirmed_at,
+    null,
+  );
+  await f.controller.tick(now);
+  assert.equal(
+    f.controller.status(r.subscription.endpoint).device
+      .last_morning_confirmed_at,
+    null,
+  );
+  f.controller.confirm({ endpoint: r.subscription.endpoint, kind: "morning" });
+  assert.ok(
+    f.controller.status(r.subscription.endpoint).device
+      .last_morning_confirmed_at,
+  );
+  now = new Date("2026-11-03T12:00:00Z");
+  await f.controller.tick(now);
+  assert.equal(
+    f.controller.status(r.subscription.endpoint).device
+      .last_morning_confirmed_at,
+    null,
+  );
+  assert.equal(JSON.stringify(f.data), before);
+});

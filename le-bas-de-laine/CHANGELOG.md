@@ -1,3 +1,11 @@
+# 1.2.0 — saisie et suivi plus clairs
+
+Revenus échus visibles avant le disponible, confirmation du montant et de la date, avec choix explicite pour un dépôt déjà compris dans le solde de référence. Commerçants récents normalisés proposant catégorie et compte sans reprendre montant ou ancienne date; choix manuels conservés.
+
+Notifications : confirmation de réception par l’utilisateur, séparée de l’acceptation technique du test ou du résumé, et diagnostic iPhone. Vérification quotidienne facultative des versions publiques GitHub, annonce d’une version disponible et installation Chromebook guidée, volontaire, avec sauvegarde par l’installateur existant. Aucun budget envoyé à GitHub.
+
+Moteur de prévision, limites, schéma 3 et JSON 3 inchangés. Vue simplifiée conservée. Validation : 157 tests Node et parcours navigateur sur données fictives; aucune livraison physique iPhone revendiquée.
+
 # 1.1.0 — résumé du matin à 7 h
 
 Notifications Web Push propriétaires, activées explicitement depuis l’application complète sur l’écran d’accueil iPhone. Résumé quotidien à 7 h America/Toronto, changement d’heure automatique et reprise avant 8 h. Détails masqués par défaut; option pour revenus/paiements prévus, renouvellements et limites à 80 % ou plus. Test, préférences par appareil, désactivation et suspension globale. Aucun envoi activé par la mise à jour seule; la vue simplifiée reste inchangée.

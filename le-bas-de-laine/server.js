@@ -1,3 +1,4 @@
+import { createUpdateChecker } from "./updates.js";
 import { createNotifications } from "./notifications.js";
 import { purchaseQuote } from "./purchase.js";
 import { monthlyBudget } from "./budget.js";
@@ -48,6 +49,20 @@ const notificationTick = () =>
     );
 setTimeout(notificationTick, 10000).unref();
 setInterval(notificationTick, 60000).unref();
+const updates = createUpdateChecker({
+  dir: data,
+  version: JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"))
+    .version,
+});
+const checkUpdates = () => {
+  if (
+    process.env.BDL_UPDATE_CHECKS !== "off" &&
+    store.setting("configured", false)
+  )
+    updates.check().catch(() => {});
+};
+setTimeout(checkUpdates, 20000).unref();
+setInterval(checkUpdates, 3600000).unref();
 let backupError = null,
   lastDailyBackupAt = null;
 function backupToday() {
@@ -137,6 +152,9 @@ function handler(isPrivate) {
           "/periods.js",
           "/sw.js",
           "/notifications.js",
+          "/merchant.js",
+          "/recent.js",
+          "/updates.js",
           "/styles.css",
           "/logo.svg",
           "/logo.png",
@@ -175,7 +193,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "1.1.0",
+            version: "1.2.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -237,6 +255,8 @@ function handler(isPrivate) {
             today(),
           ),
         );
+      if (req.method === "GET" && url.pathname === "/api/updates/status")
+        return reply(res, 200, updates.status());
       if (req.method === "GET" && url.pathname === "/api/notifications/status")
         return reply(res, 200, notifications.status());
       if (req.method === "GET" && url.pathname === "/api/classify")
@@ -265,6 +285,10 @@ function handler(isPrivate) {
         )
           return reply(res, 403, { error: "Origine ou format refusé." });
         const x = await body(req);
+        if (url.pathname === "/api/updates/check")
+          return reply(res, 200, await updates.check({ force: true }));
+        if (url.pathname === "/api/updates/preferences")
+          return reply(res, 200, updates.preferences(x));
         if (url.pathname.startsWith("/api/notifications/")) {
           const action = url.pathname.slice("/api/notifications/".length);
           let value;
@@ -280,6 +304,7 @@ function handler(isPrivate) {
             notifications.disableAll();
             value = notifications.status(x.endpoint);
           } else if (action === "test") value = await notifications.test(x);
+          else if (action === "confirm") value = notifications.confirm(x);
           else
             return reply(res, 404, {
               error: "Action de notification introuvable.",
@@ -474,6 +499,9 @@ function handler(isPrivate) {
         "/periods.js": "periods.js",
         "/sw.js": "sw.js",
         "/notifications.js": "notifications.js",
+        "/merchant.js": "merchant.js",
+        "/recent.js": "recent.js",
+        "/updates.js": "updates.js",
         "/demo.json": "demo.json",
         "/styles.css": "styles.css",
         "/logo.svg": "logo.svg",

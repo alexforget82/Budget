@@ -1,3 +1,5 @@
+import { updatesEditor } from "./updates.js";
+import { recentMerchants, recentFor } from "./recent.js";
 import { notificationsEditor } from "./notifications.js";
 import { periodStart, nextPeriod } from "./periods.js";
 import {
@@ -16,6 +18,16 @@ import {
 const shared = location.pathname.match(/^\/s\/[^/]+/),
   editor = $("#editor"),
   editorForm = $("#editor-form");
+let updateStatus = null;
+const openUpdates = () =>
+  updatesEditor({
+    request,
+    modal,
+    onStatus: (value) => {
+      updateStatus = value;
+      render();
+    },
+  });
 let state,
   page = location.hash.slice(1) || "today",
   saveEditor,
@@ -328,11 +340,20 @@ function render() {
           balanceVerifiedOn: state.balance_verified_on,
           backupInfo: state.backup_status,
           openOverdue: overdueEditor,
+          pendingIncome: state.pending_income,
         })
       : page === "transactions"
         ? transactionsView()
         : planView(),
   );
+  if (updateStatus?.available && page !== "transactions")
+    $("#main").prepend(
+      button(
+        "Version " + updateStatus.latest.version + " disponible",
+        openUpdates,
+        "update-notice",
+      ),
+    );
   if (page === "today" && state.review_count)
     $("#main").prepend(
       button(
@@ -358,6 +379,15 @@ async function refresh() {
   try {
     state = await request(shared ? shared[0] + "/data" : "/api/state");
     render();
+    if (!shared) {
+      try {
+        const next = await request("/api/updates/status");
+        if (JSON.stringify(next) !== JSON.stringify(updateStatus)) {
+          updateStatus = next;
+          render();
+        }
+      } catch {}
+    }
   } catch (e) {
     $("#main").replaceChildren(
       node("p", e.message, "warning"),
@@ -422,7 +452,11 @@ function transactionEditor(old) {
       (o) => o.status === "paid" && o.transaction_id === old.id,
     );
   rememberLabel.hidden = !!linked;
+  const initialAccount = account.value;
   let userCategory = false,
+    userAccount = false,
+    autoAccount = false,
+    periodContext = "",
     autoCategory = "";
   let suggestions = [],
     timer,
@@ -435,6 +469,19 @@ function transactionEditor(old) {
     periodLabel.hidden = true;
     matchBox.hidden = true;
     if (isTransfer) return;
+    const recent = !old
+      ? recentFor(state, description.value, direction.value)
+      : null;
+    if (!old && !userAccount) {
+      if (recent) {
+        account.value = String(recent.account_id);
+        autoAccount = true;
+      } else if (autoAccount) {
+        account.value = initialAccount;
+        autoAccount = false;
+      }
+    }
+
     if (!old && !userCategory && amount.value && description.value) {
       try {
         const proposal = await request(
@@ -451,6 +498,17 @@ function transactionEditor(old) {
           autoCategory = category.value;
           ruleHint.textContent =
             "Proposition : " + proposal.pattern + ". Vous pouvez la modifier.";
+        } else if (recent) {
+          category.value = String(recent.category_id || "");
+          autoCategory = category.value;
+          ruleHint.textContent =
+            "Dernier achat : " +
+            (state.categories.find((c) => c.id === recent.category_id)?.name ||
+              "Sans catégorie") +
+            " · " +
+            (state.accounts.find((a) => a.id === Number(account.value))?.name ||
+              "") +
+            ". Modifiable.";
         } else {
           if (category.value === autoCategory) category.value = "";
           autoCategory = "";
@@ -464,11 +522,21 @@ function transactionEditor(old) {
     if (c) {
       const start = periodStart(c, date.value),
         next = nextPeriod(c, start);
+      const context = category.value + ":" + date.value,
+        chosen = period.value;
       period.replaceChildren(
         new Option("Cette période · " + shortDate(start), start),
         new Option("La prochaine · " + shortDate(next), next),
       );
-      period.value = old?.period_on || start;
+      period.value =
+        periodContext === context && [start, next].includes(chosen)
+          ? chosen
+          : old?.category_id === Number(category.value) &&
+              old?.date === date.value &&
+              [start, next].includes(old?.period_on)
+            ? old.period_on
+            : start;
+      periodContext = context;
       periodLabel.hidden = false;
     }
     if (old || !amount.value || !date.value) return;
@@ -512,17 +580,53 @@ function transactionEditor(old) {
     }
   };
   direction.onchange = update;
-  account.onchange = update;
+  account.onchange = () => {
+    userAccount = true;
+    update();
+  };
   category.onchange = () => {
     userCategory = true;
     ruleHint.textContent = "";
     update();
   };
   date.onchange = update;
+  const recentBox = node("details", null, "recent-purchases"),
+    recentRows = !old ? recentMerchants(state) : [],
+    recentChoice = select("recent_merchant", [
+      ["", "Choisir…"],
+      ...recentRows.map((t, i) => [
+        i,
+        t.description +
+          " · " +
+          (state.accounts.find((a) => a.id === t.account_id)?.name || ""),
+      ]),
+    ]);
+  recentBox.append(
+    node("summary", "Commerçants récents"),
+    field("Réutiliser un commerçant", recentChoice),
+    node(
+      "small",
+      "Catégorie et moyen proposés; montant non recopié et date par défaut aujourd’hui.",
+      "muted",
+    ),
+  );
+  recentChoice.onchange = () => {
+    if (recentChoice.value === "") return;
+    const t = recentRows[Number(recentChoice.value)];
+    direction.value = "expense";
+    description.value = t.description;
+    account.value = String(t.account_id);
+    category.value = String(t.category_id || "");
+    userCategory = false;
+    userAccount = false;
+    autoCategory = category.value;
+    update();
+  };
   const content = [
     field("Type", direction),
     field("Montant", amount),
     field("Description", description),
+    ...(!old && recentRows.length ? [recentBox] : []),
     group,
     ruleHint,
     rememberLabel,
@@ -598,7 +702,7 @@ function checkpoint() {
 }
 async function occurrenceAction(o, action) {
   try {
-    if (action === "pay") {
+    if (action === "pay" && o.kind !== "income") {
       await send(
         "/api/occurrence",
         { ...o, action: "pay", date: dateNow() },
@@ -671,6 +775,13 @@ async function occurrenceAction(o, action) {
         action === "postpone" ? addDays(dateNow(), 1) : dateNow(),
       ),
       amount = amountField("amount", o.amount_cents / 100);
+    date.max = action === "postpone" ? "" : dateNow();
+    const included = input("included_income", "checkbox"),
+      includedLabel = node("label", null, "check");
+    includedLabel.append(
+      included,
+      node("span", "Déjà compris dans le solde bancaire de référence"),
+    );
     if (action === "postpone") {
       date.min = dateNow();
       modal("Reporter " + o.name, [field("Nouvelle date", date)], () =>
@@ -682,6 +793,18 @@ async function occurrenceAction(o, action) {
         [
           field("Montant réel", amount),
           field("Date réelle", date),
+          ...(o.kind === "income"
+            ? [
+                includedLabel,
+                node(
+                  "p",
+                  "Dernier solde de référence : " +
+                    shortDate(state.balance_verified_on || dateNow()) +
+                    ". Cochez seulement si ce solde contient déjà le dépôt.",
+                  "muted",
+                ),
+              ]
+            : []),
           node("p", "Seule cette échéance sera modifiée.", "muted"),
         ],
         () =>
@@ -690,6 +813,7 @@ async function occurrenceAction(o, action) {
             action: "pay",
             amount: amount.value,
             date: date.value,
+            included: o.kind === "income" && included.checked,
           }),
       );
   } catch (e) {
@@ -1719,6 +1843,7 @@ function planView() {
   download.download = "";
   actions.append(
     guide,
+    button("Mises à jour", openUpdates),
     button("Notifications du matin", () =>
       notificationsEditor({ request, modal }),
     ),

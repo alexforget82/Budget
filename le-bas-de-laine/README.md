@@ -1,4 +1,4 @@
-# Le bas de laine · 1.1.0
+# Le bas de laine · 1.2.0
 
 Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Node.js et SQLite, sans dépendance de production, abonnement ni synchronisation bancaire. Sillage et ses données restent séparés.
 
@@ -7,7 +7,7 @@ Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **
 Linux doit être activé; Node.js **22.13 ou plus récent** est requis (Node 24 recommandé). Téléchargez et extrayez l’archive dans **Fichiers Linux**, puis :
 
 ```bash
-cd ~/Le-bas-de-laine-1.1.0 && bash "Installer Le bas de laine.sh"
+cd ~/Le-bas-de-laine-1.2.0 && bash "Installer Le bas de laine.sh"
 ```
 
 Ouvrez **http://localhost:3040** ou le lanceur **Le bas de laine**, puis actualisez après une mise à jour. Le programme va dans `~/.local/share/le-bas-de-laine/app`, le budget dans `data`, les copies d’installation dans `backups`. Le service `le-bas-de-laine.service` fonctionne sans Terminal ouvert et démarre avec Linux. ChromeOS ne lance pas forcément Linux à l’ouverture de session; l’accès iPhone nécessite un Chromebook allumé, éveillé et connecté.
@@ -54,7 +54,7 @@ Configurez Tailscale sur le Chromebook et l’iPhone, puis lancez au besoin `bas
 
 `npm test` lance les tests Node; les parcours Chromium, essais de restauration et limites de validation sont décrits dans [docs/TESTS.md](docs/TESTS.md). Les essais automatisés ne remplacent pas l’utilisation réelle sur Chromebook et iPhone. L’historique des versions est dans [CHANGELOG.md](CHANGELOG.md), le contrat de calcul dans [docs/SPECIFICATION.md](docs/SPECIFICATION.md). Les anciennes maquettes statiques restent des documents de référence.
 
-## Résumé du matin sur iPhone (1.1.0)
+## Résumé du matin sur iPhone (1.2.0)
 
 Sur l’iPhone propriétaire, ouvrez la version complète depuis son icône d’écran d’accueil, puis **Plan → Réglages et sauvegardes → Notifications du matin → Activer sur cet appareil**. Acceptez l’autorisation iOS et utilisez **Envoyer un test**. Si vous êtes dans Safari, ajoutez d’abord l’application à l’écran d’accueil. iOS 16.4 ou plus récent et l’accès HTTPS privé configuré sont requis.
 
@@ -65,3 +65,13 @@ Par défaut, le contenu dit seulement que votre résumé est prêt. L’option A
 Chaque appareil s’active séparément. Désactivez cet appareil ou suspendez tous les rappels depuis ce panneau. Le lien simplifié de la conjointe n’a pas ces commandes et ne reçoit rien sans activation propriétaire. Le bouton Test vérifie l’acceptation par le service; confirmez ensuite la réception sur l’iPhone.
 
 Envoi Web Push chiffré, sans clé API payante ni dépendance de production. Les clés locales et abonnements sont dans `data/web-push.json`, permissions privées, exclus de l’export JSON du budget. Ils restent dans les copies complètes de données faites lors des installations; une restauration du budget sur une autre machine exige de réactiver les appareils. Ne partagez pas ce fichier. Le service worker ne cache pas de pages et ne récupère pas de données financières en arrière-plan.
+
+## Nouveautés 1.2
+
+Les revenus attendus aujourd’hui et ceux des 30 derniers jours restent visibles tant que leur réception n’est pas confirmée. **Reçue** demande le montant réel et la date. Cochez **Déjà compris dans le solde bancaire de référence** uniquement si votre dernier solde saisi comprend ce dépôt : il sera clos sans ajouter l’argent une deuxième fois. Les revenus futurs restent dans la prévision; un revenu arrivé à échéance attend votre confirmation.
+
+À la saisie, les commerçants récents proposent la catégorie et le moyen de paiement, modifiables. Le montant reste vide et la date reste celle du jour. Une modification manuelle de catégorie ou de compte garde priorité.
+
+Dans Notifications du matin, **J’ai reçu le test** confirme votre observation, distincte de l’acceptation par le service de push. Même principe pour le dernier résumé du matin. L’application ne peut pas prouver seule que l’iPhone a affiché la notification.
+
+**Plan → Réglages et sauvegardes → Mises à jour** vérifie la dernière version publiée. Une vérification quotidienne ne télécharge que les informations publiques de version GitHub, sans données du budget; elle peut être désactivée. L’installation reste volontaire : télécharger, extraire, lancer le bloc indiqué, actualiser. L’installateur sauvegarde avant remplacement. Une erreur de connexion ne bloque pas le budget. Les commandes de mise à jour et de notifications restent réservées à la version complète.

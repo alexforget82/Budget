@@ -2038,3 +2038,12 @@
 .notifications-settings details p { margin-block: 10px; }
 .notifications-settings .error:empty { display: none; }
 @media(max-width:600px){ .notification-actions button { flex:1 1 160px; } }
+.income-awaiting { padding:16px; margin-bottom:20px; border:1px solid var(--line); border-radius:var(--radius); background:var(--accent-soft); }
+.income-awaiting p,.income-awaiting small { margin-top:8px; font-size:13px; }
+.income-awaiting-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding-top:8px; }
+.income-awaiting details { margin-top:10px; }
+.recent-purchases select { width:100%; margin-top:8px; }
+.updates-panel { display:grid; gap:14px; }
+.updates-panel code { display:block; white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; padding:10px; background:var(--accent-soft); border-radius:8px; }
+.updates-panel ol { padding-left:20px; }
+.update-notice { margin-bottom:16px; padding:10px 16px; border:1px solid var(--line); border-radius:10px; background:var(--accent-soft); }

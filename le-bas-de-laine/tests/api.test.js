@@ -24,7 +24,12 @@ export async function launch(t, privateAccess = false) {
   const port = probe.address().port;
   await new Promise((r) => probe.close(r));
   const child = spawn(process.execPath, [path.join(root, "server.js")], {
-    env: { ...process.env, BDL_DATA: dir, PORT: String(port) },
+    env: {
+      ...process.env,
+      BDL_UPDATE_CHECKS: "off",
+      BDL_DATA: dir,
+      PORT: String(port),
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let log = "";
@@ -700,4 +705,38 @@ test("notification enrollment is private, per-device, outside JSON finances, and
   assert.equal(worker.status, 200);
   assert.match(worker.headers.get("content-type"), /javascript/);
   assert.equal(worker.headers.get("cache-control"), "no-store");
+});
+
+test("pending receipt and update preferences do not silently change budget cash", async (t) => {
+  const f = await launch(t);
+  await f.call("/api/setup", {
+    balance: 1000,
+    paychecks: [
+      {
+        name: "Allocation",
+        amount: 100,
+        start_on: today(),
+        frequency: "monthly",
+        day_adjust: "none",
+      },
+    ],
+    categories: [],
+  });
+  const before = await f.call("/api/state");
+  assert.equal(before.pending_income.length, 1);
+  const backup = (await f.call("/api/export")).tables;
+  assert.equal((await f.call("/api/updates/status")).available, false);
+  await f.call("/api/updates/preferences", { automatic: false });
+  assert.deepEqual((await f.call("/api/export")).tables, backup);
+  const after = await f.call("/api/occurrence", {
+    rule_id: before.recurrences[0].id,
+    original_on: today(),
+    action: "pay",
+    amount: 100,
+    included: true,
+    date: today(),
+  });
+  assert.equal(after.pending_income.length, 0);
+  assert.equal(after.simulation.bank_cents, 100000);
+  assert.equal(after.transactions[0].included, 1);
 });

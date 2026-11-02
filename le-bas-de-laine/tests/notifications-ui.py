@@ -2,7 +2,7 @@
 import os,json,socket,subprocess,tempfile,time,urllib.request,shutil,base64
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-ROOT=Path(__file__).resolve().parents[1];tmp=tempfile.TemporaryDirectory(prefix='bdl-notify-ui-');sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1];sock.close();base=f'http://127.0.0.1:{port}';log=open(Path(tmp.name)/'server.log','w');server=subprocess.Popen(['node',str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_DATA':str(Path(tmp.name)/'data'),'PORT':str(port)},stdout=log,stderr=log)
+ROOT=Path(__file__).resolve().parents[1];tmp=tempfile.TemporaryDirectory(prefix='bdl-notify-ui-');sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1];sock.close();base=f'http://127.0.0.1:{port}';log=open(Path(tmp.name)/'server.log','w');server=subprocess.Popen(['node',str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(Path(tmp.name)/'data'),'PORT':str(port)},stdout=log,stderr=log)
 point=bytes.fromhex('046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5');public=base64.urlsafe_b64encode(point).decode().rstrip('=');endpoint='https://web.push.apple.com/fake-browser-ui'
 mock='''(() => {const key=Uint8Array.from(atob(KEY.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));const tracker=window.__pushTest={permissions:0,registrations:0,subscriptions:0,unsubscriptions:0};let registered=false,hasSub=false;class MockNotification{}MockNotification.permission='default';MockNotification.requestPermission=async()=>{tracker.permissions++;MockNotification.permission='granted';return 'granted';};Object.defineProperty(window,'Notification',{value:MockNotification,configurable:true});Object.defineProperty(window,'PushManager',{value:class{},configurable:true});const sub={endpoint:ENDPOINT,options:{applicationServerKey:key.buffer},toJSON:()=>({endpoint:ENDPOINT,keys:{p256dh:KEY,auth:'AAAAAAAAAAAAAAAAAAAAAA'}}),unsubscribe:async()=>{hasSub=false;tracker.unsubscriptions++;return true;}};const registration={pushManager:{getSubscription:async()=>hasSub?sub:null,subscribe:async(options)=>{if(!options.userVisibleOnly)throw Error('userVisibleOnly');tracker.subscriptions++;hasSub=true;return sub;}}};Object.defineProperty(navigator,'serviceWorker',{value:{getRegistration:async()=>registered?registration:undefined,register:async(url,options)=>{if(!url.startsWith('/sw.js')||options.scope!=='/')throw Error('scope');tracker.registrations++;registered=true;return registration;},ready:Promise.resolve(registration)},configurable:true});})();'''.replace('KEY',json.dumps(public)).replace('ENDPOINT',json.dumps(endpoint))
 def call(url,payload=None):
@@ -12,7 +12,7 @@ try:
  for _ in range(100):
   try:state=call('/api/state');break
   except Exception:time.sleep(.05)
- call('/api/setup',{'balance':1000,'paychecks':[{'name':'Paie','amount':1000,'start_on':state['simulation']['reference'],'frequency':'monthly','day_adjust':'none'}],'categories':[]});baseline=call('/api/export')['tables'];backend={'enabled':False,'details':False,'known':False,'tests':0}
+ call('/api/setup',{'balance':1000,'paychecks':[{'name':'Paie','amount':1000,'start_on':state['simulation']['reference'],'frequency':'monthly','day_adjust':'none'}],'categories':[]});baseline=call('/api/export')['tables'];backend={'enabled':False,'details':False,'known':False,'tests':0,'test_sent':None,'test_confirmed':None,'confirmations':0}
  def intercept(route):
   action=route.request.url.rsplit('/',1)[-1];data=json.loads(route.request.post_data or '{}')
   if action=='key':out={'public_key':public}
@@ -21,13 +21,14 @@ try:
    if action=='preferences':backend['details']=data['details']
    if action=='unsubscribe':backend.update(enabled=False,known=False)
    if action=='pause':backend['enabled']=False
-   if action=='test':backend['tests']+=1
-   device={'enabled':backend['enabled'],'details':backend['details'],'last_sent_at':None,'last_error':None,'last_status':None} if backend['known'] and (data.get('endpoint') or action in ['subscribe','preferences','test']) else None
+   if action=='test':backend['tests']+=1;backend['test_sent']='2026-11-02T12:00:00Z';backend['test_confirmed']=None
+   if action=='confirm':backend['confirmations']+=1;backend['test_confirmed']='2026-11-02T12:01:00Z'
+   device={'enabled':backend['enabled'],'details':backend['details'],'last_sent_at':None,'last_error':None,'last_status':None,'last_test_sent_at':backend['test_sent'],'last_test_confirmed_at':backend['test_confirmed'],'last_morning_confirmed_at':None} if backend['known'] and (data.get('endpoint') or action in ['subscribe','preferences','test']) else None
    out={'hour':7,'time_zone':'America/Toronto','threshold_percent':80,'can_activate':True,'devices_count':int(backend['enabled']),'error':None,'device':device}
   route.fulfill(status=200,content_type='application/json',body=json.dumps(out))
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('chromium'));page=browser.new_page(locale='fr-CA');page.add_init_script(mock);page.route('**/api/notifications/**',intercept);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'/#plan');page.locator('.settings').get_by_text('Réglages et sauvegardes',exact=True).click();page.get_by_role('button',name='Notifications du matin',exact=True).click();dialog=page.locator('#editor');expect(dialog).to_contain_text('7 h');expect(dialog.get_by_role('checkbox',name='Afficher les montants et les noms sur l’écran verrouillé')).not_to_be_checked();page.get_by_role('button',name='Activer sur cet appareil',exact=True).click();expect(dialog).to_contain_text('Actif sur cet appareil');assert page.evaluate('window.__pushTest.permissions')==1;assert backend['details'] is False
-  dialog.get_by_role('button',name='Envoyer un test',exact=True).click();expect(dialog).to_contain_text('Test accepté');assert backend['tests']==1;dialog.get_by_role('checkbox',name='Afficher les montants et les noms sur l’écran verrouillé').check();page.wait_for_timeout(100);assert backend['details'] is True
+  dialog.get_by_role('button',name='Envoyer un test',exact=True).click();expect(dialog).to_contain_text('Test accepté');assert backend['tests']==1;dialog.get_by_role('button',name='J’ai reçu le test',exact=True).click();expect(dialog).to_contain_text('Réception du dernier test confirmée par vous.');assert backend['confirmations']==1;dialog.get_by_role('checkbox',name='Afficher les montants et les noms sur l’écran verrouillé').check();page.wait_for_timeout(100);assert backend['details'] is True
   for width in [320,390,768,1440]:
    for theme in ['light','dark']:
     page.set_viewport_size({'width':width,'height':844});page.emulate_media(color_scheme=theme);assert dialog.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),(width,theme)

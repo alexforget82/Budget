@@ -1,3 +1,4 @@
+import { pendingIncome } from "./pending-income.js";
 import { matchingRule, normalizeMerchant } from "./classification.js";
 import { createHash } from "node:crypto";
 import {
@@ -736,6 +737,7 @@ export function createService(store, clock = today) {
           description: o.name,
           amount: ((o.kind === "income" ? 1 : -1) * cents(amount)) / 100,
           date: on,
+          included: o.kind === "income" && x.included === true,
         });
         markPaid(o, id, null);
       }
@@ -787,7 +789,7 @@ export function createService(store, clock = today) {
       );
     return {
       ...data,
-      version: "1.1.0",
+      version: "1.2.0",
       configured: setting("configured", false),
       theme: "system",
       simulation,
@@ -801,6 +803,7 @@ export function createService(store, clock = today) {
         .filter((a) => a.kind === "bank")
         .map((a) => ({ id: a.id, balance_cents: bankBalance(data, a.id) })),
       last_import: lastImport,
+      pending_income: pendingIncome(data, clock()),
       review_count: data.transactions.filter((t) => !t.reviewed).length,
       review_rule_ids: data.transactions
         .filter(

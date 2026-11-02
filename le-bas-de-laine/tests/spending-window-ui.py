@@ -10,7 +10,7 @@ def call(url,payload=None):
  req=urllib.request.Request(base+url,data=None if payload is None else json.dumps(payload).encode(),headers={} if payload is None else {'Content-Type':'application/json'})
  with urllib.request.urlopen(req) as response:return json.load(response)
 try:
- server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
+ server=subprocess.Popen(['node','--import',str(clock),str(ROOT/'server.js')],cwd=ROOT,env={**os.environ,'BDL_UPDATE_CHECKS':'off','BDL_DATA':str(data),'PORT':str(port)},stdout=log,stderr=log)
  for _ in range(100):
   try:state=call('/api/state');break
   except Exception:time.sleep(.05)

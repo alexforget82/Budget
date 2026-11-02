@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 148,
+    "passed": 157,
     "failed": 0,
     "skipped": 0
   },
@@ -73,7 +73,11 @@
       "classification rules, manual/CSV overrides, review counter/filter, bulk category preview, private shared interface",
       "1.0 labels and integrated owner guide",
       "16px mobile controls, 44px buttons and compact-height dialog actions",
-      "notification consent/preferences/test/disable UI with mocked push APIs; no financial mutations"
+      "notification consent/preferences/test/disable UI with mocked push APIs; no financial mutations",
+      "pending receipt new or already in reference balance",
+      "recent merchant preserves manual choices and anticipated period",
+      "guided voluntary update and optional daily metadata check",
+      "push receipt explicitly confirmed by user"
     ],
     "suites_passed": 4,
     "targeted_suites_passed": 4,
@@ -199,7 +203,7 @@
     "schema_tables": 8
   },
   "recovery": {
-    "real_programs": "0.9.0 -> 1.1.0 -> 0.9.0",
+    "real_programs": "0.9.0 -> 1.2.0 -> 0.9.0",
     "real_http_json_restore": true,
     "sqlite_migration_failure_rollback": true,
     "recent_budget_preserved": true,
@@ -214,5 +218,10 @@
     "independent_decryption_reference": "http_ece via web-push 3.6.7, development only",
     "default_details": false,
     "budget_schema_unchanged": true
+  },
+  "updates": {
+    "public_metadata_only": true,
+    "automatic_installation": false,
+    "financial_engine_unchanged": true
   }
 }

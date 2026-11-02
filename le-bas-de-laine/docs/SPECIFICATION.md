@@ -35,3 +35,11 @@ Deux fois par mois utilise un premier jour 1–27 et un second postérieur jusqu
 Les souscriptions et clés VAPID sont dans un fichier local 0600, hors des neuf tables et hors du JSON du budget. Activation liée à l’adresse privée et au propriétaire; changement de scope = réactivation. Réservation par date persistée avant l’envoi, pour ne pas dupliquer une tentative incertaine après redémarrage. Les refus connus peuvent réessayer après cinq minutes, au plus trois fois dans le créneau; les réponses 404/410 désactivent l’abonnement. Même tag de jour et renotify=false. L’acceptation par le service n’est pas une preuve de réception sur iPhone.
 
 Destination HTTPS limitée aux services Apple/Google/Mozilla/Microsoft connus, sans redirection; payload AES128GCM RFC8291/8188, signature VAPID ES256. Service worker sans interception fetch, sans cache, sans chargement de données du budget; un clic ouvre uniquement le tableau de bord de sa propre origine. L’effacement du budget suspend les rappels. Ni notification ni marqueur d’envoi ne modifie un calcul financier.
+
+## Suivi et saisie 1.2
+
+Le moteur financier reste identique. La liste des revenus échus couvre les 30 derniers jours, respecte report, annulation et montant exceptionnel. Recevoir un revenu crée la transaction existante; le drapeau déjà inclus clôt l’échéance sans modifier une seconde fois le solde de référence.
+
+Les suggestions de commerçant sont normalisées et classées par date réelle puis ordre de saisie. Elles ne recopient ni montant ni date/période et ne remplacent pas les choix manuels.
+
+La confirmation de notification est une déclaration de l’utilisateur, rattachée au dernier envoi de l’appareil, pas un accusé de livraison Apple. Les préférences/cache de mises à jour sont locaux hors JSON financier; vérification limitée à une source publique fixe, URL d’archive par tag validée, réponse bornée et délai limité. Aucune installation distante automatique.
