@@ -1,3 +1,17 @@
+# Vérifications — 1.1.0
+
+**148 tests Node réussis** : les 139 précédents et neuf scénarios supplémentaires. Chiffrement authentifié et déchiffrement récepteur, signature/audience/expiration VAPID, destinations/redirects/TTL, 7 h été/hiver, réservation persistante et concurrence, trois reprises maximum/expiration, scope propriétaire/adresse et suspension, confidentialité et seuil 79/80/85 %, corruption locale sans effet financier, service worker sans fetch et clic local, API privée/permissions/JSON financier inchangé/effacement suspendant les rappels. Aucun message réel envoyé par les tests.
+
+**Interface** : `notifications-ui.py` vérifie le geste d’autorisation, l’activation, les détails masqués par défaut, le test, les préférences, la désactivation, la suspension globale, les instructions iPhone écran d’accueil et l’absence de commandes dans la vue partagée. Quatre largeurs et deux thèmes, APIs de notifications/navigateur simulées. Parcours général, finition mobile et minimum 30 jours également réussis. Les APIs simulées ne valident pas une livraison Apple ni un iPhone physique.
+
+**Interopérabilité indépendante** : `tests/push-interop.js` a déchiffré notre payload avec http_ece issu de web-push 3.6.7, installé séparément dans un dossier de développement temporaire. Cette bibliothèque et ses dépendances ne sont pas livrées, ne sont pas nécessaires au programme et n’ont envoyé aucun push. Reproduction facultative : `node tests/push-interop.js /chemin/developpement/package.json`.
+
+**Récupération** : programmes réels 0.9.0 → 1.1.0 → 0.9.0 et restauration JSON par API réussis sur budget fictif, mêmes prévisions et tables. Commandes systemd simulées comme décrit précédemment. Le lien simplifié est conservé. Aucun changement de schéma ou moteur.
+
+**À confirmer par l’utilisateur** : installation sur l’appareil, autorisation iOS et réception via Envoyer un test, puis envoi du matin avec serveur éveillé. La livraison peut être retardée par le réseau ou Concentration. Archive autonome : 146 tests Node réussis et deux références externes Sillage omises. Tests sur données fictives, aucune ouverture en écriture d’une vraie base.
+
+## Référence précédente
+
 # Vérifications — 1.0.0
 
 **139 tests Node réussis**, zéro échec. Les 137 scénarios précédents conservent leurs résultats. Deux tests de récupération supplémentaires exercent un échec de démarrage après une vraie migration SQLite (programme, données et configuration d’origine rétablis, copie échouée gardée), puis le retour explicite avec refus sans confirmation, sauvegarde du budget récent, échec réversible et réussite persistante.

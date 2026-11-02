@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 comparaison*.json
 decisions*.json
+web-push.json
+web-push.json.next

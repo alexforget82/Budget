@@ -11,7 +11,7 @@ with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as archive
   if not p.is_file() or p.is_symlink():continue
   relative=p.relative_to(root)
   if any(part in {'data','node_modules','__pycache__','releases','.git'} for part in relative.parts):continue
-  if p.name.endswith(('.sqlite','.sqlite-wal','.sqlite-shm','.pyc')) or p.name in {'private-access.json','shared-view.json'}:continue
+  if p.name.endswith(('.sqlite','.sqlite-wal','.sqlite-shm','.pyc')) or p.name in {'private-access.json','shared-view.json','web-push.json','web-push.json.next'}:continue
   if len(relative.parts)>1 and relative.parts[0] not in allowed_dirs:continue
   if len(relative.parts)==1 and not (p.suffix in {'.js','.sh','.md','.py'} or p.name in {'package.json','.gitignore'}):continue
   info=zipfile.ZipInfo(f'Le-bas-de-laine-{version}/'+relative.as_posix(),date_time=(2026,10,30,12,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=(0o100755 if p.suffix=='.sh' else 0o100644)<<16

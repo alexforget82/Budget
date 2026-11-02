@@ -1,3 +1,4 @@
+import { createNotifications } from "./notifications.js";
 import { purchaseQuote } from "./purchase.js";
 import { monthlyBudget } from "./budget.js";
 import http from "node:http";
@@ -32,6 +33,21 @@ if (
     !privateConfig.login)
 )
   throw Error("Configuration privée invalide.");
+const notifications = createNotifications({
+  dir: data,
+  state: () => store.state(),
+  configured: () => store.setting("configured", false),
+  origin: () => privateConfig?.origin || null,
+  owner: () => privateConfig?.login || "",
+});
+const notificationTick = () =>
+  notifications
+    .tick()
+    .catch(() =>
+      console.error("Les rappels du matin sont momentanément indisponibles."),
+    );
+setTimeout(notificationTick, 10000).unref();
+setInterval(notificationTick, 60000).unref();
 let backupError = null,
   lastDailyBackupAt = null;
 function backupToday() {
@@ -119,6 +135,8 @@ function handler(isPrivate) {
           "/app.js",
           "/view.js",
           "/periods.js",
+          "/sw.js",
+          "/notifications.js",
           "/styles.css",
           "/logo.svg",
           "/logo.png",
@@ -157,7 +175,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "1.0.0",
+            version: "1.1.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -219,6 +237,8 @@ function handler(isPrivate) {
             today(),
           ),
         );
+      if (req.method === "GET" && url.pathname === "/api/notifications/status")
+        return reply(res, 200, notifications.status());
       if (req.method === "GET" && url.pathname === "/api/classify")
         return reply(
           res,
@@ -245,6 +265,27 @@ function handler(isPrivate) {
         )
           return reply(res, 403, { error: "Origine ou format refusé." });
         const x = await body(req);
+        if (url.pathname.startsWith("/api/notifications/")) {
+          const action = url.pathname.slice("/api/notifications/".length);
+          let value;
+          if (action === "key") value = notifications.prepare();
+          else if (action === "status")
+            value = notifications.status(x.endpoint);
+          else if (action === "subscribe") value = notifications.subscribe(x);
+          else if (action === "preferences")
+            value = notifications.preferences(x);
+          else if (action === "unsubscribe")
+            value = notifications.unsubscribe(x);
+          else if (action === "pause") {
+            notifications.disableAll();
+            value = notifications.status(x.endpoint);
+          } else if (action === "test") value = await notifications.test(x);
+          else
+            return reply(res, 404, {
+              error: "Action de notification introuvable.",
+            });
+          return reply(res, 200, value);
+        }
         let result;
         if (url.pathname === "/api/reset") {
           if (x.confirm !== "EFFACER")
@@ -252,6 +293,7 @@ function handler(isPrivate) {
               "Écrivez EFFACER pour réinitialiser Le bas de laine seulement.",
             );
           store.backup("avant-reinitialisation-" + Date.now());
+          notifications.disableAll();
           store.atomic(() => {
             for (const table of [...store.tables].reverse())
               store.run("DELETE FROM " + table);
@@ -430,6 +472,8 @@ function handler(isPrivate) {
         "/app.js": "app.js",
         "/view.js": "view.js",
         "/periods.js": "periods.js",
+        "/sw.js": "sw.js",
+        "/notifications.js": "notifications.js",
         "/demo.json": "demo.json",
         "/styles.css": "styles.css",
         "/logo.svg": "logo.svg",

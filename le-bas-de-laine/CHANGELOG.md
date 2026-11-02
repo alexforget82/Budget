@@ -1,3 +1,11 @@
+# 1.1.0 — résumé du matin à 7 h
+
+Notifications Web Push propriétaires, activées explicitement depuis l’application complète sur l’écran d’accueil iPhone. Résumé quotidien à 7 h America/Toronto, changement d’heure automatique et reprise avant 8 h. Détails masqués par défaut; option pour revenus/paiements prévus, renouvellements et limites à 80 % ou plus. Test, préférences par appareil, désactivation et suspension globale. Aucun envoi activé par la mise à jour seule; la vue simplifiée reste inchangée.
+
+Chiffrement standard Web Push/VAPID sur primitives natives Node, sans dépendance de production ni frais API. Destinations restreintes aux services de push connus, redirections refusées. Clés/abonnements locaux privés et séparés du JSON financier; scope adresse/propriétaire, réservation persistante contre les doubles rappels, trois tentatives maximum et abonnements expirés désactivés. Service worker sans cache de pages ni lecture financière en arrière-plan. Schéma, calculs et formats de budget inchangés.
+
+Validation : 148 tests Node, parcours navigateur ciblés avec APIs push simulées, chiffrement déchiffré par une bibliothèque indépendante. Aucune livraison réelle Apple/iPhone validée ici : le test depuis l’appareil reste nécessaire. Chromebook/Linux/serveur éveillés et Internet requis pour l’envoi.
+
 # 1.0.0 — consolidation
 
 Retrait de la mention version d’essai, version visible sur ordinateur et mobile, vocabulaire bancaire/prévision clarifié et guide intégré dans Plan. Champs mobiles à 16 px, boutons de 44 px et actions de formulaire accessibles dans une hauteur réduite. Moteur financier inchangé.

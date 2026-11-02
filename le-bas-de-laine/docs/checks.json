@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 139,
+    "passed": 148,
     "failed": 0,
     "skipped": 0
   },
@@ -72,9 +72,12 @@
       "two fixed monthly dates in wizard, limit/bill editors, transaction period selection and shared view",
       "classification rules, manual/CSV overrides, review counter/filter, bulk category preview, private shared interface",
       "1.0 labels and integrated owner guide",
-      "16px mobile controls, 44px buttons and compact-height dialog actions"
+      "16px mobile controls, 44px buttons and compact-height dialog actions",
+      "notification consent/preferences/test/disable UI with mocked push APIs; no financial mutations"
     ],
-    "suites_passed": 16
+    "suites_passed": 4,
+    "targeted_suites_passed": 4,
+    "previous_release_suites_passed": 16
   },
   "comparison": {
     "real_sillage_code_on_temporary_database": true,
@@ -196,12 +199,20 @@
     "schema_tables": 8
   },
   "recovery": {
-    "real_programs": "0.9.0 -> 1.0.0 -> 0.9.0",
+    "real_programs": "0.9.0 -> 1.1.0 -> 0.9.0",
     "real_http_json_restore": true,
     "sqlite_migration_failure_rollback": true,
     "recent_budget_preserved": true,
     "systemd_commands_simulated": true
   },
   "physical_iphone_tested": false,
-  "two_week_user_trial_completed": false
+  "two_week_user_trial_completed": false,
+  "push": {
+    "time_zone": "America/Toronto",
+    "hour": 7,
+    "real_delivery_tested": false,
+    "independent_decryption_reference": "http_ece via web-push 3.6.7, development only",
+    "default_details": false,
+    "budget_schema_unchanged": true
+  }
 }

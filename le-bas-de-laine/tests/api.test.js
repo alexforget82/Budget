@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from "node:crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -306,6 +307,16 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
     ).status,
     403,
   );
+  assert.equal(
+    (await raw("/api/notifications/status", "wife@example.com")).status,
+    403,
+  );
+  for (const action of ["key", "subscribe", "test", "preferences", "pause"])
+    assert.equal(
+      (await raw("/api/notifications/" + action, "wife@example.com", {}))
+        .status,
+      403,
+    );
   const quote = await raw(share + "/purchase", "wife@example.com", {
     amount: 10,
   });
@@ -618,4 +629,75 @@ test("classification and CSV review workflow stays owner-only and supports expli
   assert.equal(shared.rules, undefined);
   assert.equal(shared.transactions, undefined);
   await call(path + "/review", undefined, 404);
+});
+
+test("notification enrollment is private, per-device, outside JSON finances, and reset disables reminders", async (t) => {
+  const f = await launch(t, true),
+    before = (await f.call("/api/export")).tables;
+  const initial = await f.call("/api/notifications/status");
+  assert.equal(initial.hour, 7);
+  assert.equal(initial.time_zone, "America/Toronto");
+  assert.equal(initial.devices_count, 0);
+  assert.equal(initial.can_activate, true);
+  await f.call("/api/notifications/key", {}, 403, {
+    Origin: "https://evil.example",
+  });
+  const key = await f.call("/api/notifications/key", {});
+  assert.equal(Buffer.from(key.public_key, "base64url").length, 65);
+  const dh = createECDH("prime256v1");
+  dh.generateKeys();
+  const subscription = {
+    endpoint: "https://web.push.apple.com/fake-api-unit-only",
+    keys: {
+      p256dh: dh.getPublicKey().toString("base64url"),
+      auth: randomBytes(16).toString("base64url"),
+    },
+  };
+  await f.call(
+    "/api/notifications/subscribe",
+    {
+      subscription: { ...subscription, endpoint: "https://127.0.0.1/private" },
+    },
+    400,
+  );
+  let status = await f.call("/api/notifications/subscribe", { subscription });
+  assert.equal(status.device.enabled, true);
+  assert.equal(status.device.details, false);
+  assert.equal(status.devices_count, 1);
+  assert.ok(!JSON.stringify(status).includes("private_jwk"));
+  assert.ok(!JSON.stringify(status).includes(subscription.endpoint));
+  status = await f.call("/api/notifications/preferences", {
+    endpoint: subscription.endpoint,
+    details: true,
+  });
+  assert.equal(status.device.details, true);
+  assert.deepEqual((await f.call("/api/export")).tables, before);
+  assert.equal(
+    fs.statSync(path.join(f.dir, "web-push.json")).mode & 0o777,
+    0o600,
+  );
+  await f.call("/api/notifications/pause", {});
+  status = await f.call("/api/notifications/status", {
+    endpoint: subscription.endpoint,
+  });
+  assert.equal(status.device.enabled, false);
+  await f.call(
+    "/api/notifications/test",
+    { endpoint: subscription.endpoint },
+    400,
+  ); // Disabled: no network call.
+  await f.call("/api/notifications/subscribe", { subscription });
+  await f.call("/api/reset", { confirm: "EFFACER" });
+  status = await f.call("/api/notifications/status", {
+    endpoint: subscription.endpoint,
+  });
+  assert.equal(status.device.enabled, false);
+  await f.call("/api/notifications/unsubscribe", {
+    endpoint: subscription.endpoint,
+  });
+  assert.equal((await f.call("/api/notifications/status")).devices_count, 0);
+  const worker = await fetch(f.base + "/sw.js");
+  assert.equal(worker.status, 200);
+  assert.match(worker.headers.get("content-type"), /javascript/);
+  assert.equal(worker.headers.get("cache-control"), "no-store");
 });

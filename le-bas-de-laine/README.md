@@ -1,4 +1,4 @@
-# Le bas de laine · 1.0.0
+# Le bas de laine · 1.1.0
 
 Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Node.js et SQLite, sans dépendance de production, abonnement ni synchronisation bancaire. Sillage et ses données restent séparés.
 
@@ -7,7 +7,7 @@ Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **
 Linux doit être activé; Node.js **22.13 ou plus récent** est requis (Node 24 recommandé). Téléchargez et extrayez l’archive dans **Fichiers Linux**, puis :
 
 ```bash
-cd ~/Le-bas-de-laine-1.0.0 && bash "Installer Le bas de laine.sh"
+cd ~/Le-bas-de-laine-1.1.0 && bash "Installer Le bas de laine.sh"
 ```
 
 Ouvrez **http://localhost:3040** ou le lanceur **Le bas de laine**, puis actualisez après une mise à jour. Le programme va dans `~/.local/share/le-bas-de-laine/app`, le budget dans `data`, les copies d’installation dans `backups`. Le service `le-bas-de-laine.service` fonctionne sans Terminal ouvert et démarre avec Linux. ChromeOS ne lance pas forcément Linux à l’ouverture de session; l’accès iPhone nécessite un Chromebook allumé, éveillé et connecté.
@@ -38,7 +38,7 @@ Le budget mensuel est une vue globale des règles actuelles et des transactions.
 
 Exportez régulièrement le JSON depuis Plan et gardez-le hors du Chromebook. Les copies SQLite quotidiennes sont locales. Le JSON 3 conserve règles, marqueurs et liens privés; les anciens JSON 1 et 2 restent restaurables. **Une restauration remplace le budget courant**, avec copie préalable. Gardez les exports et liens privés confidentiels.
 
-Après une mise à jour effectuée par la 1.0.0, ce bloc, lancé dans son dossier décompressé, rétablit le programme **et le budget d’avant la mise à jour** :
+Après une mise à jour effectuée par la 1.0.0 ou plus récente, ce bloc, lancé dans son dossier décompressé, rétablit le programme **et le budget d’avant la mise à jour** :
 
 ```bash
 bash "Revenir a la version precedente.sh" --confirmer
@@ -53,3 +53,15 @@ Configurez Tailscale sur le Chromebook et l’iPhone, puis lancez au besoin `bas
 ## Vérifications et historique
 
 `npm test` lance les tests Node; les parcours Chromium, essais de restauration et limites de validation sont décrits dans [docs/TESTS.md](docs/TESTS.md). Les essais automatisés ne remplacent pas l’utilisation réelle sur Chromebook et iPhone. L’historique des versions est dans [CHANGELOG.md](CHANGELOG.md), le contrat de calcul dans [docs/SPECIFICATION.md](docs/SPECIFICATION.md). Les anciennes maquettes statiques restent des documents de référence.
+
+## Résumé du matin sur iPhone (1.1.0)
+
+Sur l’iPhone propriétaire, ouvrez la version complète depuis son icône d’écran d’accueil, puis **Plan → Réglages et sauvegardes → Notifications du matin → Activer sur cet appareil**. Acceptez l’autorisation iOS et utilisez **Envoyer un test**. Si vous êtes dans Safari, ajoutez d’abord l’application à l’écran d’accueil. iOS 16.4 ou plus récent et l’accès HTTPS privé configuré sont requis.
+
+Le résumé part vers **7 h, heure du Québec (America/Toronto)**, avec changement d’heure automatique. Le Chromebook, Linux et le serveur doivent être éveillés et connectés. Reprise possible entre 7 h et 8 h; pas de rattrapage plus tard. Les modes Concentration, les réglages de l’iPhone et le service de notifications peuvent retarder la livraison. Aucun envoi ni permission n’est activé par la mise à jour seule.
+
+Par défaut, le contenu dit seulement que votre résumé est prêt. L’option Afficher les montants et les noms permet d’inclure les revenus/paiements **prévus**, les renouvellements automatiques et les limites utilisées à **80 % ou plus**. Ce sont des prévisions, pas une confirmation bancaire. Les alertes sont regroupées dans le résumé, sans rappels répétés durant la journée. Les limites ne demandent pas de transfert manuel.
+
+Chaque appareil s’active séparément. Désactivez cet appareil ou suspendez tous les rappels depuis ce panneau. Le lien simplifié de la conjointe n’a pas ces commandes et ne reçoit rien sans activation propriétaire. Le bouton Test vérifie l’acceptation par le service; confirmez ensuite la réception sur l’iPhone.
+
+Envoi Web Push chiffré, sans clé API payante ni dépendance de production. Les clés locales et abonnements sont dans `data/web-push.json`, permissions privées, exclus de l’export JSON du budget. Ils restent dans les copies complètes de données faites lors des installations; une restauration du budget sur une autre machine exige de réactiver les appareils. Ne partagez pas ce fichier. Le service worker ne cache pas de pages et ne récupère pas de données financières en arrière-plan.

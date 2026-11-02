@@ -1,6 +1,6 @@
-# Le bas de laine — contrat de calcul 1.0.0
+# Le bas de laine — contrat de calcul 1.1.0
 
-Trois écrans, un seul achat à saisir, pas d’enveloppe à alimenter. Programme, données et liens séparés de Sillage. Toutes les opérations monétaires utilisent des cents entiers. Aucun changement du moteur de calcul dans la 1.0.0.
+Trois écrans, un seul achat à saisir, pas d’enveloppe à alimenter. Programme, données et liens séparés de Sillage. Toutes les opérations monétaires utilisent des cents entiers. Aucun changement du moteur de calcul dans les versions 1.0.0 et 1.1.0.
 
 **Indicateurs.** Le chiffre principal est le minimum journalier des 30 premiers jours de la simulation, inclus aujourd’hui. Le minimum 90 jours et sa date restent disponibles. Le montant secondaire avant prochain revenu exclut le jour d’un revenu futur et reste plafonné à 30 jours. Les deux fenêtres et le curseur utilisent la même simulation; propriétaire et lien partagé ont les mêmes valeurs.
 
@@ -29,3 +29,9 @@ Deux fois par mois utilise un premier jour 1–27 et un second postérieur jusqu
 **Stockage et restauration.** Neuf tables, schéma 3, migrations numérotées avec copie SQLite préalable. JSON 3; JSON 1/2 restaurables avec historique validé et règles vides. Validation sur base temporaire avant remplacement, contrôle des références, copie avant restauration. Les mises à jour conservent un couple programme/données précédent; échec après migration = restauration des deux. Le retour explicite préserve séparément le budget récent.
 
 **Validation.** Scénarios fictifs et comparaisons figées, sans écriture sur les données réelles. Les 12 références Sillage historiques restent identiques pour le modèle initial sans report. Les reports hebdomadaires sont une différence volontaire testée à part. Le contrôle d’un export reflète sa date et son contenu, pas les modifications réelles faites ensuite. Les captures Chromium ne prouvent pas le comportement matériel iOS ni deux semaines d’usage quotidien.
+
+**Rappels (1.1.0).** Consentement propriétaire par appareil, iOS 16.4+ depuis l’écran d’accueil. Créneau 7 h–8 h America/Toronto; contrôle chaque minute, aucun rattrapage après. Résumé privé générique par défaut; détails nominatifs/chiffrés seulement sur option. Seuil de limite à 80 % du budget de période, après reports, dépenses nettes réelles; les renouvellements demeurent automatiques. Pas de notification répétée en journée.
+
+Les souscriptions et clés VAPID sont dans un fichier local 0600, hors des neuf tables et hors du JSON du budget. Activation liée à l’adresse privée et au propriétaire; changement de scope = réactivation. Réservation par date persistée avant l’envoi, pour ne pas dupliquer une tentative incertaine après redémarrage. Les refus connus peuvent réessayer après cinq minutes, au plus trois fois dans le créneau; les réponses 404/410 désactivent l’abonnement. Même tag de jour et renotify=false. L’acceptation par le service n’est pas une preuve de réception sur iPhone.
+
+Destination HTTPS limitée aux services Apple/Google/Mozilla/Microsoft connus, sans redirection; payload AES128GCM RFC8291/8188, signature VAPID ES256. Service worker sans interception fetch, sans cache, sans chargement de données du budget; un clic ouvre uniquement le tableau de bord de sa propre origine. L’effacement du budget suspend les rappels. Ni notification ni marqueur d’envoi ne modifie un calcul financier.

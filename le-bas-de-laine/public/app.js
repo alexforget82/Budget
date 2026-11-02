@@ -1,3 +1,4 @@
+import { notificationsEditor } from "./notifications.js";
 import { periodStart, nextPeriod } from "./periods.js";
 import {
   $,
@@ -1718,6 +1719,9 @@ function planView() {
   download.download = "";
   actions.append(
     guide,
+    button("Notifications du matin", () =>
+      notificationsEditor({ request, modal }),
+    ),
     download,
     button("Restaurer", restoreEditor),
     button("Reprendre Sillage", sillageEditor),

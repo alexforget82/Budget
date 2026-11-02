@@ -1,7 +1,7 @@
 """Run both real released 0.9.0 and current HTTP apps against an isolated fake budget."""
 import os,json,subprocess,tempfile,zipfile,socket,time,urllib.request
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1];archive=ROOT/'releases/Le-bas-de-laine-0.9.0.zip'
+ROOT=Path(__file__).resolve().parents[1];VERSION=json.loads((ROOT/'package.json').read_text())['version'];archive=ROOT/'releases/Le-bas-de-laine-0.9.0.zip'
 if not archive.exists():print('SKIP: optional released 0.9.0 archive is outside this standalone delivery.');raise SystemExit(0)
 with tempfile.TemporaryDirectory(prefix='bdl-real-recovery-') as tmp:
  tmp=Path(tmp);home=tmp/'home';home.mkdir();root=home/'.local/share/le-bas-de-laine';data=root/'data';clock=tmp/'clock.mjs';clock.write_text("const Original=Date;globalThis.Date=class extends Original{constructor(...a){super(...(a.length?a:['2026-11-10T16:00:00Z']));}static now(){return Original.parse('2026-11-10T16:00:00Z');}};")
@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix='bdl-real-recovery-') as tmp:
     call('/api/transaction',purchase);restored=call('/api/restore',{'confirm':'REMPLACER','backup':backup});assert restored['simulation']==state['simulation'];assert call('/api/export')['tables']==backup['tables'];call('/api/transaction',purchase)
    return state,backup
   finally:server.terminate();server.wait(timeout=5)
- before,backup=run_app('0.9.0');install(ROOT);current,current_backup=run_app('1.0.0',True);assert before['simulation']==current['simulation'];assert backup['tables']==current_backup['tables']
+ before,backup=run_app('0.9.0');install(ROOT);current,current_backup=run_app(VERSION,True);assert before['simulation']==current['simulation'];assert backup['tables']==current_backup['tables']
  restored=json.loads(node(f"import {{rollback}} from {json.dumps((ROOT/'rollback.js').as_uri())};console.log(JSON.stringify(await rollback({{home:{json.dumps(str(home))},confirm:true,command:()=>true,ready:async()=>true}})));") )
  after,after_backup=run_app('0.9.0');assert after_backup['tables']==backup['tables'];assert after['simulation']==before['simulation'];assert Path(restored['saved'],'data','budget.sqlite').exists()
- print('PASS: actual 0.9.0 → 1.0.0 → 0.9.0 programs and HTTP APIs, identical financial forecast, actual JSON restore API and full exported tables restored, private link retained, recent budget separately preserved; isolated Linux service commands simulated.')
+ print('PASS: actual 0.9.0 → '+VERSION+' → 0.9.0 programs and HTTP APIs, identical financial forecast, actual JSON restore API and full exported tables restored, private link retained, recent budget separately preserved; isolated Linux service commands simulated.')

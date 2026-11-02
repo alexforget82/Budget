@@ -2032,3 +2032,9 @@
   line-height: 1.5;
   margin-block: 10px;
 }
+.notifications-settings { display: grid; gap: 16px; }
+.notification-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.notification-actions button { white-space: normal; }
+.notifications-settings details p { margin-block: 10px; }
+.notifications-settings .error:empty { display: none; }
+@media(max-width:600px){ .notification-actions button { flex:1 1 160px; } }
