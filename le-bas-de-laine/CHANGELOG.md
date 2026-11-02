@@ -1,3 +1,11 @@
+# 1.0.0 — consolidation
+
+Retrait de la mention version d’essai, version visible sur ordinateur et mobile, vocabulaire bancaire/prévision clarifié et guide intégré dans Plan. Champs mobiles à 16 px, boutons de 44 px et actions de formulaire accessibles dans une hauteur réduite. Moteur financier inchangé.
+
+Installation : copie cohérente avant mise à jour, retour automatique du programme et des données si le nouveau démarrage échoue après migration; copie de l’état échoué conservée. Retour explicite à la version précédente avec le programme et son budget correspondant, sauvegarde séparée du budget récent, restauration de la situation courante si le retour échoue. Aucun changement du schéma 3, du JSON 3 ou des liens privés.
+
+Validation : 139 tests Node, 16 parcours Chromium, restauration JSON via l’API réelle et retour réel 0.9.0 → 1.0.0 → 0.9.0 sur données fictives. Commandes systemd simulées pour ce dernier parcours; pas de validation matérielle iPhone ni de deux semaines d’usage revendiquées.
+
 # 0.9.0 — classement et révision des transactions
 
 Règles prioritaires de correspondance avec conditions compte/sens/montant, normalisation conservant les chiffres significatifs, propositions modifiables à la saisie et par ligne CSV, mémorisation facultative du commerçant. File de révision, compteur, validation individuelle et des lignes déjà classées par une règle. Sélection et changement de catégorie en lot avec aperçu exact du disponible, jeton anti-aperçu périmé et sauvegarde préalable; opérations liées à une échéance protégées. Aucun changement de calcul pour les règles ou marqueurs seuls. Schéma 3 et JSON 3, restauration JSON 1/2 maintenue, interface simplifiée partagée inchangée.

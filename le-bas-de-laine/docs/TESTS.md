@@ -1,3 +1,17 @@
+# Vérifications — 1.0.0
+
+**139 tests Node réussis**, zéro échec. Les 137 scénarios précédents conservent leurs résultats. Deux tests de récupération supplémentaires exercent un échec de démarrage après une vraie migration SQLite (programme, données et configuration d’origine rétablis, copie échouée gardée), puis le retour explicite avec refus sans confirmation, sauvegarde du budget récent, échec réversible et réussite persistante.
+
+**16 parcours Chromium réussis** : assistant, tutoriel, interface générale, calendrier, grille mensuelle, budget, graphique quotidien, outils courants, états/sauvegardes, exceptions ponctuelles, suppression du plan, minimum 30 jours, reports hebdomadaires, deux fois par mois, classement/révision et finition 1.0.0. Petits/grands écrans et thèmes clair/sombre. `tests/release-ui.py` vérifie la version sans mention d’essai, les contrôles de 16 px et boutons de 44 px, la fermeture accessible en hauteur réduite, le guide et la parité partagée sans écriture.
+
+**Programmes réels et restauration** : `python3 tests/recovery-integration.py`, depuis le dépôt contenant l’archive 0.9.0, lance les deux programmes et leurs API HTTP sur une base fictive. Compare l’export complet et la simulation avant/après mise à jour, crée une opération, restaure réellement le JSON par l’API, vérifie l’identité des tables/prévisions, puis revient à la 0.9.0 avec le lien simplifié intact et le budget récent conservé. Les commandes systemd y sont simulées, les serveurs Node et SQLite sont réels. Ce script indique SKIP dans une livraison autonome sans l’ancienne archive.
+
+**Export figé fourni** : le fichier du 1 novembre 2026 a été recalculé hors dépôt sur une copie; 90 journées comparées à un grand livre indépendant, sans écart, et mêmes résultats financiers entre la 0.9.0 et la 1.0.0. Ce contrôle ne porte pas sur les réglages que l’utilisateur a modifiés après cet export. Aucun fichier personnel ou lien réel n’est livré.
+
+**Limites de validation** : pas de test matériel ChromeOS/iPhone; pas de deux semaines d’usage réel terminées. Ces étapes restent une validation utilisateur à faire. Les tests système utilisent des dossiers isolés; Sillage et les vraies bases ne sont jamais ouverts en écriture. Archive autonome : 137 réussites Node et deux références externes Sillage omises.
+
+## Référence précédente
+
 # Vérifications — 0.9.0
 
 137 tests Node réussis. Nouvelles vérifications : normalisation avec conservation des chiffres significatifs, opérateurs/priorité/conditions, exclusion des échéances payées, parité financière après création/pause/suppression de règle et validation, mémorisation atomique, CSV proposé et remplacement explicite, aperçu de classement en lot/jeton périmé/préservation banque-carte-soldes, JSON 3 et restauration JSON 2, migration réelle du schéma 2 avec copie originale intacte. Migration depuis le schéma 1 et JSON 1 également conservée dans les tests existants. Routes privées de classement/révision refusées à l’utilisateur partagé.

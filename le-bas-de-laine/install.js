@@ -38,7 +38,7 @@ export async function install({
             signal: AbortSignal.timeout(700),
           }),
           data = await r.json();
-        if (r.ok && data.version === "0.9.0") return true;
+        if (r.ok && data.version === "1.0.0") return true;
       } catch {}
       await new Promise((r) => setTimeout(r, 100));
     }
@@ -76,7 +76,8 @@ export async function install({
       ["is-active", "--quiet", "le-bas-de-laine.service"],
       true,
     );
-  let switched = false;
+  let switched = false,
+    dataBackup = null;
   fs.mkdirSync(root, { recursive: true, mode: 0o700 });
   fs.mkdirSync(unitDir, { recursive: true });
   command(["stop", "le-bas-de-laine.service"], true);
@@ -86,15 +87,17 @@ export async function install({
         "Un serveur manuel utilise déjà 3040. Arrêtez cette instance avant l’installation. Sillage sur 3030 peut rester ouvert.",
       );
     if (fs.existsSync(path.join(root, "data"))) {
-      const backup = path.join(
-        root,
-        "backups",
-        "avant-installation-" + Date.now(),
+      fs.mkdirSync(path.join(root, "backups"), {
+        recursive: true,
+        mode: 0o700,
+      });
+      const backup = fs.mkdtempSync(
+        path.join(root, "backups", "avant-installation-"),
       );
-      fs.mkdirSync(backup, { recursive: true, mode: 0o700 });
       fs.cpSync(path.join(root, "data"), path.join(backup, "data"), {
         recursive: true,
       });
+      dataBackup = backup;
     }
     fs.mkdirSync(staging);
     for (const entry of fs.readdirSync(release, { withFileTypes: true })) {
@@ -133,12 +136,43 @@ export async function install({
       path.join(launcher, "le-bas-de-laine.desktop"),
       `[Desktop Entry]\nType=Application\nName=Le bas de laine\nExec=${desktopQuote(process.execPath)} ${desktopQuote(path.join(app, "open.js"))}\nIcon=${path.join(app, "public/logo.png")}\nTerminal=false\nCategories=Office;Finance;\n`,
     );
+    const previousPackage = path.join(previous, "package.json"),
+      manifest = path.join(root, "previous-installation.json");
+    if (dataBackup && fs.existsSync(previousPackage)) {
+      const info = JSON.parse(fs.readFileSync(previousPackage, "utf8"));
+      const temp = manifest + ".next";
+      fs.writeFileSync(
+        temp,
+        JSON.stringify(
+          {
+            format: "le-bas-de-laine-rollback",
+            backup: path.relative(root, dataBackup),
+            previous_version: info.version,
+            created_at: new Date().toISOString(),
+          },
+          null,
+          2,
+        ),
+        { mode: 0o600 },
+      );
+      fs.renameSync(temp, manifest);
+    }
     return root;
   } catch (e) {
     command(["stop", "le-bas-de-laine.service"], true);
     if (switched) {
       fs.rmSync(app, { recursive: true, force: true });
       if (fs.existsSync(previous)) fs.renameSync(previous, app);
+      if (dataBackup) {
+        const failed = fs.mkdtempSync(
+          path.join(root, "backups", "installation-echouee-"),
+        );
+        if (fs.existsSync(path.join(root, "data")))
+          fs.renameSync(path.join(root, "data"), path.join(failed, "data"));
+        fs.cpSync(path.join(dataBackup, "data"), path.join(root, "data"), {
+          recursive: true,
+        });
+      }
     }
     if (oldUnit) fs.writeFileSync(unitFile, oldUnit);
     else fs.rmSync(unitFile, { force: true });

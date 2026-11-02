@@ -1309,7 +1309,7 @@ function categoryEditor(c) {
     c ? "Modifier " + c.name : "Une limite de dépense",
     [
       field("Catégorie", name),
-      field("Montant par période", amount),
+      field("Montant par renouvellement", amount),
       field("Période", period),
       field("Renouvellement", day),
       secondField,
@@ -1712,16 +1712,19 @@ function planView() {
   );
   const actions = node("div", null, "actions"),
     download = node("a", "Exporter une sauvegarde", "button-link");
+  const guide = node("a", "Guide d’utilisation", "button-link");
+  guide.href = "/guide";
   download.href = "/api/export";
   download.download = "";
   actions.append(
+    guide,
     download,
     button("Restaurer", restoreEditor),
     button("Reprendre Sillage", sillageEditor),
     button("Vérifier mon solde", checkpoint),
   );
   actions.append(
-    button("Réinitialiser l’essai", () => {
+    button("Effacer les données", () => {
       const confirm = required(input("confirm"));
       confirm.placeholder = "EFFACER";
       modal(
@@ -1739,7 +1742,7 @@ function planView() {
           await send(
             "/api/reset",
             { confirm: confirm.value },
-            "L’essai a été réinitialisé. Sillage n’a pas changé.",
+            "Les données du Bas de laine ont été effacées. Sillage n’a pas changé.",
           );
         },
       );

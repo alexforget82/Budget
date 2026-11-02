@@ -1,283 +1,55 @@
-# Le bas de laine
+# Le bas de laine · 1.0.0
 
-Première version d’essai **0.9.0**. Une application séparée de Sillage : sa base, son programme et ses liens existants restent intacts. Aucun renseignement bancaire réel n’est livré dans cette archive.
+Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Node.js et SQLite, sans dépendance de production, abonnement ni synchronisation bancaire. Sillage et ses données restent séparés.
 
-Trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Un seul compte bancaire principal; cartes et marge comme moyens de paiement sans solde de dette à gérer. Les catégories variables ont une limite à la semaine, au mois ou deux fois par mois. Pas d’enveloppes à alimenter.
+## Installer ou mettre à jour sur Chromebook
 
-## Maquettes initiales (0.1.0)
-
-Ouvrez **docs/Trois-maquettes.pdf**, ou les fichiers **docs/maquettes/maquette-laine.html**, **maquette-slate.html** et **maquette-paper.html**. Les HTML sont autonomes et s’ouvrent sans serveur; ils sont des aperçus statiques. Avec le serveur lancé, **http://localhost:3040/maquettes** permet de changer la direction visuelle. Toutes les maquettes et captures utilisent des chiffres fictifs.
-
-La direction appliquée à l’application est **Laine et fleur de lys** : crème, bleu québécois et touches dorées. Un seul thème sombre suit automatiquement le réglage de l’appareil, sans sélecteur ni préférence manuelle.
-
-## Installer sur Chromebook
-
-Prérequis : Linux déjà activé, Node.js **22.13 ou plus récent**, idéalement Node 24. Aucun `npm install`, aucun outil de compilation, aucun CDN.
-
-Dans le dossier décompressé :
+Linux doit être activé; Node.js **22.13 ou plus récent** est requis (Node 24 recommandé). Téléchargez et extrayez l’archive dans **Fichiers Linux**, puis :
 
 ```bash
-bash "Installer Le bas de laine.sh"
+cd ~/Le-bas-de-laine-1.0.0 && bash "Installer Le bas de laine.sh"
 ```
 
-Ouvrez ensuite **http://localhost:3040** ou **Le bas de laine** dans le lanceur Linux. Aucun onglet n’est ouvert automatiquement pendant l’installation. Sillage peut rester ouvert sur **3030**.
+Ouvrez **http://localhost:3040** ou le lanceur **Le bas de laine**, puis actualisez après une mise à jour. Le programme va dans `~/.local/share/le-bas-de-laine/app`, le budget dans `data`, les copies d’installation dans `backups`. Le service `le-bas-de-laine.service` fonctionne sans Terminal ouvert et démarre avec Linux. ChromeOS ne lance pas forcément Linux à l’ouverture de session; l’accès iPhone nécessite un Chromebook allumé, éveillé et connecté.
 
-Le programme est installé dans `~/.local/share/le-bas-de-laine/app`, les données dans `~/.local/share/le-bas-de-laine/data`, et le service s’appelle `le-bas-de-laine.service`. Il fonctionne sans Terminal ouvert. Il démarre avec Linux; ChromeOS ne démarre pas nécessairement Linux tout seul à l’ouverture de session. Le Chromebook doit rester éveillé et connecté pour l’accès à distance.
+L’installation sauvegarde les données avant de remplacer le programme. Si le démarrage échoue, programme **et données** précédents sont rétablis, avec conservation séparée de la copie échouée. Aucune donnée bancaire réelle n’est livrée dans l’archive.
 
-Pour démarrer sans installation :
+## Comprendre le disponible
+
+Le chiffre principal est le **minimum prévu des 30 prochains jours**, après les factures, les achats de carte à payer et toutes les limites qui se renouvellent dans cette fenêtre. Le graphique et le curseur utilisent exactement la même prévision. À surveiller signale un minimum supplémentaire sur 90 jours; le montant avant le prochain revenu reste secondaire.
+
+Les quatre lignes expliquent le jour du minimum : solde bancaire calculé, cartes déjà à payer, mouvements prévus nets des revenus et paiements, limites protégées. Les montants sont en cents entiers. Ce disponible prévu n’est pas un solde bancaire et dépend des opérations saisies.
+
+Une limite protège automatiquement son restant et ses prochaines allocations. À la semaine, les restants se reportent dans le même mois de renouvellement et s’effacent au premier renouvellement du nouveau mois, sans réduire l’allocation. Les limites mensuelles et deux fois par mois ne reportent pas le restant. **75 $ deux fois par mois = 150 $ par mois** : le montant est par passage.
+
+Un achat sur carte consomme sa limite et devient à payer; le paiement de carte diminue le solde bancaire et libère cette protection, sans seconde déduction du disponible. Les dettes antérieures non saisies et les dépenses oubliées ne sont pas devinées.
+
+## Utiliser l’application
+
+**Plan → Réglages et sauvegardes → Guide d’utilisation** ouvre le guide intégré, également disponible à `/guide`. Il décrit la configuration, la saisie, les achats anticipés, les cartes, les sauvegardes et l’iPhone.
+
+- Aujourd’hui : minimum 30 jours, prévision quotidienne, limites et simulateur d’achat.
+- Transactions : saisie, CSV avec aperçu, règles de classement, révision et catégorie en lot avec effet chiffré avant confirmation.
+- Plan : revenus et factures, limites, calendrier, budget mensuel, comptes et sauvegardes.
+
+Le budget mensuel est une vue globale des règles actuelles et des transactions. Il compte les dates réelles, sans moyenne annualisée, mais ne conserve pas les anciennes versions des budgets. Il ne réserve pas une seconde fois l’argent.
+
+## Sauvegarder et revenir en arrière
+
+Exportez régulièrement le JSON depuis Plan et gardez-le hors du Chromebook. Les copies SQLite quotidiennes sont locales. Le JSON 3 conserve règles, marqueurs et liens privés; les anciens JSON 1 et 2 restent restaurables. **Une restauration remplace le budget courant**, avec copie préalable. Gardez les exports et liens privés confidentiels.
+
+Après une mise à jour effectuée par la 1.0.0, ce bloc, lancé dans son dossier décompressé, rétablit le programme **et le budget d’avant la mise à jour** :
 
 ```bash
-npm start
+bash "Revenir a la version precedente.sh" --confirmer
 ```
 
-Ce démarrage manuel utilise `data/` dans le dossier courant. Évitez de commencer un vrai budget dans ce mode puis d’installer sans reprendre ce dossier; l’installation utilise son propre dossier stable. Pour transférer un essai manuel, exportez son JSON, puis restaurez-le dans l’installation. Ne pointez jamais `BDL_DATA` vers le dossier Sillage.
+Le budget le plus récent est conservé séparément et son chemin s’affiche. Ne restaurez pas un JSON récent dans une ancienne version incompatible. Le script vérifie que le programme correspond à la copie de données et restaure la situation courante si le retour ne démarre pas.
 
-## Commencer
+## iPhone
 
-Au premier démarrage, choisissez soit **Reprendre Sillage**, soit l’assistant en quatre étapes :
+Configurez Tailscale sur le Chromebook et l’iPhone, puis lancez au besoin `bash "Configurer acces iPhone.sh"`. Le port HTTPS privé est **8443**, distinct du port Sillage 443. Le lien simplifié créé dans Plan est en lecture seule et reste valable après les mises à jour. Il donne les mêmes montants quotidiens et le même minimum 30 jours. Dans Safari : **Partager → Sur l’écran d’accueil**.
 
-1. Nom et solde réel du compte principal.
-2. Chaque prochaine paie à recevoir : montant, fréquence, date.
-3. Les prochaines factures fixes. Les catégories variables iront à l’étape suivante.
-4. Les limites, avec montant, période et renouvellement. Les exemples Épicerie/Essence/Restaurant sont à modifier ou à décocher.
+## Vérifications et historique
 
-Ajoutez vos cartes dans **Plan → Moyens de paiement**. Il n’y a aucun solde initial de carte à saisir. Une facture fixe et une limite ne doivent pas protéger la même dépense.
-
-## Le disponible, limites comprises
-
-Le calcul simule chaque journée sur **90 jours**. Le montant principal reste le minimum prévu **avant la prochaine paie**, plafonné à 30 jours comme en 0.1.0. L’alerte « À surveiller » signale un creux supplémentaire sur 90 jours, avec date, montant et facture ou renouvellement lorsqu’ils surviennent ce jour-là. Elle n’affiche pas un deuxième grand chiffre identique s’il n’y a pas de creux supplémentaire. S’il n’y a pas de prochaine paie connue dans les 30 jours, le disponible principal couvre 30 jours et le précise.
-
-Les quatre lignes expliquent le montant principal :
-
-- solde réel du compte, ajusté des opérations entrées après le dernier contrôle;
-- achats sur cartes encore à payer;
-- factures et mouvements nets prévus jusqu’au jour contraignant;
-- restant de la période courante **et de chaque période qui commence avant la paie**, dans la fenêtre de 30 jours.
-
-Une limite n’est jamais un débit bancaire fictif. Un achat sur carte dans une limite diminue son restant et augmente les achats à payer : pas de deuxième déduction. Le paiement de la carte diminue le compte bancaire et libère la protection correspondante. La partie qui dépasse les achats protégés réduit réellement le disponible, comme le remboursement d’une ancienne dette. Un trop-payé n’est pas suivi comme un solde créditeur de carte.
-
-**Exemple testé** : Conjoint 1 000 $, limite Épicerie 230 $, paie le lendemain. Le disponible est 770 $. Un achat de 71,69 $ sur carte laisse 158,31 $ dans la limite et protège 71,69 $ pour la carte : toujours 770 $. Son remboursement complet ramène le Conjoint à 928,31 $, sans changer ces 770 $.
-
-Sans paie entre les renouvellements, chacun des prochains jeudis protège 230 $ supplémentaires. Une prévision n’assume pas que les limites non dépensées auront été consommées sur votre compte bancaire : elle les garde protégées. Une nouvelle période réelle repart de sa limite; il n’y a pas de report de budget inutilisé.
-
-Un achat anticipé peut être imputé à **la prochaine période** à la saisie, en conservant sa vraie date. La prochaine période protège alors sa limite moins cet achat. Les catégories sans limite restent disponibles pour classer les achats.
-
-
-Dans l’assistant, **Autres** propose un coussin modifiable de **50 $ par mois**, que vous pouvez décocher. Il couvre les achats sans catégorie ou dans une catégorie sans limite propre. Les factures associées, les virements et les revenus sans catégorie n’en consomment pas le montant. Les catégories choisies restent visibles dans Transactions. Cette réserve n’est pas ajoutée aux budgets existants automatiquement : dans Plan, ajoutez une limite nommée Autres pour l’activer; la catégorie existante est réutilisée.
-
-Touchez **Limites protégées** dans les quatre lignes : le détail indique le restant actuel et les renouvellements inclus, avec leur date et les achats déjà imputés. Son total correspond exactement à la ligne. Le calcul est daté du jour qui détermine le minimum avant la paie; il ne prétend pas que tous les montants sont débités aujourd’hui.
-
-## Factures, solde et transactions
-
-**Payée / Reçue / Effectué** enregistre l’opération et règle l’échéance ensemble. **Montant…** permet de modifier uniquement cette échéance. **Reporter** garde l’obligation à une nouvelle date. Une facture passée non résolue continue de réduire le disponible. Une paie attendue aujourd’hui n’est pas ajoutée avant d’être marquée reçue; les paies futures restent des prévisions.
-
-Le bouton **Vérifier mon solde** affiche l’écart et remplace le point de départ bancaire. L’ordre de saisie détermine les opérations déjà incluses : les achats de carte à payer restent protégés. Une modification d’une opération bancaire antérieure à ce point ne réécrit pas le solde réel que vous avez confirmé.
-
-Les achats se corrigent avec **Modifier** dans Transactions. Un paiement de carte s’enregistre comme **Paiement de carte / virement**, jamais comme une nouvelle dépense. La version d’essai ne propose pas encore la modification ou la suppression des virements : vérifiez leur montant avant d’enregistrer et corrigez un essai via restauration au besoin.
-
-## Import CSV
-
-Dans Transactions : **Importer un CSV**. Formats pris en charge : CSV virgule/point-virgule/tabulation, dates ISO ou JJ/MM/AAAA, montant signé à deux décimales. Trois colonnes sont demandées si les en-têtes ne sont pas reconnus.
-
-Choisissez **Déjà dans le solde bancaire** pour l’historique : les achats réduisent tout de même la limite de catégorie. Pour une carte, choisissez séparément si les achats sont encore à payer ou déjà payés. Un solde bancaire vérifié ne renseigne pas cette dette de carte.
-
-L’aperçu signale les lignes déjà présentes, les erreurs et les factures ouvertes qui pourraient correspondre. Pour une suggestion, choisissez la facture ou **Nouvelle opération** avant d’importer. Une même ligne ne peut pas être appliquée deux fois dans une validation. Le repérage des doublons utilise compte, date, montant et description; un fichier contenant deux vraies opérations strictement identiques demande une vérification manuelle.
-
-## Reprendre Sillage et comparer
-
-Exportez une **sauvegarde JSON complète** depuis Sillage. L’export pour ChatGPT n’est pas un fichier de restauration. Le premier import se fait dans une nouvelle base vide; l’assistant offre ce choix avant toute configuration.
-
-L’import préserve les identifiants source. Réimporter exactement la même sauvegarde est sans effet; un changement source met à jour sa ligne existante. Les conflits d’édition et les suppressions source sont signalés, sans écrasement silencieux. Des opérations ajoutées localement bloquent la reprise d’une nouvelle sauvegarde, pour ne pas remplacer leur effet sur le solde. Pendant l’essai parallèle, continuez donc à saisir **dans Sillage seulement**.
-
-Les enveloppes variables hebdomadaires/mensuelles sont reprises comme limites. Certains mécanismes anciens n’ont pas d’équivalent direct : paiement d’enveloppe à date précise, autre fréquence de limite, règles de financement, report du restant, calendriers particuliers d’enveloppe. Les champs connus mais non repris sont signalés. Un import avec règles manquantes affiche **Disponible à vérifier**, également dans la vue partagée. Le montant ne doit pas être utilisé comme budget validé tant que ces points ne sont pas réglés.
-
-Le script de comparaison exécute le code Sillage installé sur une **copie temporaire** restaurée depuis le JSON, à la date de référence fixée. Il ne démarre jamais Sillage sur votre dossier de données réel. La nouvelle simulation est aussi temporaire :
-
-```bash
-node compare.js /chemin/vers/sauvegarde.json --date 2026-10-30 --output comparaison.json
-```
-
-Remplacez la date par celle de votre copie figée. Le programme Sillage est cherché dans `~/.local/share/sillage/app`; sinon utilisez `--sillage-dir /chemin/vers/le/programme/Sillage`. Le rapport reste local et contient vos montants : partagez seulement les éléments que vous souhaitez faire examiner.
-
-Le rapport compare chaque jour sur 90 jours, avec solde, cartes, limites et disponible, puis les deux indicateurs. Il ne désigne jamais automatiquement un moteur fautif. Les écarts non expliqués restent **à examiner** et empêchent la validation. Après analyse, un fichier passé à `--decisions decisions.json` peut les classer en règle volontairement différente, erreur de Sillage ou erreur de la nouvelle application, avec explication obligatoire. Le code de sortie est 0 si validé, 2 s’il reste une différence ou une règle bloquante, 1 si le contrôle ne peut pas s’exécuter.
-
-## iPhone, pour vous et votre conjointe
-
-Après installation et connexion Tailscale dans Linux :
-
-```bash
-bash "Configurer acces iPhone.sh"
-```
-
-Le script affiche la nouvelle adresse privée, sur **HTTPS 8443**. Il garde l’accès Sillage sur 443 et refuse d’écraser un autre service utilisant 8443. Si Tailscale demande d’activer Serve dans sa console, faites-le puis relancez le script.
-
-Sur l’iPhone, connectez Tailscale, ouvrez cette adresse dans Safari puis utilisez **Partager → Sur l’écran d’accueil**. L’accès complet exige votre identité Tailscale. Pour votre conjointe, créez un **lien de lecture** dans **Plan → Réglages et sauvegardes**. Il montre le même calcul, les limites et les journées, sans accès aux formulaires ni à l’export complet. Un manifeste distinct conserve son lien lors de l’ajout à l’écran d’accueil. Ce lien peut être révoqué. Aucun accès public Funnel n’est activé.
-
-## Sauvegarder, restaurer et revenir à Sillage
-
-Une copie SQLite cohérente est conservée au premier usage configuré de la journée, puis lors du changement de jour tant que le serveur fonctionne. Les fichiers sont dans `data/backups`. Un export manuel JSON et une restauration sont dans Plan; une copie est conservée avant restauration, import ou réinitialisation.
-
-**Réinitialiser l’essai** efface seulement la nouvelle base après confirmation **EFFACER** et sauvegarde. Cela permet de tester les exemples puis de repartir de votre JSON Sillage. Ne supprimez aucun dossier Sillage.
-
-L’installation conserve le programme précédent dans `app.previous` et une copie de ses données avant mise à jour. Pour rester sur Sillage, continuez simplement à ouvrir son adresse habituelle : aucune désinstallation du Bas de laine n’est nécessaire. N’arrêtez Sillage qu’après comparaison expliquée et deux à quatre semaines d’essai; cette durée n’est pas remplacée par les tests automatiques.
-
-## Technique et vérifications
-
-Node.js + SQLite natif, huit tables, schéma `migrations/001-initial.sql`, `PRAGMA user_version=1`. Moteur pur indépendant de Sillage; seul le calendrier bancaire Canada/Québec réutilise une fonction pure éprouvée du projet précédent. La comparaison charge le programme Sillage externe uniquement pour la référence temporaire.
-
-```bash
-npm test
-python3 tests/ui.py  # développeur : Playwright et Chromium requis
-```
-
-Les tests utilisent des données fictives. Le test de comparaison réelle au code Sillage peut être omis si ce programme n’est pas disponible. Les tests systemd vérifient le vrai analyseur, mais pas un Chromebook physique. Le parcours responsive a été vérifié dans Chromium; pas de test matériel Safari iOS, de connexion bancaire ou de validation sur vos données réelles. Voir `docs/TESTS.md` et `docs/SPECIFICATION.md`.
-
-## Dates des paies et factures
-
-Dans l’assistant et dans Plan, « Week-ends et jours fériés » permet de conserver la date ou de choisir le jour ouvrable précédent ou suivant. Le calendrier utilisé est celui des fermetures du système de paiement canadien. Un aperçu affiche la prochaine date dans l’assistant et les trois prochaines dans le formulaire complet.
-
-« Dernier jour du mois » et « Dernier jour ouvrable du mois » sont deux fréquences distinctes. Une récurrence mensuelle au 31 revient au dernier jour des mois plus courts, sans dériver les mois suivants. Les ajustements conservent l’ancrage de la récurrence. Les échéances déjà payées et les reports manuels sont conservés lors d’un changement compatible de calendrier; les dates des achats réels ne changent pas.
-
-Les règles existantes ne sont pas déplacées automatiquement. Les limites de catégorie gardent leur date de renouvellement budgétaire; elles ne sont pas des paiements bancaires. Les dates RRQ hors novembre/décembre 2026 demeurent estimées et doivent être confirmées avec le calendrier officiel de Retraite Québec.
-
-## Ajouts 0.4.0
-
-Pour une nouvelle règle, les revenus choisissent par défaut le jour ouvrable précédent, les dépenses et virements le suivant. Le champ « Si la date tombe un week-end ou un férié » reste modifiable. Aucun choix existant n’est remplacé. Les listes montrent la date nominale puis la date déplacée.
-
-- Aujourd’hui → **Puis-je faire cet achat ?** : montant, date, moyen de paiement et catégorie facultative. Vérifie les 30 jours suivant l’achat, après limites et achats sur carte. La date peut aller jusqu’à 60 jours après aujourd’hui pour conserver 30 jours complets dans la prévision de 90 jours. Aucun achat n’est enregistré. Le résultat reste « À vérifier » si l’import est provisoire.
-- Plan → **Bilan par catégorie** : achats réels du mois choisi et total, sans compter les virements comme des achats.
-- Plan → **Calendrier des échéances** : agenda mensuel des échéances ouvertes dans la prévision de 90 jours, avec dates déplacées et actions Payée/Reçue/Reporter.
-- Plan → **Moyens de paiement → + Compte / carte** : ajoutez un compte bancaire ou une épargne, puis saisissez son solde. Les soldes secondaires sont suivis séparément et ne gonflent pas le disponible du compte principal. Un virement vers l’épargne réduit celui-ci.
-
-### Calendrier corrigé en 0.4.1
-
-Les dix fermetures de 2026 et celles de 2027 correspondent exactement aux tableaux transmis par l’utilisateur dans la conversation. Les sources n’ont pas été téléchargées directement (accès HTTP 403); cette validation porte sur le contenu reçu, sans prétendre authentifier les pages sources.
-
-Le 24 juin est férié au Québec, mais n’est pas une fermeture du système de paiement national. Il ne décale donc plus automatiquement les paiements. Le lundi de Pâques, les congés propres à une province ou à une industrie et la fermeture Dayforce en août ne sont pas ajoutés à ce calendrier. Un employeur peut appliquer ses propres dates de paie.
-
-Noël et lendemain : fermetures les 25 et 28 décembre 2026, puis 27 et 28 décembre 2027. Une opération demandée le 25 décembre et reportée au prochain jour de traitement tombe le 29 décembre dans les deux cas.
-
-Si des décisions d’échéance enregistrées utilisaient l’ancien 24 juin, leurs clés sont converties par occurrence en conservant l’état payé/annulé/reporté, le report manuel et les liens aux achats. Une copie SQLite `avant-calendrier-canadien-*.sqlite` précède toute conversion effective. La restauration d’une ancienne sauvegarde applique la même conversion. Pour revenir à l’ancien programme avec ces échéances, reprendre aussi la sauvegarde correspondante d’avant conversion. Aucun changement de schéma. Voir [le suivi du calendrier](docs/CALENDRIER.md).
-
-## Tutoriel à l’écran — 0.4.2
-
-À la première configuration, une aide s’affiche automatiquement pour chacune des quatre étapes : solde réel, prochaines paies, factures fixes et limites variables. Elle explique quoi saisir, ce qui est protégé et donne un exemple. « Masquer l’aide » conserve les champs saisis; « Afficher le tutoriel » la rétablit.
-
-Après la configuration, **Tutoriel** dans Aujourd’hui ou Plan permet de revoir les étapes, puis les gestes quotidiens (achat, facture payée, cartes, vérification du solde et sauvegarde). Le parcours peut être quitté à tout moment. Il n’enregistre aucun montant, ne réinitialise rien et ne relance pas l’assistant de configuration sur un budget existant.
-
-## Identité québécoise — 0.4.3
-
-Le logo représente un bas de laine traditionnel écru à bandes rouges et grises, avec des pièces d’épargne et une fleur de lys sur fond bleu. Il est appliqué au menu, au navigateur, au lanceur Linux, au manifeste de l’application et à l’icône iPhone. Le fichier PNG généré est conservé sans modification; un SVG incorporant ce même PNG assure la compatibilité des anciens aperçus.
-
-Palette crème, bleu profond et touches dorées; mode sombre bleu nuit selon le réglage de l’appareil. Les revenus et alertes gardent leurs couleurs de sens. Aucun changement de calcul. Après mise à jour, actualisez la page. Si l’ancienne icône reste sur l’écran d’accueil iPhone, retirez seulement le raccourci puis recréez-le depuis Safari avec le même lien. Les données restent sur le serveur.
-
-## Calendrier Mois / Liste — 0.4.4
-
-Ouvrez **Plan → Calendrier des échéances**, puis choisissez **Mois** ou **Liste**. Les flèches changent de mois dans la prévision de 90 jours. La semaine commence le lundi; une case hors prévision n’affiche aucun montant.
-
-Sur ordinateur, chaque case affiche le disponible exact en fin de journée et les premières opérations. Sur iPhone, les cases montrent la date et le nombre de mouvements; touchez une journée pour lire son disponible exact et toutes ses opérations sous la grille. Les dates négatives sont signalées en rouge. Le minimum prévu sur 90 jours porte un repère doré et une indication dans le détail.
-
-Les revenus, paiements/virements et renouvellements de limites sont distingués. Un renouvellement est une protection incluse dans le disponible, sans débit bancaire fictif. Les factures en retard sont regroupées aujourd’hui, avec leur date d’origine et l’indication « En retard ».
-
-La vue Liste affiche les journées et leur disponible, y compris sans opération. Les actions Reçue/Payée/Effectué, Montant et Reporter réutilisent les formulaires existants. Un clic direct sur Payée/Reçue/Effectué enregistre l’opération réelle aujourd’hui; pour saisir un autre montant ou une autre date réelle, utilisez Montant. Le mois choisi reste ouvert après l’enregistrement. La navigation seule ne modifie aucune donnée.
-
-## Graphique interactif — 0.4.5
-
-Dans **Aujourd’hui → À surveiller**, le graphique affiche les **30 prochains jours**. Déplacez le curseur, touchez/glissez sur la courbe ou utilisez les flèches du clavier sur le curseur : la date, le disponible exact et les opérations prévues s’affichent dessous. Le bouton **Minimum** sélectionne le point le plus bas de ces 30 jours, marqué en doré. Les axes donnent les montants et les dates.
-
-Les renouvellements de limites sont distingués des paiements : ils protègent le disponible sans débit bancaire. Les factures en retard restent indiquées avec leur date. L’alerte sur **90 jours** demeure au-dessus du graphique, avec sa portée distincte. Les deux vues lisent les mêmes journées calculées; aucun calcul parallèle ou arrondi n’est appliqué au disponible choisi.
-
-Le graphique est également accessible dans le lien simplifié de lecture : mêmes montants et opérations, sans action d’écriture. Naviguer dans le graphique ne crée aucune transaction. Le jour choisi est conservé lors d’un rafraîchissement automatique tant qu’il reste dans les 30 jours.
-
-## RRQ — 0.4.6
-
-Dans **Plan → Paies et revenus → Modifier**, choisissez **RRQ (calendrier de versement)** pour la rente. La fréquence mensuelle ordinaire et le dernier jour ouvrable restent des choix distincts; une règle simplement nommée RRQ n’est pas convertie automatiquement.
-
-Les dates reçues de l’utilisateur sont intégrées pour **30 novembre 2026** et **30 décembre 2026**. Le 31 décembre n’est donc plus généré pour cette fréquence RRQ. L’aperçu identifie chaque ligne : **date fournie** ou **estimation**. Les dates reçues ne sont pas présentées comme une vérification indépendante d’une publication officielle.
-
-L’utilisateur a indiqué que sa liste 2027 était une estimation à vérifier. Elle n’est pas intégrée comme calendrier confirmé. Pour les mois sans date fournie, l’application conserve l’estimation du dernier jour ouvrable et un avertissement si elle tombe dans la prévision. En particulier, le 30 septembre 2027 est une fermeture bancaire : l’estimation est le 29 septembre, sans prétendre confirmer une date officielle RRQ. Les jours corrects sont mardi 30 novembre et jeudi 30 décembre 2027, mais ces libellés corrigés ne confirment pas les dates de versement.
-
-Une décision déjà associée au 31 décembre 2026 est déplacée vers la même occurrence du 30, en conservant paiement/report/annulation et transaction réelle. Sauvegarde automatique avant conversion effective; les anciennes sauvegardes et imports Sillage restent compatibles.
-
-## Quatre améliorations quotidiennes — 0.5.0
-
-1. **Transactions → Modifier sur un virement** : corrigez description, montant, date et comptes, ou supprimez avec confirmation. L’ordre de saisie et l’indicateur « déjà compris dans le solde » sont préservés. Pour un virement lié à une échéance, les comptes restent fixes; supprimer le virement rouvre son échéance et conserve son report/montant particulier. Les points de contrôle bancaires existants restent la référence : une correction historique ne réécrit pas un solde déjà vérifié.
-2. **Filtres Transactions** : recherche sans distinction d’accents dans description/catégorie/comptes, mois, compte, catégorie, Sans catégorie ou Virements seulement. Les filtres restent après modification. Le pied affiche les totaux filtrés; les virements sont indiqués à part, hors revenus/dépenses et hors net. Choisir le compte destinataire affiche le virement entrant.
-3. **Vos limites** : une liste compacte réunit limite par semaine/mois, dépensé, restant et prochain renouvellement. Les périodes restent distinctes, sans équivalent mensuel fictif. Les dépassements sont indiqués. La vue partagée utilise les mêmes montants.
-4. **Lien simplifié → Puis-je faire cet achat ?** : entrez le montant, puis Vérifier. Résultat Oui/Non; si l’import est provisoire, À vérifier remplace toute autorisation. Sous Options, choisissez éventuellement une date, une carte ou une limite pour un achat déjà prévu. Le même moteur vérifie 30 journées complètes que dans la vue propriétaire. Aucune transaction n’est créée. Les champs minimum/maximum restent dans la version complète.
-
-Les liens iPhone existants sont conservés : actualisez la page après installation. Le simulateur partagé n’ouvre aucun accès aux modifications ou exports. Son API renvoie uniquement la décision et le statut provisoire; les choix de carte/limite contiennent nom et identifiant, sans solde secondaire ni historique supplémentaire.
-
-## Trois repères — 0.5.1
-
-- **Solde de référence** : sa date apparaît sous le disponible. Il s’agit du dernier solde principal saisi ou repris depuis une sauvegarde, sélectionné par ordre de saisie. Une vérification du compte d’épargne ne change pas cette date. Le bouton Vérifier mon solde conserve son fonctionnement.
-- **Échéances en retard** : un rappel discret rassemble leur nombre et leurs noms. Traiter ouvre leurs actions existantes : Payée/Effectué, Montant et Reporter. Une fois traitées ou reportées, elles quittent le rappel. Leurs montants restent déjà inclus dans la prévision.
-- **Sauvegarde** : Aujourd’hui affiche la date et l’heure réelles de la copie quotidienne locale, avec un bouton Télécharger une sauvegarde. Le même repère se trouve dans Plan → Réglages et sauvegardes. Le téléchargement JSON contient le budget actuel, alors que la copie quotidienne reste celle créée au premier usage de la journée; sa date n’est pas renouvelée à chaque opération. L’affichage des heures utilise America/Toronto.
-
-Les copies SQLite réutilisées sont contrôlées (version et quick_check; nouveau contrôle si leur taille/date de modification change). Une copie invalide n’est pas annoncée comme réussie. L’export JSON de la base active reste disponible pour récupérer le budget. Ni l’affichage ni le téléchargement ne modifient les transactions.
-
-Le lien simplifié affiche la date du solde et les retards, sans bouton d’administration ni téléchargement de sauvegarde. Aucun nouvel écran; calculs inchangés.
-
-## Modifier un montant une seule fois — 0.5.2
-
-Dans **Aujourd’hui → Les 14 jours à venir**, ou **Plan → Calendrier → une journée**, cliquez sur **Modifier cette fois** pour le revenu ou paiement concerné. Entrez le montant prévu pour cette échéance et enregistrez. La prévision est recalculée; aucun revenu ou paiement réel n’est créé à ce stade. Le montant habituel de la récurrence et les échéances suivantes sont conservés. Les virements programmés utilisent le même mécanisme.
-
-**Revenir au montant habituel** retire l’exception de montant sans annuler un report de date. Vous pouvez modifier plusieurs fois la même échéance : une seule exception est conservée. Les montants doivent être positifs, avec au plus deux décimales.
-
-Quand l’opération passe, utilisez Reçue/Payée/Effectué. Pour saisir un autre montant ou une date réelle particulière, le lien Saisir le revenu/paiement réel dans le formulaire ouvre le formulaire existant. Une seule transaction réelle est créée. Une échéance déjà réglée n’est plus modifiable comme prévision; corrigez sa transaction dans **Transactions → Modifier**.
-
-Le bouton Modifier d’une règle dans Plan reste destiné au montant habituel; son formulaire le précise. Les modifications ponctuelles restent réservées au propriétaire. Aucun changement de schéma.
-
-## Reports hebdomadaires — 0.6.0
-
-Toutes les limites **à la semaine**, existantes ou créées plus tard, reportent le restant au renouvellement suivant dans le même mois. Au **premier renouvellement dont la date appartient au nouveau mois**, le report est effacé et l’allocation habituelle reste entière. Le 1er du mois ne fait rien si le renouvellement n’a pas encore eu lieu. Les limites mensuelles gardent leur fonctionnement.
-
-Exemple, allocation de 230 $ le jeudi : 180 $ dépensés la première semaine laissent 50 $. Le jeudi suivant du même mois, le budget devient 280 $. Au premier jeudi du mois suivant, le nouveau budget repart à 230 $, sans les anciens reports.
-
-La liste Vos limites affiche Budget quand un report est présent, le Dépensé de cette période, le Restant, puis le détail Allocation / Report reçu. Un achat imputé en avance utilise d’abord l’allocation de sa période; s’il la dépasse, le disponible non utilisé des périodes précédentes du même mois peut être réservé une fois pour cet achat. L’indication « déjà utilisés pour une prochaine période » explique ce cas. Les allocations et achats sur carte ne sont pas protégés deux fois.
-
-**Prévision prudente** : elle protège le restant actuel (report compris une fois) et les allocations futures. Elle ne suppose pas à l’avance que les sommes utilisables avant le renouvellement resteront inutilisées. Les reports réellement inutilisés sont libérés quand le premier renouvellement du nouveau mois est atteint; aucun revenu ni débit fictif n’est créé. Les achats restant à payer sur carte continuent d’être protégés.
-
-**Activation** : la période courante sert de point de départ, sans recréer des reports pour les anciennes semaines potentiellement incomplètes. Une sauvegarde précède l’activation sur une base existante. La date d’activation est conservée dans l’export; restaurer une ancienne sauvegarde sans cette date active les reports à partir de la période courante. Aucune table supplémentaire.
-
-## Budget mensuel (0.7.0)
-
-Dans **Plan → Budget mensuel**, choisissez le mois pour comparer Prévu, Réel et Écart par catégorie. Le prévu compte les dates effectives des paies, factures et allocations : deux ou trois paies, quatre ou cinq semaines, sans moyenne annuelle. Les montants exceptionnels et dates reportées sont pris en compte; une échéance payée reste dans le prévu. Le réel suit la date réelle des transactions.
-
-Les virements restent séparés pour éviter de compter à nouveau un achat lors du paiement de carte. Les reports de limites sont présentés à part, sans les additionner aux allocations mensuelles. Le prévu utilise les règles actuelles, sans historique figé des anciens réglages. Une catégorie facultative peut regrouper les règles; sinon leur nom suffit. Cette vue ne réserve aucun argent et ne change pas le disponible. Le lien simplifié iPhone reste inchangé.
-
-## Disponible sur 30 jours (0.7.1)
-
-Le montant principal est désormais le **minimum prévu des 30 prochains jours**, limites et renouvellements compris. Il utilise la même simulation que le graphique, le curseur et le lien simplifié iPhone. Le montant avant le prochain revenu reste dans le détail : un petit revenu ne raccourcit plus la fenêtre du chiffre principal.
-
-Les quatre lignes sous le montant expliquent ce minimum à sa date : solde de départ, cartes à payer, prévisions nettes (revenus moins paiements) et limites protégées. Une prévision nette positive peut donc augmenter le montant. La projection sur 90 jours reste accessible. Le curseur permet aussi au lien simplifié de consulter chacune des 30 journées, avec les mêmes montants que le propriétaire.
-
-Correction : la toute première échéance avancée avant sa date nominale par un ajustement de jour ouvrable reste protégée tant qu’elle est ouverte, même après sa date ou un report. Aucun changement des transactions enregistrées ni des liens privés.
-
-## Retirer une limite ou une facture (0.7.2)
-
-Dans Plan, choisissez **Supprimer la limite** ou **Supprimer la facture**, dans la liste ou son formulaire de modification, puis confirmez. Une limite retirée cesse de protéger de l’argent : sa catégorie et ses achats restent disponibles. Une facture retirée cesse de générer des échéances non réglées dans la prévision; ses paiements réels et leurs liens sont conservés. Les revenus et virements programmés proposent la même action. Pause reste disponible pour une interruption temporaire. Ces actions sont réservées au propriétaire; le lien simplifié reçoit les montants recalculés.
-
-## Deux fois par mois (0.8.0)
-
-Les limites, factures, revenus et virements programmés proposent **Deux fois par mois**, distinct d’Aux deux semaines. Dans une limite, choisissez les deux jours du mois; dans une facture, la date de début fixe le premier jour et un champ fixe le second. Le premier jour peut aller du 1 au 27, le second est postérieur et peut être le dernier jour du mois. Le 31 est ramené au dernier jour des mois courts.
-
-**Montant par passage** : 75 $ le 1er et le 15 = 150 $ par mois. Pour diviser une ancienne limite mensuelle de 150 $, modifiez son montant à 75 $ et sa période à Deux fois par mois. Aucune conversion automatique des limites existantes. Pas de report du restant entre les périodes de ce nouveau mode; les reports hebdomadaires existants restent inchangés.
-
-Les limites sont protégées à chacune des deux dates dans le disponible; les achats anticipés peuvent choisir la prochaine période. Les factures conservent leurs options week-end/férié et leurs montants exceptionnels. Pour éviter que deux passages se confondent au même jour ouvrable, les dates déplacées doivent être suffisamment espacées (au moins sept jours, y compris entre les mois); choisissez Conserver la date pour des passages plus proches.
-
-L’installation adapte automatiquement la base (schéma 2), avec une copie SQLite préalable dans data/backups/avant-schema-2-….sqlite. Les catégories, transactions, paiements et liens privés sont conservés. Les anciennes sauvegardes JSON au format 1 restent restaurables; les nouvelles utilisent le format 2. Une ancienne application ne peut pas ouvrir directement le schéma 2 : utilisez sa copie préalable en cas de retour en arrière.
-
-## Classement et révision (0.9.0)
-
-Dans **Transactions → Règles de classement**, créez un motif Contient, Commence par ou Égal à et sa catégorie cible. Les conditions facultatives limitent la règle à un compte, un sens et une fourchette de montants. La priorité numérique la plus basse gagne; à égalité, la règle la plus ancienne gagne. Une règle spécifique doit recevoir une priorité plus basse que la règle générale.
-
-La comparaison ignore les accents et la casse, retire les numéros explicitement étiquetés terminal/succursale et les suffixes #1234, mais conserve les nombres sans étiquette. Un motif Contient IGA peut donc reconnaître IGA 0873 sans supprimer arbitrairement ce nombre.
-
-À la saisie, la catégorie est proposée et reste modifiable. Une sélection manuelle ne sera pas écrasée. L’option Toujours proposer cette catégorie crée une règle pour les prochaines opérations, sans modifier l’historique. Dans l’aperçu CSV, chaque ligne affiche sa catégorie proposée, modifiable avant import; le choix d’une échéance garde le chemin d’association existant, sans classement automatique par règle.
-
-Les imports CSV arrivent **À réviser**. La saisie manuelle et l’historique existant sont déjà validés. Ce marqueur ne change aucun calcul. Le compteur d’Aujourd’hui ouvre la file; le filtre de Transactions, les boutons Valider et Valider celles qui ont une règle permettent de la traiter. Cette dernière action valide seulement les lignes dont la catégorie correspond déjà à leur règle, sans reclasser l’historique.
-
-Cochez plusieurs opérations pour changer leur catégorie en lot : l’aperçu montre le disponible avant/après, puis une confirmation et une sauvegarde précèdent l’application. Les opérations liées à une facture payée sont exclues de ce changement en lot. Dates, comptes, montants, soldes vérifiés et protections de carte restent conservés. La validation d’une sélection ne change que le marqueur de révision.
-
-Trois écrans principaux conservés. Aucune nouvelle fonction dans le lien simplifié; règles et révision restent privées. Schéma 3 avec copie SQLite préalable, neuf tables; JSON 3 restaure les règles et marqueurs, JSON 1 et 2 restent acceptés (historique validé, sans règles). Aucune application automatique des règles à l’historique.
+`npm test` lance les tests Node; les parcours Chromium, essais de restauration et limites de validation sont décrits dans [docs/TESTS.md](docs/TESTS.md). Les essais automatisés ne remplacent pas l’utilisation réelle sur Chromebook et iPhone. L’historique des versions est dans [CHANGELOG.md](CHANGELOG.md), le contrat de calcul dans [docs/SPECIFICATION.md](docs/SPECIFICATION.md). Les anciennes maquettes statiques restent des documents de référence.

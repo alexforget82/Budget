@@ -218,7 +218,11 @@ export function forecastExplorer(sim) {
     selected.dataset.date = d.date;
     selected.replaceChildren(
       node("h4", longDate(d.date)),
-      node("span", "Disponible après limites et cartes", "muted"),
+      node(
+        "span",
+        "Disponible prévu après factures, limites et cartes",
+        "muted",
+      ),
       node(
         "strong",
         money(d.safe_cents),
@@ -356,7 +360,7 @@ export function todayView(
   );
   const breakdown = node("div", null, "breakdown");
   for (const [label, value] of [
-    ["Solde du compte", spending.breakdown.bank_cents],
+    ["Solde bancaire calculé", spending.breakdown.bank_cents],
     ["Cartes à payer", -spending.breakdown.cards_cents],
     [
       "Prévisions nettes (revenus − paiements)",
@@ -445,7 +449,16 @@ export function todayView(
           : ". Aucun revenu connu dans cette fenêtre."),
     ),
   );
-  hero.append(balanceNote, breakdown, beforeIncome);
+  hero.append(
+    balanceNote,
+    node(
+      "p",
+      "Prévision après les dépenses prévues : ce montant est distinct du solde bancaire.",
+      "muted forecast-definition",
+    ),
+    breakdown,
+    beforeIncome,
+  );
   left.append(hero);
   const minimum = node("section", null, "panel minimum"),
     minlabel = node("div");

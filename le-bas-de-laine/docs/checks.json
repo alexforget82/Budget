@@ -1,8 +1,8 @@
 {
-  "version": "0.9.0",
+  "version": "1.0.0",
   "horizon_days": 90,
   "node_tests": {
-    "passed": 137,
+    "passed": 139,
     "failed": 0,
     "skipped": 0
   },
@@ -70,8 +70,11 @@
       "30-day headline and exact breakdown, owner/shared parity for all 30 slider dates",
       "remove limits and recurring bills with confirmation, preserved history and responsive controls",
       "two fixed monthly dates in wizard, limit/bill editors, transaction period selection and shared view",
-      "classification rules, manual/CSV overrides, review counter/filter, bulk category preview, private shared interface"
-    ]
+      "classification rules, manual/CSV overrides, review counter/filter, bulk category preview, private shared interface",
+      "1.0 labels and integrated owner guide",
+      "16px mobile controls, 44px buttons and compact-height dialog actions"
+    ],
+    "suites_passed": 16
   },
   "comparison": {
     "real_sillage_code_on_temporary_database": true,
@@ -191,5 +194,14 @@
     "future_forecast": "protect allocations and potential spending, without assuming amounts will remain unused",
     "early_purchases": "assigned allocation first; earlier available funds in same month only",
     "schema_tables": 8
-  }
+  },
+  "recovery": {
+    "real_programs": "0.9.0 -> 1.0.0 -> 0.9.0",
+    "real_http_json_restore": true,
+    "sqlite_migration_failure_rollback": true,
+    "recent_budget_preserved": true,
+    "systemd_commands_simulated": true
+  },
+  "physical_iphone_tested": false,
+  "two_week_user_trial_completed": false
 }

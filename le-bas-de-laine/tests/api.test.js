@@ -278,6 +278,8 @@ test("private access enforces Tailscale identity; wife token remains readonly", 
   assert.equal((await raw(share + "/data", "wife@example.com")).status, 200);
   assert.equal((await raw("/styles.css", "wife@example.com")).status, 200);
   assert.equal((await raw("/api/export", "wife@example.com")).status, 403);
+  assert.equal((await raw("/guide", "wife@example.com")).status, 403);
+  assert.equal((await raw("/guide", "owner@example.com")).status, 200);
   assert.equal(
     (await raw("/api/budget?month=2027-01", "wife@example.com")).status,
     403,

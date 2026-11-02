@@ -157,7 +157,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "0.9.0",
+            version: "1.0.0",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {
@@ -426,6 +426,7 @@ function handler(isPrivate) {
         return reply(res, 405, { error: "Méthode refusée." });
       const files = {
         "/": "index.html",
+        "/guide": "guide.html",
         "/app.js": "app.js",
         "/view.js": "view.js",
         "/periods.js": "periods.js",
