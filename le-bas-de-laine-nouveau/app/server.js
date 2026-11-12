@@ -677,7 +677,37 @@ function calendarData(month) {
   const eventsByDate = new Map();
   for (const event of allOccurrences(gridStart, gridEnd)) {
     if (!eventsByDate.has(event.due)) eventsByDate.set(event.due, []);
-    eventsByDate.get(event.due).push(event);
+    eventsByDate.get(event.due).push({ ...event, status: event.moved ? 'moved' : 'planned' });
+  }
+  const transactionsByDate = new Map();
+  const paidKeys = new Set();
+  for (const transaction of q('SELECT * FROM transactions WHERE date>=? AND date<=? ORDER BY date,id', gridStart, gridEnd)) {
+    if (!transactionsByDate.has(transaction.date)) transactionsByDate.set(transaction.date, []);
+    const paid = !!transaction.recurring_id;
+    if (paid) paidKeys.add(`${transaction.recurring_id}|${transaction.recurring_date}`);
+    transactionsByDate.get(transaction.date).push({
+      ...transaction,
+      name: transaction.description || (transaction.kind === 'income' ? 'Revenu' : transaction.kind === 'card_payment' ? 'Paiement de carte' : 'Dépense'),
+      status: paid ? 'paid' : 'entered'
+    });
+  }
+  for (const occurrence of q(`SELECT occurrences.*, recurring.name, recurring.kind, recurring.method, recurring.amount AS recurring_amount
+                              FROM occurrences JOIN recurring ON recurring.id=occurrences.recurring_id
+                              WHERE occurrences.state IN ('paid','skipped') AND occurrences.due_date>=? AND occurrences.due_date<=?`, gridStart, gridEnd)) {
+    const key = `${occurrence.recurring_id}|${occurrence.due_date}`;
+    if (occurrence.state === 'paid' && paidKeys.has(key)) continue;
+    const date = occurrence.due_date;
+    if (!eventsByDate.has(date)) eventsByDate.set(date, []);
+    eventsByDate.get(date).push({
+      rid: occurrence.recurring_id,
+      nominal: occurrence.due_date,
+      due: date,
+      name: occurrence.name,
+      kind: occurrence.kind,
+      amount: occurrence.amount != null ? occurrence.amount : occurrence.recurring_amount,
+      method: occurrence.method,
+      status: occurrence.state
+    });
   }
   const staticLimits = new Map();
   for (const category of q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE')) {
@@ -698,6 +728,7 @@ function calendarData(month) {
       inMonth: date.slice(0, 7) === month,
       safe: row ? row.safe : null,
       events: eventsByDate.get(date) || [],
+      transactions: transactionsByDate.get(date) || [],
       limitEvents: limits
     };
   });

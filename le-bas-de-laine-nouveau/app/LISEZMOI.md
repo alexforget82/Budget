@@ -105,3 +105,17 @@
 - Lorsqu’un revenu saisi dans Transactions correspond clairement à un revenu prévu, il est associé automatiquement à cette échéance.
 - La paie, rente ou allocation prévue est alors marquée payée : le montant n’est compté qu’une fois.
 - Le choix reste visible et peut être changé ou retiré avant l’enregistrement.
+
+## Version 2.0.0 — calendrier de contrôle
+
+Le calendrier ne montre plus seulement ce qui est prévu. Il réunit maintenant,
+pour chaque journée :
+
+- les opérations réellement saisies ;
+- les revenus et factures encore prévus ;
+- les échéances marquées payées, déplacées ou ignorées ;
+- les renouvellements de limites.
+
+Touchez une opération saisie pour la modifier, ou une échéance pour la gérer.
+Les dépenses importées ou saisies sans limite sont regroupées dans la **Boîte de
+réception** de Transactions afin de les classer rapidement, sans double saisie.

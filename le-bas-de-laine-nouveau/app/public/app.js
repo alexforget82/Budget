@@ -174,7 +174,7 @@ function renderTransactions() {
   $('#tx-total').innerHTML = rows.length ? `<span class="tag">${rows.length} opération${rows.length>1?'s':''}</span><span class="tag positive">Entrées ${money(ins)}</span><span class="tag negative">Sorties ${money(outs)}</span><span class="tag">Net ${money(ins-outs)}</span>` : '';
   const notice = $('#tx-review-notice'), review = state.data.review_count || 0;
   notice.hidden = !review || status === 'unclassified';
-  if (!notice.hidden) notice.innerHTML = `<b>${review} dépense${review>1?'s':''} à classer.</b><span> Choisissez une limite pour que le suivi et le restant soient justes.</span> <button type="button" class="mini" id="tx-show-review">Voir la file</button>`;
+  if (!notice.hidden) notice.innerHTML = `<b>Boîte de réception : ${review} dépense${review>1?'s':''} à classer.</b><span> Choisissez une limite pour que le suivi et le restant soient justes.</span> <button type="button" class="mini" id="tx-show-review">Ouvrir la boîte</button>`;
   $('#tx-show-review')?.addEventListener('click', () => { $('#tx-status').value='unclassified'; renderTransactions(); });
   const selected = rows.filter(t => state.selectedTransactions.has(t.id));
   const selection = $('#tx-selection');
@@ -221,10 +221,18 @@ async function renderCalendar() {
   $('#calendar-prev').disabled = calendar.month <= calendar.minMonth;
   $('#calendar-next').disabled = calendar.month >= calendar.maxMonth;
   $('#calendar-grid').innerHTML = calendar.days.map(day => {
-    const events = day.events.slice(0, 2).map(event => `<button class="calendar-event ${event.kind === 'income' ? 'income' : 'expense'}" type="button" data-occurrence="${event.rid}|${event.nominal}"><span>${event.kind === 'income' ? '↑' : '↓'} ${escape(event.name)}</span><b>${signed(event.amount, event.kind)}</b></button>`);
-    const limits = day.limitEvents.slice(0, Math.max(0, 3 - events.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><b>${money(event.amount)}</b></button>`);
-    const extra = Math.max(0, day.events.length + day.limitEvents.length - events.length - limits.length);
-    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${events.join('')}${limits.join('')}${extra ? `<span class="calendar-more">+ ${extra} autre${extra > 1 ? 's' : ''}</span>` : ''}</div></article>`;
+    const statusLabel = { planned:'Prévu', moved:'Déplacé', skipped:'Ignoré', paid:'Payé', entered:'Saisi' };
+    const actual = day.transactions.map(transaction => ({ ...transaction, type:'transaction' }));
+    const planned = day.events.map(event => ({ ...event, type:'occurrence' }));
+    const items = [...actual, ...planned];
+    const rows = items.slice(0, 3).map(item => {
+      const direction = item.kind === 'income' ? 'income' : 'expense', label = statusLabel[item.status] || 'Prévu';
+      const control = item.type === 'transaction' ? `data-edit-tx="${item.id}"` : `data-occurrence="${item.rid}|${item.nominal}"`;
+      return `<button class="calendar-event ${direction} status-${item.status}" type="button" ${control}><span>${item.status === 'paid' ? '✓' : item.status === 'skipped' ? '⊘' : item.status === 'moved' ? '↪' : item.status === 'entered' ? '•' : item.kind === 'income' ? '↑' : '↓'} ${escape(item.name)}</span><em>${label}</em><b>${signed(item.amount,item.kind)}</b></button>`;
+    });
+    const limits = day.limitEvents.slice(0, Math.max(0, 3 - rows.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><em>${event.funded ? 'Réservé' : 'Limite'}</em><b>${money(event.amount)}</b></button>`);
+    const extra = Math.max(0, items.length + day.limitEvents.length - rows.length - limits.length);
+    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<span class="calendar-more">+ ${extra} autre${extra > 1 ? 's' : ''}</span>` : ''}</div></article>`;
   }).join('');
 }
 async function renderBudget() {
