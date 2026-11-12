@@ -364,9 +364,31 @@ function applyTransactionRule() {
 }
 
 function populateCategories(selected='') { $('#tx-category').innerHTML = `<option value="">Sans limite</option>${state.data.categories.map(c=>`<option value="${c.id}" ${String(c.id)===String(selected)?'selected':''}>${escape(c.name)} · ${money(c.reserve)} restant</option>`).join('')}`; }
-function populateMatches(selected='') { const nearby = state.data.upcoming.filter(e=>e.kind==='expense' && Math.abs((new Date(`${e.due}T12:00Z`)-new Date(`${state.data.today}T12:00Z`))/86400000)<=10); $('#tx-recurring').innerHTML = `<option value="">Aucune association</option>${nearby.map(e=>`<option value="${e.rid}|${e.nominal}" ${`${e.rid}|${e.nominal}`===selected?'selected':''}>${escape(e.name)} · ${dateFmt(e.due)} · ${money(e.amount)}</option>`).join('')}`; }
-function prepareTransaction(tx=null) { const f=$('#transaction-form'); f.reset(); populateCategories(tx?.category_id || ''); populateMatches(tx?.recurring_id && tx?.recurring_date ? `${tx.recurring_id}|${tx.recurring_date}` : ''); f.id.value=tx?.id||''; f.kind.value=tx?.kind||'expense'; f.amount.value=tx ? (tx.amount/100).toFixed(2).replace('.',',') : ''; f.date.value=tx?.date||state.data.today; f.method.value=tx?.method||'joint'; f.description.value=tx?.description||''; updateTransactionFields(); if (!tx) applyTransactionRule(); $('#transaction-title').textContent=tx?'Modifier la transaction':'Ajouter une transaction'; open('transaction'); }
-function updateTransactionFields() { const kind=$('#tx-form-kind').value, card = $('#tx-form-method'); $('#tx-category-field').hidden=kind!=='expense'; $('#tx-remember-field').hidden=kind!=='expense'; $('#match-field').hidden=kind!=='expense'; card.closest('.field').hidden=kind==='income'; if(kind==='card_payment') card.value='joint'; if(kind!=='expense') $('#tx-rule-hint').textContent=''; }
+function recurringCandidates(kind, date) {
+  const target = /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) ? date : state.data.today;
+  return state.data.upcoming.filter(event => event.kind === kind && Math.abs((new Date(`${event.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) / 86400000) <= 10)
+    .sort((a,b) => Math.abs(new Date(`${a.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) - Math.abs(new Date(`${b.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) || a.name.localeCompare(b.name,'fr-CA'));
+}
+function populateMatches(selected='') {
+  const form = $('#transaction-form'), kind = form.kind.value, matching = ['expense','income'].includes(kind), select = $('#tx-recurring');
+  if (!matching) { select.innerHTML = '<option value="">Aucune association</option>'; return []; }
+  const candidates = recurringCandidates(kind, form.date.value);
+  select.innerHTML = `<option value="">Aucune association</option>${candidates.map(event=>`<option value="${event.rid}|${event.nominal}" ${`${event.rid}|${event.nominal}`===selected?'selected':''}>${escape(event.name)} · ${dateFmt(event.due)} · ${money(event.amount)}</option>`).join('')}`;
+  return candidates;
+}
+function suggestIncomeMatch(candidates = recurringCandidates('income', $('#tx-date').value)) {
+  const form = $('#transaction-form');
+  if (form.kind.value !== 'income' || form.id.value || form.dataset.matchManual === '1') return;
+  const amount = parseCents(form.amount.value); if (amount === null) return;
+  const description = merchantKey(form.description.value);
+  const sameAmount = candidates.filter(event => event.amount === amount);
+  const sameName = description ? sameAmount.filter(event => description.includes(merchantKey(event.name)) || merchantKey(event.name).includes(description)) : sameAmount;
+  const choice = sameName.length === 1 ? sameName[0] : sameAmount.length === 1 ? sameAmount[0] : null;
+  if (choice) $('#tx-recurring').value = `${choice.rid}|${choice.nominal}`;
+}
+function refreshTransactionMatches(selected='') { const candidates = populateMatches(selected); if (!selected) suggestIncomeMatch(candidates); }
+function prepareTransaction(tx=null) { const f=$('#transaction-form'); f.reset(); f.id.value=tx?.id||''; f.kind.value=tx?.kind||'expense'; f.amount.value=tx ? (tx.amount/100).toFixed(2).replace('.',',') : ''; f.date.value=tx?.date||state.data.today; f.method.value=tx?.method||'joint'; f.description.value=tx?.description||''; f.dataset.matchManual=tx?'1':''; populateCategories(tx?.category_id || ''); updateTransactionFields(); refreshTransactionMatches(tx?.recurring_id && tx?.recurring_date ? `${tx.recurring_id}|${tx.recurring_date}` : ''); if (!tx) { applyTransactionRule(); suggestIncomeMatch(); } $('#transaction-title').textContent=tx?'Modifier la transaction':'Ajouter une transaction'; open('transaction'); }
+function updateTransactionFields() { const kind=$('#tx-form-kind').value, card = $('#tx-form-method'), matching=['expense','income'].includes(kind); $('#tx-category-field').hidden=kind!=='expense'; $('#tx-remember-field').hidden=kind!=='expense'; $('#match-field').hidden=!matching; card.closest('.field').hidden=kind==='income'; if(kind==='card_payment') card.value='joint'; if(kind!=='expense') $('#tx-rule-hint').textContent=''; if(matching){ setText('#match-label',kind==='income'?'Associer à un revenu prévu':'Associer à une facture prévue'); setText('#match-copy',kind==='income'?'Évite de compter deux fois une paie, rente ou allocation déjà prévue.':'Évite de compter deux fois une facture déjà prévue.'); } }
 function prepareLimit(c=null) { const f=$('#limit-form'); f.reset(); f.id.value=c?.id||''; f.name.value=c?.name||''; f.amount.value=c?(c.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=c?.frequency||'w'; f.funding.value=c?.funding||'start'; f.start_date.value=c?.start_date||state.data.today; if(c?.frequency==='m') f.monthly_renewal.value=c.renewal; else f.renewal.value=c?.renewal||'4'; $('#limit-title').textContent=c?'Modifier la limite':'Ajouter une limite'; $('#delete-limit').hidden=!c; updateLimitFields(); open('limit'); }
 function updateLimitFields() { const monthly=$('#limit-frequency').value==='m'; $('#limit-weekday').hidden=monthly; $('#limit-monthday').hidden=!monthly; $('#limit-funding').hidden=!monthly; if(!monthly) $('#limit-form').funding.value='start'; }
 function prepareRule(rule=null) { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||'income'; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':'Ajouter une règle'; $('#delete-recurring').hidden=!rule; open('recurring'); }
@@ -421,7 +443,13 @@ function wire() {
   $('#safe-slider').addEventListener('input',renderChart);
   $('#quick-afford').addEventListener('click',()=>{ const n=parseCents($('#quick-amount').value); if(n===null)return toast('Inscrivez un montant valide.'); $('#afford-form').reset();$('#afford-form').amount.value=(n/100).toFixed(2).replace('.',',');$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); });
   ['#tx-search','#tx-kind','#tx-method','#tx-month','#tx-status','#tx-sort'].forEach(s=>$(s).addEventListener(s==='#tx-search'?'input':'change',renderTransactions));
-  $('#tx-form-kind').addEventListener('change',()=>{updateTransactionFields();applyTransactionRule();}); $('#tx-form-method').addEventListener('change',applyTransactionRule); $('#tx-description').addEventListener('input',applyTransactionRule); $('#limit-frequency').addEventListener('change',updateLimitFields);
+  $('#tx-form-kind').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';updateTransactionFields();refreshTransactionMatches();applyTransactionRule();});
+  $('#tx-form-method').addEventListener('change',applyTransactionRule);
+  $('#tx-description').addEventListener('input',()=>{applyTransactionRule();suggestIncomeMatch();});
+  $('#tx-amount').addEventListener('input',()=>suggestIncomeMatch());
+  $('#tx-date').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';refreshTransactionMatches();});
+  $('#tx-recurring').addEventListener('change',()=>{$('#transaction-form').dataset.matchManual='1';});
+  $('#limit-frequency').addEventListener('change',updateLimitFields);
   $('#budget-prev').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()-1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#budget-next').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#calendar-prev').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,-1); if(!state.calendar || candidate>=state.calendar.minMonth){state.calendarMonth=candidate;renderCalendar();}});

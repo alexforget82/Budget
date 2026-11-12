@@ -98,3 +98,10 @@
   <script src="/app.js"></script>
 </body>
 </html>
+
+
+## Correctif 1.7.1 — revenus sans double compte
+
+- Lorsqu’un revenu saisi dans Transactions correspond clairement à un revenu prévu, il est associé automatiquement à cette échéance.
+- La paie, rente ou allocation prévue est alors marquée payée : le montant n’est compté qu’une fois.
+- Le choix reste visible et peut être changé ou retiré avant l’enregistrement.
