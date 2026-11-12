@@ -1,3 +1,7 @@
+# 1.3.0 — transactions plus rapides à lire
+
+Transactions garde les règles de commerçant, l’import CSV avec aperçu et la file de révision, en ajoutant un tri explicite par date, montant, description ou catégorie. Une sélection affiche maintenant son total et sa moyenne avant le classement ou la validation. Les opérations à classer sont signalées directement dans la liste avec un accès immédiat à leur file. Le moteur de prévision, les limites, les cartes, le schéma SQLite et les données restent inchangés.
+
 # 1.2.0 — saisie et suivi plus clairs
 
 Revenus échus visibles avant le disponible, confirmation du montant et de la date, avec choix explicite pour un dépôt déjà compris dans le solde de référence. Commerçants récents normalisés proposant catégorie et compte sans reprendre montant ou ancienne date; choix manuels conservés.

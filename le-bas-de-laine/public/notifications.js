@@ -140,7 +140,7 @@ export async function notificationsEditor({ request, modal }) {
           const wanted = details.checked,
             key = await request("/api/notifications/key", {}),
             registration = await navigator.serviceWorker.register(
-              "/sw.js?v=1.2.0",
+              "/sw.js?v=1.3.0",
               { scope: "/", updateViaCache: "none" },
             );
           await navigator.serviceWorker.ready;

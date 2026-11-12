@@ -1994,6 +1994,22 @@
   gap: 10px;
   margin-bottom: 16px;
 }
+.transaction-review-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: -4px 0 16px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+.transaction-review-notice strong { color: var(--accent); }
+.transaction-review-notice span { color: var(--muted); }
+.transaction-review-notice .text-button { margin-left: auto; }
+.selection-summary { font-variant-numeric: tabular-nums; }
 .review-batch[hidden] { display: none; }
 .selection-cell { width: 42px; }
 .classification-rules { display: grid; gap: 12px; }
@@ -2003,6 +2019,7 @@
 .csv-row select { max-width: 100%; }
 @media (max-width: 600px) {
   .review-batch button { flex: 1 1 140px; white-space: normal; }
+  .transaction-review-notice .text-button { margin-left: 0; }
   .ledger .edit { white-space: normal; }
 }
 @media (max-width: 800px) {

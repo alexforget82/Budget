@@ -39,6 +39,7 @@ let state,
     month: null,
     account: "",
     category: "",
+    sort: "date_desc",
     review: false,
   },
   calendarChoice = { mode: "month", month: null, selected: null, open: false },
@@ -367,6 +368,7 @@ function render() {
             month: "",
             account: "",
             category: "",
+            sort: "date_desc",
             review: true,
           };
           navigate("transactions");
@@ -1110,12 +1112,25 @@ function transactionsView() {
         ...state.categories.map((c) => [c.id, c.name]),
       ],
       transactionFilters.category,
+    ),
+    sort = select(
+      "transaction-sort",
+      [
+        ["date_desc", "Plus récentes"],
+        ["date_asc", "Plus anciennes"],
+        ["amount_desc", "Montant décroissant"],
+        ["amount_asc", "Montant croissant"],
+        ["description_asc", "Description A–Z"],
+        ["category_asc", "Catégorie A–Z"],
+      ],
+      transactionFilters.sort,
     );
   search.placeholder = "Description, catégorie ou compte";
   search.setAttribute("aria-label", "Rechercher une transaction");
   month.setAttribute("aria-label", "Mois");
   account.setAttribute("aria-label", "Filtrer par compte");
   category.setAttribute("aria-label", "Filtrer par catégorie");
+  sort.setAttribute("aria-label", "Trier les opérations");
   const actions = node("div", null, "actions");
   const reviewFilter = button(
     "À réviser (" + (state.review_count || 0) + ")",
@@ -1130,8 +1145,10 @@ function transactionsView() {
     button("Règles de classement", classificationManager),
     button("Importer un CSV", csvEditor),
   );
-  filters.append(search, month, account, category, actions);
+  filters.append(search, month, account, category, sort, actions);
   root.append(filters);
+  const reviewNotice = node("div", null, "transaction-review-notice");
+  root.append(reviewNotice);
   const selectedIds = new Set(),
     batch = node("div", null, "review-batch");
   root.append(batch);
@@ -1171,6 +1188,7 @@ function transactionsView() {
       month: month.value,
       account: account.value,
       category: category.value,
+      sort: sort.value,
       review: !!transactionFilters.review,
     };
     tbody.replaceChildren();
@@ -1217,7 +1235,26 @@ function transactionsView() {
             ].join(" "),
           ).includes(norm(search.value)),
       )
-      .sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq);
+      .sort((a, b) => {
+        const byDate = b.date.localeCompare(a.date) || b.seq - a.seq;
+        if (sort.value === "date_desc") return byDate;
+        if (sort.value === "date_asc") return -byDate;
+        if (sort.value === "amount_desc")
+          return b.amount_cents - a.amount_cents || byDate;
+        if (sort.value === "amount_asc")
+          return a.amount_cents - b.amount_cents || byDate;
+        if (sort.value === "description_asc")
+          return (
+            norm(a.description).localeCompare(norm(b.description), "fr-CA") ||
+            byDate
+          );
+        if (sort.value === "category_asc")
+          return (
+            norm(categoryName(a)).localeCompare(norm(categoryName(b)), "fr-CA") ||
+            byDate
+          );
+        return byDate;
+      });
     const realIds = list
       .filter((t) => t.kind === "transaction")
       .map((t) => t.id);
@@ -1227,14 +1264,47 @@ function transactionsView() {
       "aria-pressed",
       String(!!transactionFilters.review),
     );
+    reviewNotice.replaceChildren();
+    if ((state.review_count || 0) && !transactionFilters.review) {
+      reviewNotice.append(
+        node(
+          "strong",
+          state.review_count +
+            " opération" +
+            (state.review_count > 1 ? "s" : "") +
+            " à classer",
+        ),
+        node(
+          "span",
+          "Confirmez les propositions des règles ou choisissez une catégorie.",
+        ),
+        button("Voir la file", () => {
+          transactionFilters.review = true;
+          draw();
+        }, "text-button"),
+      );
+    }
     function drawBatch() {
       batch.replaceChildren();
       all.checked =
         !!realIds.length && realIds.every((id) => selectedIds.has(id));
       all.indeterminate = selectedIds.size > 0 && !all.checked;
-      if (selectedIds.size)
+      if (selectedIds.size) {
+        const selected = list.filter(
+            (t) => t.kind === "transaction" && selectedIds.has(t.id),
+          ),
+          total = selected.reduce((sum, t) => sum + t.amount_cents, 0),
+          average = Math.round(total / selected.length);
         batch.append(
-          node("span", selectedIds.size + " sélectionnée(s)"),
+          node(
+            "span",
+            selectedIds.size +
+              " sélectionnée(s) · Total " +
+              money(total) +
+              " · Moyenne " +
+              money(average),
+            "selection-summary",
+          ),
           button("Changer la catégorie", () => batchCategory([...selectedIds])),
           button("Valider la sélection", () =>
             send("/api/review/apply", {
@@ -1243,6 +1313,7 @@ function transactionsView() {
             }),
           ),
         );
+      }
       const ruled = realIds.filter((id) =>
         (state.review_rule_ids || []).includes(id),
       );
@@ -1351,7 +1422,7 @@ function transactionsView() {
     drawBatch();
   }
   search.oninput = draw;
-  month.onchange = account.onchange = category.onchange = draw;
+  month.onchange = account.onchange = category.onchange = sort.onchange = draw;
   draw();
   return root;
 }

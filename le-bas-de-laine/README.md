@@ -1,4 +1,4 @@
-# Le bas de laine · 1.2.0
+# Le bas de laine · 1.3.0
 
 Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Node.js et SQLite, sans dépendance de production, abonnement ni synchronisation bancaire. Sillage et ses données restent séparés.
 
@@ -7,7 +7,7 @@ Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **
 Linux doit être activé; Node.js **22.13 ou plus récent** est requis (Node 24 recommandé). Téléchargez et extrayez l’archive dans **Fichiers Linux**, puis :
 
 ```bash
-cd ~/Le-bas-de-laine-1.2.0 && bash "Installer Le bas de laine.sh"
+cd ~/Le-bas-de-laine-1.3.0 && bash "Installer Le bas de laine.sh"
 ```
 
 Ouvrez **http://localhost:3040** ou le lanceur **Le bas de laine**, puis actualisez après une mise à jour. Le programme va dans `~/.local/share/le-bas-de-laine/app`, le budget dans `data`, les copies d’installation dans `backups`. Le service `le-bas-de-laine.service` fonctionne sans Terminal ouvert et démarre avec Linux. ChromeOS ne lance pas forcément Linux à l’ouverture de session; l’accès iPhone nécessite un Chromebook allumé, éveillé et connecté.
@@ -29,7 +29,7 @@ Un achat sur carte consomme sa limite et devient à payer; le paiement de carte 
 **Plan → Réglages et sauvegardes → Guide d’utilisation** ouvre le guide intégré, également disponible à `/guide`. Il décrit la configuration, la saisie, les achats anticipés, les cartes, les sauvegardes et l’iPhone.
 
 - Aujourd’hui : minimum 30 jours, prévision quotidienne, limites et simulateur d’achat.
-- Transactions : saisie, CSV avec aperçu, règles de classement, révision et catégorie en lot avec effet chiffré avant confirmation.
+- Transactions : saisie, CSV avec aperçu, règles par commerçant, file À classer, recherche, filtres, tri et catégories en lot avec effet chiffré avant confirmation.
 - Plan : revenus et factures, limites, calendrier, budget mensuel, comptes et sauvegardes.
 
 Le budget mensuel est une vue globale des règles actuelles et des transactions. Il compte les dates réelles, sans moyenne annualisée, mais ne conserve pas les anciennes versions des budgets. Il ne réserve pas une seconde fois l’argent.
@@ -54,7 +54,7 @@ Configurez Tailscale sur le Chromebook et l’iPhone, puis lancez au besoin `bas
 
 `npm test` lance les tests Node; les parcours Chromium, essais de restauration et limites de validation sont décrits dans [docs/TESTS.md](docs/TESTS.md). Les essais automatisés ne remplacent pas l’utilisation réelle sur Chromebook et iPhone. L’historique des versions est dans [CHANGELOG.md](CHANGELOG.md), le contrat de calcul dans [docs/SPECIFICATION.md](docs/SPECIFICATION.md). Les anciennes maquettes statiques restent des documents de référence.
 
-## Résumé du matin sur iPhone (1.2.0)
+## Résumé du matin sur iPhone (1.3.0)
 
 Sur l’iPhone propriétaire, ouvrez la version complète depuis son icône d’écran d’accueil, puis **Plan → Réglages et sauvegardes → Notifications du matin → Activer sur cet appareil**. Acceptez l’autorisation iOS et utilisez **Envoyer un test**. Si vous êtes dans Safari, ajoutez d’abord l’application à l’écran d’accueil. iOS 16.4 ou plus récent et l’accès HTTPS privé configuré sont requis.
 
@@ -65,6 +65,10 @@ Par défaut, le contenu dit seulement que votre résumé est prêt. L’option A
 Chaque appareil s’active séparément. Désactivez cet appareil ou suspendez tous les rappels depuis ce panneau. Le lien simplifié de la conjointe n’a pas ces commandes et ne reçoit rien sans activation propriétaire. Le bouton Test vérifie l’acceptation par le service; confirmez ensuite la réception sur l’iPhone.
 
 Envoi Web Push chiffré, sans clé API payante ni dépendance de production. Les clés locales et abonnements sont dans `data/web-push.json`, permissions privées, exclus de l’export JSON du budget. Ils restent dans les copies complètes de données faites lors des installations; une restauration du budget sur une autre machine exige de réactiver les appareils. Ne partagez pas ce fichier. Le service worker ne cache pas de pages et ne récupère pas de données financières en arrière-plan.
+
+## Nouveautés 1.3
+
+Transactions se lit comme un grand livre compact : choisissez le tri par date, montant, description ou catégorie. Lors d’une sélection, le total et la moyenne sont affichés avant toute action. Les opérations importées ou encore non validées sont signalées dans la liste, avec un accès direct à la file **À classer**. Les règles par commerçant, l’import CSV et les calculs du disponible ne changent pas.
 
 ## Nouveautés 1.2
 
