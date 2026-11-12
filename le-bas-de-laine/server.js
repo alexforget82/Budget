@@ -193,7 +193,7 @@ function handler(isPrivate) {
         if (shared[2] === "/data") {
           const snapshot = currentState();
           return reply(res, 200, {
-            version: "1.3.0",
+            version: "1.3.1",
             simulation: snapshot.simulation,
             balance_verified_on: snapshot.balance_verified_on,
             purchase_options: {

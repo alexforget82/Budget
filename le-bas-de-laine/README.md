@@ -1,4 +1,4 @@
-# Le bas de laine · 1.3.0
+# Le bas de laine · 1.3.1
 
 Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **Transactions**, **Plan**. Node.js et SQLite, sans dépendance de production, abonnement ni synchronisation bancaire. Sillage et ses données restent séparés.
 
@@ -7,7 +7,7 @@ Budget personnel local, en français, avec trois écrans : **Aujourd’hui**, **
 Linux doit être activé; Node.js **22.13 ou plus récent** est requis (Node 24 recommandé). Téléchargez et extrayez l’archive dans **Fichiers Linux**, puis :
 
 ```bash
-cd ~/Le-bas-de-laine-1.3.0 && bash "Installer Le bas de laine.sh"
+cd ~/Le-bas-de-laine-1.3.1 && bash "Installer Le bas de laine.sh"
 ```
 
 Ouvrez **http://localhost:3040** ou le lanceur **Le bas de laine**, puis actualisez après une mise à jour. Le programme va dans `~/.local/share/le-bas-de-laine/app`, le budget dans `data`, les copies d’installation dans `backups`. Le service `le-bas-de-laine.service` fonctionne sans Terminal ouvert et démarre avec Linux. ChromeOS ne lance pas forcément Linux à l’ouverture de session; l’accès iPhone nécessite un Chromebook allumé, éveillé et connecté.
@@ -54,7 +54,7 @@ Configurez Tailscale sur le Chromebook et l’iPhone, puis lancez au besoin `bas
 
 `npm test` lance les tests Node; les parcours Chromium, essais de restauration et limites de validation sont décrits dans [docs/TESTS.md](docs/TESTS.md). Les essais automatisés ne remplacent pas l’utilisation réelle sur Chromebook et iPhone. L’historique des versions est dans [CHANGELOG.md](CHANGELOG.md), le contrat de calcul dans [docs/SPECIFICATION.md](docs/SPECIFICATION.md). Les anciennes maquettes statiques restent des documents de référence.
 
-## Résumé du matin sur iPhone (1.3.0)
+## Résumé du matin sur iPhone (1.3.1)
 
 Sur l’iPhone propriétaire, ouvrez la version complète depuis son icône d’écran d’accueil, puis **Plan → Réglages et sauvegardes → Notifications du matin → Activer sur cet appareil**. Acceptez l’autorisation iOS et utilisez **Envoyer un test**. Si vous êtes dans Safari, ajoutez d’abord l’application à l’écran d’accueil. iOS 16.4 ou plus récent et l’accès HTTPS privé configuré sont requis.
 

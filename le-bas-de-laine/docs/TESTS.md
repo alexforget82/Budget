@@ -1,4 +1,4 @@
-# Vérifications — 1.3.0
+# Vérifications — 1.3.1
 
 **157 tests Node réussis**. Le moteur, les limites, les cartes, les règles de classement et l’import CSV donnent les mêmes résultats. Les parcours Chromium `classification-ui.py`, `daily-tools-ui.py` et `ui.py` ont été exécutés sur des données fictives. Ils valident la file de révision, le total et la moyenne de la sélection, le tri alphabétique, les filtres, les virements, l’import CSV et l’affichage mobile sur quatre largeurs et deux thèmes. Aucune donnée réelle n’est utilisée. Cette version ne modifie aucune table ni formule financière.
 
