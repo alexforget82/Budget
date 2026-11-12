@@ -2,7 +2,7 @@
 'use strict';
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
-const state = { data: null, page: 'today', month: null, selectedTransactions: new Set(), csv: null };
+const state = { data: null, page: 'today', month: null, calendarMonth: null, calendar: null, selectedTransactions: new Set(), csv: null };
 const money = cents => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format((Number(cents) || 0) / 100);
 const signed = (cents, kind) => `${kind === 'income' ? '+' : '−'}${money(Math.abs(cents))}`;
 const dateFmt = value => new Intl.DateTimeFormat('fr-CA', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${value}T12:00:00Z`));
@@ -36,15 +36,22 @@ function changePage(page) {
   state.page = page;
   $$('.page').forEach(el => el.hidden = el.id !== `page-${page}`);
   $$('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
-  const titles = { today:['Aujourd’hui','Votre argent, sans les complications.'], transactions:['Transactions','Chaque achat est saisi une seule fois.'], plan:['Plan','Ce qui arrive, dans un seul endroit.'], calendar:['Calendrier','La prévision jour par jour.'], budget:['Budget','La vue mensuelle, sans effets sur le disponible.'] };
+  const titles = { today:['Aujourd’hui','Votre argent, sans les complications.'], transactions:['Transactions','Chaque achat est saisi une seule fois.'], plan:['Plan','Ce qui arrive, dans un seul endroit.'], calendar:['Calendrier','La prévision mensuelle, jour par jour.'], budget:['Budget','La vue mensuelle, sans effets sur le disponible.'] };
   setText('#top-title', titles[page][0]); setText('#top-subtitle', titles[page][1]);
   if (page === 'budget') renderBudget();
+  if (page === 'calendar') renderCalendar();
   window.scrollTo({ top:0, behavior:'instant' });
 }
 function upcomingByKind(kind) { return state.data.upcoming.filter(e => e.kind === kind); }
 function categoryName(id) { return state.data.categories.find(c => c.id === id)?.name || 'Sans limite'; }
 function nextLimitText(c) { const starts = c.starts || []; const next = starts.find(d => d > state.data.today); if (!next) return 'aucun renouvellement sous 30 jours'; return c.funding === 'income' ? `à couvrir avant ${dateFmt(next)}` : `renouvelle ${dateFmt(next)}`; }
 function progressWidth(c) { if (!c.amount) return 0; return Math.max(0, Math.min(100, (c.reserve / c.amount) * 100)); }
+function checkpointText(settings) {
+  if (settings.checkpointAge === null || settings.checkpointAge === undefined) return 'Solde à vérifier';
+  if (settings.checkpointAge === 0) return 'Solde vérifié aujourd’hui';
+  return `Solde vérifié il y a ${settings.checkpointAge} jour${settings.checkpointAge > 1 ? 's' : ''}`;
+}
+function signedMoney(cents) { return `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${money(Math.abs(cents))}`; }
 function renderSetup() {
   const holder = $('#setup-banner');
   if (state.data.settings.setupComplete) { holder.innerHTML = ''; return; }
@@ -57,7 +64,7 @@ function renderToday() {
   setText('#safe30-note', `Point le plus bas prévu le ${dateFmt(min.date)}.`);
   setText('#safe-now', money(d.current.safe));
   setText('#safe-until', money(d.safeUntilIncome.safe));
-  setText('#checkpoint-label', d.settings.checkpointDate ? `Solde vérifié le ${dayFmt(d.settings.checkpointDate)}` : 'Solde à vérifier');
+  setText('#checkpoint-label', checkpointText(d.settings));
   renderChart();
   const income = d.nextIncome;
   const bill = upcomingByKind('expense')[0];
@@ -65,7 +72,8 @@ function renderToday() {
   $('#glance').innerHTML = [
     income ? `<article class="card glance-card income"><small>Prochain revenu</small><b>${escape(income.name)} · ${money(income.amount)}</b><span>${dateFmt(income.due)}</span></article>` : `<article class="card glance-card income"><small>Prochain revenu</small><b>À ajouter dans Plan</b><span>Une paie rend la prévision plus juste.</span></article>`,
     bill ? `<article class="card glance-card bill"><small>Prochaine facture</small><b>${escape(bill.name)} · ${money(bill.amount)}</b><span>${dateFmt(bill.due)}</span></article>` : `<article class="card glance-card bill"><small>Prochaine facture</small><b>Aucune facture prévue</b><span>Ajoutez-en une dans Plan si nécessaire.</span></article>`,
-    urgent ? `<article class="card glance-card limit"><small>Limite à surveiller</small><b>${escape(urgent.name)} · ${money(urgent.reserve)} restant</b><span>${nextLimitText(urgent)}</span></article>` : `<article class="card glance-card limit"><small>Limites</small><b>À configurer</b><span>Épicerie, essence ou autres dépenses variables.</span></article>`
+    urgent ? `<article class="card glance-card limit"><small>Limite à surveiller</small><b>${escape(urgent.name)} · ${money(urgent.reserve)} restant</b><span>${nextLimitText(urgent)}</span></article>` : `<article class="card glance-card limit"><small>Limites</small><b>À configurer</b><span>Épicerie, essence ou autres dépenses variables.</span></article>`,
+    `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>${checkpointText(d.settings)}</small><b>Solde prévu ${money(d.settings.expectedBank)}</b><span>${d.settings.checkpointChange ? `${signedMoney(d.settings.checkpointChange)} depuis le solde inscrit` : 'Aucune opération comptabilisée depuis le solde inscrit.'}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier</button><button class="mini" type="button" data-open="transaction">Ajouter une opération</button></div></article>`
   ].join('');
   const limits = [...d.categories].filter(c => c.amount).sort((a,b) => a.reserve - b.reserve);
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
@@ -195,15 +203,28 @@ function renderPlan() {
   $('#income-list').innerHTML = listRules('income', 'Ajoutez une paie, une rente ou une allocation.');
   $('#bill-list').innerHTML = listRules('expense', 'Ajoutez vos factures fixes.');
   $('#limit-list').innerHTML = state.data.categories.length ? state.data.categories.map(c=>limitRow(c,true)).join('') : `<div class="empty">Ajoutez Épicerie, Essence ou une autre dépense variable.</div>`;
-  setText('#plan-checkpoint', state.data.settings.checkpointDate ? `Solde vérifié le ${dateFmt(state.data.settings.checkpointDate)}.` : 'Aucun solde vérifié : inscrivez votre solde actuel pour démarrer.');
+  const settings = state.data.settings;
+  setText('#plan-checkpoint', settings.checkpointDate ? `${checkpointText(settings)}.` : 'Aucun solde vérifié : inscrivez votre solde actuel pour démarrer.');
+  setText('#plan-checkpoint-detail', settings.checkpointDate ? `Solde inscrit : ${money(settings.bank)} · solde prévu aujourd’hui : ${money(settings.expectedBank)} · écart depuis la vérification : ${signedMoney(settings.checkpointChange)}.` : 'Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.');
 }
 function labelFrequency(f) { return ({w:'chaque semaine',b:'aux 2 semaines',m:'chaque mois',a:'chaque année'})[f] || f; }
-function renderCalendar() {
-  const d = state.data, rows = d.daily.slice(0,30);
-  $('#calendar-grid').innerHTML = rows.map(row => {
-    const events = row.events.slice(0,3).map(e=>`<button class="evt link ${e.kind==='income'?'positive':'negative'}" data-occurrence="${e.rid}|${e.nominal}">${e.kind==='income'?'+':'−'} ${escape(e.name)} · ${money(e.amount)}</button>`).join('');
-    const limitStarts = row.limitEvents.map(e=>`<button class="evt link" data-open="adjust">↻ ${escape(e.name)} · ${money(e.amount)}</button>`).join('');
-    return `<article class="day-card ${row.date===d.today?'today':''}"><div class="date">${dateFmt(row.date)}</div><div class="safe">Disponible ${money(row.safe)}</div>${events}${limitStarts}</article>`;
+function shiftedMonthClient(month, offset) { const date = new Date(`${month}-01T12:00:00Z`); date.setUTCMonth(date.getUTCMonth() + offset); return date.toISOString().slice(0, 7); }
+function calendarMonthLabel(month) { return new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric'}).format(new Date(`${month}-01T12:00:00Z`)); }
+async function renderCalendar() {
+  if (!state.data) return;
+  const requested = state.calendarMonth || state.data.today.slice(0, 7);
+  const calendar = await api(`/api/calendar?month=${encodeURIComponent(requested)}`);
+  if (requested !== (state.calendarMonth || state.data.today.slice(0, 7))) return;
+  state.calendar = calendar;
+  state.calendarMonth = calendar.month;
+  setText('#calendar-month', calendarMonthLabel(calendar.month));
+  $('#calendar-prev').disabled = calendar.month <= calendar.minMonth;
+  $('#calendar-next').disabled = calendar.month >= calendar.maxMonth;
+  $('#calendar-grid').innerHTML = calendar.days.map(day => {
+    const events = day.events.slice(0, 2).map(event => `<button class="calendar-event ${event.kind === 'income' ? 'income' : 'expense'}" type="button" data-occurrence="${event.rid}|${event.nominal}"><span>${event.kind === 'income' ? '↑' : '↓'} ${escape(event.name)}</span><b>${signed(event.amount, event.kind)}</b></button>`);
+    const limits = day.limitEvents.slice(0, Math.max(0, 3 - events.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><b>${money(event.amount)}</b></button>`);
+    const extra = Math.max(0, day.events.length + day.limitEvents.length - events.length - limits.length);
+    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${events.join('')}${limits.join('')}${extra ? `<span class="calendar-more">+ ${extra} autre${extra > 1 ? 's' : ''}</span>` : ''}</div></article>`;
   }).join('');
 }
 async function renderBudget() {
@@ -229,7 +250,7 @@ async function renderBudget() {
   }).join('');
   $('#budget-empty').hidden = b.categories.length > 0;
 }
-function render() { renderSetup(); renderToday(); renderTransactions(); renderPlan(); renderCalendar(); if (state.page === 'budget') renderBudget(); }
+function render() { renderSetup(); renderToday(); renderTransactions(); renderPlan(); if (state.page === 'calendar') renderCalendar(); if (state.page === 'budget') renderBudget(); }
 
 function csvDelimiter(text) {
   const first = String(text || '').split(/\r?\n/, 1)[0] || '';
@@ -349,7 +370,21 @@ function updateTransactionFields() { const kind=$('#tx-form-kind').value, card =
 function prepareLimit(c=null) { const f=$('#limit-form'); f.reset(); f.id.value=c?.id||''; f.name.value=c?.name||''; f.amount.value=c?(c.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=c?.frequency||'w'; f.funding.value=c?.funding||'start'; f.start_date.value=c?.start_date||state.data.today; if(c?.frequency==='m') f.monthly_renewal.value=c.renewal; else f.renewal.value=c?.renewal||'4'; $('#limit-title').textContent=c?'Modifier la limite':'Ajouter une limite'; $('#delete-limit').hidden=!c; updateLimitFields(); open('limit'); }
 function updateLimitFields() { const monthly=$('#limit-frequency').value==='m'; $('#limit-weekday').hidden=monthly; $('#limit-monthday').hidden=!monthly; $('#limit-funding').hidden=!monthly; if(!monthly) $('#limit-form').funding.value='start'; }
 function prepareRule(rule=null) { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||'income'; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':'Ajouter une règle'; $('#delete-recurring').hidden=!rule; open('recurring'); }
-function prepareOccurrence(key) { const [rid,due]=key.split('|'); const event=state.data.upcoming.find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
+function prepareOccurrence(key) { const [rid,due]=key.split('|'); const calendarEvents = state.calendar?.days.flatMap(day => day.events) || []; const event=[...state.data.upcoming,...calendarEvents].find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
+function updateCheckpointDifference() {
+  const value = parseCents($('#checkpoint-bank').value), expected = state.data.settings.expectedBank;
+  if (value === null) { setText('#checkpoint-difference', 'Inscrivez le solde vu dans votre banque pour comparer.'); return; }
+  const difference = value - expected;
+  setText('#checkpoint-difference', difference === 0 ? 'Même montant que le solde prévu.' : difference > 0 ? `${signedMoney(difference)} de plus que le solde prévu. Vérifiez une entrée oubliée ou enregistrez ce nouveau solde.` : `${signedMoney(difference)} de moins que le solde prévu. Vérifiez une dépense oubliée ou enregistrez ce nouveau solde.`);
+}
+function prepareCheckpoint() {
+  const settings = state.data.settings, form = $('#checkpoint-form');
+  form.reset();
+  setText('#checkpoint-expected', money(settings.expectedBank));
+  setText('#checkpoint-flow', settings.checkpointChange ? signedMoney(settings.checkpointChange) : 'Aucun écart');
+  updateCheckpointDifference();
+  open('checkpoint');
+}
 function prepareAdjust() {
   const negative = state.data.firstNegative;
   if (!negative) { toast('Aucun jour négatif à corriger dans les 90 prochains jours.'); return; }
@@ -368,7 +403,7 @@ function wire() {
     if(button.dataset.page) return changePage(button.dataset.page);
     if(button.dataset.pageLink) return changePage(button.dataset.pageLink);
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
-    if(button.dataset.open) { if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
+    if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
     if(button.dataset.editTx) return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.editTx));
     if(button.dataset.deleteTx) { if(confirm('Supprimer cette transaction ?')) await act({action:'delete_transaction',id:button.dataset.deleteTx}); return; }
@@ -389,6 +424,9 @@ function wire() {
   $('#tx-form-kind').addEventListener('change',()=>{updateTransactionFields();applyTransactionRule();}); $('#tx-form-method').addEventListener('change',applyTransactionRule); $('#tx-description').addEventListener('input',applyTransactionRule); $('#limit-frequency').addEventListener('change',updateLimitFields);
   $('#budget-prev').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()-1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#budget-next').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);state.month=d.toISOString().slice(0,7);renderBudget();});
+  $('#calendar-prev').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,-1); if(!state.calendar || candidate>=state.calendar.minMonth){state.calendarMonth=candidate;renderCalendar();}});
+  $('#calendar-next').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,1); if(!state.calendar || candidate<=state.calendar.maxMonth){state.calendarMonth=candidate;renderCalendar();}});
+  $('#checkpoint-bank').addEventListener('input',updateCheckpointDifference);
   $('#setup-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{await act({...filled(form),action:'setup',complete:true});close(form.closest('dialog'));changePage('plan');toast('Solde enregistré. Ajoutez maintenant vos revenus, factures et limites.');}catch(error){toast(error.message);}});
   $('#checkpoint-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{await act({...filled(form),action:'checkpoint'});close(form.closest('dialog'));}catch(error){toast(error.message);}});
   $('#transaction-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{const v=filled(form), key=v.recurring_key; delete v.recurring_key;if(key){[v.recurring_id,v.recurring_date]=key.split('|');}await act({...v,action:'transaction'});close(form.closest('dialog'));}catch(error){toast(error.message);}});

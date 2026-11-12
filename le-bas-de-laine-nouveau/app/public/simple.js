@@ -1,5 +1,46 @@
 'use strict';
-const $=s=>document.querySelector(s); const money=c=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format((Number(c)||0)/100); const date=s=>new Intl.DateTimeFormat('fr-CA',{weekday:'short',day:'numeric',month:'short'}).format(new Date(`${s}T12:00:00Z`)); const esc=s=>String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-async function api(url,body){const r=await fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),j=await r.json();if(!r.ok||j.error)throw Error(j.error||'Erreur');return j}
-async function render(){const s=await api('/api/state'),g=s.categories.find(c=>c.name.toLocaleLowerCase('fr-CA').includes('épicerie'))||s.categories[0];$('#safe').textContent=money(s.safe30.safe);$('#safe-note').textContent=`Point le plus bas le ${date(s.safe30.date)}.`;$('#today-safe').textContent=money(s.current.safe);$('#grocery').textContent=g?money(g.reserve):'—';$('#grocery-note').textContent=g?`Restant · prochain renouvellement ${g.starts.find(x=>x>s.today)?date(g.starts.find(x=>x>s.today)):'à venir'}`:'Aucune limite d’épicerie';$('#events').innerHTML=s.upcoming.slice(0,6).map(e=>`<div class="compact-row"><div class="grow"><strong>${esc(e.name)}</strong><small>${date(e.due)}</small></div><span class="amount ${e.kind==='income'?'positive':'negative'}">${e.kind==='income'?'+':'−'}${money(e.amount)}</span></div>`).join('')||'<p class="empty">Rien de prévu.</p>';$('#afford').date.value=s.today}
-$('#afford').addEventListener('submit',async e=>{e.preventDefault();try{const f=Object.fromEntries(new FormData(e.currentTarget));const r=await api('/api/action',{action:'afford',...f}),a=$('#answer');a.hidden=false;a.innerHTML=`<b class="${r.afford?'positive':'negative'}">${r.afford?'Oui':'Non'}</b><br>Minimum après l’achat : ${money(r.low)}.`}catch(e){alert(e.message)}});render().catch(e=>document.body.innerHTML=`<main class="simple"><p>${esc(e.message)}</p></main>`);
+const $ = selector => document.querySelector(selector);
+const money = cents => new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format((Number(cents)||0)/100);
+const date = value => new Intl.DateTimeFormat('fr-CA',{weekday:'long',day:'numeric',month:'long'}).format(new Date(`${value}T12:00:00Z`));
+const esc = value => String(value||'').replace(/[&<>]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[char]));
+const normalized = value => String(value||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase('fr-CA');
+let current = null;
+async function api(url, body) {
+  const response = await fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined);
+  const json = await response.json();
+  if (!response.ok || json.error) throw Error(json.error || 'Erreur');
+  return json;
+}
+function amountLine(name, amount, kind, note='') {
+  const income = kind === 'income';
+  return `<div class="simple-event"><div><b>${esc(name)}</b><small>${esc(note)}</small></div><span class="${income?'positive':'negative'}">${income?'+':'−'}${money(amount)}</span></div>`;
+}
+async function render() {
+  current = await api('/api/state');
+  const day = current.daily[0], grocery = current.categories.find(category => normalized(category.name).includes('epicerie')) || null;
+  $('#safe').textContent = money(current.current.safe);
+  $('#safe-note').textContent = `Prévu pour ${date(current.today)}.`;
+  $('#safe30').textContent = money(current.safe30.safe);
+  $('#safe30-note').textContent = `Point le plus bas : ${date(current.safe30.date)}.`;
+  $('#today-date').textContent = date(current.today);
+  $('#grocery').textContent = grocery ? money(grocery.reserve) : '—';
+  $('#grocery-note').textContent = grocery ? `Restant · ${grocery.starts.find(start => start > current.today) ? `renouvelle ${date(grocery.starts.find(start => start > current.today))}` : 'prochain renouvellement à venir'}` : 'Ajoutez une limite nommée Épicerie dans Plan.';
+  const actual = current.transactions.filter(transaction => transaction.date === current.today).map(transaction => amountLine(transaction.description || (transaction.kind === 'income' ? 'Revenu' : 'Dépense'), transaction.amount, transaction.kind, 'Saisi'));
+  const planned = day.events.map(event => amountLine(event.name, event.amount, event.kind, 'Prévu'));
+  const limits = day.limitEvents.map(event => amountLine(event.name, event.amount, 'expense', event.funded ? 'Limite mise de côté' : 'Limite renouvelée'));
+  const rows = [...actual, ...planned, ...limits];
+  $('#events').innerHTML = rows.length ? rows.join('') : '<p class="empty">Aucune opération prévue aujourd’hui.</p>';
+}
+$('#refresh').addEventListener('click',()=>render().catch(showError));
+$('#afford').addEventListener('submit',async event => {
+  event.preventDefault();
+  try {
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    const result = await api('/api/action',{action:'afford',amount:values.amount,date:current.today});
+    const answer = $('#answer'); answer.hidden = false;
+    answer.innerHTML = `<b class="${result.afford?'positive':'negative'}">${result.afford?'Oui, cet achat semble possible.':'Non, cet achat ferait passer le disponible sous zéro.'}</b><br>Minimum après l’achat : ${money(result.low)}.`;
+  } catch (error) { showError(error); }
+});
+function showError(error) { document.body.innerHTML=`<main class="simple"><p>${esc(error.message)}</p></main>`; }
+document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+render().catch(showError);

@@ -1,98 +1,100 @@
-# Le Bas de Laine 1.0
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b3d72">
+  <title>Le Bas de Laine</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Navigation principale">
+      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 1.7.0</small></div></div>
+      <nav class="nav" id="nav">
+        <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
+        <button data-page="transactions">↕ <span>Transactions</span></button>
+        <button data-page="plan">☷ <span>Plan</span></button>
+        <button data-page="calendar">□ <span>Calendrier</span></button>
+        <button data-page="budget">▥ <span>Budget</span></button>
+      </nav>
+      <div class="side-bottom"><span id="checkpoint-label">Solde à vérifier</span><br><button type="button" data-open="checkpoint">Vérifier mon solde</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="title"><h1 id="top-title">Aujourd’hui</h1><p id="top-subtitle">Votre argent, sans les complications.</p></div>
+        <div class="top-actions"><button class="secondary" type="button" id="theme-button" aria-label="Changer de thème">◐ Apparence</button><button class="primary" type="button" data-open="transaction">＋ Transaction</button></div>
+      </header>
+      <div class="content">
+        <section class="page" id="page-today">
+          <div id="setup-banner"></div>
+          <div class="page-head"><div><div class="eyebrow">Votre repère des 30 prochains jours</div><h2>Votre disponible prudent</h2><p>Le montant le plus bas après les factures, les cartes et les limites.</p></div><button class="secondary" type="button" data-open="afford">Puis-je faire cet achat ?</button></div>
+          <div class="grid dashboard">
+            <article class="card hero pad">
+              <div class="eyebrow">Minimum sur 30 jours</div><h2 id="safe30">—</h2><p class="caption" id="safe30-note">Chargement de votre prévision…</p>
+              <div class="number-row"><div><small>Disponible maintenant</small><b id="safe-now">—</b></div><div><small>Jusqu’au prochain revenu</small><b id="safe-until">—</b></div></div>
+              <div class="chart-wrap"><svg id="safe-chart" aria-label="Prévision quotidienne du disponible. Touchez une journée pour voir son détail."></svg><input class="range" id="safe-slider" type="range" min="0" max="29" value="0"><div class="chart-day"><span id="chart-date">Aujourd’hui</span><b id="chart-value">—</b></div><div class="chart-legend"><span><i class="income-dot"></i>Revenu</span><span><i class="expense-dot"></i>Facture</span><span><i class="limit-dot"></i>Limite</span></div><div class="chart-details" id="chart-details" aria-live="polite"></div></div>
+              <div class="quick-check"><input id="quick-amount" type="text" inputmode="decimal" placeholder="Montant"><button id="quick-afford" type="button">Vérifier un achat</button></div>
+            </article>
+            <div class="glance" id="glance"></div>
+          </div>
+          <div id="negative-alert"></div>
+          <article class="card section-card"><div class="section-head"><div><h3>Limites à surveiller</h3><p>Le restant est calculé automatiquement.</p></div><button class="link" data-page-link="plan">Gérer le plan</button></div><div class="limit-list" id="today-limits"></div></article>
+          <article class="card section-card"><div class="section-head"><div><h3>Ce qui arrive</h3><p>Revenus et factures des 14 prochains jours.</p></div><button class="link" data-page-link="calendar">Voir le calendrier</button></div><div class="event-list" id="today-events"></div></article>
+        </section>
 
-Le Bas de Laine est une nouvelle application séparée. Son dossier de données ne
-lit pas et ne modifie pas les données des versions précédentes.
+        <section class="page" id="page-transactions" hidden>
+          <div class="page-head"><div><div class="eyebrow">Une saisie, une seule fois</div><h2>Transactions</h2><p>Les achats de carte sont protégés jusqu’à leur paiement.</p></div><button class="primary" type="button" data-open="transaction">＋ Ajouter</button></div>
+          <div class="toolbar"><input class="filter search" id="tx-search" placeholder="Rechercher une description ou une catégorie"><select class="filter" id="tx-month" aria-label="Mois"><option value="">Tous les mois</option></select><select class="filter" id="tx-kind"><option value="">Toutes les opérations</option><option value="expense">Dépenses</option><option value="income">Revenus</option><option value="card_payment">Paiements de carte</option></select><select class="filter" id="tx-method"><option value="">Tous les moyens</option><option value="joint">Compte conjoint</option><option value="card">Carte</option></select><select class="filter" id="tx-status"><option value="">Toutes les catégories</option><option value="unclassified">À classer</option></select><select class="filter" id="tx-sort" aria-label="Trier les transactions"><option value="date_desc">Plus récentes</option><option value="date_asc">Plus anciennes</option><option value="amount_desc">Montant décroissant</option><option value="amount_asc">Montant croissant</option><option value="description">Description A–Z</option><option value="category">Catégorie A–Z</option></select><button class="secondary" data-open="csv" type="button">Importer CSV</button><button class="secondary" data-open="merchant-rules" type="button">Règles</button></div>
+          <div class="notice transaction-notice" id="tx-review-notice" hidden></div>
+          <div class="toolbar selection-toolbar" id="tx-selection" hidden></div>
+          <article class="card table-card"><table class="table"><thead><tr><th class="select-column"><input id="tx-select-all" type="checkbox" aria-label="Sélectionner les dépenses affichées"></th><th>Date</th><th>Description</th><th>Catégorie</th><th>Moyen</th><th class="right">Montant</th><th></th></tr></thead><tbody id="tx-body"></tbody></table><div class="empty" id="tx-empty" hidden>Aucune transaction ne correspond à ces filtres.</div></article>
+          <div class="toolbar" id="tx-total"></div>
+        </section>
 
-## Démarrage sur Chromebook
+        <section class="page" id="page-plan" hidden>
+          <div class="page-head"><div><div class="eyebrow">Ce qui est prévu</div><h2>Plan</h2><p>Revenus, factures et limites. Ouvrez uniquement ce que vous voulez modifier.</p></div><div class="top-actions"><button class="secondary" data-open="limit" type="button">＋ Limite</button><button class="primary" data-open="recurring" type="button">＋ Règle</button></div></div>
+          <div class="grid plan-grid">
+            <article class="card plan-card"><div class="section-head"><div><h3>Revenus</h3><p>Paies, rentes et allocations à venir.</p></div></div><div class="card-body" id="income-list"></div></article>
+            <article class="card plan-card"><div class="section-head"><div><h3>Factures</h3><p>Ce qui devra être payé, au compte ou sur carte.</p></div></div><div class="card-body" id="bill-list"></div></article>
+            <article class="card plan-card"><div class="section-head"><div><h3>Limites par catégorie</h3><p>Le report est conservé dans le mois puis remis à zéro au nouveau mois.</p></div></div><div class="card-body" id="limit-list"></div></article>
+          </div>
+          <button class="secondary mobile-budget-link" type="button" data-page-link="budget">Voir le budget mensuel</button>
+          <article class="card section-card"><div class="section-head"><div><h3>Solde et sauvegarde</h3><p id="plan-checkpoint">—</p></div><div class="top-actions"><button class="secondary" data-open="checkpoint">Vérifier mon solde</button><button class="secondary" data-page-link="budget">Budget mensuel</button><a class="secondary" href="/api/export">Exporter mes données</a></div></div><div class="limit-list"><div class="notice" id="plan-checkpoint-detail">Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.</div></div></article>
+        </section>
 
-1. Décompressez l’archive.
-2. Dans le terminal Linux, ouvrez le dossier décompressé.
-3. Lancez :
+        <section class="page" id="page-calendar" hidden>
+          <div class="page-head"><div><div class="eyebrow">Prévision du mois</div><h2>Calendrier utile</h2><p>Paies, factures, renouvellements et disponible prévu, jour par jour.</p></div><div class="top-actions calendar-actions"><button class="secondary" id="calendar-prev" type="button">←</button><button class="pill" id="calendar-month" type="button">—</button><button class="secondary" id="calendar-next" type="button">→</button></div></div>
+          <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </section>
 
-   ```bash
-   bash "Installer Le Bas de Laine.sh"
-   ```
+        <section class="page" id="page-budget" hidden>
+          <div class="page-head"><div><div class="eyebrow">La vue mensuelle</div><h2>Budget</h2><p>Prévu et dépensé par catégorie, sans modifier votre disponible.</p></div><div class="top-actions"><button class="secondary" id="budget-prev" type="button">←</button><button class="pill" id="budget-month" type="button">—</button><button class="secondary" id="budget-next" type="button">→</button></div></div>
+          <div class="budget-summary" id="budget-summary"></div>
+          <section class="budget-history card" id="budget-history"></section>
+          <section class="budget-categories" aria-label="Budget par catégorie"><div class="budget-section-head"><div><h3>Vos catégories</h3><p>Le budget sert à suivre le mois. Il ne modifie pas votre disponible à dépenser.</p></div><button class="link" type="button" data-page-link="plan">Gérer les limites</button></div><div class="budget-category-grid" id="budget-body"></div><div class="empty" id="budget-empty" hidden>Ajoutez une limite dans Plan pour la voir ici.</div></section>
+        </section>
+      </div>
+    </main>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile"><button class="active" data-page="today">⌂<br>Aujourd’hui</button><button data-page="transactions">↕<br>Transactions</button><button data-page="plan">☷<br>Plan</button><button data-page="calendar">□<br>Calendrier</button></nav>
 
-4. Ouvrez **Le Bas de Laine** depuis le lanceur Linux, ou allez à
-   `http://localhost:3045`.
-
-Le service est démarré par systemd à chaque ouverture de Linux. Les données sont
-conservées dans `~/.local/share/le-bas-de-laine-nouveau/data` et une sauvegarde
-SQLite quotidienne y est créée automatiquement.
-
-## Première configuration
-
-Le tutoriel demande uniquement le solde réel du compte conjoint. Dans **Plan**,
-ajoutez ensuite vos revenus, vos factures fixes et vos limites. Vous pouvez le
-faire dans n’importe quel ordre : le bandeau de départ montre ce qu’il reste à
-faire.
-
-Pour la RRQ, créez une règle mensuelle et choisissez **Dernier jour ouvrable du
-mois**. Une date publiée par Retraite Québec peut toujours être déplacée
-ponctuellement dans le calendrier.
-
-## Calcul du disponible
-
-Chaque jour, l’application calcule :
-
-```
-solde réel du compte conjoint
-− achats de carte à payer
-− factures prévues
-− réserves des limites
-= disponible prudent
-```
-
-Une limite hebdomadaire se reporte à chaque renouvellement du même mois. Au
-changement de mois, ce report repart à zéro. Les transactions classées dans une
-limite réduisent son restant sans retirer le disponible une deuxième fois.
-
-## iPhone avec Tailscale
-
-Gardez Tailscale connecté sur le Chromebook et sur l’iPhone. Depuis l’iPhone,
-ouvrez l’adresse Tailscale du Chromebook avec le port `3045`, par exemple :
-
-```
-http://100.x.y.z:3045
-```
-
-La vue complète est à cette adresse. La vue simplifiée de votre conjointe est à
-`/simple`, par exemple `http://100.x.y.z:3045/simple`.
-
-Si vous préférez utiliser une adresse `https://…ts.net`, vérifiez d’abord votre
-configuration actuelle avec `tailscale serve status`, car modifier Tailscale
-Serve peut remplacer l’adresse d’une ancienne application.
-
-## Sauvegarde et export
-
-Dans **Plan**, utilisez **Exporter mes données** pour télécharger un fichier
-JSON. Les sauvegardes quotidiennes sont des fichiers SQLite : elles servent à
-récupérer une base locale si nécessaire.
-
-## Limite financée par revenu
-
-Pour une limite mensuelle à échéance, ouvrez-la dans **Plan** et choisissez
-**Au prochain revenu qui le permet**. L’application ne la retire pas du
-montant disponible dès le début du mois : elle la gèle automatiquement au
-premier revenu qui couvre les factures, les cartes et les limites prioritaires
-jusqu’au prochain revenu. Si ce n’est pas possible, elle reste signalée comme
-montant à couvrir avant son échéance.
-
-## Nouveautés 1.4.0 — transactions
-
-Transactions peut maintenant être trié par date, montant, description ou limite et filtré par mois. Les règles de commerçant proposent une limite pour les nouveaux achats et les imports, sans modifier vos transactions ou récurrences passées. Le CSV se lit et se classe dans l’application avant l’import; les lignes sans limite restent visibles dans **À classer**. Réimporter le même fichier n’ajoute pas de doublon.
-
-
-## Nouveautés 1.5.0 — prévision expliquée
-
-- La courbe du disponible est plus grande et indique les revenus, factures et limites.
-- Touchez la courbe ou déplacez le curseur pour voir le calcul d’une journée.
-- L’accueil indique pourquoi le plus bas des 30 jours mérite votre attention.
-
-
-## Nouveautés 1.6.0 — budget mensuel
-
-- Le Budget affiche chaque catégorie dans une carte avec Budget, Dépensé, Disponible et une barre de progression.
-- Les limites proches de leur maximum deviennent dorées; les dépassements deviennent rouges.
-- Une comparaison courte montre les dépenses variables des trois derniers mois.
-- Le bouton Modifier de chaque carte ouvre directement la limite correspondante dans Plan.
+  <dialog class="dialog" id="dialog-setup"><h3>Bienvenue dans Le Bas de Laine</h3><form id="setup-form"><p>En quatre petites étapes, vous aurez un disponible déjà utile. Commencez par le vrai solde du compte conjoint.</p><div class="steps"><div class="step"><b>1. Solde</b><span>maintenant</span></div><div class="step"><b>2. Revenus</b><span>dans Plan</span></div><div class="step"><b>3. Factures</b><span>dans Plan</span></div><div class="step"><b>4. Limites</b><span>dans Plan</span></div></div><div class="form-grid" style="margin-top:16px"><label class="field full">Solde actuel du compte conjoint<input required name="bank" inputmode="decimal" placeholder="ex. 1 250,00"></label><label class="field full" style="display:flex;grid-template-columns:auto 1fr;align-items:start;gap:9px;font-weight:500"><input type="checkbox" name="seed_limits" value="1" checked style="width:auto;margin-top:3px"><span><b>Ajouter mes cinq limites de départ</b><small>Épicerie, Essence Alex, Essence Jenny, Lait et Couches, Pharmacie et Médicaments. Vous pourrez tout modifier dans Plan.</small></span></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Plus tard</button><button class="primary" type="submit">Commencer</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-checkpoint"><h3>Vérifier mon solde</h3><form id="checkpoint-form"><p>Comparez le vrai solde du compte conjoint avec le solde prévu. Enregistrer ce solde devient votre nouveau point de départ; les achats de carte restent protégés séparément.</p><div class="checkpoint-preview"><div><small>Solde prévu aujourd’hui</small><b id="checkpoint-expected">—</b></div><div><small>Depuis la dernière vérification</small><span id="checkpoint-flow">—</span></div></div><div class="form-grid" style="margin-top:16px"><label class="field full">Solde réel dans la banque<input required name="bank" id="checkpoint-bank" inputmode="decimal" placeholder="ex. 1 250,00"><small id="checkpoint-difference">Inscrivez le solde vu dans votre banque pour comparer.</small></label></div><div class="dialog-actions"><button class="secondary" type="button" data-open="transaction">Ajouter une opération oubliée</button><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer le solde</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-transaction"><h3 id="transaction-title">Ajouter une transaction</h3><form id="transaction-form"><p>Un achat lié à une limite réduit son restant automatiquement.</p><input type="hidden" name="id"><div class="form-grid" style="margin-top:16px"><label class="field">Type<select name="kind" id="tx-form-kind"><option value="expense">Dépense</option><option value="income">Revenu</option><option value="card_payment">Paiement de carte</option></select></label><label class="field">Montant<input required name="amount" inputmode="decimal" placeholder="0,00"></label><label class="field">Date<input required name="date" type="date"></label><label class="field">Moyen<select name="method" id="tx-form-method"><option value="joint">Compte conjoint</option><option value="card">Carte de crédit</option></select></label><label class="field full">Description<input name="description" id="tx-description" placeholder="ex. IGA, paie Alex, paiement Visa"><small id="tx-rule-hint"></small></label><label class="field full" id="tx-category-field">Limite / catégorie<select name="category_id" id="tx-category"></select><small>Facultatif. Choisissez Épicerie ou Essence pour réduire cette limite.</small></label><label class="field full" id="tx-remember-field"><span><input type="checkbox" name="remember_rule" value="1"> Mémoriser cette catégorie pour ce commerçant</span><small>Les prochains achats et imports semblables seront proposés dans cette limite.</small></label><label class="field full" id="match-field">Associer à une facture prévue<select name="recurring_key" id="tx-recurring"><option value="">Aucune association</option></select><small>Évite de compter deux fois une facture déjà prévue.</small></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-merchant-rules"><h3>Règles par commerçant</h3><div class="dialog-body"><p>Une règle propose une limite seulement pour les nouveaux achats et les imports. Elle ne change pas l’historique.</p><div id="merchant-rules-list" class="rules-list"></div><form id="merchant-rule-form"><input type="hidden" name="id"><div class="form-grid" style="margin-top:16px"><label class="field full">Commerçant ou mot distinctif<input required name="merchant" placeholder="ex. IGA ou Shell"></label><label class="field">Limiter à<select name="category_id" id="merchant-rule-category"></select></label><label class="field">Moyen (facultatif)<select name="method"><option value="">Tous les moyens</option><option value="joint">Compte conjoint</option><option value="card">Carte de crédit</option></select></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Fermer</button><button class="primary" type="submit">Enregistrer la règle</button></div></form></div></dialog>
+  <dialog class="dialog" id="dialog-csv"><h3>Importer un CSV</h3><form id="csv-form"><p>Choisissez un fichier avec au minimum une date, une description et un montant signé. Les dépenses négatives deviennent des dépenses; les montants positifs, des revenus.</p><div class="form-grid" style="margin-top:16px"><label class="field full">Fichier CSV<input required type="file" id="csv-file" accept=".csv,text/csv,text/plain"></label><label class="field">Moyen des dépenses importées<select name="method" id="csv-method"><option value="joint">Compte conjoint</option><option value="card">Carte de crédit</option></select></label><label class="field full" style="display:flex;grid-template-columns:auto 1fr;align-items:start;gap:9px;font-weight:500"><input type="checkbox" name="included" value="1" checked style="width:auto;margin-top:3px"><span><b>Déjà compris dans mon solde bancaire actuel</b><small>Conservez cette case cochée pour de l’historique bancaire : les catégories et limites seront mises à jour, sans retirer l’argent une deuxième fois.</small></span></label></div><div id="csv-mapping" class="csv-mapping" hidden></div><div id="csv-preview" class="csv-preview"></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Annuler</button><button class="primary" id="csv-import" type="submit" disabled>Importer les lignes</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-limit"><h3 id="limit-title">Ajouter une limite</h3><form id="limit-form"><p>Une limite se reporte à chaque période dans le même mois. Au premier renouvellement du mois suivant, elle repart à zéro.</p><input type="hidden" name="id"><div class="form-grid" style="margin-top:16px"><label class="field full">Nom<input required name="name" list="limit-names" placeholder="ex. Épicerie"></label><label class="field">Montant par période<input required name="amount" inputmode="decimal" placeholder="225,00"></label><label class="field">Fréquence<select name="frequency" id="limit-frequency"><option value="w">Chaque semaine</option><option value="m">Chaque mois</option></select></label><label class="field" id="limit-weekday">Renouvelle le<select name="renewal"><option value="0">dimanche</option><option value="1">lundi</option><option value="2">mardi</option><option value="3">mercredi</option><option value="4">jeudi</option><option value="5">vendredi</option><option value="6">samedi</option></select></label><label class="field" id="limit-monthday" hidden>Renouvelle le<select name="monthly_renewal"><option value="last">dernier jour du mois</option><option value="1">1er</option><option value="15">15</option><option value="30">30</option></select></label><label class="field full" id="limit-funding">Réserver ce montant<select name="funding"><option value="start">Dès le début de la période</option><option value="income">Au prochain revenu qui le permet</option></select><small>Ce mode garde la limite à couvrir, puis la gèle seulement lorsqu’un revenu laisse assez de disponible avant son échéance.</small></label><label class="field full">Date de début<input required name="start_date" type="date"><small>Aucun montant n’est calculé avant cette date.</small></label></div><div class="dialog-actions"><button class="danger" type="button" id="delete-limit" hidden>Supprimer</button><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-recurring"><h3 id="recurring-title">Ajouter une règle</h3><form id="recurring-form"><p>Utilisez une règle pour une paie ou une facture fixe. Pour une dépense variable, créez une limite.</p><input type="hidden" name="id"><div class="form-grid" style="margin-top:16px"><label class="field full">Nom<input required name="name" list="rule-names" placeholder="ex. Paie Alex ou Hydro-Québec"></label><label class="field">Type<select name="kind"><option value="income">Revenu</option><option value="expense">Facture</option></select></label><label class="field">Montant<input required name="amount" inputmode="decimal" placeholder="0,00"></label><label class="field">Fréquence<select name="frequency"><option value="w">Chaque semaine</option><option value="b">Aux 2 semaines</option><option value="m">Chaque mois</option><option value="a">Chaque année</option></select></label><label class="field">Prochaine date<input required name="anchor_date" type="date"></label><label class="field">Si jour non ouvrable<select name="adjustment"><option value="auto">Automatique</option><option value="prev">Jour ouvrable précédent</option><option value="next">Jour ouvrable suivant</option><option value="none">Garder la date</option><option value="last">Dernier jour ouvrable du mois</option></select><small>Pour RRQ : « dernier jour ouvrable du mois ».</small></label><label class="field">Moyen de paiement<select name="method"><option value="joint">Compte conjoint</option><option value="card">Carte de crédit</option></select></label></div><div class="dialog-actions"><button class="danger" type="button" id="delete-recurring" hidden>Supprimer</button><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-occurrence"><h3>Gérer cette échéance</h3><form id="occurrence-form"><p id="occurrence-copy"></p><input type="hidden" name="recurring_id"><input type="hidden" name="due_date"><div class="form-grid" style="margin-top:16px"><label class="field full">Montant payé<input name="amount" inputmode="decimal" placeholder="Laisser vide pour le montant prévu"></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Fermer</button><button class="danger" type="button" id="skip-occurrence">Ignorer</button><button class="secondary" type="button" id="move-occurrence">Déplacer</button><button class="primary" type="submit">Marquer payée</button></div></form></dialog>
+  <dialog class="dialog" id="dialog-adjust"><h3>Ajuster le plan</h3><div class="dialog-body"><p id="adjust-copy"></p><div id="adjust-options" style="margin-top:14px"></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Fermer</button></div></div></dialog>
+  <dialog class="dialog" id="dialog-afford"><h3>Puis-je faire cet achat ?</h3><form id="afford-form"><p>Le calcul vérifie le point le plus bas des 30 jours suivant cette date.</p><div class="form-grid" style="margin-top:16px"><label class="field">Montant<input required name="amount" inputmode="decimal" placeholder="0,00"></label><label class="field">Date<input required name="date" type="date"></label></div><div class="notice" id="afford-result" hidden></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Fermer</button><button class="primary" type="submit">Vérifier</button></div></form></dialog>
+  <datalist id="rule-names"><option value="Paie Alex"><option value="Paie Jenny"><option value="Rente RRQ"><option value="ACE - Canada"><option value="Allocation famille - Québec"><option value="Remboursement d’impôt"><option value="Autres revenus"><option value="Hydro-Québec"><option value="Assurance habitation"><option value="Téléphone"></datalist>
+  <datalist id="limit-names"><option value="Épicerie"><option value="Essence Alex"><option value="Essence Jenny"><option value="Lait et Couches"><option value="Pharmacie et Médicaments"><option value="Autre"></datalist>
+  <div class="toast" id="toast" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

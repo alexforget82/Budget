@@ -399,12 +399,19 @@ function buildState() {
   const toReview = transactions.filter(tx =>
     tx.kind === 'expense' && !tx.category_id && !tx.recurring_id
   ).length;
+  const current = daily[0] || { safe: 0, cash: settings.bank, cards: 0, limits: 0, reserves: {} };
+  const checkpointAge = settings.checkpointDate
+    ? Math.max(0, Math.round((dateObj(t).getTime() - dateObj(settings.checkpointDate).getTime()) / 86400000))
+    : null;
+  settings.expectedBank = current.cash;
+  settings.checkpointChange = current.cash - settings.bank;
+  settings.checkpointAge = checkpointAge;
   return {
     version: VERSION, today: t, settings, categories: visibleCategories, recurring: q('SELECT * FROM recurring WHERE active=1 ORDER BY kind,name'),
     transactions: transactions.slice(0, 250), upcoming: occurrenceList.filter(e => e.due <= addDays(t, 30)), daily,
     safe30: low30, safeUntilIncome: lowUntil, nextIncome, firstNegative,
     limitOverrides: q('SELECT * FROM limit_overrides ORDER BY due_date'), merchant_rules: merchantRules(), review_count: toReview,
-    current: daily[0] || { safe: 0, cash: settings.bank, cards: 0, limits: 0, reserves: {} }
+    current
   };
 }
 
@@ -660,6 +667,42 @@ function budget(month) {
     }))
   };
 }
+function calendarData(month) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Error('Mois invalide.');
+  const state = buildState(), minMonth = state.today.slice(0, 7), maxMonth = state.daily.at(-1)?.date.slice(0, 7) || minMonth;
+  if (month < minMonth || month > maxMonth) throw Error('Choisis un mois couvert par la prévision.');
+  const first = `${month}-01`, leading = (dow(first) + 6) % 7;
+  const gridStart = addDays(first, -leading), gridEnd = addDays(gridStart, 41);
+  const daily = new Map(state.daily.map(row => [row.date, row]));
+  const eventsByDate = new Map();
+  for (const event of allOccurrences(gridStart, gridEnd)) {
+    if (!eventsByDate.has(event.due)) eventsByDate.set(event.due, []);
+    eventsByDate.get(event.due).push(event);
+  }
+  const staticLimits = new Map();
+  for (const category of q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE')) {
+    if (category.funding === 'income') continue;
+    for (const period of categoryPeriods(category, gridEnd)) {
+      if (period.date < gridStart) continue;
+      if (!staticLimits.has(period.date)) staticLimits.set(period.date, []);
+      staticLimits.get(period.date).push({ category_id: category.id, name: category.name, ...period });
+    }
+  }
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const date = addDays(gridStart, index), row = daily.get(date);
+    const limits = [...(row?.limitEvents || [])];
+    const known = new Set(limits.map(item => `${item.category_id}|${item.due}`));
+    for (const item of staticLimits.get(date) || []) if (!known.has(`${item.category_id}|${item.due}`)) limits.push(item);
+    return {
+      date,
+      inMonth: date.slice(0, 7) === month,
+      safe: row ? row.safe : null,
+      events: eventsByDate.get(date) || [],
+      limitEvents: limits
+    };
+  });
+  return { month, minMonth, maxMonth, days };
+}
 
 function respond(res, value, status = 200) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value)); }
 function readBody(req, callback) {
@@ -673,6 +716,7 @@ http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (url.pathname === '/api/state') return respond(res, buildState());
   if (url.pathname === '/api/budget') { try { return respond(res, budget(url.searchParams.get('month') || today().slice(0,7))); } catch (error) { return respond(res, { error: error.message }, 400); } }
+  if (url.pathname === '/api/calendar') { try { return respond(res, calendarData(url.searchParams.get('month') || today().slice(0,7))); } catch (error) { return respond(res, { error: error.message }, 400); } }
   if (url.pathname === '/api/export') {
     const tables = {}; for (const name of ['settings','categories','recurring','transactions','occurrences','limit_overrides','merchant_rules','imported_rows']) tables[name] = q(`SELECT * FROM ${name}`);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="le-bas-de-laine-${today()}.json"` }); return res.end(JSON.stringify({ format: 'le-bas-de-laine-v3', exported: today(), tables }, null, 2));
