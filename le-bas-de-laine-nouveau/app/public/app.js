@@ -72,8 +72,14 @@ function renderToday() {
   const events = d.upcoming.slice(0,7);
   $('#today-events').innerHTML = events.length ? events.map(eventRow).join('') : `<div class="empty">Aucune échéance. Ajoutez vos paies et factures dans Plan.</div>`;
   const alert = $('#negative-alert');
+  const lowDay = d.daily.find(day => day.date === min.date);
+  const drivers = [...(lowDay?.events || []).filter(event => event.kind === 'expense').map(event => event.name), ...(lowDay?.limitEvents || []).map(event => event.name)];
+  const namedDrivers = drivers.slice(0, 2).map(escape);
+  const otherDrivers = drivers.length > namedDrivers.length ? ` et ${drivers.length - namedDrivers.length} autre${drivers.length - namedDrivers.length > 1 ? 's' : ''}` : '';
   if (d.firstNegative) {
-    alert.innerHTML = `<article class="notice" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:14px"><span><b>Le disponible passera sous zéro le ${dateFmt(d.firstNegative.date)} : ${money(d.firstNegative.safe)}.</b><br>Vous pouvez reporter une facture ou ajuster une limite pour cette période.</span><button class="primary" type="button" data-open="adjust">Ajuster le plan</button></article>`;
+    alert.innerHTML = `<article class="notice forecast-alert"><span><b>Le disponible passera sous zéro le ${dateFmt(d.firstNegative.date)} : ${money(d.firstNegative.safe)}.</b><br>Vous pouvez reporter une facture ou ajuster une limite pour cette période.</span><button class="primary" type="button" data-open="adjust">Ajuster le plan</button></article>`;
+  } else if (lowDay && drivers.length) {
+    alert.innerHTML = `<article class="notice forecast-alert"><span><b>À surveiller le ${dateFmt(lowDay.date)} : ${namedDrivers.join(' et ')}${otherDrivers} ${drivers.length > 1 ? 'font' : 'fait'} descendre le disponible à ${money(lowDay.safe)}.</b><br>Ce montant reste positif, mais c’est le point le plus bas des 30 prochains jours.</span><button class="secondary" type="button" data-chart-day="${lowDay.date}">Voir cette journée</button></article>`;
   } else alert.innerHTML = '';
 }
 function limitRow(c, plan = false) {
@@ -87,13 +93,40 @@ function eventRow(e) {
 }
 function renderChart() {
   const days = state.data.daily.slice(0,30), svg = $('#safe-chart'), slider = $('#safe-slider');
+  if (!days.length) return;
   slider.max = Math.max(0, days.length - 1); if (Number(slider.value) > Number(slider.max)) slider.value = 0;
-  const values = days.map(d => d.safe); const lo = Math.min(...values), hi = Math.max(...values), span = Math.max(1, hi - lo);
-  const points = values.map((v,i) => `${(i/(Math.max(1,values.length-1))*100).toFixed(2)},${(94-((v-lo)/span*78)).toFixed(2)}`).join(' ');
-  const index = Number(slider.value), point = points.split(' ')[index]?.split(',') || ['0','94'];
+  const values = days.map(d => d.safe), lo = Math.min(...values), hi = Math.max(...values), span = Math.max(1, hi - lo);
+  const coordinates = values.map((value, index) => ({ x: (index / Math.max(1, values.length - 1)) * 100, y: 94 - ((value - lo) / span * 78) }));
+  const points = coordinates.map(point => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
+  const index = Number(slider.value), point = coordinates[index] || coordinates[0];
+  const marker = (event, dayIndex, markerIndex, kind) => {
+    const coordinate = coordinates[dayIndex];
+    const offset = (markerIndex % 3 - 1) * 3.4;
+    const x = Math.max(2, Math.min(98, coordinate.x + offset));
+    const label = kind === 'income' ? `Revenu : ${event.name} · ${money(event.amount)}` : kind === 'limit' ? `Limite : ${event.name} · ${money(event.amount)}` : `Facture : ${event.name} · ${money(event.amount)}`;
+    if (kind === 'limit') return `<rect class="forecast-marker forecast-limit" x="${(x - 1.8).toFixed(2)}" y="${(coordinate.y - 1.8).toFixed(2)}" width="3.6" height="3.6" rx=".7"><title>${escape(label)}</title></rect>`;
+    return `<circle class="forecast-marker forecast-${kind}" cx="${x.toFixed(2)}" cy="${coordinate.y.toFixed(2)}" r="2.25"><title>${escape(label)}</title></circle>`;
+  };
+  const markers = days.flatMap((day, dayIndex) => [
+    ...(day.events || []).map((event, eventIndex) => marker(event, dayIndex, eventIndex, event.kind === 'income' ? 'income' : 'expense')),
+    ...(day.limitEvents || []).map((event, eventIndex) => marker(event, dayIndex, (day.events || []).length + eventIndex, 'limit'))
+  ]).join('');
   svg.setAttribute('viewBox','0 0 100 100');
-  svg.innerHTML = `<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9fe0ce" stop-opacity=".34"/><stop offset="1" stop-color="#9fe0ce" stop-opacity="0"/></linearGradient></defs><path d="M0 94 L${points.replaceAll(' ',', L')} L100 94 Z" fill="url(#fill)"/><polyline points="${points}" fill="none" stroke="#9fe0ce" stroke-width="2.4" vector-effect="non-scaling-stroke"/><line x1="0" y1="94" x2="100" y2="94" stroke="rgba(255,255,255,.18)" vector-effect="non-scaling-stroke"/><circle cx="${point[0]}" cy="${point[1]}" r="3.2" fill="#f3bf45" stroke="#fff" stroke-width="1.3" vector-effect="non-scaling-stroke"/>`;
+  svg.innerHTML = `<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9fe0ce" stop-opacity=".34"/><stop offset="1" stop-color="#9fe0ce" stop-opacity="0"/></linearGradient></defs><path d="M0 94 L${points.replaceAll(' ', ' L')} L100 94 Z" fill="url(#fill)"/><line x1="${point.x.toFixed(2)}" y1="8" x2="${point.x.toFixed(2)}" y2="94" class="forecast-selected-line" vector-effect="non-scaling-stroke"/><polyline points="${points}" fill="none" stroke="#9fe0ce" stroke-width="2.4" vector-effect="non-scaling-stroke"/><line x1="0" y1="94" x2="100" y2="94" stroke="rgba(255,255,255,.18)" vector-effect="non-scaling-stroke"/>${markers}<circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="3.2" fill="#f3bf45" stroke="#fff" stroke-width="1.3" vector-effect="non-scaling-stroke"/>`;
   setText('#chart-date', index === 0 ? `Aujourd’hui · ${dayFmt(days[index].date)}` : dateFmt(days[index].date)); setText('#chart-value', money(days[index].safe));
+  const day = days[index], previous = days[index - 1], change = previous ? day.safe - previous.safe : 0;
+  const eventRows = [
+    ...(day.events || []).map(event => `<li class="${event.kind === 'income' ? 'positive' : 'negative'}"><span>${event.kind === 'income' ? '↑' : '↓'} ${escape(event.name)}</span><b>${signed(event.amount, event.kind)}</b></li>`),
+    ...(day.limitEvents || []).map(event => `<li class="limit-change"><span>◇ ${escape(event.name)}${event.funded ? ' · mise de côté' : ' · renouvellement'}</span><b>${money(event.amount)}</b></li>`)
+  ];
+  const explanation = eventRows.length ? `<ul class="chart-events">${eventRows.join('')}</ul>` : `<p class="chart-quiet">Aucune paie, facture ou limite ne change ce jour-là.</p>`;
+  $('#chart-details').innerHTML = `<div class="chart-detail-head"><b>Le ${dateFmt(day.date)}</b><span class="${change < 0 ? 'negative' : change > 0 ? 'positive' : ''}">${previous ? `${change >= 0 ? '+' : '−'}${money(Math.abs(change))} depuis hier` : 'Point de départ'}</span></div>${explanation}<div class="chart-calculation"><span>Compte ${money(day.cash)}</span><span>Cartes −${money(day.cards)}</span><span>Limites −${money(day.limits)}</span></div>`;
+  svg.onclick = event => {
+    const rect = svg.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    slider.value = String(Math.round(ratio * (days.length - 1)));
+    renderChart();
+  };
 }
 function transactionCategory(t) { return t.kind === 'expense' ? categoryName(t.category_id) : '—'; }
 function populateTransactionMonths() {
@@ -320,6 +353,7 @@ function wire() {
     const button=event.target.closest('button,[data-page-link]'); if(!button)return;
     if(button.dataset.page) return changePage(button.dataset.page);
     if(button.dataset.pageLink) return changePage(button.dataset.pageLink);
+    if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
     if(button.dataset.open) { if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
     if(button.dataset.editTx) return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.editTx));

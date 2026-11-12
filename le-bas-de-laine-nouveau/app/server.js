@@ -657,4 +657,4 @@ http.createServer((req, res) => {
   if (!file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); return res.end('Introuvable'); }
   res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
   res.end(fs.readFileSync(file));
-}).listen(PORT, '0.0.0.0', () => console.log(`Le Bas de Laine v1.4.0 — http://localhost:${PORT}`));
+}).listen(PORT, '0.0.0.0', () => console.log(`Le Bas de Laine v${VERSION} — http://localhost:${PORT}`));

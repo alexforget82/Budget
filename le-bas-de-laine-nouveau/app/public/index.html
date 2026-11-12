@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navigation principale">
-      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 1.4.0</small></div></div>
+      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 1.5.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
         <button data-page="transactions">↕ <span>Transactions</span></button>
@@ -35,7 +35,7 @@
             <article class="card hero pad">
               <div class="eyebrow">Minimum sur 30 jours</div><h2 id="safe30">—</h2><p class="caption" id="safe30-note">Chargement de votre prévision…</p>
               <div class="number-row"><div><small>Disponible maintenant</small><b id="safe-now">—</b></div><div><small>Jusqu’au prochain revenu</small><b id="safe-until">—</b></div></div>
-              <div class="chart-wrap"><svg id="safe-chart" aria-label="Prévision quotidienne du disponible"></svg><input class="range" id="safe-slider" type="range" min="0" max="29" value="0"><div class="chart-day"><span id="chart-date">Aujourd’hui</span><b id="chart-value">—</b></div></div>
+              <div class="chart-wrap"><svg id="safe-chart" aria-label="Prévision quotidienne du disponible. Touchez une journée pour voir son détail."></svg><input class="range" id="safe-slider" type="range" min="0" max="29" value="0"><div class="chart-day"><span id="chart-date">Aujourd’hui</span><b id="chart-value">—</b></div><div class="chart-legend"><span><i class="income-dot"></i>Revenu</span><span><i class="expense-dot"></i>Facture</span><span><i class="limit-dot"></i>Limite</span></div><div class="chart-details" id="chart-details" aria-live="polite"></div></div>
               <div class="quick-check"><input id="quick-amount" type="text" inputmode="decimal" placeholder="Montant"><button id="quick-afford" type="button">Vérifier un achat</button></div>
             </article>
             <div class="glance" id="glance"></div>

@@ -81,3 +81,10 @@ montant à couvrir avant son échéance.
 ## Nouveautés 1.4.0 — transactions
 
 Transactions peut maintenant être trié par date, montant, description ou limite et filtré par mois. Les règles de commerçant proposent une limite pour les nouveaux achats et les imports, sans modifier vos transactions ou récurrences passées. Le CSV se lit et se classe dans l’application avant l’import; les lignes sans limite restent visibles dans **À classer**. Réimporter le même fichier n’ajoute pas de doublon.
+
+
+## Nouveautés 1.5.0 — prévision expliquée
+
+- La courbe du disponible est plus grande et indique les revenus, factures et limites.
+- Touchez la courbe ou déplacez le curseur pour voir le calcul d’une journée.
+- L’accueil indique pourquoi le plus bas des 30 jours mérite votre attention.
