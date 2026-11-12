@@ -88,3 +88,11 @@ Transactions peut maintenant être trié par date, montant, description ou limit
 - La courbe du disponible est plus grande et indique les revenus, factures et limites.
 - Touchez la courbe ou déplacez le curseur pour voir le calcul d’une journée.
 - L’accueil indique pourquoi le plus bas des 30 jours mérite votre attention.
+
+
+## Nouveautés 1.6.0 — budget mensuel
+
+- Le Budget affiche chaque catégorie dans une carte avec Budget, Dépensé, Disponible et une barre de progression.
+- Les limites proches de leur maximum deviennent dorées; les dépassements deviennent rouges.
+- Une comparaison courte montre les dépenses variables des trois derniers mois.
+- Le bouton Modifier de chaque carte ouvre directement la limite correspondante dans Plan.

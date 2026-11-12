@@ -618,7 +618,12 @@ function action(body) {
     default: throw Error('Action inconnue.');
   }
 }
-function budget(month) {
+function shiftedMonth(month, offset) {
+  const [year, value] = month.split('-').map(Number);
+  const date = new Date(Date.UTC(year, value - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}`;
+}
+function budgetSnapshot(month) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Error('Mois invalide.');
   const first = `${month}-01`, last = iso(new Date(Date.UTC(+month.slice(0,4), +month.slice(5,7), 0)));
   const categories = q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE');
@@ -633,6 +638,27 @@ function budget(month) {
   const income = recurring.filter(e => e.kind === 'income').reduce((sum,e) => sum + e.amount, 0);
   const fixed = recurring.filter(e => e.kind === 'expense').reduce((sum,e) => sum + e.amount, 0);
   return { month, categories: entries, income, fixed, variable: entries.reduce((sum,e) => sum + e.planned,0), actualVariable: entries.reduce((sum,e) => sum + e.spent,0) };
+}
+function budget(month) {
+  const current = budgetSnapshot(month);
+  const history = [-1, -2, -3].map(offset => budgetSnapshot(shiftedMonth(month, offset)));
+  const categories = current.categories.map(category => {
+    const earlier = history.map(snapshot => snapshot.categories.find(item => item.id === category.id)?.spent || 0);
+    return {
+      ...category,
+      previousSpent: earlier[0] || 0,
+      averageSpent: earlier.length ? Math.round(earlier.reduce((sum, amount) => sum + amount, 0) / earlier.length) : 0
+    };
+  });
+  return {
+    ...current,
+    categories,
+    history: history.map(snapshot => ({
+      month: snapshot.month,
+      planned: snapshot.variable,
+      spent: snapshot.actualVariable
+    }))
+  };
 }
 
 function respond(res, value, status = 200) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value)); }

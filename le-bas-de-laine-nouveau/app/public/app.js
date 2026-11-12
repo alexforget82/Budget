@@ -211,8 +211,22 @@ async function renderBudget() {
   const b = await api(`/api/budget?month=${encodeURIComponent(state.month)}`);
   const m = new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric'}).format(new Date(`${b.month}-01T12:00:00Z`));
   setText('#budget-month', m);
-  $('#budget-summary').innerHTML = `<article class="card"><small>Revenus prévus</small><b class="positive">${money(b.income)}</b></article><article class="card"><small>Factures et limites</small><b>${money(b.fixed+b.variable)}</b></article><article class="card"><small>Reste à répartir</small><b class="${b.income-b.fixed-b.variable >= 0 ? 'positive':'negative'}">${money(b.income-b.fixed-b.variable)}</b></article>`;
-  $('#budget-body').innerHTML = b.categories.map(c=>{ const pct = c.planned ? Math.min(100,(c.spent/c.planned)*100) : 0; return `<tr><td><b>${escape(c.name)}</b><small style="display:block;color:var(--muted)">${labelFrequency(c.frequency)}</small></td><td class="right">${money(c.planned)}</td><td class="right">${money(c.spent)}</td><td class="right ${c.remaining<0?'negative':''}">${money(c.remaining)}</td><td><div class="progress"><i class="${c.remaining<0?'over':''}" style="width:${pct}%"></i></div></td></tr>`; }).join('');
+  const rest = b.income-b.fixed-b.variable;
+  $('#budget-summary').innerHTML = `<article class="card budget-summary-card income"><small>Revenus prévus</small><b class="positive">${money(b.income)}</b><span>Revenus programmés ce mois-ci</span></article><article class="card budget-summary-card"><small>Factures fixes</small><b>${money(b.fixed)}</b><span>Ce qui est déjà planifié</span></article><article class="card budget-summary-card"><small>Limites du mois</small><b>${money(b.variable)}</b><span>${b.categories.length} catégorie${b.categories.length>1?'s':''} à suivre</span></article><article class="card budget-summary-card ${rest < 0 ? 'negative-card':''}"><small>Reste du plan</small><b class="${rest >= 0 ? 'positive':'negative'}">${money(rest)}</b><span>Revenus moins factures et limites</span></article>`;
+  const monthName = month => new Intl.DateTimeFormat('fr-CA',{month:'long'}).format(new Date(`${month}-01T12:00:00Z`));
+  $('#budget-history').innerHTML = `<div class="budget-history-copy"><div><div class="eyebrow">Comparaison</div><h3>Vos dépenses variables</h3><p>Une vue rapide des trois derniers mois.</p></div><div class="budget-history-current"><small>Dépensé ce mois-ci</small><b>${money(b.actualVariable)}</b></div></div><div class="budget-history-months">${b.history.map(row => `<div class="budget-history-month"><span>${escape(monthName(row.month))}</span><b>${money(row.spent)}</b><small>sur ${money(row.planned)} prévu</small></div>`).join('')}</div>`;
+  const sorted = [...b.categories].sort((a,b) => {
+    const ratioA = a.planned ? a.spent / a.planned : 0, ratioB = b.planned ? b.spent / b.planned : 0;
+    return ratioB - ratioA || a.name.localeCompare(b.name, 'fr-CA');
+  });
+  $('#budget-body').innerHTML = sorted.map(c => {
+    const ratio = c.planned ? c.spent / c.planned : 0;
+    const percent = Math.round(ratio * 100), width = Math.max(0, Math.min(100, percent));
+    const stateClass = c.remaining < 0 ? 'over' : ratio >= .8 ? 'warn' : '';
+    const status = c.remaining < 0 ? `Dépassement de ${money(Math.abs(c.remaining))}` : c.remaining === 0 ? 'Limite atteinte' : `${money(c.remaining)} restant`;
+    const comparison = c.previousSpent ? `Mois dernier : ${money(c.previousSpent)}` : `Moyenne 3 mois : ${money(c.averageSpent)}`;
+    return `<article class="budget-category ${stateClass}"><div class="budget-category-head"><div><h3>${escape(c.name)}</h3><p>${labelFrequency(c.frequency)} · ${percent}% utilisé</p></div><span class="budget-status ${stateClass}">${status}</span></div><div class="budget-amounts"><div><small>Budget</small><b>${money(c.planned)}</b></div><div><small>Dépensé</small><b>${money(c.spent)}</b></div><div><small>Disponible</small><b class="${c.remaining < 0 ? 'negative' : ''}">${money(c.remaining)}</b></div></div><div class="budget-progress" aria-label="${percent}% utilisé"><i class="${stateClass}" style="width:${width}%"></i></div><footer><span>${comparison}</span><button class="mini" type="button" data-edit-limit="${c.id}">Modifier</button></footer></article>`;
+  }).join('');
   $('#budget-empty').hidden = b.categories.length > 0;
 }
 function render() { renderSetup(); renderToday(); renderTransactions(); renderPlan(); renderCalendar(); if (state.page === 'budget') renderBudget(); }

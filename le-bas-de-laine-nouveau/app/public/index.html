@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navigation principale">
-      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 1.5.0</small></div></div>
+      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 1.6.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
         <button data-page="transactions">↕ <span>Transactions</span></button>
@@ -72,7 +72,8 @@
         <section class="page" id="page-budget" hidden>
           <div class="page-head"><div><div class="eyebrow">La vue mensuelle</div><h2>Budget</h2><p>Prévu et dépensé par catégorie, sans modifier votre disponible.</p></div><div class="top-actions"><button class="secondary" id="budget-prev" type="button">←</button><button class="pill" id="budget-month" type="button">—</button><button class="secondary" id="budget-next" type="button">→</button></div></div>
           <div class="budget-summary" id="budget-summary"></div>
-          <article class="card table-card"><table class="table"><thead><tr><th>Catégorie</th><th class="right">Budget</th><th class="right">Dépensé</th><th class="right">Disponible</th><th style="width:24%"></th></tr></thead><tbody id="budget-body"></tbody></table><div class="empty" id="budget-empty" hidden>Ajoutez une limite dans Plan pour la voir ici.</div></article>
+          <section class="budget-history card" id="budget-history"></section>
+          <section class="budget-categories" aria-label="Budget par catégorie"><div class="budget-section-head"><div><h3>Vos catégories</h3><p>Le budget sert à suivre le mois. Il ne modifie pas votre disponible à dépenser.</p></div><button class="link" type="button" data-page-link="plan">Gérer les limites</button></div><div class="budget-category-grid" id="budget-body"></div><div class="empty" id="budget-empty" hidden>Ajoutez une limite dans Plan pour la voir ici.</div></section>
         </section>
       </div>
     </main>
