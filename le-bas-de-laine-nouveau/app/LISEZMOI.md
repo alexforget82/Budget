@@ -173,3 +173,15 @@ réel remplace alors le prévu pour cette occurrence, sans double compte.
 
 Le logo des Fêtes représente désormais un vrai **bas de laine** rempli d’épargne,
 avec une touche hivernale québécoise.
+
+## Version 2.5.0 — Plan compact et Budget plus lisible
+
+L’écran **Plan** est maintenant condensé en quatre sections repliées : Revenus,
+Factures, Limites, puis Solde et données. Chaque ligne annonce son nombre de
+règles et sa prochaine information utile; ouvrez seulement la section que vous
+voulez modifier. Les boutons existants et les calculs restent les mêmes.
+
+Le **Budget** met maintenant les catégories proches de leur limite dans un court
+bloc **À surveiller**. Son en-tête distingue les revenus prévus, le total
+planifié, les achats déjà saisis et le reste du plan. Cette page demeure une vue
+mensuelle : elle ne modifie jamais le Safe-to-Spend.

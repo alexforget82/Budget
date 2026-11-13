@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navigation principale">
-      <div class="brand"><img src="/logo-noel.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.4.0</small></div></div>
+      <div class="brand"><img src="/logo-noel.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.5.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
         <button data-page="transactions">↕ <span>Transactions</span></button>
@@ -57,14 +57,14 @@
         </section>
 
         <section class="page" id="page-plan" hidden>
-          <div class="page-head"><div><div class="eyebrow">Ce qui est prévu</div><h2>Plan</h2><p>Revenus, factures et limites. Ouvrez uniquement ce que vous voulez modifier.</p></div><div class="top-actions"><button class="secondary" data-open="limit" type="button">＋ Limite</button><button class="primary" data-open="recurring" type="button">＋ Règle</button></div></div>
-          <div class="grid plan-grid">
-            <article class="card plan-card"><div class="section-head"><div><h3>Revenus</h3><p>Paies, rentes et allocations à venir.</p></div></div><div class="card-body" id="income-list"></div></article>
-            <article class="card plan-card"><div class="section-head"><div><h3>Factures</h3><p>Ce qui devra être payé, au compte ou sur carte.</p></div></div><div class="card-body" id="bill-list"></div></article>
-            <article class="card plan-card"><div class="section-head"><div><h3>Limites par catégorie</h3><p>Le report est conservé dans le mois puis remis à zéro au nouveau mois.</p></div></div><div class="card-body" id="limit-list"></div></article>
+          <div class="page-head"><div><div class="eyebrow">Ce qui est prévu</div><h2>Plan</h2><p>Trois sections courtes. Ouvrez seulement celle que vous voulez modifier.</p></div><div class="top-actions"><button class="secondary" data-open="limit" type="button">＋ Limite</button><button class="primary" data-open="recurring" type="button">＋ Règle</button></div></div>
+          <div class="plan-accordion" aria-label="Votre plan">
+            <details class="card plan-group" id="plan-income-group"><summary><span><b>Revenus</b><small id="plan-income-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="income-list"></div></details>
+            <details class="card plan-group" id="plan-bill-group"><summary><span><b>Factures</b><small id="plan-bill-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="bill-list"></div></details>
+            <details class="card plan-group" id="plan-limit-group"><summary><span><b>Limites</b><small id="plan-limit-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="limit-list"></div></details>
+            <details class="card plan-group plan-support"><summary><span><b>Solde et données</b><small id="plan-checkpoint">—</small></span><span class="plan-group-hint">Ouvrir</span></summary><div class="plan-group-body"><div class="notice" id="plan-checkpoint-detail">Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.</div><div class="plan-support-actions"><button class="secondary" data-open="checkpoint">Vérifier mon solde</button><button class="secondary" data-page-link="budget">Budget mensuel</button><a class="secondary" href="/api/export">Exporter mes données</a></div></div></details>
           </div>
           <button class="secondary mobile-budget-link" type="button" data-page-link="budget">Voir le budget mensuel</button>
-          <article class="card section-card"><div class="section-head"><div><h3>Solde et sauvegarde</h3><p id="plan-checkpoint">—</p></div><div class="top-actions"><button class="secondary" data-open="checkpoint">Vérifier mon solde</button><button class="secondary" data-page-link="budget">Budget mensuel</button><a class="secondary" href="/api/export">Exporter mes données</a></div></div><div class="limit-list"><div class="notice" id="plan-checkpoint-detail">Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.</div></div></article>
         </section>
 
         <section class="page" id="page-calendar" hidden>
@@ -77,6 +77,7 @@
         <section class="page" id="page-budget" hidden>
           <div class="page-head"><div><div class="eyebrow">La vue mensuelle</div><h2>Budget</h2><p>Prévu et dépensé par catégorie, sans modifier votre disponible.</p></div><div class="top-actions"><button class="secondary" id="budget-prev" type="button">←</button><button class="pill" id="budget-month" type="button">—</button><button class="secondary" id="budget-next" type="button">→</button></div></div>
           <div class="budget-summary" id="budget-summary"></div>
+          <section class="budget-priority card" id="budget-priority" aria-live="polite"></section>
           <section class="budget-history card" id="budget-history"></section>
           <section class="budget-categories" aria-label="Budget par catégorie"><div class="budget-section-head"><div><h3>Vos catégories</h3><p>Le budget sert à suivre le mois. Il ne modifie pas votre disponible à dépenser.</p></div><button class="link" type="button" data-page-link="plan">Gérer les limites</button></div><div class="budget-category-grid" id="budget-body"></div><div class="empty" id="budget-empty" hidden>Ajoutez une limite dans Plan pour la voir ici.</div></section>
         </section>

@@ -221,13 +221,23 @@ function renderTransactions() {
 }
 function renderPlan() {
   const rules = state.data.recurring;
+  const plural = (count, one, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+  const nextFor = entries => entries.map(rule => state.data.upcoming.find(event => event.rid === rule.id)).filter(Boolean).sort((a,b) => a.due.localeCompare(b.due))[0];
   const listRules = (kind, empty) => {
     const entries = rules.filter(rule => rule.kind === kind);
     return entries.length ? entries.map(r => { const next = state.data.upcoming.find(e=>e.rid===r.id); return `<div class="compact-row"><div class="grow"><strong>${escape(r.name)}</strong><small>${labelFrequency(r.frequency)}${next ? ` · ${dateFmt(next.due)}` : ''}</small></div><span class="amount ${r.kind==='income'?'positive':'negative'}">${signed(r.amount,r.kind)}</span><button class="mini" data-edit-rule="${r.id}">Modifier</button></div>`; }).join('') : `<div class="empty">${empty}</div>`;
   };
+  const incomeRules = rules.filter(rule => rule.kind === 'income');
+  const billRules = rules.filter(rule => rule.kind === 'expense');
+  const nextIncome = nextFor(incomeRules), nextBill = nextFor(billRules);
+  const limits = state.data.categories;
+  const urgent = [...limits].filter(limit => limit.amount > 0).sort((a,b) => a.reserve - b.reserve)[0];
   $('#income-list').innerHTML = listRules('income', 'Ajoutez une paie, une rente ou une allocation.');
   $('#bill-list').innerHTML = listRules('expense', 'Ajoutez vos factures fixes.');
-  $('#limit-list').innerHTML = state.data.categories.length ? state.data.categories.map(c=>limitRow(c,true)).join('') : `<div class="empty">Ajoutez Épicerie, Essence ou une autre dépense variable.</div>`;
+  $('#limit-list').innerHTML = limits.length ? limits.map(c=>limitRow(c,true)).join('') : `<div class="empty">Ajoutez Épicerie, Essence ou une autre dépense variable.</div>`;
+  setText('#plan-income-meta', incomeRules.length ? `${plural(incomeRules.length, 'règle')} · ${nextIncome ? `prochaine : ${dateFmt(nextIncome.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
+  setText('#plan-bill-meta', billRules.length ? `${plural(billRules.length, 'règle')} · ${nextBill ? `prochaine : ${dateFmt(nextBill.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
+  setText('#plan-limit-meta', limits.length ? `${plural(limits.length, 'limite')} · ${urgent ? `${urgent.name} : ${money(urgent.reserve)} restant` : 'à suivre'}` : 'Aucune limite');
   const settings = state.data.settings;
   setText('#plan-checkpoint', settings.checkpointDate ? `${checkpointText(settings)}.` : 'Aucun solde vérifié : inscrivez votre solde actuel pour démarrer.');
   setText('#plan-checkpoint-detail', settings.checkpointDate ? `Solde inscrit : ${money(settings.bank)} · solde prévu aujourd’hui : ${money(settings.expectedBank)} · écart depuis la vérification : ${signedMoney(settings.checkpointChange)}.` : 'Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.');
@@ -287,13 +297,18 @@ async function renderBudget() {
   const m = new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric'}).format(new Date(`${b.month}-01T12:00:00Z`));
   setText('#budget-month', m);
   const rest = b.income-b.fixed-b.variable;
-  $('#budget-summary').innerHTML = `<article class="card budget-summary-card income"><small>Revenus prévus</small><b class="positive">${money(b.income)}</b><span>Revenus programmés ce mois-ci</span></article><article class="card budget-summary-card"><small>Factures fixes</small><b>${money(b.fixed)}</b><span>Ce qui est déjà planifié</span></article><article class="card budget-summary-card"><small>Limites du mois</small><b>${money(b.variable)}</b><span>${b.categories.length} catégorie${b.categories.length>1?'s':''} à suivre</span></article><article class="card budget-summary-card ${rest < 0 ? 'negative-card':''}"><small>Reste du plan</small><b class="${rest >= 0 ? 'positive':'negative'}">${money(rest)}</b><span>Revenus moins factures et limites</span></article>`;
+  $('#budget-summary').innerHTML = `<article class="card budget-summary-card income"><small>Revenus prévus</small><b class="positive">${money(b.income)}</b><span>Ce qui est programmé ce mois-ci</span></article><article class="card budget-summary-card"><small>Planifié à dépenser</small><b>${money(b.fixed+b.variable)}</b><span>Factures et limites du mois</span></article><article class="card budget-summary-card"><small>Dépensé dans les limites</small><b>${money(b.actualVariable)}</b><span>Achats déjà saisis ce mois-ci</span></article><article class="card budget-summary-card ${rest < 0 ? 'negative-card':''}"><small>Reste du plan</small><b class="${rest >= 0 ? 'positive':'negative'}">${money(rest)}</b><span>Revenus moins factures et limites</span></article>`;
   const monthName = month => new Intl.DateTimeFormat('fr-CA',{month:'long'}).format(new Date(`${month}-01T12:00:00Z`));
   $('#budget-history').innerHTML = `<div class="budget-history-copy"><div><div class="eyebrow">Comparaison</div><h3>Vos dépenses variables</h3><p>Une vue rapide des trois derniers mois.</p></div><div class="budget-history-current"><small>Dépensé ce mois-ci</small><b>${money(b.actualVariable)}</b></div></div><div class="budget-history-months">${b.history.map(row => `<div class="budget-history-month"><span>${escape(monthName(row.month))}</span><b>${money(row.spent)}</b><small>sur ${money(row.planned)} prévu</small></div>`).join('')}</div>`;
   const sorted = [...b.categories].sort((a,b) => {
     const ratioA = a.planned ? a.spent / a.planned : 0, ratioB = b.planned ? b.spent / b.planned : 0;
     return ratioB - ratioA || a.name.localeCompare(b.name, 'fr-CA');
   });
+  const attention = sorted.filter(category => {
+    const ratio = category.planned ? category.spent / category.planned : 0;
+    return category.remaining <= 0 || ratio >= .75;
+  }).slice(0, 3);
+  $('#budget-priority').innerHTML = attention.length ? `<div class="budget-priority-head"><div><div class="eyebrow">À surveiller</div><h3>Les catégories qui demandent votre attention</h3><p>Le Budget est une vue mensuelle : il ne change jamais le Safe-to-Spend.</p></div><span class="tag">${attention.length} catégorie${attention.length > 1 ? 's' : ''}</span></div><div class="budget-priority-list">${attention.map(category => { const ratio = category.planned ? category.spent / category.planned : 0, stateClass = category.remaining < 0 ? 'over' : 'warn', label = category.remaining < 0 ? `Dépassement ${money(Math.abs(category.remaining))}` : `${money(category.remaining)} restant`; return `<button class="budget-priority-item ${stateClass}" type="button" data-edit-limit="${category.id}"><span><b>${escape(category.name)}</b><small>${Math.round(ratio * 100)} % utilisé · Budget ${money(category.planned)}</small></span><strong>${label}</strong></button>`; }).join('')}</div>` : `<div class="budget-priority-head calm"><div><div class="eyebrow">À surveiller</div><h3>${b.categories.length ? 'Tout est sous contrôle ce mois-ci' : 'Ajoutez une première limite'}</h3><p>${b.categories.length ? 'Aucune limite n’est près d’être atteinte.' : 'Le Budget affichera ici les catégories proches de leur limite.'}</p></div></div>`;
   $('#budget-body').innerHTML = sorted.map(c => {
     const ratio = c.planned ? c.spent / c.planned : 0;
     const percent = Math.round(ratio * 100), width = Math.max(0, Math.min(100, percent));
