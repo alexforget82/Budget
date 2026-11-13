@@ -232,8 +232,26 @@ async function renderCalendar() {
     });
     const limits = day.limitEvents.slice(0, Math.max(0, 3 - rows.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><em>${event.funded ? 'Réservé' : 'Limite'}</em><b>${money(event.amount)}</b></button>`);
     const extra = Math.max(0, items.length + day.limitEvents.length - rows.length - limits.length);
-    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<span class="calendar-more">+ ${extra} autre${extra > 1 ? 's' : ''}</span>` : ''}</div></article>`;
+    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<button class="calendar-more" type="button" data-calendar-expand="${day.date}">+ ${extra} autre${extra > 1 ? 's' : ''}</button>` : ''}</div></article>`;
   }).join('');
+}
+function prepareCalendarDay(date) {
+  const day = state.calendar?.days.find(item => item.date === date);
+  if (!day) return;
+  const statusLabel = { planned:'Prévu', moved:'Déplacé', skipped:'Ignoré', paid:'Payé', entered:'Saisi' };
+  const actual = (day.transactions || []).map(transaction => ({ ...transaction, type:'transaction' }));
+  const planned = (day.events || []).map(event => ({ ...event, type:'occurrence' }));
+  const items = [...actual, ...planned];
+  const rows = items.map(item => {
+    const label = statusLabel[item.status] || 'Prévu', direction = item.kind === 'income' ? 'positive' : 'negative';
+    const control = item.type === 'transaction' ? `data-calendar-day-tx="${item.id}"` : `data-calendar-day-occurrence="${item.rid}|${item.nominal}"`;
+    return `<button type="button" class="calendar-day-detail-item ${item.status || ''}" ${control}><span><b>${escape(item.name)}</b><small>${label} · ${item.type === 'transaction' ? 'touchez pour modifier' : 'touchez pour gérer'}</small></span><strong class="${direction}">${signed(item.amount,item.kind)}</strong></button>`;
+  });
+  const limits = (day.limitEvents || []).map(event => `<button type="button" class="calendar-day-detail-item limit" data-calendar-day-plan="1"><span><b>${escape(event.name)}</b><small>${event.funded ? 'Montant réservé' : 'Renouvellement de limite'} · voir dans Plan</small></span><strong>${money(event.amount)}</strong></button>`);
+  setText('#calendar-day-title', `Le ${dateFmt(date)}`);
+  setText('#calendar-day-copy', day.safe === null ? 'Aucun disponible prévu pour cette journée.' : `Disponible prévu après les opérations du jour : ${money(day.safe)}.`);
+  $('#calendar-day-detail').innerHTML = rows.length || limits.length ? `${rows.join('')}${limits.join('')}` : `<p class="checkpoint-review-empty">Aucune opération ou échéance pour cette journée.</p>`;
+  open('calendar-day');
 }
 async function renderBudget() {
   if (!state.data) return;
@@ -400,18 +418,33 @@ function updateTransactionFields() { const kind=$('#tx-form-kind').value, card =
 function prepareLimit(c=null) { const f=$('#limit-form'); f.reset(); f.id.value=c?.id||''; f.name.value=c?.name||''; f.amount.value=c?(c.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=c?.frequency||'w'; f.funding.value=c?.funding||'start'; f.start_date.value=c?.start_date||state.data.today; if(c?.frequency==='m') f.monthly_renewal.value=c.renewal; else f.renewal.value=c?.renewal||'4'; $('#limit-title').textContent=c?'Modifier la limite':'Ajouter une limite'; $('#delete-limit').hidden=!c; updateLimitFields(); open('limit'); }
 function updateLimitFields() { const monthly=$('#limit-frequency').value==='m'; $('#limit-weekday').hidden=monthly; $('#limit-monthday').hidden=!monthly; $('#limit-funding').hidden=!monthly; if(!monthly) $('#limit-form').funding.value='start'; }
 function prepareRule(rule=null) { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||'income'; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':'Ajouter une règle'; $('#delete-recurring').hidden=!rule; open('recurring'); }
-function prepareOccurrence(key) { const [rid,due]=key.split('|'); const calendarEvents = state.calendar?.days.flatMap(day => day.events) || []; const event=[...state.data.upcoming,...calendarEvents].find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
+function prepareOccurrence(key) { const [rid,due]=key.split('|'); const calendarEvents = state.calendar?.days.flatMap(day => day.events) || [], checkpointEvents = state.data.checkpointActivity?.openEvents || []; const event=[...state.data.upcoming,...calendarEvents,...checkpointEvents].find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
 function updateCheckpointDifference() {
   const value = parseCents($('#checkpoint-bank').value), expected = state.data.settings.expectedBank;
   if (value === null) { setText('#checkpoint-difference', 'Inscrivez le solde vu dans votre banque pour comparer.'); return; }
   const difference = value - expected;
   setText('#checkpoint-difference', difference === 0 ? 'Même montant que le solde prévu.' : difference > 0 ? `${signedMoney(difference)} de plus que le solde prévu. Vérifiez une entrée oubliée ou enregistrez ce nouveau solde.` : `${signedMoney(difference)} de moins que le solde prévu. Vérifiez une dépense oubliée ou enregistrez ce nouveau solde.`);
 }
+function renderCheckpointReview() {
+  const activity = state.data.checkpointActivity || {};
+  const transactions = activity.transactions || [], todayEvents = activity.todayEvents || [], openEvents = activity.openEvents || [];
+  const checkpoint = state.data.settings.checkpointDate;
+  const since = checkpoint ? `depuis le ${dateFmt(checkpoint)}` : 'depuis le dernier solde enregistré';
+  const transactionRows = transactions.length ? transactions.map(tx => {
+    const label = tx.kind === 'income' ? 'Revenu saisi' : tx.kind === 'card_payment' ? 'Paiement de carte' : 'Dépense saisie';
+    return `<button class="checkpoint-review-item" data-review-tx="${tx.id}" type="button"><span><b>${escape(tx.description || label)}</b><small>${dateFmt(tx.date)} · ${label}</small></span><strong class="${tx.impact >= 0 ? 'positive' : 'negative'}">${signedMoney(tx.impact)}</strong></button>`;
+  }).join('') : `<p class="checkpoint-review-empty">Aucune opération saisie ne modifie le compte conjoint ${since}. Les achats sur carte n’apparaissent qu’au paiement de la carte.</p>`;
+  const todayRows = todayEvents.length ? `<div class="checkpoint-review-group"><small>Prévu aujourd’hui dans le solde</small>${todayEvents.map(event => `<button class="checkpoint-review-item planned" data-review-occurrence="${event.rid}|${event.nominal}" type="button"><span><b>${escape(event.name)}</b><small>${event.kind === 'income' ? 'Revenu prévu' : 'Facture prévue'}</small></span><strong class="${event.impact >= 0 ? 'positive' : 'negative'}">${signedMoney(event.impact)}</strong></button>`).join('')}</div>` : '';
+  const openRows = openEvents.length ? `<div class="checkpoint-review-group checkpoint-open-events"><small>Échéance passée à confirmer</small>${openEvents.map(event => `<button class="checkpoint-review-item warning" data-review-occurrence="${event.rid}|${event.nominal}" type="button"><span><b>${escape(event.name)}</b><small>${dateFmt(event.due)} · touchez pour payer, déplacer ou ignorer</small></span><strong class="${event.kind === 'income' ? 'positive' : 'negative'}">${signed(event.amount,event.kind)}</strong></button>`).join('')}</div>` : '';
+  const entered = Number(activity.enteredImpact || 0), planned = Number(activity.todayImpact || 0), total = entered + planned;
+  $('#checkpoint-review').innerHTML = `<div class="checkpoint-review-head"><div><b>Ce qui explique le solde prévu</b><small>${transactions.length ? `${transactions.length} opération${transactions.length > 1 ? 's' : ''} ${since}` : `Aucune opération bancaire ${since}`}</small></div><span class="tag ${total < 0 ? 'negative' : total > 0 ? 'positive' : ''}">${signedMoney(total)}</span></div><div class="checkpoint-review-group"><small>Opérations bancaires saisies</small>${transactionRows}</div>${todayRows}${openRows}`;
+}
 function prepareCheckpoint() {
   const settings = state.data.settings, form = $('#checkpoint-form');
   form.reset();
   setText('#checkpoint-expected', money(settings.expectedBank));
   setText('#checkpoint-flow', settings.checkpointChange ? signedMoney(settings.checkpointChange) : 'Aucun écart');
+  renderCheckpointReview();
   updateCheckpointDifference();
   open('checkpoint');
 }
@@ -435,6 +468,12 @@ function wire() {
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
     if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
+    if(button.dataset.calendarExpand) return prepareCalendarDay(button.dataset.calendarExpand);
+    if(button.dataset.calendarDayTx) { close($('#dialog-calendar-day')); return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.calendarDayTx)); }
+    if(button.dataset.calendarDayOccurrence) { close($('#dialog-calendar-day')); return prepareOccurrence(button.dataset.calendarDayOccurrence); }
+    if(button.dataset.calendarDayPlan) { close($('#dialog-calendar-day')); return changePage('plan'); }
+    if(button.dataset.reviewTx) { close($('#dialog-checkpoint')); return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.reviewTx)); }
+    if(button.dataset.reviewOccurrence) { close($('#dialog-checkpoint')); return prepareOccurrence(button.dataset.reviewOccurrence); }
     if(button.dataset.editTx) return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.editTx));
     if(button.dataset.deleteTx) { if(confirm('Supprimer cette transaction ?')) await act({action:'delete_transaction',id:button.dataset.deleteTx}); return; }
     if(button.dataset.editLimit) return prepareLimit(state.data.categories.find(c=>String(c.id)===button.dataset.editLimit));

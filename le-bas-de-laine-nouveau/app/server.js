@@ -403,6 +403,32 @@ function buildState() {
   const checkpointAge = settings.checkpointDate
     ? Math.max(0, Math.round((dateObj(t).getTime() - dateObj(settings.checkpointDate).getTime()) / 86400000))
     : null;
+  // Le rapprochement bancaire suit uniquement les éléments qui modifient le
+  // compte conjoint. Un achat sur carte reste protégé, mais ne fait pas encore
+  // bouger le solde bancaire avant son paiement.
+  const checkpointTransactions = afterCheckpoint
+    .filter(tx => tx.date <= t)
+    .map(tx => {
+      const impact = tx.kind === 'income' ? tx.amount
+        : (tx.kind === 'expense' && tx.method === 'joint') || tx.kind === 'card_payment' ? -tx.amount : 0;
+      return { ...tx, impact };
+    })
+    .filter(tx => tx.impact !== 0)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  const checkpointTodayEvents = occurrenceList
+    .filter(event => event.due === t && (event.kind === 'income' || event.method === 'joint'))
+    .map(event => ({ ...event, impact: event.kind === 'income' ? event.amount : -event.amount }));
+  const checkpointOpenEvents = settings.checkpointDate
+    ? allOccurrences(addDays(settings.checkpointDate, 1), addDays(t, -1))
+      .filter(event => event.due > settings.checkpointDate && event.due < t)
+    : [];
+  const checkpointActivity = {
+    transactions: checkpointTransactions,
+    enteredImpact: checkpointTransactions.reduce((sum, tx) => sum + tx.impact, 0),
+    todayEvents: checkpointTodayEvents,
+    todayImpact: checkpointTodayEvents.reduce((sum, event) => sum + event.impact, 0),
+    openEvents: checkpointOpenEvents
+  };
   settings.expectedBank = current.cash;
   settings.checkpointChange = current.cash - settings.bank;
   settings.checkpointAge = checkpointAge;
@@ -411,7 +437,7 @@ function buildState() {
     transactions: transactions.slice(0, 250), upcoming: occurrenceList.filter(e => e.due <= addDays(t, 30)), daily,
     safe30: low30, safeUntilIncome: lowUntil, nextIncome, firstNegative,
     limitOverrides: q('SELECT * FROM limit_overrides ORDER BY due_date'), merchant_rules: merchantRules(), review_count: toReview,
-    current
+    current, checkpointActivity
   };
 }
 

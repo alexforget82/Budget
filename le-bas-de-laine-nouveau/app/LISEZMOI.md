@@ -119,3 +119,14 @@ pour chaque journée :
 Touchez une opération saisie pour la modifier, ou une échéance pour la gérer.
 Les dépenses importées ou saisies sans limite sont regroupées dans la **Boîte de
 réception** de Transactions afin de les classer rapidement, sans double saisie.
+
+## Version 2.1.0 — solde vérifiable et journées détaillées
+
+La fenêtre **Vérifier mon solde** détaille désormais les opérations qui ont
+vraiment modifié le compte conjoint depuis le dernier solde confirmé. Elle
+sépare clairement les achats sur carte, les mouvements bancaires et les
+échéances passées qui attendent encore une décision.
+
+Dans le calendrier, le bouton **+ autres** ouvre maintenant la journée au
+complet. On peut alors modifier une opération, gérer une échéance ou ouvrir
+Plan pour une limite, sans faire défiler une case de calendrier surchargée.
