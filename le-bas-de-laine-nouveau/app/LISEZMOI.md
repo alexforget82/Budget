@@ -185,3 +185,10 @@ Le **Budget** met maintenant les catégories proches de leur limite dans un cour
 bloc **À surveiller**. Son en-tête distingue les revenus prévus, le total
 planifié, les achats déjà saisis et le reste du plan. Cette page demeure une vue
 mensuelle : elle ne modifie jamais le Safe-to-Spend.
+
+## Correctif 2.5.1 — icône iPhone de la vue foyer
+
+La page **/simple** utilise désormais son propre manifeste iPhone. Une fois
+ajoutée depuis Safari à l’écran d’accueil, son icône démarre toujours la vue
+foyer et non l’application complète. L’adresse avec ou sans barre finale
+(``/simple`` ou ``/simple/``) affiche la même vue.

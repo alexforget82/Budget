@@ -1,0 +1,10 @@
+{
+  "id": "/simple",
+  "name": "Le Bas de Laine — foyer",
+  "short_name": "Bas de Laine",
+  "start_url": "/simple",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#0b3d72",
+  "icons": [{"src":"/logo-noel.svg","sizes":"any","type":"image/svg+xml"}]
+}
