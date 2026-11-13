@@ -144,3 +144,16 @@ les opérations et états connus, sans inventer un Safe-to-Spend rétroactif.
 
 Enfin, l’import CSV reconnaît un même relevé même si ses lignes sont présentées
 dans un ordre différent, tout en restant compatible avec les imports antérieurs.
+
+## Version 2.3.0 — achats répartis et Safe-to-Spend détaillé
+
+Une même dépense peut maintenant être ventilée entre plusieurs limites, sans
+créer de deuxième opération ni déduire le compte conjoint deux fois. Par
+exemple, un achat Costco peut répartir 140 $ dans Épicerie, 20 $ dans Pharmacie
+et 20 $ dans Autre. La transaction reste unique et les montants doivent toujours
+égaliser le total de l’achat.
+
+Le Safe-to-Spend est plus grand et plus explicite : le point bas, son écart par
+rapport à aujourd’hui et les éléments qui l’expliquent sont visibles avant le
+graphique. Le calcul demeure exactement le même : compte conjoint − cartes à
+payer − limites réservées.

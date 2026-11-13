@@ -55,6 +55,14 @@ db.exec(`
     FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET NULL,
     FOREIGN KEY(recurring_id) REFERENCES recurring(id) ON DELETE SET NULL
   );
+  CREATE TABLE IF NOT EXISTS transaction_splits (
+    transaction_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL CHECK(amount > 0),
+    PRIMARY KEY(transaction_id, category_id),
+    FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
+  );
   CREATE TABLE IF NOT EXISTS occurrences (
     recurring_id INTEGER NOT NULL,
     due_date TEXT NOT NULL,
@@ -263,6 +271,28 @@ function categoryPeriods(category, until) {
   }
   return periods.sort((a, b) => a.date.localeCompare(b.date));
 }
+function withTransactionSplits(rows) {
+  if (!rows.length) return rows;
+  const ids = rows.map(row => Number(row.id)).filter(Number.isInteger);
+  if (!ids.length) return rows;
+  const splits = q(`SELECT transaction_splits.transaction_id, transaction_splits.category_id, transaction_splits.amount,
+                           categories.name AS category_name
+                    FROM transaction_splits JOIN categories ON categories.id=transaction_splits.category_id
+                    WHERE transaction_splits.transaction_id IN (${ids.map(() => '?').join(',')})
+                    ORDER BY transaction_splits.transaction_id, transaction_splits.rowid`, ...ids);
+  const byTransaction = new Map();
+  for (const split of splits) {
+    if (!byTransaction.has(split.transaction_id)) byTransaction.set(split.transaction_id, []);
+    byTransaction.get(split.transaction_id).push(split);
+  }
+  return rows.map(row => ({ ...row, splits: byTransaction.get(row.id) || [] }));
+}
+function amountInCategory(transaction, categoryId) {
+  if (transaction.splits?.length) return transaction.splits
+    .filter(split => split.category_id === categoryId)
+    .reduce((sum, split) => sum + split.amount, 0);
+  return transaction.category_id === categoryId ? transaction.amount : 0;
+}
 function incomeFundedPeriods(category, from, until) {
   if (category.frequency !== 'm' || !category.start_date) return [];
   const [startYear, startMonth] = category.start_date.slice(0, 7).split('-').map(Number);
@@ -281,7 +311,7 @@ function incomeFundedPeriods(category, from, until) {
 function categoryReserve(category, day, transactions) {
   const periods = categoryPeriods(category, day).filter(p => monthKey(p.date) === monthKey(day) && p.date <= day);
   const allocated = periods.reduce((sum, p) => sum + p.amount, 0);
-  const spent = transactions.filter(t => t.kind === 'expense' && t.category_id === category.id && t.date <= day && t.date >= category.start_date && monthKey(t.date) === monthKey(day)).reduce((sum, t) => sum + t.amount, 0);
+  const spent = transactions.filter(t => t.kind === 'expense' && t.date <= day && t.date >= category.start_date && monthKey(t.date) === monthKey(day)).reduce((sum, t) => sum + amountInCategory(t, category.id), 0);
   return Math.max(0, allocated - spent);
 }
 
@@ -296,7 +326,7 @@ function baseData() {
 function buildState() {
   const t = today(), horizon = addDays(t, 89), settings = baseData();
   const categories = q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE');
-  const transactions = q('SELECT * FROM transactions ORDER BY date DESC, id DESC');
+  const transactions = withTransactionSplits(q('SELECT * FROM transactions ORDER BY date DESC, id DESC'));
   const afterCheckpoint = transactions.filter(tx => tx.created_at > settings.checkpointAt && !tx.included);
   const occurrenceList = allOccurrences(t, horizon);
   const daily = [];
@@ -304,7 +334,7 @@ function buildState() {
   const incomeDue = incomeCategories.flatMap(category => incomeFundedPeriods(category, t, horizon).map(period => ({ ...period, category })));
   const funded = new Map();
   const fundingKey = period => `${period.category.id}|${period.due}`;
-  const categorySpent = (category, day) => transactions.filter(tx => tx.kind === 'expense' && tx.category_id === category.id && tx.date <= day && tx.date >= category.start_date && monthKey(tx.date) === monthKey(day)).reduce((sum, tx) => sum + tx.amount, 0);
+  const categorySpent = (category, day) => transactions.filter(tx => tx.kind === 'expense' && tx.date <= day && tx.date >= category.start_date && monthKey(tx.date) === monthKey(day)).reduce((sum, tx) => sum + amountInCategory(tx, category.id), 0);
   const reservesFor = day => {
     const reserves = {};
     for (const category of categories) {
@@ -397,7 +427,7 @@ function buildState() {
   });
   const firstNegative = daily.find(d => d.safe < 0) || null;
   const toReview = transactions.filter(tx =>
-    tx.kind === 'expense' && !tx.category_id && !tx.recurring_id
+    tx.kind === 'expense' && !tx.category_id && !tx.splits.length && !tx.recurring_id
   ).length;
   const current = daily[0] || { safe: 0, cash: settings.bank, cards: 0, limits: 0, reserves: {} };
   const checkpointAge = settings.checkpointDate
@@ -460,6 +490,23 @@ function importKey(value) {
   const key = String(value || '');
   if (Buffer.byteLength(key) < 8 || Buffer.byteLength(key) > 400 || /[\0-\x1F]/.test(key)) throw Error('Clé d’import invalide.');
   return key;
+}
+function normalizedSplits(value, kind, total) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw Error('Répartition invalide.');
+  if (!value.length) return [];
+  if (kind !== 'expense') throw Error('Seules les dépenses peuvent être réparties.');
+  const grouped = new Map();
+  for (const raw of value) {
+    const categoryId = Number(raw?.category_id), amount = money(raw?.amount);
+    if (!categoryById(categoryId)) throw Error('Choisis une limite pour chaque part.');
+    if (amount <= 0) throw Error('Chaque part doit être supérieure à zéro.');
+    grouped.set(categoryId, (grouped.get(categoryId) || 0) + amount);
+  }
+  const splits = [...grouped.entries()].map(([category_id, amount]) => ({ category_id, amount }));
+  if (splits.length < 2) throw Error('Choisis au moins deux limites, ou utilise une seule limite.');
+  if (splits.reduce((sum, split) => sum + split.amount, 0) !== total) throw Error('La répartition doit totaliser exactement le montant de la dépense.');
+  return splits;
 }
 function action(body) {
   const t = today();
@@ -565,16 +612,25 @@ function action(body) {
       const method = kind === 'expense' && body.method === 'card' ? 'card' : 'joint';
       const description = String(body.description || '').trim().slice(0, 160);
       const recurringId = body.recurring_id ? Number(body.recurring_id) : null, recurringDate = body.recurring_date ? String(body.recurring_date) : null;
-      const proposed = !body.id && kind === 'expense' && !body.category_id && !recurringId ? merchantRuleFor(description, method) : null;
-      const categoryId = kind === 'expense' ? Number(body.category_id || proposed?.category_id || 0) || null : null;
+      const splits = normalizedSplits(body.splits, kind, amount);
+      const proposed = !body.id && kind === 'expense' && !splits.length && !body.category_id && !recurringId ? merchantRuleFor(description, method) : null;
+      const categoryId = kind === 'expense' && !splits.length ? Number(body.category_id || proposed?.category_id || 0) || null : null;
       if (categoryId && !categoryById(categoryId)) throw Error('Limite introuvable.');
-      if (body.id) {
-        const existing = one('SELECT id FROM transactions WHERE id=?', Number(body.id));
-        if (!existing) throw Error('Transaction introuvable.');
-        run('UPDATE transactions SET date=?,amount=?,kind=?,method=?,category_id=?,description=?,recurring_id=?,recurring_date=?,included=? WHERE id=?', date, amount, kind, method, categoryId, description, recurringId, recurringDate, body.included ? 1 : 0, Number(body.id));
-      } else {
-        run('INSERT INTO transactions(date,amount,kind,method,category_id,description,recurring_id,recurring_date,included,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)', date, amount, kind, method, categoryId, description, recurringId, recurringDate, body.included ? 1 : 0, Date.now());
-      }
+      let transactionId;
+      db.exec('BEGIN');
+      try {
+        if (body.id) {
+          const existing = one('SELECT id FROM transactions WHERE id=?', Number(body.id));
+          if (!existing) throw Error('Transaction introuvable.');
+          transactionId = Number(body.id);
+          run('UPDATE transactions SET date=?,amount=?,kind=?,method=?,category_id=?,description=?,recurring_id=?,recurring_date=?,included=? WHERE id=?', date, amount, kind, method, categoryId, description, recurringId, recurringDate, body.included ? 1 : 0, transactionId);
+        } else {
+          transactionId = Number(run('INSERT INTO transactions(date,amount,kind,method,category_id,description,recurring_id,recurring_date,included,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)', date, amount, kind, method, categoryId, description, recurringId, recurringDate, body.included ? 1 : 0, Date.now()).lastInsertRowid);
+        }
+        run('DELETE FROM transaction_splits WHERE transaction_id=?', transactionId);
+        for (const split of splits) run('INSERT INTO transaction_splits(transaction_id,category_id,amount) VALUES(?,?,?)', transactionId, split.category_id, split.amount);
+        db.exec('COMMIT');
+      } catch (error) { db.exec('ROLLBACK'); throw error; }
       if (body.remember_rule && kind === 'expense' && description && categoryId) {
         const normalized = merchantKey(description);
         if (normalized.length >= 2) run(`INSERT INTO merchant_rules(merchant,normalized,category_id,method,created_at)
@@ -621,6 +677,7 @@ function action(body) {
       if (!ids.length) throw Error('Sélection invalide.');
       const selected = q(`SELECT id FROM transactions WHERE id IN (${ids.map(() => '?').join(',')}) AND kind='expense'`, ...ids);
       if (!selected.length) throw Error('Aucune dépense à classer.');
+      run(`DELETE FROM transaction_splits WHERE transaction_id IN (${selected.map(() => '?').join(',')})`, ...selected.map(row => row.id));
       run(`UPDATE transactions SET category_id=? WHERE id IN (${selected.map(() => '?').join(',')})`, categoryId, ...selected.map(row => row.id));
       return `${selected.length} dépense${selected.length > 1 ? 's' : ''} classée${selected.length > 1 ? 's' : ''}.`;
     }
@@ -661,11 +718,11 @@ function budgetSnapshot(month) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Error('Mois invalide.');
   const first = `${month}-01`, last = iso(new Date(Date.UTC(+month.slice(0,4), +month.slice(5,7), 0)));
   const categories = q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE');
-  const transactions = q('SELECT * FROM transactions WHERE date>=? AND date<=?', first, last);
+  const transactions = withTransactionSplits(q('SELECT * FROM transactions WHERE date>=? AND date<=?', first, last));
   const entries = categories.map(c => {
     const starts = categoryStarts(c, last).filter(d => d >= first && d <= last);
     const planned = starts.length * c.amount;
-    const spent = transactions.filter(t => t.kind === 'expense' && t.category_id === c.id).reduce((sum, t) => sum + t.amount, 0);
+    const spent = transactions.filter(t => t.kind === 'expense').reduce((sum, t) => sum + amountInCategory(t, c.id), 0);
     return { ...c, planned, spent, remaining: planned - spent };
   });
   const recurring = allOccurrences(first, last);
