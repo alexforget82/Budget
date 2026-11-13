@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navigation principale">
-      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.1.0</small></div></div>
+      <div class="brand"><img src="/logo.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.2.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
         <button data-page="transactions">↕ <span>Transactions</span></button>
@@ -32,9 +32,10 @@
           <div id="setup-banner"></div>
           <div class="page-head"><div><div class="eyebrow">Votre repère des 30 prochains jours</div><h2>Votre disponible prudent</h2><p>Le montant le plus bas après les factures, les cartes et les limites.</p></div><button class="secondary" type="button" data-open="afford">Puis-je faire cet achat ?</button></div>
           <div class="grid dashboard">
-            <article class="card hero pad">
-              <div class="eyebrow">Minimum sur 30 jours</div><h2 id="safe30">—</h2><p class="caption" id="safe30-note">Chargement de votre prévision…</p>
-              <div class="number-row"><div><small>Disponible maintenant</small><b id="safe-now">—</b></div><div><small>Jusqu’au prochain revenu</small><b id="safe-until">—</b></div></div>
+            <article class="card hero pad safe-hero">
+              <div class="safe-hero-head"><div><div class="eyebrow">Safe-to-Spend · 30 jours</div><p class="safe-lead">Le minimum que vous pouvez dépenser sans vous mettre dans le trouble.</p></div><span class="safe-status" id="safe-status">Prévision</span></div>
+              <div class="safe-primary"><div><small>Minimum prévu</small><h2 id="safe30">—</h2><p class="caption" id="safe30-note">Chargement de votre prévision…</p></div><div class="safe-next"><small>Minimum avant le prochain revenu</small><b id="safe-until">—</b><span id="safe-next-note">—</span></div></div>
+              <div class="safe-calculation" aria-label="Calcul du Safe-to-Spend d’aujourd’hui"><div><small>Compte conjoint</small><b id="safe-bank">—</b></div><div><small>Cartes à payer</small><b id="safe-cards">—</b></div><div><small>Limites réservées</small><b id="safe-limits">—</b></div><div class="safe-total"><small>Disponible maintenant</small><b id="safe-now">—</b></div></div>
               <div class="chart-wrap"><svg id="safe-chart" aria-label="Prévision quotidienne du disponible. Touchez une journée pour voir son détail."></svg><input class="range" id="safe-slider" type="range" min="0" max="29" value="0"><div class="chart-day"><span id="chart-date">Aujourd’hui</span><b id="chart-value">—</b></div><div class="chart-legend"><span><i class="income-dot"></i>Revenu</span><span><i class="expense-dot"></i>Facture</span><span><i class="limit-dot"></i>Limite</span></div><div class="chart-details" id="chart-details" aria-live="polite"></div></div>
               <div class="quick-check"><input id="quick-amount" type="text" inputmode="decimal" placeholder="Montant"><button id="quick-afford" type="button">Vérifier un achat</button></div>
             </article>
@@ -66,7 +67,7 @@
         </section>
 
         <section class="page" id="page-calendar" hidden>
-          <div class="page-head"><div><div class="eyebrow">Prévu et réel</div><h2>Calendrier utile</h2><p>Paies, factures, limites et opérations réellement saisies, jour par jour.</p></div><div class="top-actions calendar-actions"><button class="secondary" id="calendar-prev" type="button">←</button><button class="pill" id="calendar-month" type="button">—</button><button class="secondary" id="calendar-next" type="button">→</button></div></div>
+          <div class="page-head"><div><div class="eyebrow" id="calendar-kicker">Prévu et réel</div><h2>Calendrier utile</h2><p id="calendar-copy">Paies, factures, limites et opérations réellement saisies, jour par jour.</p></div><div class="top-actions calendar-actions"><button class="secondary" id="calendar-prev" type="button">←</button><button class="pill" id="calendar-month" type="button">—</button><button class="secondary" id="calendar-next" type="button">→</button></div></div>
           <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
           <div class="calendar-legend"><span><i class="status-entered"></i>Saisi</span><span><i class="status-planned"></i>Prévu</span><span><i class="status-paid"></i>Payé</span><span><i class="status-moved"></i>Déplacé</span><span><i class="status-skipped"></i>Ignoré</span></div>
           <div class="calendar-grid" id="calendar-grid"></div>

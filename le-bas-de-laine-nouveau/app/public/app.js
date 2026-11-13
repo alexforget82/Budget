@@ -64,6 +64,13 @@ function renderToday() {
   setText('#safe30-note', `Point le plus bas prévu le ${dateFmt(min.date)}.`);
   setText('#safe-now', money(d.current.safe));
   setText('#safe-until', money(d.safeUntilIncome.safe));
+  setText('#safe-bank', money(d.current.cash));
+  setText('#safe-cards', `−${money(d.current.cards)}`);
+  setText('#safe-limits', `−${money(d.current.limits)}`);
+  setText('#safe-next-note', d.nextIncome ? `jusqu’au ${dateFmt(d.nextIncome.due)}` : 'sur les 30 prochains jours');
+  const safeStatus = $('#safe-status');
+  safeStatus.className = `safe-status ${min.safe < 0 ? 'risk' : min.safe < d.current.safe ? 'watch' : 'steady'}`;
+  safeStatus.textContent = min.safe < 0 ? 'À corriger' : min.safe < d.current.safe ? 'À surveiller' : 'Stable';
   setText('#checkpoint-label', checkpointText(d.settings));
   renderChart();
   const income = d.nextIncome;
@@ -218,6 +225,8 @@ async function renderCalendar() {
   state.calendar = calendar;
   state.calendarMonth = calendar.month;
   setText('#calendar-month', calendarMonthLabel(calendar.month));
+  setText('#calendar-kicker', calendar.historical ? 'Historique réel' : 'Prévu et réel');
+  setText('#calendar-copy', calendar.historical ? 'Transactions et échéances enregistrées. Le Safe-to-Spend n’est pas recalculé pour les journées passées.' : 'Paies, factures, limites et opérations réellement saisies, jour par jour.');
   $('#calendar-prev').disabled = calendar.month <= calendar.minMonth;
   $('#calendar-next').disabled = calendar.month >= calendar.maxMonth;
   $('#calendar-grid').innerHTML = calendar.days.map(day => {
@@ -232,7 +241,8 @@ async function renderCalendar() {
     });
     const limits = day.limitEvents.slice(0, Math.max(0, 3 - rows.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><em>${event.funded ? 'Réservé' : 'Limite'}</em><b>${money(event.amount)}</b></button>`);
     const extra = Math.max(0, items.length + day.limitEvents.length - rows.length - limits.length);
-    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${day.safe === null ? '—' : money(day.safe)}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<button class="calendar-more" type="button" data-calendar-expand="${day.date}">+ ${extra} autre${extra > 1 ? 's' : ''}</button>` : ''}</div></article>`;
+    const safeLabel = day.safe === null ? (calendar.historical && day.inMonth ? 'Historique' : '—') : money(day.safe);
+    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${safeLabel}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<button class="calendar-more" type="button" data-calendar-expand="${day.date}">+ ${extra} autre${extra > 1 ? 's' : ''}</button>` : ''}</div></article>`;
   }).join('');
 }
 function prepareCalendarDay(date) {
@@ -249,7 +259,7 @@ function prepareCalendarDay(date) {
   });
   const limits = (day.limitEvents || []).map(event => `<button type="button" class="calendar-day-detail-item limit" data-calendar-day-plan="1"><span><b>${escape(event.name)}</b><small>${event.funded ? 'Montant réservé' : 'Renouvellement de limite'} · voir dans Plan</small></span><strong>${money(event.amount)}</strong></button>`);
   setText('#calendar-day-title', `Le ${dateFmt(date)}`);
-  setText('#calendar-day-copy', day.safe === null ? 'Aucun disponible prévu pour cette journée.' : `Disponible prévu après les opérations du jour : ${money(day.safe)}.`);
+  setText('#calendar-day-copy', day.safe === null ? (state.calendar?.historical ? 'Historique réel : le Safe-to-Spend n’est pas recalculé pour une journée passée.' : 'Aucun disponible prévu pour cette journée.') : `Disponible prévu après les opérations du jour : ${money(day.safe)}.`);
   $('#calendar-day-detail').innerHTML = rows.length || limits.length ? `${rows.join('')}${limits.join('')}` : `<p class="checkpoint-review-empty">Aucune opération ou échéance pour cette journée.</p>`;
   open('calendar-day');
 }
@@ -330,6 +340,7 @@ function csvRows() {
   const csv = state.csv;
   if (!csv) return [];
   const method = $('#csv-method').value;
+  const occurrences = new Map();
   return csv.rows.map((cells,index) => {
     const date = csvDate(cells[csv.map.date]);
     const description = String(cells[csv.map.description] || '').trim();
@@ -338,7 +349,10 @@ function csvRows() {
     const kind = signedAmount < 0 ? 'expense' : 'income';
     const rule = kind === 'expense' ? transactionRuleFor(description, method) : null;
     const category_id = kind === 'expense' ? Number(csv.categories.get(index) || rule?.category_id || 0) || '' : '';
-    return { date, description, amount: (Math.abs(signedAmount) / 100).toFixed(2), kind, method, category_id, import_key: `csv|${date}|${encodeURIComponent(description)}|${Math.abs(signedAmount)}|${kind}|${method}|${index}` };
+    const signature = `${date}|${encodeURIComponent(merchantKey(description))}|${Math.abs(signedAmount)}|${kind}|${method}`;
+    const occurrence = (occurrences.get(signature) || 0) + 1;
+    occurrences.set(signature, occurrence);
+    return { date, description, amount: (Math.abs(signedAmount) / 100).toFixed(2), kind, method, category_id, import_key: `csv2|${signature}|${occurrence}`, legacy_import_key: `csv|${date}|${encodeURIComponent(description)}|${Math.abs(signedAmount)}|${kind}|${method}|${index}` };
   });
 }
 function renderCsvPreview() {
@@ -349,7 +363,7 @@ function renderCsvPreview() {
   ['date','description','amount'].forEach(key => $(`#csv-map-${key}`).addEventListener('change', event => { csv.map[key] = Number(event.target.value); renderCsvPreview(); }));
   try {
     const rows = csvRows();
-    preview.innerHTML = `<p class="csv-summary"><b>${rows.length} ligne${rows.length>1?'s':''} prête${rows.length>1?'s':''}.</b> Les catégories proposées viennent de vos règles; vous pouvez les modifier avant l’import.</p><div class="table-card csv-table"><table class="table"><thead><tr><th>Date</th><th>Description</th><th>Montant</th><th>Limite proposée</th></tr></thead><tbody>${rows.slice(0,30).map((row,index) => `<tr><td>${escape(row.date)}</td><td>${escape(row.description)}</td><td class="right ${row.kind==='income'?'positive':'negative'}">${row.kind==='income'?'+':'−'}${money(Number(row.amount)*100)}</td><td>${row.kind === 'expense' ? `<select class="filter csv-category" data-csv-category="${index}"><option value="">À classer</option>${state.data.categories.map(category=>`<option value="${category.id}" ${String(category.id)===String(row.category_id)?'selected':''}>${escape(category.name)}</option>`).join('')}</select>` : 'Revenu'}</td></tr>`).join('')}</tbody></table></div>${rows.length>30?`<p class="muted">Aperçu des 30 premières lignes sur ${rows.length}.</p>`:''}`;
+    preview.innerHTML = `<p class="csv-summary"><b>${rows.length} ligne${rows.length>1?'s':''} prête${rows.length>1?'s':''}.</b> Les catégories proposées viennent de vos règles; vous pouvez les modifier avant l’import. Un même relevé est ignoré s’il a déjà été importé, même si ses lignes ont changé d’ordre.</p><div class="table-card csv-table"><table class="table"><thead><tr><th>Date</th><th>Description</th><th>Montant</th><th>Limite proposée</th></tr></thead><tbody>${rows.slice(0,30).map((row,index) => `<tr><td>${escape(row.date)}</td><td>${escape(row.description)}</td><td class="right ${row.kind==='income'?'positive':'negative'}">${row.kind==='income'?'+':'−'}${money(Number(row.amount)*100)}</td><td>${row.kind === 'expense' ? `<select class="filter csv-category" data-csv-category="${index}"><option value="">À classer</option>${state.data.categories.map(category=>`<option value="${category.id}" ${String(category.id)===String(row.category_id)?'selected':''}>${escape(category.name)}</option>`).join('')}</select>` : 'Revenu'}</td></tr>`).join('')}</tbody></table></div>${rows.length>30?`<p class="muted">Aperçu des 30 premières lignes sur ${rows.length}.</p>`:''}`;
     $$('.csv-category').forEach(select => select.addEventListener('change', () => { csv.categories.set(Number(select.dataset.csvCategory), select.value); renderCsvPreview(); }));
     button.disabled = false;
   } catch(error) { preview.innerHTML = `<p class="notice"><b>Import à vérifier.</b><br>${escape(error.message)}</p>`; button.disabled = true; }

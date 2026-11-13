@@ -597,13 +597,14 @@ function action(body) {
         const proposed = kind === 'expense' && !raw.category_id ? merchantRuleFor(description, method) : null;
         const categoryId = kind === 'expense' ? Number(raw.category_id || proposed?.category_id || 0) || null : null;
         if (categoryId && !categoryById(categoryId)) throw Error(`Limite invalide à la ligne ${index + 1}.`);
-        return { date, description, kind, amount, method, categoryId, key: importKey(raw.import_key) };
+        const legacyKey = raw.legacy_import_key ? importKey(raw.legacy_import_key) : '';
+        return { date, description, kind, amount, method, categoryId, key: importKey(raw.import_key), legacyKey };
       });
       let imported = 0, skipped = 0;
       db.exec('BEGIN');
       try {
         for (const row of rows) {
-          if (one('SELECT import_key FROM imported_rows WHERE import_key=?', row.key)) { skipped++; continue; }
+          if (one('SELECT import_key FROM imported_rows WHERE import_key=?', row.key) || (row.legacyKey && one('SELECT import_key FROM imported_rows WHERE import_key=?', row.legacyKey))) { skipped++; continue; }
           const result = run('INSERT INTO transactions(date,amount,kind,method,category_id,description,included,created_at) VALUES(?,?,?,?,?,?,?,?)', row.date, row.amount, row.kind, row.method, row.categoryId, row.description, included, Date.now());
           run('INSERT INTO imported_rows(import_key,transaction_id) VALUES(?,?)', row.key, Number(result.lastInsertRowid));
           imported++;
@@ -695,8 +696,18 @@ function budget(month) {
 }
 function calendarData(month) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw Error('Mois invalide.');
-  const state = buildState(), minMonth = state.today.slice(0, 7), maxMonth = state.daily.at(-1)?.date.slice(0, 7) || minMonth;
-  if (month < minMonth || month > maxMonth) throw Error('Choisis un mois couvert par la prévision.');
+  const state = buildState(), forecastMonth = state.today.slice(0, 7), maxMonth = state.daily.at(-1)?.date.slice(0, 7) || forecastMonth;
+  // Le calendrier permet de relire l’historique réel sans inventer de solde
+  // projeté pour le passé. Sa borne commence à la première donnée réellement
+  // enregistrée ou confirmée, jamais à l’ancre théorique d’une récurrence.
+  const historyDates = [
+    state.settings.checkpointDate,
+    (one('SELECT MIN(date) AS value FROM transactions') || {}).value,
+    (one("SELECT MIN(due_date) AS value FROM occurrences WHERE state IN ('paid','skipped','moved')") || {}).value,
+    state.today
+  ].filter(validDate);
+  const minMonth = historyDates.sort()[0].slice(0, 7);
+  if (month < minMonth || month > maxMonth) throw Error('Choisis un mois couvert par l’historique ou la prévision.');
   const first = `${month}-01`, leading = (dow(first) + 6) % 7;
   const gridStart = addDays(first, -leading), gridEnd = addDays(gridStart, 41);
   const daily = new Map(state.daily.map(row => [row.date, row]));
@@ -758,7 +769,7 @@ function calendarData(month) {
       limitEvents: limits
     };
   });
-  return { month, minMonth, maxMonth, days };
+  return { month, minMonth, maxMonth, historical: month < forecastMonth, days };
 }
 
 function respond(res, value, status = 200) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value)); }

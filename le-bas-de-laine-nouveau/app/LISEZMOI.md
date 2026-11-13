@@ -130,3 +130,17 @@ sépare clairement les achats sur carte, les mouvements bancaires et les
 Dans le calendrier, le bouton **+ autres** ouvre maintenant la journée au
 complet. On peut alors modifier une opération, gérer une échéance ou ouvrir
 Plan pour une limite, sans faire défiler une case de calendrier surchargée.
+
+## Version 2.2.0 — Safe-to-Spend plus clair et historique réel
+
+L’accueil commence désormais par une lecture courte et explicite du
+Safe-to-Spend : minimum sur 30 jours, minimum avant le prochain revenu, puis
+le calcul **compte conjoint − cartes à payer − limites réservées**. Le graphique
+reste disponible juste dessous pour explorer chaque journée.
+
+Le calendrier peut remonter jusqu’à la première opération réellement enregistrée
+ou confirmée. Les mois passés sont marqués **Historique réel** : ils montrent
+les opérations et états connus, sans inventer un Safe-to-Spend rétroactif.
+
+Enfin, l’import CSV reconnaît un même relevé même si ses lignes sont présentées
+dans un ordre différent, tout en restant compatible avec les imports antérieurs.
