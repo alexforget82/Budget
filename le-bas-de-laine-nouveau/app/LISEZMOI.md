@@ -192,3 +192,15 @@ La page **/simple** utilise désormais son propre manifeste iPhone. Une fois
 ajoutée depuis Safari à l’écran d’accueil, son icône démarre toujours la vue
 foyer et non l’application complète. L’adresse avec ou sans barre finale
 (``/simple`` ou ``/simple/``) affiche la même vue.
+
+## Version 2.6.0 — calendrier de décision et iPhone plus rapide
+
+Le Calendrier commence par trois repères courts : disponible au début de la
+période, point bas, puis nombre de mouvements. Les journées importantes à venir
+peuvent être ouvertes directement depuis leur liste, ou en touchant la date
+d’une case du calendrier. Le bouton **Aujourd’hui** ramène rapidement au mois
+en cours.
+
+Sur iPhone, les prochains repères se parcourent horizontalement pour ne pas
+allonger l’écran. Le bas de l’écran offre maintenant **Ajouter** au centre pour
+saisir une transaction sans remonter en haut de la page.

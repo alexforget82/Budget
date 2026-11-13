@@ -257,6 +257,16 @@ async function renderCalendar() {
   setText('#calendar-copy', calendar.historical ? 'Transactions et échéances enregistrées. Le Safe-to-Spend n’est pas recalculé pour les journées passées.' : 'Paies, factures, limites et opérations réellement saisies, jour par jour.');
   $('#calendar-prev').disabled = calendar.month <= calendar.minMonth;
   $('#calendar-next').disabled = calendar.month >= calendar.maxMonth;
+  $('#calendar-today').disabled = calendar.month === state.data.today.slice(0, 7);
+  const inMonth = calendar.days.filter(day => day.inMonth);
+  const forecast = inMonth.filter(day => day.safe !== null);
+  const firstForecast = forecast.find(day => day.date >= state.data.today) || forecast[0];
+  const low = forecast.reduce((current, day) => !current || day.safe < current.safe ? day : current, null);
+  const movements = inMonth.reduce((count, day) => count + day.events.length + day.transactions.length + day.limitEvents.length, 0);
+  $('#calendar-summary').innerHTML = `<article class="card calendar-summary-card"><small>${calendar.historical ? 'Dernier solde connu' : 'Disponible au début'}</small><b>${firstForecast ? money(firstForecast.safe) : '—'}</b><span>${firstForecast ? dateFmt(firstForecast.date) : 'Aucune prévision'}</span></article><article class="card calendar-summary-card ${low && low.safe < 0 ? 'negative-card' : ''}"><small>${calendar.historical ? 'Valeur enregistrée la plus basse' : 'Point bas du mois'}</small><b class="${low && low.safe < 0 ? 'negative' : 'positive'}">${low ? money(low.safe) : '—'}</b><span>${low ? dateFmt(low.date) : 'Aucune prévision'}</span></article><article class="card calendar-summary-card"><small>Mouvements du mois</small><b>${movements}</b><span>Paies, factures, limites et saisies</span></article>`;
+  const agendaDays = (calendar.historical ? inMonth : inMonth.filter(day => day.date >= state.data.today));
+  const highlights = agendaDays.filter(day => day.events.length || day.transactions.length || day.limitEvents.length).slice(0, 5);
+  $('#calendar-agenda').innerHTML = `<div class="calendar-agenda-head"><div><div class="eyebrow">Repères du mois</div><h3>${calendar.historical ? 'Les journées enregistrées' : 'Les prochaines journées importantes'}</h3></div><small>Touchez une journée pour son détail</small></div><div class="calendar-agenda-list">${highlights.length ? highlights.map(day => { const entries = [...day.transactions, ...day.events, ...day.limitEvents]; const labels = entries.slice(0, 2).map(entry => escape(entry.description || entry.name)).join(' · '); const more = entries.length > 2 ? ` + ${entries.length - 2}` : ''; return `<button class="calendar-agenda-item" type="button" data-calendar-expand="${day.date}"><time>${dayFmt(day.date)}</time><span><b>${labels}${more}</b><small>${day.safe === null ? 'Historique réel' : `Disponible prévu : ${money(day.safe)}`}</small></span><i>›</i></button>`; }).join('') : `<p class="calendar-agenda-empty">Aucun mouvement dans ce mois.</p>`}</div>`;
   $('#calendar-grid').innerHTML = calendar.days.map(day => {
     const statusLabel = { planned:'Prévu', moved:'Déplacé', skipped:'Ignoré', paid:'Payé', entered:'Saisi' };
     const actual = day.transactions.map(transaction => ({ ...transaction, type:'transaction' }));
@@ -270,7 +280,7 @@ async function renderCalendar() {
     const limits = day.limitEvents.slice(0, Math.max(0, 3 - rows.length)).map(event => `<button class="calendar-event limit" type="button" data-page-link="plan"><span>◇ ${escape(event.name)}</span><em>${event.funded ? 'Réservé' : 'Limite'}</em><b>${money(event.amount)}</b></button>`);
     const extra = Math.max(0, items.length + day.limitEvents.length - rows.length - limits.length);
     const safeLabel = day.safe === null ? (calendar.historical && day.inMonth ? 'Historique' : '—') : money(day.safe);
-    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><div class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</div><div class="calendar-safe">${safeLabel}</div><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<button class="calendar-more" type="button" data-calendar-expand="${day.date}">+ ${extra} autre${extra > 1 ? 's' : ''}</button>` : ''}</div></article>`;
+    return `<article class="calendar-day ${day.inMonth ? '' : 'outside'} ${day.date === state.data.today ? 'today' : ''}"><button class="calendar-day-open" type="button" data-calendar-expand="${day.date}" aria-label="Ouvrir le ${dateFmt(day.date)}"><span class="calendar-date"><b>${Number(day.date.slice(-2))}</b>${day.date === state.data.today ? '<span>Auj.</span>' : ''}</span><span class="calendar-safe">${safeLabel}</span></button><div class="calendar-events">${rows.join('')}${limits.join('')}${extra ? `<button class="calendar-more" type="button" data-calendar-expand="${day.date}">+ ${extra} autre${extra > 1 ? 's' : ''}</button>` : ''}</div></article>`;
   }).join('');
 }
 function prepareCalendarDay(date) {
@@ -661,6 +671,7 @@ function wire() {
   $('#budget-next').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#calendar-prev').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,-1); if(!state.calendar || candidate>=state.calendar.minMonth){state.calendarMonth=candidate;renderCalendar();}});
   $('#calendar-next').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,1); if(!state.calendar || candidate<=state.calendar.maxMonth){state.calendarMonth=candidate;renderCalendar();}});
+  $('#calendar-today').addEventListener('click',()=>{state.calendarMonth=state.data.today.slice(0,7);renderCalendar();});
   $('#checkpoint-bank').addEventListener('input',updateCheckpointDifference);
   $('#setup-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{await act({...filled(form),action:'setup',complete:true});close(form.closest('dialog'));changePage('plan');toast('Solde enregistré. Ajoutez maintenant vos revenus, factures et limites.');}catch(error){toast(error.message);}});
   $('#checkpoint-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{await act({...filled(form),action:'checkpoint'});close(form.closest('dialog'));}catch(error){toast(error.message);}});

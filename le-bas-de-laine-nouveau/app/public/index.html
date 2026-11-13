@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="Navigation principale">
-      <div class="brand"><img src="/logo-noel.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.5.1</small></div></div>
+      <div class="brand"><img src="/logo-noel.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.6.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
         <button data-page="transactions">↕ <span>Transactions</span></button>
@@ -68,7 +68,9 @@
         </section>
 
         <section class="page" id="page-calendar" hidden>
-          <div class="page-head"><div><div class="eyebrow" id="calendar-kicker">Prévu et réel</div><h2>Calendrier utile</h2><p id="calendar-copy">Paies, factures, limites et opérations réellement saisies, jour par jour.</p></div><div class="top-actions calendar-actions"><button class="secondary" id="calendar-prev" type="button">←</button><button class="pill" id="calendar-month" type="button">—</button><button class="secondary" id="calendar-next" type="button">→</button></div></div>
+          <div class="page-head calendar-page-head"><div><div class="eyebrow" id="calendar-kicker">Prévu et réel</div><h2>Calendrier utile</h2><p id="calendar-copy">Paies, factures, limites et opérations réellement saisies, jour par jour.</p></div><div class="top-actions calendar-actions"><button class="secondary" id="calendar-today" type="button">Aujourd’hui</button><button class="secondary" id="calendar-prev" type="button">←</button><button class="pill" id="calendar-month" type="button">—</button><button class="secondary" id="calendar-next" type="button">→</button></div></div>
+          <section class="calendar-summary" id="calendar-summary" aria-live="polite"></section>
+          <section class="calendar-agenda card" id="calendar-agenda" aria-label="Repères du mois"></section>
           <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
           <div class="calendar-legend"><span><i class="status-entered"></i>Saisi</span><span><i class="status-planned"></i>Prévu</span><span><i class="status-paid"></i>Payé</span><span><i class="status-moved"></i>Déplacé</span><span><i class="status-skipped"></i>Ignoré</span></div>
           <div class="calendar-grid" id="calendar-grid"></div>
@@ -84,7 +86,7 @@
       </div>
     </main>
   </div>
-  <nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile"><button class="active" data-page="today">⌂<br>Aujourd’hui</button><button data-page="transactions">↕<br>Transactions</button><button data-page="plan">☷<br>Plan</button><button data-page="calendar">□<br>Calendrier</button></nav>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile"><button class="active" data-page="today">⌂<br>Aujourd’hui</button><button data-page="transactions">↕<br>Transactions</button><button class="mobile-add" type="button" data-open="transaction">＋<br>Ajouter</button><button data-page="plan">☷<br>Plan</button><button data-page="calendar">□<br>Calendrier</button></nav>
 
   <dialog class="dialog" id="dialog-setup"><h3>Bienvenue dans Le Bas de Laine</h3><form id="setup-form"><p>En quatre petites étapes, vous aurez un disponible déjà utile. Commencez par le vrai solde du compte conjoint.</p><div class="steps"><div class="step"><b>1. Solde</b><span>maintenant</span></div><div class="step"><b>2. Revenus</b><span>dans Plan</span></div><div class="step"><b>3. Factures</b><span>dans Plan</span></div><div class="step"><b>4. Limites</b><span>dans Plan</span></div></div><div class="form-grid" style="margin-top:16px"><label class="field full">Solde actuel du compte conjoint<input required name="bank" inputmode="decimal" placeholder="ex. 1 250,00"></label><label class="field full" style="display:flex;grid-template-columns:auto 1fr;align-items:start;gap:9px;font-weight:500"><input type="checkbox" name="seed_limits" value="1" checked style="width:auto;margin-top:3px"><span><b>Ajouter mes cinq limites de départ</b><small>Épicerie, Essence Alex, Essence Jenny, Lait et Couches, Pharmacie et Médicaments. Vous pourrez tout modifier dans Plan.</small></span></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Plus tard</button><button class="primary" type="submit">Commencer</button></div></form></dialog>
   <dialog class="dialog" id="dialog-checkpoint"><h3>Vérifier mon solde</h3><form id="checkpoint-form"><p>Comparez le vrai solde du compte conjoint avec le solde prévu. Enregistrer ce solde devient votre nouveau point de départ; les achats de carte restent protégés séparément.</p><div class="checkpoint-preview"><div><small>Dernier solde confirmé</small><b id="checkpoint-start">—</b><span id="checkpoint-date">—</span></div><div><small>Solde prévu aujourd’hui</small><b id="checkpoint-expected">—</b><span id="checkpoint-flow">—</span></div></div><section class="checkpoint-review" id="checkpoint-review" aria-live="polite"></section><div class="form-grid" style="margin-top:16px"><label class="field full">Solde réel dans la banque<input required name="bank" id="checkpoint-bank" inputmode="decimal" placeholder="ex. 1 250,00"><small id="checkpoint-difference">Inscrivez le solde vu dans votre banque pour comparer.</small></label></div><div class="dialog-actions"><button class="secondary" type="button" data-open="transaction">Ajouter une opération oubliée</button><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer le solde</button></div></form></dialog>
