@@ -84,11 +84,15 @@ function renderToday() {
   const income = d.nextIncome;
   const bill = upcomingByKind('expense')[0];
   const urgent = [...d.categories].filter(c => c.amount > 0).sort((a,b) => (a.reserve / a.amount) - (b.reserve / b.amount))[0];
+  const confidence = d.checkpointActivity || {};
+  const checkpointDate = d.settings.checkpointDate ? dateFmt(d.settings.checkpointDate) : 'à confirmer';
+  const confidenceFlow = `${confidence.income ? `+${money(confidence.income)} entrées` : 'aucune entrée'} · ${confidence.outflow ? `−${money(confidence.outflow)} sorties` : 'aucune sortie'}`;
+  const confidenceOpen = confidence.openEvents?.length ? `${confidence.openEvents.length} échéance${confidence.openEvents.length > 1 ? 's' : ''} passée${confidence.openEvents.length > 1 ? 's' : ''} à décider.` : 'Toutes les opérations bancaires saisies sont expliquées.';
   $('#glance').innerHTML = [
     income ? `<article class="card glance-card income"><small>Prochain revenu</small><b>${escape(income.name)} · ${money(income.amount)}</b><span>${dateFmt(income.due)}</span></article>` : `<article class="card glance-card income"><small>Prochain revenu</small><b>À ajouter dans Plan</b><span>Une paie rend la prévision plus juste.</span></article>`,
     bill ? `<article class="card glance-card bill"><small>Prochaine facture</small><b>${escape(bill.name)} · ${money(bill.amount)}</b><span>${dateFmt(bill.due)}</span></article>` : `<article class="card glance-card bill"><small>Prochaine facture</small><b>Aucune facture prévue</b><span>Ajoutez-en une dans Plan si nécessaire.</span></article>`,
     urgent ? `<article class="card glance-card limit"><small>Limite à surveiller</small><b>${escape(urgent.name)} · ${money(urgent.reserve)} restant</b><span>${nextLimitText(urgent)}</span></article>` : `<article class="card glance-card limit"><small>Limites</small><b>À configurer</b><span>Épicerie, essence ou autres dépenses variables.</span></article>`,
-    `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>${checkpointText(d.settings)}</small><b>Solde prévu ${money(d.settings.expectedBank)}</b><span>${d.settings.checkpointChange ? `${signedMoney(d.settings.checkpointChange)} depuis le solde inscrit` : 'Aucune opération comptabilisée depuis le solde inscrit.'}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier</button><button class="mini" type="button" data-open="transaction">Ajouter une opération</button></div></article>`
+    `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="transaction">Ajouter une opération</button></div></article>`
   ].join('');
   const limits = [...d.categories].filter(c => c.amount).sort((a,b) => a.reserve - b.reserve);
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
@@ -462,7 +466,7 @@ function setSplitMode(enabled, splits = null) {
 }
 function recurringCandidates(kind, date) {
   const target = /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) ? date : state.data.today;
-  return state.data.upcoming.filter(event => event.kind === kind && Math.abs((new Date(`${event.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) / 86400000) <= 10)
+  return (state.data.matchable || state.data.upcoming).filter(event => event.kind === kind && Math.abs((new Date(`${event.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) / 86400000) <= 14)
     .sort((a,b) => Math.abs(new Date(`${a.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) - Math.abs(new Date(`${b.due}T12:00:00Z`) - new Date(`${target}T12:00:00Z`)) || a.name.localeCompare(b.name,'fr-CA'));
 }
 function populateMatches(selected='') {
@@ -472,17 +476,38 @@ function populateMatches(selected='') {
   select.innerHTML = `<option value="">Aucune association</option>${candidates.map(event=>`<option value="${event.rid}|${event.nominal}" ${`${event.rid}|${event.nominal}`===selected?'selected':''}>${escape(event.name)} · ${dateFmt(event.due)} · ${money(event.amount)}</option>`).join('')}`;
   return candidates;
 }
-function suggestIncomeMatch(candidates = recurringCandidates('income', $('#tx-date').value)) {
+function matchWords(value) { return merchantKey(value).split(/\s+/).filter(word => word.length >= 3); }
+function suggestedMatch(candidates) {
   const form = $('#transaction-form');
-  if (form.kind.value !== 'income' || form.id.value || form.dataset.matchManual === '1') return;
-  const amount = parseCents(form.amount.value); if (amount === null) return;
-  const description = merchantKey(form.description.value);
-  const sameAmount = candidates.filter(event => event.amount === amount);
-  const sameName = description ? sameAmount.filter(event => description.includes(merchantKey(event.name)) || merchantKey(event.name).includes(description)) : sameAmount;
-  const choice = sameName.length === 1 ? sameName[0] : sameAmount.length === 1 ? sameAmount[0] : null;
-  if (choice) $('#tx-recurring').value = `${choice.rid}|${choice.nominal}`;
+  if (!['expense','income'].includes(form.kind.value) || form.id.value || form.dataset.matchManual === '1') return null;
+  const amount = parseCents(form.amount.value), description = matchWords(form.description.value), date = form.date.value, method = form.method.value;
+  const scored = candidates.map(event => {
+    const distance = Math.abs((new Date(`${event.due}T12:00:00Z`) - new Date(`${date}T12:00:00Z`)) / 86400000);
+    const eventWords = matchWords(event.name);
+    const nameMatch = description.length && eventWords.some(word => description.includes(word)) ? 5 : 0;
+    const exactAmount = amount !== null && event.amount === amount;
+    const closeAmount = amount !== null && Math.abs(event.amount - amount) <= 2500;
+    const methodMatch = form.kind.value === 'income' || event.method === method;
+    const score = nameMatch + (exactAmount ? 4 : closeAmount ? 1 : 0) + (methodMatch ? 2 : 0) + (distance <= 1 ? 3 : distance <= 4 ? 2 : distance <= 10 ? 1 : 0);
+    return { event, distance, nameMatch, exactAmount, methodMatch, score };
+  }).filter(item => item.methodMatch && (item.nameMatch || (item.exactAmount && item.distance <= 4))).sort((a,b) => b.score - a.score || a.distance - b.distance);
+  if (!scored.length || (scored[1] && scored[0].score - scored[1].score < 2)) return null;
+  return scored[0].event;
 }
-function refreshTransactionMatches(selected='') { const candidates = populateMatches(selected); if (!selected) suggestIncomeMatch(candidates); }
+function renderMatchSuggestion(candidates) {
+  const box = $('#tx-match-suggestion'), form = $('#transaction-form');
+  if (!box) return;
+  const event = $('#tx-recurring').value ? null : suggestedMatch(candidates);
+  if (!event) { box.hidden = true; box.innerHTML = ''; return; }
+  const label = form.kind.value === 'income' ? 'revenu' : 'facture';
+  box.hidden = false;
+  box.innerHTML = `<span><b>${escape(event.name)}</b> semble correspondre à ce ${label} prévu : ${dateFmt(event.due)} · ${money(event.amount)}.</span><button class="mini" type="button" data-use-match="${event.rid}|${event.nominal}">Associer</button>`;
+}
+function refreshTransactionMatches(selected) {
+  const current = selected === undefined ? $('#tx-recurring').value : selected;
+  const candidates = populateMatches(current);
+  renderMatchSuggestion(candidates);
+}
 function prepareTransaction(tx=null) {
   const f=$('#transaction-form');
   f.reset();
@@ -499,7 +524,7 @@ function prepareTransaction(tx=null) {
   if (tx?.splits?.length) setSplitMode(true, tx.splits);
   else { renderSplitRows([]); setSplitMode(false); }
   refreshTransactionMatches(tx?.recurring_id && tx?.recurring_date ? `${tx.recurring_id}|${tx.recurring_date}` : '');
-  if (!tx) { applyTransactionRule(); suggestIncomeMatch(); }
+  if (!tx) applyTransactionRule();
   $('#transaction-title').textContent=tx?'Modifier la transaction':'Ajouter une transaction';
   open('transaction');
 }
@@ -512,6 +537,7 @@ function updateTransactionFields() {
   $('#tx-split-toggle-field').hidden=kind!=='expense' || splitMode;
   $('#tx-remember-field').hidden=kind!=='expense' || splitMode;
   $('#match-field').hidden=!matching;
+  $('#tx-match-suggestion').hidden=!matching;
   card.closest('.field').hidden=kind==='income';
   if(kind==='card_payment') card.value='joint';
   if(kind!=='expense') $('#tx-rule-hint').textContent='';
@@ -539,13 +565,17 @@ function renderCheckpointReview() {
   const todayRows = todayEvents.length ? `<div class="checkpoint-review-group"><small>Prévu aujourd’hui dans le solde</small>${todayEvents.map(event => `<button class="checkpoint-review-item planned" data-review-occurrence="${event.rid}|${event.nominal}" type="button"><span><b>${escape(event.name)}</b><small>${event.kind === 'income' ? 'Revenu prévu' : 'Facture prévue'}</small></span><strong class="${event.impact >= 0 ? 'positive' : 'negative'}">${signedMoney(event.impact)}</strong></button>`).join('')}</div>` : '';
   const openRows = openEvents.length ? `<div class="checkpoint-review-group checkpoint-open-events"><small>Échéance passée à confirmer</small>${openEvents.map(event => `<button class="checkpoint-review-item warning" data-review-occurrence="${event.rid}|${event.nominal}" type="button"><span><b>${escape(event.name)}</b><small>${dateFmt(event.due)} · touchez pour payer, déplacer ou ignorer</small></span><strong class="${event.kind === 'income' ? 'positive' : 'negative'}">${signed(event.amount,event.kind)}</strong></button>`).join('')}</div>` : '';
   const entered = Number(activity.enteredImpact || 0), planned = Number(activity.todayImpact || 0), total = entered + planned;
-  $('#checkpoint-review').innerHTML = `<div class="checkpoint-review-head"><div><b>Ce qui explique le solde prévu</b><small>${transactions.length ? `${transactions.length} opération${transactions.length > 1 ? 's' : ''} ${since}` : `Aucune opération bancaire ${since}`}</small></div><span class="tag ${total < 0 ? 'negative' : total > 0 ? 'positive' : ''}">${signedMoney(total)}</span></div><div class="checkpoint-review-group"><small>Opérations bancaires saisies</small>${transactionRows}</div>${todayRows}${openRows}`;
+  const openCount = openEvents.length;
+  $('#checkpoint-review').innerHTML = `<div class="checkpoint-review-head"><div><b>Ce qui explique le solde prévu</b><small>${transactions.length ? `${transactions.length} opération${transactions.length > 1 ? 's' : ''} ${since}` : `Aucune opération bancaire ${since}`}</small></div><span class="tag ${total < 0 ? 'negative' : total > 0 ? 'positive' : ''}">${signedMoney(total)}</span></div><div class="checkpoint-summary"><div><small>Entrées comptées</small><b class="positive">+${money(activity.income || 0)}</b></div><div><small>Sorties comptées</small><b class="negative">−${money(activity.outflow || 0)}</b></div><div><small>À décider</small><b class="${openCount ? 'negative' : 'positive'}">${openCount ? `${openCount} échéance${openCount > 1 ? 's' : ''}` : 'Rien'}</b></div></div><div class="checkpoint-review-group"><small>Opérations bancaires saisies</small>${transactionRows}</div>${todayRows}${openRows}`;
 }
 function prepareCheckpoint() {
   const settings = state.data.settings, form = $('#checkpoint-form');
   form.reset();
+  setText('#checkpoint-start', money(settings.bank));
+  setText('#checkpoint-date', settings.checkpointDate ? `confirmé ${dateFmt(settings.checkpointDate)}` : 'pas encore confirmé');
   setText('#checkpoint-expected', money(settings.expectedBank));
-  setText('#checkpoint-flow', settings.checkpointChange ? signedMoney(settings.checkpointChange) : 'Aucun écart');
+  const activity = state.data.checkpointActivity || {};
+  setText('#checkpoint-flow', `${activity.income ? `+${money(activity.income)}` : '+0,00 $'} · ${activity.outflow ? `−${money(activity.outflow)}` : '−0,00 $'} depuis ce solde`);
   renderCheckpointReview();
   updateCheckpointDifference();
   open('checkpoint');
@@ -570,6 +600,13 @@ function wire() {
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
     if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
+    if(button.dataset.useMatch) {
+      $('#tx-recurring').value = button.dataset.useMatch;
+      $('#transaction-form').dataset.matchManual = '1';
+      $('#tx-match-suggestion').hidden = true;
+      setText('#match-copy', 'Cette opération marquera cette échéance payée lorsque vous enregistrerez.');
+      return;
+    }
     if(button.dataset.removeSplit !== undefined) { button.closest('.tx-split-row')?.remove(); updateSplitTotal(); return; }
     if(button.dataset.calendarExpand) return prepareCalendarDay(button.dataset.calendarExpand);
     if(button.dataset.calendarDayTx) { close($('#dialog-calendar-day')); return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.calendarDayTx)); }
@@ -594,11 +631,11 @@ function wire() {
   $('#quick-afford').addEventListener('click',()=>{ const n=parseCents($('#quick-amount').value); if(n===null)return toast('Inscrivez un montant valide.'); $('#afford-form').reset();$('#afford-form').amount.value=(n/100).toFixed(2).replace('.',',');$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); });
   ['#tx-search','#tx-kind','#tx-method','#tx-month','#tx-status','#tx-sort'].forEach(s=>$(s).addEventListener(s==='#tx-search'?'input':'change',renderTransactions));
   $('#tx-form-kind').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';updateTransactionFields();refreshTransactionMatches();applyTransactionRule();});
-  $('#tx-form-method').addEventListener('change',applyTransactionRule);
-  $('#tx-description').addEventListener('input',()=>{applyTransactionRule();suggestIncomeMatch();});
-  $('#tx-amount').addEventListener('input',()=>{suggestIncomeMatch();updateSplitTotal();});
+  $('#tx-form-method').addEventListener('change',()=>{applyTransactionRule();refreshTransactionMatches();});
+  $('#tx-description').addEventListener('input',()=>{applyTransactionRule();refreshTransactionMatches();});
+  $('#tx-amount').addEventListener('input',()=>{refreshTransactionMatches();updateSplitTotal();});
   $('#tx-date').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';refreshTransactionMatches();});
-  $('#tx-recurring').addEventListener('change',()=>{$('#transaction-form').dataset.matchManual='1';});
+  $('#tx-recurring').addEventListener('change',()=>{$('#transaction-form').dataset.matchManual='1';renderMatchSuggestion([]);});
   $('#tx-split-toggle').addEventListener('click',()=>setSplitMode(true));
   $('#tx-single-category').addEventListener('click',()=>setSplitMode(false, currentSplitRows()));
   $('#tx-add-split').addEventListener('click',()=>renderSplitRows([...currentSplitRows(), {category_id:'',amount:''}]));

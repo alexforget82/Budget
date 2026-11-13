@@ -1,15 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Le Bas de Laine — édition des Fêtes">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Le Bas de Laine — bas de laine des Fêtes">
   <defs>
-    <linearGradient id="winter" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#082a50"/><stop offset="1" stop-color="#0b3d72"/></linearGradient>
-    <linearGradient id="wool" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff9e8"/><stop offset="1" stop-color="#eadcc0"/></linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071f3c"/><stop offset="1" stop-color="#0b3d72"/></linearGradient>
+    <linearGradient id="sock" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff9e7"/><stop offset="1" stop-color="#e9d7b7"/></linearGradient>
   </defs>
-  <rect width="128" height="128" rx="30" fill="url(#winter)"/>
-  <path d="M21 88c2-26 19-47 42-47 23 0 40 19 41 43-10 14-29 21-49 18-15-2-27-6-34-14Z" fill="url(#wool)"/>
-  <path d="M25 85c16-18 31-32 47-42M29 97c18-26 35-41 53-51M49 103c-6-19-5-37 5-57M69 103c-8-17-7-37 5-57M88 93c-13-20-27-35-45-44M100 83C81 73 62 69 37 70" fill="none" stroke="#0b3d72" stroke-width="5" stroke-linecap="round" opacity=".94"/>
-  <path d="M18 101c26-10 48-6 74 10 9 6 17 5 22-2-3 13-16 17-28 9-24-15-45-18-68-8Z" fill="none" stroke="#4f9872" stroke-width="5" stroke-linecap="round"/>
-  <path d="M43 49c8-22 30-31 51-17 7 5 11 12 13 20L94 57c-12-8-26-8-40 2Z" fill="#bb3843"/>
-  <path d="M42 49c20-13 39-11 56 7l-5 9c-15-11-31-12-48-4Z" fill="#d74b53"/>
-  <path d="M63 30l4 5 5 1-4 4 1 5-5-2-5 2 1-5-4-4 5-1Z" fill="#f3bf45"/>
-  <path d="M91 24c0-6 4-10 9-10s9 4 9 10-4 9-9 9-9-4-9-9Z" fill="#fff9e8"/>
-  <path d="M20 30v-6m0 6-5-3m5 3 5-3m-5 3v6m0-6-5 3m5-3 5 3" stroke="#f3bf45" stroke-width="2.5" stroke-linecap="round"/>
+  <rect width="128" height="128" rx="30" fill="url(#night)"/>
+  <path d="M48 37h40v35c0 9 9 12 14 18 7 8 4 19-7 22-21 7-53 4-67-8-7-6-3-17 7-21 9-4 13-10 13-18Z" fill="url(#sock)"/>
+  <path d="M48 39h41v18H48Z" fill="#f8ecd1"/>
+  <path d="M49 55h39" stroke="#1e7f75" stroke-width="5" stroke-linecap="round"/>
+  <path d="M36 86c13-4 31-4 48 1M31 96c16-5 34-4 54 2M52 62c5 9 5 22 1 37M68 62c5 9 5 22 1 39M83 62c-1 11 2 20 10 29" fill="none" stroke="#d8c49e" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>
+  <path d="M74 38c0-8 6-15 13-15s13 7 13 15" fill="none" stroke="#f3bf45" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="79" cy="37" r="7" fill="#f3bf45" stroke="#f9df85" stroke-width="2"/>
+  <circle cx="91" cy="35" r="7" fill="#f3bf45" stroke="#f9df85" stroke-width="2"/>
+  <circle cx="101" cy="39" r="6" fill="#f3bf45" stroke="#f9df85" stroke-width="2"/>
+  <path d="M52 28c8-12 24-14 35-5l-5 13-30 1Z" fill="#bb3843"/>
+  <path d="M49 34c12-8 24-8 36 0l-3 8H51Z" fill="#d74b53"/>
+  <path d="M78 16c4-4 9-3 12 1 3 4 2 9-2 12" fill="none" stroke="#fff9e7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M25 31v-7m0 7-6-4m6 4 6-4m-6 4v7m0-7-6 4m6-4 6 4" stroke="#f3bf45" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M25 102c19-8 41-6 61 7" fill="none" stroke="#4f9872" stroke-width="4" stroke-linecap="round"/>
 </svg>

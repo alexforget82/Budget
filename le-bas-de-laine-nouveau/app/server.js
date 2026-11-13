@@ -453,18 +453,23 @@ function buildState() {
       .filter(event => event.due > settings.checkpointDate && event.due < t)
     : [];
   const checkpointActivity = {
+    startingBank: settings.bank,
+    expectedBank: current.cash,
     transactions: checkpointTransactions,
     enteredImpact: checkpointTransactions.reduce((sum, tx) => sum + tx.impact, 0),
     todayEvents: checkpointTodayEvents,
     todayImpact: checkpointTodayEvents.reduce((sum, event) => sum + event.impact, 0),
-    openEvents: checkpointOpenEvents
+    openEvents: checkpointOpenEvents,
+    income: [...checkpointTransactions, ...checkpointTodayEvents].filter(item => item.impact > 0).reduce((sum, item) => sum + item.impact, 0),
+    outflow: -[...checkpointTransactions, ...checkpointTodayEvents].filter(item => item.impact < 0).reduce((sum, item) => sum + item.impact, 0)
   };
   settings.expectedBank = current.cash;
   settings.checkpointChange = current.cash - settings.bank;
   settings.checkpointAge = checkpointAge;
   return {
     version: VERSION, today: t, settings, categories: visibleCategories, recurring: q('SELECT * FROM recurring WHERE active=1 ORDER BY kind,name'),
-    transactions: transactions.slice(0, 250), upcoming: occurrenceList.filter(e => e.due <= addDays(t, 30)), daily,
+    transactions: transactions.slice(0, 250), upcoming: occurrenceList.filter(e => e.due <= addDays(t, 30)),
+    matchable: allOccurrences(addDays(t, -14), addDays(t, 30)), daily,
     safe30: low30, safeUntilIncome: lowUntil, nextIncome, firstNegative,
     limitOverrides: q('SELECT * FROM limit_overrides ORDER BY due_date'), merchant_rules: merchantRules(), review_count: toReview,
     current, checkpointActivity

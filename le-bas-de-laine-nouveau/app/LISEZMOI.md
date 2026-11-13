@@ -157,3 +157,19 @@ Le Safe-to-Spend est plus grand et plus explicite : le point bas, son écart par
 rapport à aujourd’hui et les éléments qui l’expliquent sont visibles avant le
 graphique. Le calcul demeure exactement le même : compte conjoint − cartes à
 payer − limites réservées.
+
+## Version 2.4.0 — solde de confiance et association suggérée
+
+La carte **Solde de confiance** indique maintenant le dernier solde confirmé,
+le solde prévu, les entrées et sorties prises en compte, ainsi que les éventuelles
+échéances passées à décider. La fenêtre **Vérifier mon solde** présente le même
+résumé avant la liste détaillée des opérations. Ces informations expliquent le
+solde; elles ne modifient aucun calcul.
+
+Lorsqu’une nouvelle transaction ressemble clairement à une facture ou un revenu
+prévu, un bouton **Associer** est proposé. Il faut toujours appuyer sur ce bouton
+pour marquer l’échéance payée : rien n’est associé automatiquement. Le paiement
+réel remplace alors le prévu pour cette occurrence, sans double compte.
+
+Le logo des Fêtes représente désormais un vrai **bas de laine** rempli d’épargne,
+avec une touche hivernale québécoise.
