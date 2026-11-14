@@ -43,4 +43,12 @@ $('#afford').addEventListener('submit',async event => {
 });
 function showError(error) { document.body.innerHTML=`<main class="simple"><p>${esc(error.message)}</p></main>`; }
 document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+let lastRefresh = Date.now();
+function refreshWhenBack() {
+  if (document.hidden || Date.now() - lastRefresh < 3000) return;
+  lastRefresh = Date.now();
+  render().catch(showError);
+}
+document.addEventListener('visibilitychange', refreshWhenBack);
+window.addEventListener('focus', refreshWhenBack);
 render().catch(showError);

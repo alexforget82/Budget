@@ -104,7 +104,15 @@ function renderToday() {
   const checkpointDate = d.settings.checkpointDate ? dateFmt(d.settings.checkpointDate) : 'à confirmer';
   const confidenceFlow = `${confidence.income ? `+${money(confidence.income)} entrées` : 'aucune entrée'} · ${confidence.outflow ? `−${money(confidence.outflow)} sorties` : 'aucune sortie'}`;
   const confidenceOpen = confidence.openEvents?.length ? `${confidence.openEvents.length} échéance${confidence.openEvents.length > 1 ? 's' : ''} passée${confidence.openEvents.length > 1 ? 's' : ''} à décider.` : 'Toutes les opérations bancaires saisies sont expliquées.';
-  $('#glance').innerHTML = `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="review">Revue rapide</button></div></article><article class="card glance-card guide"><small>Votre prochaine action</small><b>${d.review_count ? `${d.review_count} transaction${d.review_count > 1 ? 's' : ''} à classer` : d.firstNegative ? 'Ajuster le plan avant le point bas' : 'Aucune action urgente'}</b><span>${d.review_count ? 'Classez-les pour que les limites soient justes.' : d.firstNegative ? `Prévu le ${dateFmt(d.firstNegative.date)}.` : 'Votre prévision est à jour.'}</span><div class="glance-actions">${d.review_count ? '<button class="mini" type="button" data-review-classify>Ouvrir la boîte</button>' : d.firstNegative ? '<button class="mini" type="button" data-open="adjust">Voir les options</button>' : '<button class="mini" type="button" data-open="transaction">Ajouter une transaction</button>'}</div></article>`;
+  const needsBalance = d.settings.checkpointAge === null || d.settings.checkpointAge === undefined || d.settings.checkpointAge > 7;
+  const action = needsBalance
+    ? { title:'Vérifier votre solde', copy:'Le solde confirmé date de plus d’une semaine ou n’a pas encore été saisi.', control:'data-open="checkpoint"', label:'Vérifier' }
+    : d.review_count
+      ? { title:`${d.review_count} transaction${d.review_count > 1 ? 's' : ''} à classer`, copy:'Classez-les pour que les limites soient justes.', control:'data-review-classify', label:'Ouvrir la boîte' }
+      : d.firstNegative
+        ? { title:'Ajuster le plan avant le point bas', copy:`Prévu le ${dateFmt(d.firstNegative.date)}.`, control:'data-open="adjust"', label:'Voir les options' }
+        : { title:'Aucune action urgente', copy:'Votre prévision et votre solde sont à jour.', control:'data-open="review"', label:'Revue rapide' };
+  $('#glance').innerHTML = `<article class="card glance-card trust ${needsBalance ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="review">Revue rapide</button></div></article><article class="card glance-card guide"><small>Votre prochaine action</small><b>${escape(action.title)}</b><span>${escape(action.copy)}</span><div class="glance-actions"><button class="mini" type="button" ${action.control}>${action.label}</button></div></article>`;
   const limits = [...d.categories].filter(c => c.amount).sort((a,b) => a.reserve - b.reserve);
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
   const events = d.upcoming.slice(0,7);
@@ -281,6 +289,15 @@ function renderTransactions() {
   all.indeterminate = state.selectedTransactions.size > 0 && !all.checked;
   all.onchange = () => { for (const id of ids) all.checked ? state.selectedTransactions.add(id) : state.selectedTransactions.delete(id); renderTransactions(); };
 }
+function ensurePlanBrief() {
+  let brief = $('#plan-brief');
+  if (brief) return brief;
+  brief = document.createElement('section');
+  brief.id = 'plan-brief';
+  brief.className = 'plan-brief';
+  $('.plan-accordion')?.insertAdjacentElement('beforebegin', brief);
+  return brief;
+}
 function renderPlan() {
   const rules = state.data.recurring;
   const plural = (count, one, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
@@ -294,13 +311,26 @@ function renderPlan() {
   const nextIncome = nextFor(incomeRules), nextBill = nextFor(billRules);
   const limits = state.data.categories;
   const urgent = [...limits].filter(limit => limit.amount > 0).sort((a,b) => a.reserve - b.reserve)[0];
+  const nextEvent = [...state.data.upcoming].sort((a,b) => a.due.localeCompare(b.due))[0];
+  const settings = state.data.settings;
+  const needsBalance = settings.checkpointAge === null || settings.checkpointAge === undefined || settings.checkpointAge > 7;
+  const action = needsBalance
+    ? { title:'Vérifier votre solde', copy:'Un solde récent rend le plan fiable.', control:'data-open="checkpoint"', label:'Vérifier' }
+    : state.data.review_count
+      ? { title:`${state.data.review_count} transaction${state.data.review_count > 1 ? 's' : ''} à classer`, copy:'Classez-les pour garder les limites justes.', control:'data-review-classify', label:'Classer' }
+      : { title:'Plan à jour', copy:'Aucune vérification urgente aujourd’hui.', control:'data-open="review"', label:'Revoir' };
+  const brief = ensurePlanBrief();
+  if (brief) {
+    const nextCopy = nextEvent ? `<b>${escape(nextEvent.name)}</b><small>${nextEvent.kind === 'income' ? 'Revenu' : 'Facture'} · ${dateFmt(nextEvent.due)} · ${signed(nextEvent.amount,nextEvent.kind)}</small>` : '<b>Aucune échéance prochaine</b><small>Ajoutez vos revenus et factures ci-dessous.</small>';
+    const limitCopy = urgent ? `<b>${escape(urgent.name)}</b><small>${money(urgent.reserve)} restant · ${nextLimitText(urgent)}</small>` : '<b>Aucune limite à surveiller</b><small>Ajoutez Épicerie, Essence ou une autre limite.</small>';
+    brief.innerHTML = `<article class="card plan-brief-main"><div><div class="eyebrow">La prochaine étape</div>${nextCopy}</div>${nextEvent ? `<button class="primary" type="button" data-occurrence="${nextEvent.rid}|${nextEvent.nominal}">Gérer</button>` : '<button class="secondary" type="button" data-open="recurring">Ajouter une règle</button>'}</article><article class="card plan-brief-item limit">${urgent ? `<button type="button" data-edit-limit="${urgent.id}">` : '<div>'}<span>Limite à suivre</span>${limitCopy}${urgent ? '</button>' : '</div>'}</article><article class="card plan-brief-item action"><div><span>Fiabilité du plan</span><b>${escape(action.title)}</b><small>${escape(action.copy)}</small></div><button class="mini" type="button" ${action.control}>${action.label}</button></article>`;
+  }
   $('#income-list').innerHTML = listRules('income', 'Ajoutez une paie, une rente ou une allocation.');
   $('#bill-list').innerHTML = listRules('expense', 'Ajoutez vos factures fixes.');
   $('#limit-list').innerHTML = limits.length ? limits.map(c=>limitRow(c,true)).join('') : `<div class="empty">Ajoutez Épicerie, Essence ou une autre dépense variable.</div>`;
   setText('#plan-income-meta', incomeRules.length ? `${plural(incomeRules.length, 'règle')} · ${nextIncome ? `prochaine : ${dateFmt(nextIncome.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
   setText('#plan-bill-meta', billRules.length ? `${plural(billRules.length, 'règle')} · ${nextBill ? `prochaine : ${dateFmt(nextBill.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
   setText('#plan-limit-meta', limits.length ? `${plural(limits.length, 'limite')} · ${urgent ? `${urgent.name} : ${money(urgent.reserve)} restant` : 'à suivre'}` : 'Aucune limite');
-  const settings = state.data.settings;
   setText('#plan-checkpoint', settings.checkpointDate ? `${checkpointText(settings)}.` : 'Aucun solde vérifié : inscrivez votre solde actuel pour démarrer.');
   setText('#plan-checkpoint-detail', settings.checkpointDate ? `Solde inscrit : ${money(settings.bank)} · solde prévu aujourd’hui : ${money(settings.expectedBank)} · écart depuis la vérification : ${signedMoney(settings.checkpointChange)}.` : 'Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.');
 }
@@ -361,6 +391,14 @@ function prepareCalendarDay(date) {
   setText('#calendar-day-title', `Le ${dateFmt(date)}`);
   setText('#calendar-day-copy', day.safe === null ? (state.calendar?.historical ? 'Historique réel : le Safe-to-Spend n’est pas recalculé pour une journée passée.' : 'Aucun disponible prévu pour cette journée.') : `Disponible prévu après les opérations du jour : ${money(day.safe)}.`);
   $('#calendar-day-detail').innerHTML = rows.length || limits.length ? `${rows.join('')}${limits.join('')}` : `<p class="checkpoint-review-empty">Aucune opération ou échéance pour cette journée.</p>`;
+  let actions = $('#calendar-day-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.id = 'calendar-day-actions';
+    actions.className = 'calendar-day-actions';
+    $('#dialog-calendar-day .dialog-actions')?.insertAdjacentElement('beforebegin', actions);
+  }
+  actions.innerHTML = `<button class="secondary" type="button" data-calendar-add-tx="${date}">＋ Ajouter une transaction ce jour</button>`;
   open('calendar-day');
 }
 async function renderBudget() {
@@ -608,13 +646,13 @@ function refreshTransactionMatches(selected) {
   const candidates = populateMatches(current);
   renderMatchSuggestion(candidates);
 }
-function prepareTransaction(tx=null) {
+function prepareTransaction(tx=null, preset={}) {
   const f=$('#transaction-form');
   f.reset();
   f.id.value=tx?.id||'';
   f.kind.value=tx?.kind||'expense';
   f.amount.value=tx ? (tx.amount/100).toFixed(2).replace('.',',') : '';
-  f.date.value=tx?.date||state.data.today;
+  f.date.value=tx?.date||preset.date||state.data.today;
   f.method.value=tx?.method||'joint';
   f.description.value=tx?.description||'';
   f.dataset.matchManual=tx?'1':'';
@@ -735,6 +773,7 @@ function wire() {
     }
     if(button.dataset.removeSplit !== undefined) { button.closest('.tx-split-row')?.remove(); updateSplitTotal(); return; }
     if(button.dataset.calendarExpand) return prepareCalendarDay(button.dataset.calendarExpand);
+    if(button.dataset.calendarAddTx) { close($('#dialog-calendar-day')); return prepareTransaction(null, { date:button.dataset.calendarAddTx }); }
     if(button.dataset.calendarDayTx) { close($('#dialog-calendar-day')); return prepareTransaction(state.data.transactions.find(t=>String(t.id)===button.dataset.calendarDayTx)); }
     if(button.dataset.calendarDayOccurrence) { close($('#dialog-calendar-day')); return prepareOccurrence(button.dataset.calendarDayOccurrence); }
     if(button.dataset.calendarDayPlan) { close($('#dialog-calendar-day')); return changePage('plan'); }
@@ -753,6 +792,7 @@ function wire() {
     if(button.dataset.reduceLimit) { const [category_id,due_date,current]=button.dataset.reduceLimit.split('|'); const amount=prompt('Montant pour cette période seulement :',(Number(current)/100).toFixed(2).replace('.',',')); if(amount!==null){ try{await act({action:'limit_override',type:'amount',category_id,due_date,amount});prepareAdjust();}catch(error){toast(error.message);} } return; }
   });
   $('#theme-button').addEventListener('click',()=>{ const dark=document.documentElement.dataset.theme==='dark'; document.documentElement.dataset.theme=dark?'light':'dark'; localStorage.setItem('bdl-theme',dark?'light':'dark'); });
+  document.addEventListener('visibilitychange',()=>{ if (!document.hidden && !document.querySelector('dialog[open]')) refresh().catch(()=>{}); });
   $('#safe-slider').addEventListener('input',renderChart);
   $('#quick-afford').addEventListener('click',()=>{ const n=parseCents($('#quick-amount').value); if(n===null)return toast('Inscrivez un montant valide.'); $('#afford-form').reset();$('#afford-form').amount.value=(n/100).toFixed(2).replace('.',',');$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); });
   ['#tx-search','#tx-kind','#tx-method','#tx-month','#tx-status','#tx-sort'].forEach(s=>$(s).addEventListener(s==='#tx-search'?'input':'change',renderTransactions));
