@@ -204,3 +204,16 @@ en cours.
 Sur iPhone, les prochains repères se parcourent horizontalement pour ne pas
 allonger l’écran. Le bas de l’écran offre maintenant **Ajouter** au centre pour
 saisir une transaction sans remonter en haut de la page.
+
+## Version 2.7.0 — revue de la semaine
+
+Le bouton **Revue rapide** de l’accueil ouvre une seule fenêtre qui indique :
+
+- si le solde bancaire mérite d’être vérifié ;
+- les dépenses qui attendent encore une limite ;
+- les échéances passées à payer, déplacer ou ignorer ;
+- les revenus et factures des sept prochains jours.
+
+Chaque action mène directement à l’écran utile. Cette revue n’ajoute ni calcul,
+ni transaction, ni nouvelle donnée : elle rend seulement les vérifications
+hebdomadaires plus courtes.

@@ -605,6 +605,21 @@ function prepareCheckpoint() {
   updateCheckpointDifference();
   open('checkpoint');
 }
+function prepareReview() {
+  const data = state.data, settings = data.settings, activity = data.checkpointActivity || {};
+  const unclassified = Number(data.review_count || 0), openEvents = activity.openEvents || [];
+  const checkpointAge = settings.checkpointAge;
+  const needsBalance = checkpointAge === null || checkpointAge === undefined || checkpointAge > 7;
+  const week = data.upcoming.filter(event => event.due >= data.today && event.due <= isoPlus(data.today, 6)).slice(0, 5);
+  const actions = Number(needsBalance) + Number(unclassified > 0) + Number(openEvents.length > 0);
+  setText('#review-intro', actions ? `${actions} chose${actions > 1 ? 's' : ''} mérite${actions > 1 ? 'nt' : ''} votre attention. Faites seulement les actions indiquées; le reste est déjà à jour.` : 'Tout est à jour. Voici simplement ce qui arrive dans les sept prochains jours.');
+  const balanceCopy = checkpointAge === null || checkpointAge === undefined ? 'Aucun solde n’a encore été confirmé.' : checkpointAge === 0 ? 'Solde confirmé aujourd’hui.' : `Solde confirmé il y a ${checkpointAge} jour${checkpointAge > 1 ? 's' : ''}.`;
+  const classificationCopy = unclassified ? `${unclassified} dépense${unclassified > 1 ? 's' : ''} attend${unclassified > 1 ? 'ent' : ''} une limite.` : 'Toutes les dépenses sont classées.';
+  const overdueCopy = openEvents.length ? `${openEvents.length} échéance${openEvents.length > 1 ? 's' : ''} passée${openEvents.length > 1 ? 's' : ''} doit être payée, déplacée ou ignorée.` : 'Aucune échéance passée à décider.';
+  $('#review-checks').innerHTML = `<article class="review-check ${needsBalance ? 'needs-action' : 'done'}"><div><small>1 · Solde bancaire</small><b>${needsBalance ? 'À vérifier' : 'En ordre'}</b><span>${balanceCopy}</span></div><button class="${needsBalance ? 'primary' : 'secondary'}" type="button" data-open="checkpoint">Vérifier</button></article><article class="review-check ${unclassified ? 'needs-action' : 'done'}"><div><small>2 · Transactions</small><b>${unclassified ? 'À classer' : 'En ordre'}</b><span>${classificationCopy}</span></div>${unclassified ? `<button class="primary" type="button" data-review-classify>Classer</button>` : '<span class="review-ok">✓</span>'}</article><article class="review-check ${openEvents.length ? 'needs-action' : 'done'}"><div><small>3 · Échéances</small><b>${openEvents.length ? 'À décider' : 'En ordre'}</b><span>${overdueCopy}</span></div>${openEvents.length ? `<button class="primary" type="button" data-review-calendar>Voir</button>` : '<span class="review-ok">✓</span>'}</article>`;
+  $('#review-week').innerHTML = `<div class="review-week-head"><div><div class="eyebrow">Les 7 prochains jours</div><h4>Ce qui arrive</h4></div><button class="mini" type="button" data-review-calendar>Calendrier</button></div><div class="review-week-list">${week.length ? week.map(event => `<button class="review-week-item" type="button" data-review-week-occurrence="${event.rid}|${event.nominal}"><span><b>${escape(event.name)}</b><small>${dateFmt(event.due)}</small></span><strong class="${event.kind === 'income' ? 'positive' : 'negative'}">${signed(event.amount,event.kind)}</strong></button>`).join('') : '<p class="review-week-empty">Aucun revenu ou facture dans les sept prochains jours.</p>'}</div>`;
+  open('review');
+}
 function prepareAdjust() {
   const negative = state.data.firstNegative;
   if (!negative) { toast('Aucun jour négatif à corriger dans les 90 prochains jours.'); return; }
@@ -623,7 +638,10 @@ function wire() {
     if(button.dataset.page) return changePage(button.dataset.page);
     if(button.dataset.pageLink) return changePage(button.dataset.pageLink);
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
-    if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
+    if(button.dataset.reviewClassify !== undefined) { close($('#dialog-review')); changePage('transactions'); $('#tx-status').value='unclassified'; renderTransactions(); return; }
+    if(button.dataset.reviewCalendar !== undefined) { close($('#dialog-review')); return changePage('calendar'); }
+    if(button.dataset.reviewWeekOccurrence) { close($('#dialog-review')); return prepareOccurrence(button.dataset.reviewWeekOccurrence); }
+    if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='review')prepareReview(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
     if(button.dataset.useMatch) {
       $('#tx-recurring').value = button.dataset.useMatch;
