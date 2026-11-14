@@ -34,6 +34,7 @@ function activePage(page) { return state.page === page; }
 
 function changePage(page) {
   state.page = page;
+  document.body.dataset.page = page;
   $$('.page').forEach(el => el.hidden = el.id !== `page-${page}`);
   $$('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   const titles = { today:['Aujourd’hui','Votre argent, sans les complications.'], transactions:['Transactions','Chaque achat est saisi une seule fois.'], plan:['Plan','Ce qui arrive, dans un seul endroit.'], calendar:['Calendrier','La prévision mensuelle, jour par jour.'], budget:['Budget','La vue mensuelle, sans effets sur le disponible.'] };
@@ -41,6 +42,27 @@ function changePage(page) {
   if (page === 'budget') renderBudget();
   if (page === 'calendar') renderCalendar();
   window.scrollTo({ top:0, behavior:'instant' });
+}
+function polishInterface() {
+  const copy = {
+    today: ['30 jours', 'Votre disponible', 'Le minimum après votre plan.'],
+    transactions: ['Une seule saisie', 'Transactions', 'Consultez, classez ou ajoutez.'],
+    plan: ['Ce qui est prévu', 'Plan', 'Revenus, factures et limites.'],
+    calendar: ['Prévision mensuelle', 'Calendrier', 'Touchez une journée pour agir.'],
+    budget: ['Vue mensuelle', 'Budget', 'Prévu, dépensé, restant.']
+  };
+  for (const [page, [eyebrow, title, subtitle]] of Object.entries(copy)) {
+    const header = $(`#page-${page} .page-head`);
+    if (!header) continue;
+    const eyebrowNode = $('.eyebrow', header), titleNode = $('h2', header), subtitleNode = $('p', header);
+    if (eyebrowNode) eyebrowNode.textContent = eyebrow;
+    if (titleNode) titleNode.textContent = title;
+    if (subtitleNode) subtitleNode.textContent = subtitle;
+  }
+  const planPrimary = $('#page-plan [data-open="recurring"].primary');
+  if (planPrimary) planPrimary.textContent = '＋ Échéance';
+  const afford = $('#page-today [data-open="afford"]');
+  if (afford) afford.textContent = 'Vérifier un achat';
 }
 function upcomingByKind(kind) { return state.data.upcoming.filter(e => e.kind === kind); }
 function categoryName(id) { return state.data.categories.find(c => c.id === id)?.name || 'Sans limite'; }
@@ -71,7 +93,7 @@ function renderToday() {
   const lowDay = d.daily.find(day => day.date === min.date);
   const lowDrivers = [...(lowDay?.events || []).filter(event => event.kind === 'expense').map(event => event.name), ...(lowDay?.limitEvents || []).map(event => event.name)];
   const drop = min.safe - d.current.safe;
-  setText('#side-version', `Nouvelle base · ${d.version}`);
+  setText('#side-version', `v${d.version}`);
   setText('#safe30', money(min.safe));
   setText('#safe30-note', `Vous ne descendrez pas sous ce montant d’ici le ${dateFmt(isoPlus(d.today, 29))}.`);
   setText('#safe-now', money(d.current.safe));
@@ -429,7 +451,7 @@ async function renderBudget() {
   }).join('')}` : '';
   $('#budget-empty').hidden = b.categories.length > 0;
 }
-function render() { renderSetup(); renderToday(); renderTransactions(); renderPlan(); if (state.page === 'calendar') renderCalendar(); if (state.page === 'budget') renderBudget(); }
+function render() { document.body.dataset.page = state.page; polishInterface(); renderSetup(); renderToday(); renderTransactions(); renderPlan(); if (state.page === 'calendar') renderCalendar(); if (state.page === 'budget') renderBudget(); }
 
 function csvDelimiter(text) {
   const first = String(text || '').split(/\r?\n/, 1)[0] || '';
