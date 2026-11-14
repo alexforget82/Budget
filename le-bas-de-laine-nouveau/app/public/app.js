@@ -57,6 +57,15 @@ function renderSetup() {
   if (state.data.settings.setupComplete) { holder.innerHTML = ''; return; }
   holder.innerHTML = `<article class="card pad setup"><div class="section-head" style="padding:0"><div><div class="eyebrow">Première installation</div><h3>Votre budget prend forme en quelques minutes</h3><p>Solde, revenus, factures et limites : vous pouvez tout faire progressivement.</p></div><button class="primary" data-open="setup" type="button">Commencer</button></div><div class="steps"><div class="step ${state.data.settings.bank ? 'done':''}"><b>1. Solde</b><span>${state.data.settings.bank ? 'enregistré' : 'à inscrire'}</span></div><div class="step ${state.data.recurring.some(r=>r.kind==='income') ? 'done':''}"><b>2. Revenus</b><span>${state.data.recurring.some(r=>r.kind==='income') ? 'ajoutés' : 'dans Plan'}</span></div><div class="step ${state.data.recurring.some(r=>r.kind==='expense') ? 'done':''}"><b>3. Factures</b><span>${state.data.recurring.some(r=>r.kind==='expense') ? 'ajoutées' : 'dans Plan'}</span></div><div class="step ${state.data.categories.length ? 'done':''}"><b>4. Limites</b><span>${state.data.categories.length ? 'ajoutées' : 'dans Plan'}</span></div></div></article>`;
 }
+function ensureTodayFocus() {
+  let focus = $('#safe-focus');
+  if (focus) return focus;
+  focus = document.createElement('section');
+  focus.id = 'safe-focus';
+  focus.className = 'safe-focus';
+  $('.safe-primary')?.insertAdjacentElement('afterend', focus);
+  return focus;
+}
 function renderToday() {
   const d = state.data, min = d.safe30;
   const lowDay = d.daily.find(day => day.date === min.date);
@@ -64,7 +73,7 @@ function renderToday() {
   const drop = min.safe - d.current.safe;
   setText('#side-version', `Nouvelle base · ${d.version}`);
   setText('#safe30', money(min.safe));
-  setText('#safe30-note', `Point le plus bas prévu le ${dateFmt(min.date)}.`);
+  setText('#safe30-note', `Vous ne descendrez pas sous ce montant d’ici le ${dateFmt(isoPlus(d.today, 29))}.`);
   setText('#safe-now', money(d.current.safe));
   setText('#safe-until', money(d.safeUntilIncome.safe));
   setText('#safe-bank', money(d.current.cash));
@@ -79,21 +88,23 @@ function renderToday() {
     const causes = lowDrivers.length ? `${escape(lowDrivers.slice(0, 2).join(' · '))}${lowDrivers.length > 2 ? ` + ${lowDrivers.length - 2} autre${lowDrivers.length > 3 ? 's' : ''}` : ''}` : 'Aucun mouvement majeur prévu';
     lowDetail.innerHTML = `<div><small>Écart jusqu’au point bas</small><b class="${drop < 0 ? 'negative' : drop > 0 ? 'positive' : ''}">${signedMoney(drop)}</b></div><div><small>Ce qui l’explique</small><b>${causes}</b></div>`;
   }
-  setText('#checkpoint-label', checkpointText(d.settings));
-  renderChart();
   const income = d.nextIncome;
   const bill = upcomingByKind('expense')[0];
   const urgent = [...d.categories].filter(c => c.amount > 0).sort((a,b) => (a.reserve / a.amount) - (b.reserve / b.amount))[0];
+  const focus = ensureTodayFocus();
+  if (focus) {
+    const incomeBody = income ? `<b>${escape(income.name)}</b><small>${dateFmt(income.due)} · ${money(income.amount)}</small>` : '<b>Ajoutez un revenu</b><small>La prévision sera plus juste.</small>';
+    const billBody = bill ? `<b>${escape(bill.name)}</b><small>${dateFmt(bill.due)} · ${money(bill.amount)}</small>` : '<b>Aucune facture prévue</b><small>Votre plan est calme.</small>';
+    const limitBody = urgent ? `<b>${escape(urgent.name)}</b><small>${money(urgent.reserve)} restant · ${nextLimitText(urgent)}</small>` : '<b>Aucune limite urgente</b><small>Vos limites sont confortables.</small>';
+    focus.innerHTML = `${income ? `<button type="button" class="safe-focus-item income" data-occurrence="${income.rid}|${income.nominal}">` : '<div class="safe-focus-item income">'}<span>Prochain revenu</span>${incomeBody}${income ? '</button>' : '</div>'}${bill ? `<button type="button" class="safe-focus-item bill" data-occurrence="${bill.rid}|${bill.nominal}">` : '<div class="safe-focus-item bill">'}<span>Prochaine facture</span>${billBody}${bill ? '</button>' : '</div>'}${urgent ? `<button type="button" class="safe-focus-item limit" data-edit-limit="${urgent.id}">` : '<div class="safe-focus-item limit">'}<span>Limite à surveiller</span>${limitBody}${urgent ? '</button>' : '</div>'}`;
+  }
+  setText('#checkpoint-label', checkpointText(d.settings));
+  renderChart();
   const confidence = d.checkpointActivity || {};
   const checkpointDate = d.settings.checkpointDate ? dateFmt(d.settings.checkpointDate) : 'à confirmer';
   const confidenceFlow = `${confidence.income ? `+${money(confidence.income)} entrées` : 'aucune entrée'} · ${confidence.outflow ? `−${money(confidence.outflow)} sorties` : 'aucune sortie'}`;
   const confidenceOpen = confidence.openEvents?.length ? `${confidence.openEvents.length} échéance${confidence.openEvents.length > 1 ? 's' : ''} passée${confidence.openEvents.length > 1 ? 's' : ''} à décider.` : 'Toutes les opérations bancaires saisies sont expliquées.';
-  $('#glance').innerHTML = [
-    income ? `<article class="card glance-card income"><small>Prochain revenu</small><b>${escape(income.name)} · ${money(income.amount)}</b><span>${dateFmt(income.due)}</span></article>` : `<article class="card glance-card income"><small>Prochain revenu</small><b>À ajouter dans Plan</b><span>Une paie rend la prévision plus juste.</span></article>`,
-    bill ? `<article class="card glance-card bill"><small>Prochaine facture</small><b>${escape(bill.name)} · ${money(bill.amount)}</b><span>${dateFmt(bill.due)}</span></article>` : `<article class="card glance-card bill"><small>Prochaine facture</small><b>Aucune facture prévue</b><span>Ajoutez-en une dans Plan si nécessaire.</span></article>`,
-    urgent ? `<article class="card glance-card limit"><small>Limite à surveiller</small><b>${escape(urgent.name)} · ${money(urgent.reserve)} restant</b><span>${nextLimitText(urgent)}</span></article>` : `<article class="card glance-card limit"><small>Limites</small><b>À configurer</b><span>Épicerie, essence ou autres dépenses variables.</span></article>`,
-    `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="transaction">Ajouter une opération</button></div></article>`
-  ].join('');
+  $('#glance').innerHTML = `<article class="card glance-card trust ${d.settings.checkpointAge === null || d.settings.checkpointAge > 7 ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="review">Revue rapide</button></div></article><article class="card glance-card guide"><small>Votre prochaine action</small><b>${d.review_count ? `${d.review_count} transaction${d.review_count > 1 ? 's' : ''} à classer` : d.firstNegative ? 'Ajuster le plan avant le point bas' : 'Aucune action urgente'}</b><span>${d.review_count ? 'Classez-les pour que les limites soient justes.' : d.firstNegative ? `Prévu le ${dateFmt(d.firstNegative.date)}.` : 'Votre prévision est à jour.'}</span><div class="glance-actions">${d.review_count ? '<button class="mini" type="button" data-review-classify>Ouvrir la boîte</button>' : d.firstNegative ? '<button class="mini" type="button" data-open="adjust">Voir les options</button>' : '<button class="mini" type="button" data-open="transaction">Ajouter une transaction</button>'}</div></article>`;
   const limits = [...d.categories].filter(c => c.amount).sort((a,b) => a.reserve - b.reserve);
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
   const events = d.upcoming.slice(0,7);
@@ -370,14 +381,14 @@ async function renderBudget() {
     return category.remaining <= 0 || ratio >= .75;
   }).slice(0, 3);
   $('#budget-priority').innerHTML = attention.length ? `<div class="budget-priority-head"><div><div class="eyebrow">À surveiller</div><h3>Les catégories qui demandent votre attention</h3><p>Le Budget est une vue mensuelle : il ne change jamais le Safe-to-Spend.</p></div><span class="tag">${attention.length} catégorie${attention.length > 1 ? 's' : ''}</span></div><div class="budget-priority-list">${attention.map(category => { const ratio = category.planned ? category.spent / category.planned : 0, stateClass = category.remaining < 0 ? 'over' : 'warn', label = category.remaining < 0 ? `Dépassement ${money(Math.abs(category.remaining))}` : `${money(category.remaining)} restant`; return `<button class="budget-priority-item ${stateClass}" type="button" data-edit-limit="${category.id}"><span><b>${escape(category.name)}</b><small>${Math.round(ratio * 100)} % utilisé · Budget ${money(category.planned)}</small></span><strong>${label}</strong></button>`; }).join('')}</div>` : `<div class="budget-priority-head calm"><div><div class="eyebrow">À surveiller</div><h3>${b.categories.length ? 'Tout est sous contrôle ce mois-ci' : 'Ajoutez une première limite'}</h3><p>${b.categories.length ? 'Aucune limite n’est près d’être atteinte.' : 'Le Budget affichera ici les catégories proches de leur limite.'}</p></div></div>`;
-  $('#budget-body').innerHTML = sorted.map(c => {
+  $('#budget-body').innerHTML = b.categories.length ? `<div class="budget-ledger-head" aria-hidden="true"><span>Catégorie</span><span>Budget</span><span>Dépensé</span><span>Restant</span><span></span></div>${sorted.map(c => {
     const ratio = c.planned ? c.spent / c.planned : 0;
     const percent = Math.round(ratio * 100), width = Math.max(0, Math.min(100, percent));
     const stateClass = c.remaining < 0 ? 'over' : ratio >= .8 ? 'warn' : '';
     const status = c.remaining < 0 ? `Dépassement de ${money(Math.abs(c.remaining))}` : c.remaining === 0 ? 'Limite atteinte' : `${money(c.remaining)} restant`;
     const comparison = c.previousSpent ? `Mois dernier : ${money(c.previousSpent)}` : `Moyenne 3 mois : ${money(c.averageSpent)}`;
-    return `<article class="budget-category ${stateClass}"><div class="budget-category-head"><div><h3>${escape(c.name)}</h3><p>${labelFrequency(c.frequency)} · ${percent}% utilisé</p></div><span class="budget-status ${stateClass}">${status}</span></div><div class="budget-amounts"><div><small>Budget</small><b>${money(c.planned)}</b></div><div><small>Dépensé</small><b>${money(c.spent)}</b></div><div><small>Disponible</small><b class="${c.remaining < 0 ? 'negative' : ''}">${money(c.remaining)}</b></div></div><div class="budget-progress" aria-label="${percent}% utilisé"><i class="${stateClass}" style="width:${width}%"></i></div><footer><span>${comparison}</span><button class="mini" type="button" data-edit-limit="${c.id}">Modifier</button></footer></article>`;
-  }).join('');
+    return `<article class="budget-ledger-row ${stateClass}"><div class="budget-ledger-category"><h3>${escape(c.name)}</h3><p>${labelFrequency(c.frequency)} · ${percent}% utilisé · ${comparison}</p><div class="budget-progress" aria-label="${percent}% utilisé"><i class="${stateClass}" style="width:${width}%"></i></div></div><div class="budget-ledger-number"><small>Budget</small><b>${money(c.planned)}</b></div><div class="budget-ledger-number"><small>Dépensé</small><b>${money(c.spent)}</b></div><div class="budget-ledger-number remaining ${stateClass}"><small>Restant</small><b>${status}</b></div><div class="budget-ledger-action"><button class="mini" type="button" data-edit-limit="${c.id}">Modifier</button></div></article>`;
+  }).join('')}` : '';
   $('#budget-empty').hidden = b.categories.length > 0;
 }
 function render() { renderSetup(); renderToday(); renderTransactions(); renderPlan(); if (state.page === 'calendar') renderCalendar(); if (state.page === 'budget') renderBudget(); }
