@@ -172,6 +172,57 @@ function transactionRuleFor(description, method) {
   const key = merchantKey(description);
   return (state.data.merchant_rules || []).find(rule => key.includes(rule.normalized) && (!rule.method || rule.method === method)) || null;
 }
+function transactionCategoryId(transaction) {
+  if (transaction?.category_id) return transaction.category_id;
+  return transaction?.splits?.length === 1 ? transaction.splits[0].category_id : '';
+}
+function merchantHistoryFor(description) {
+  const key = merchantKey(description);
+  if (!key) return null;
+  return [...(state.data.transactions || [])]
+    .filter(transaction => transaction.kind === 'expense' && merchantKey(transaction.description) === key)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
+    .find(transaction => transactionCategoryId(transaction) || transaction.method) || null;
+}
+function resetTransactionSuggestions() {
+  const form = $('#transaction-form');
+  if (form.dataset.suggestedCategory && form.category_id.value === form.dataset.suggestedCategory) form.category_id.value = '';
+  if (form.dataset.suggestedMethod && form.method.value === form.dataset.suggestedMethod) form.method.value = 'joint';
+  form.dataset.categoryManual = '';
+  form.dataset.methodManual = '';
+  form.dataset.suggestedCategory = '';
+  form.dataset.suggestedMethod = '';
+}
+function renderRecentMerchants() {
+  const form = $('#transaction-form');
+  let field = $('#tx-recent-field'), holder = $('#tx-recent-merchants');
+  if (!field) {
+    field = document.createElement('section');
+    field.className = 'field full recent-merchant-field';
+    field.id = 'tx-recent-field';
+    field.innerHTML = '<span>Commerçants récents</span><div id="tx-recent-merchants" class="recent-merchants"></div><small>Un toucher reprend le nom, la limite et le moyen utilisés la dernière fois. Vous pouvez toujours les modifier.</small>';
+    $('#tx-description').closest('.field').insertAdjacentElement('afterend', field);
+    holder = $('#tx-recent-merchants');
+  }
+  const show = form.kind.value === 'expense' && !form.id.value && form.dataset.splitMode !== '1';
+  if (!show) { field.hidden = true; return; }
+  const seen = new Set();
+  const transactions = [...(state.data.transactions || [])]
+    .filter(transaction => transaction.kind === 'expense' && transaction.description && merchantKey(transaction.description))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
+    .filter(transaction => {
+      const key = merchantKey(transaction.description);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 5);
+  field.hidden = !transactions.length;
+  holder.innerHTML = transactions.map(transaction => {
+    const category = transactionCategory(transaction);
+    const method = transaction.method === 'card' ? 'Carte' : 'Conjoint';
+    return `<button type="button" class="recent-merchant" data-recent-merchant="${transaction.id}" title="${escape(transaction.description)}"><b>${escape(transaction.description)}</b><small>${escape(category)} · ${method}</small></button>`;
+  }).join('');
+}
 function renderTransactions() {
   populateTransactionMonths();
   const search = ($('#tx-search').value || '').toLocaleLowerCase('fr-CA');
@@ -439,11 +490,24 @@ function prepareMerchantRules(rule = null) { renderMerchantRules(rule); open('me
 function applyTransactionRule() {
   const form = $('#transaction-form'), hint = $('#tx-rule-hint');
   hint.textContent = '';
-  if (form.kind.value !== 'expense' || form.dataset.splitMode === '1' || form.id.value || form.category_id.value) return;
+  if (form.kind.value !== 'expense' || form.dataset.splitMode === '1' || form.id.value) return;
+  const history = merchantHistoryFor(form.description.value);
+  if (history?.method && !form.dataset.methodManual) {
+    form.method.value = history.method;
+    form.dataset.suggestedMethod = history.method;
+  }
   const rule = transactionRuleFor(form.description.value, form.method.value);
-  if (!rule) return;
-  form.category_id.value = rule.category_id;
-  hint.textContent = `Proposée par la règle « ${rule.merchant} » : ${rule.category_name}.`;
+  const categoryId = rule?.category_id || transactionCategoryId(history);
+  if (categoryId && !form.dataset.categoryManual) {
+    form.category_id.value = categoryId;
+    form.dataset.suggestedCategory = String(categoryId);
+  }
+  if (rule) {
+    hint.textContent = `Proposée par la règle « ${rule.merchant} » : ${rule.category_name}.`;
+  } else if (history) {
+    const category = categoryName(transactionCategoryId(history));
+    hint.textContent = `Reprise du dernier achat : ${category}${history.method === 'card' ? ' · carte de crédit' : ' · compte conjoint'}.`;
+  }
 }
 
 function populateCategories(selected='') { $('#tx-category').innerHTML = `<option value="">Sans limite</option>${state.data.categories.map(c=>`<option value="${c.id}" ${String(c.id)===String(selected)?'selected':''}>${escape(c.name)} · ${money(c.reserve)} restant</option>`).join('')}`; }
@@ -544,12 +608,17 @@ function prepareTransaction(tx=null) {
   f.description.value=tx?.description||'';
   f.dataset.matchManual=tx?'1':'';
   f.dataset.splitMode='';
+  f.dataset.categoryManual=tx?'1':'';
+  f.dataset.methodManual=tx?'1':'';
+  f.dataset.suggestedCategory='';
+  f.dataset.suggestedMethod='';
   populateCategories(tx?.category_id || tx?.splits?.[0]?.category_id || '');
   updateTransactionFields();
   if (tx?.splits?.length) setSplitMode(true, tx.splits);
   else { renderSplitRows([]); setSplitMode(false); }
   refreshTransactionMatches(tx?.recurring_id && tx?.recurring_date ? `${tx.recurring_id}|${tx.recurring_date}` : '');
   if (!tx) applyTransactionRule();
+  renderRecentMerchants();
   $('#transaction-title').textContent=tx?'Modifier la transaction':'Ajouter une transaction';
   open('transaction');
 }
@@ -563,6 +632,8 @@ function updateTransactionFields() {
   $('#tx-remember-field').hidden=kind!=='expense' || splitMode;
   $('#match-field').hidden=!matching;
   $('#tx-match-suggestion').hidden=!matching;
+  const recentField = $('#tx-recent-field');
+  if (recentField) recentField.hidden=kind!=='expense' || !!form.id.value || splitMode;
   card.closest('.field').hidden=kind==='income';
   if(kind==='card_payment') card.value='joint';
   if(kind!=='expense') $('#tx-rule-hint').textContent='';
@@ -642,6 +713,7 @@ function wire() {
     if(button.dataset.reviewCalendar !== undefined) { close($('#dialog-review')); return changePage('calendar'); }
     if(button.dataset.reviewWeekOccurrence) { close($('#dialog-review')); return prepareOccurrence(button.dataset.reviewWeekOccurrence); }
     if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='review')prepareReview(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
+    if(button.dataset.recentMerchant) { const transaction = state.data.transactions.find(item => String(item.id) === button.dataset.recentMerchant); if (!transaction) return; const form = $('#transaction-form'); form.description.value = transaction.description; resetTransactionSuggestions(); applyTransactionRule(); refreshTransactionMatches(); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
     if(button.dataset.useMatch) {
       $('#tx-recurring').value = button.dataset.useMatch;
@@ -673,9 +745,10 @@ function wire() {
   $('#safe-slider').addEventListener('input',renderChart);
   $('#quick-afford').addEventListener('click',()=>{ const n=parseCents($('#quick-amount').value); if(n===null)return toast('Inscrivez un montant valide.'); $('#afford-form').reset();$('#afford-form').amount.value=(n/100).toFixed(2).replace('.',',');$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); });
   ['#tx-search','#tx-kind','#tx-method','#tx-month','#tx-status','#tx-sort'].forEach(s=>$(s).addEventListener(s==='#tx-search'?'input':'change',renderTransactions));
-  $('#tx-form-kind').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';updateTransactionFields();refreshTransactionMatches();applyTransactionRule();});
-  $('#tx-form-method').addEventListener('change',()=>{applyTransactionRule();refreshTransactionMatches();});
-  $('#tx-description').addEventListener('input',()=>{applyTransactionRule();refreshTransactionMatches();});
+  $('#tx-form-kind').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';resetTransactionSuggestions();updateTransactionFields();renderRecentMerchants();refreshTransactionMatches();applyTransactionRule();});
+  $('#tx-form-method').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.methodManual='1';applyTransactionRule();refreshTransactionMatches();});
+  $('#tx-category').addEventListener('change',()=>{$('#transaction-form').dataset.categoryManual='1';});
+  $('#tx-description').addEventListener('input',()=>{resetTransactionSuggestions();applyTransactionRule();refreshTransactionMatches();});
   $('#tx-amount').addEventListener('input',()=>{refreshTransactionMatches();updateSplitTotal();});
   $('#tx-date').addEventListener('change',()=>{const form=$('#transaction-form');form.dataset.matchManual='';refreshTransactionMatches();});
   $('#tx-recurring').addEventListener('change',()=>{$('#transaction-form').dataset.matchManual='1';renderMatchSuggestion([]);});
