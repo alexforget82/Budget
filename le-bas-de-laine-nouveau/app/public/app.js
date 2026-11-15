@@ -153,7 +153,7 @@ function renderToday() {
   $('#glance').innerHTML = `<article class="card glance-card trust ${needsBalance ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="review">Revue rapide</button></div></article><article class="card glance-card guide"><small>Votre prochaine action</small><b>${escape(action.title)}</b><span>${escape(action.copy)}</span><div class="glance-actions"><button class="mini" type="button" ${action.control}>${action.label}</button></div></article>`;
   const limits = [...d.categories].filter(c => c.amount).sort((a,b) => limitRatio(a) - limitRatio(b));
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
-  const events = d.upcoming.slice(0,7);
+  const events = d.upcoming.slice(0,5);
   $('#today-events').innerHTML = events.length ? events.map(eventRow).join('') : `<div class="empty">Aucune échéance. Ajoutez vos paies et factures dans Plan.</div>`;
   const alert = $('#negative-alert');
   const drivers = [...(lowDay?.events || []).filter(event => event.kind === 'expense').map(event => event.name), ...(lowDay?.limitEvents || []).map(event => event.name)];
