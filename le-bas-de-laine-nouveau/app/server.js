@@ -25,6 +25,9 @@ db.exec(`
     renewal TEXT NOT NULL DEFAULT '4',
     start_date TEXT,
     funding TEXT NOT NULL DEFAULT 'start',
+    mode TEXT NOT NULL DEFAULT 'period',
+    monthly_four INTEGER NOT NULL DEFAULT 0,
+    monthly_five INTEGER NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1
   );
   CREATE TABLE IF NOT EXISTS recurring (
@@ -105,9 +108,23 @@ const set = (key, value) => run('INSERT OR REPLACE INTO settings(key,value) VALU
 
 // Les premières installations n'avaient pas le choix de financement d'une
 // limite. Cette migration est sans effet sur les autres catégories.
-if (!q('PRAGMA table_info(categories)').some(column => column.name === 'funding')) {
+let categoryColumns = q('PRAGMA table_info(categories)');
+if (!categoryColumns.some(column => column.name === 'funding')) {
   db.exec("ALTER TABLE categories ADD COLUMN funding TEXT NOT NULL DEFAULT 'start'");
   db.exec("UPDATE categories SET funding='income' WHERE name IN ('Lait et Couches','Pharmacie et Médicaments')");
+}
+categoryColumns = q('PRAGMA table_info(categories)');
+const monthlyModeWasAdded = !categoryColumns.some(column => column.name === 'mode');
+if (monthlyModeWasAdded) db.exec("ALTER TABLE categories ADD COLUMN mode TEXT NOT NULL DEFAULT 'period'");
+categoryColumns = q('PRAGMA table_info(categories)');
+if (!categoryColumns.some(column => column.name === 'monthly_four')) db.exec('ALTER TABLE categories ADD COLUMN monthly_four INTEGER NOT NULL DEFAULT 0');
+categoryColumns = q('PRAGMA table_info(categories)');
+if (!categoryColumns.some(column => column.name === 'monthly_five')) db.exec('ALTER TABLE categories ADD COLUMN monthly_five INTEGER NOT NULL DEFAULT 0');
+// La première version de ce mode est calibrée pour l’épicerie du foyer :
+// 950 $ dans un mois à quatre jeudis, 1 125 $ dans un mois à cinq jeudis.
+// Les autres limites restent strictement inchangées.
+if (monthlyModeWasAdded) {
+  db.exec("UPDATE categories SET mode='monthly_weekly', monthly_four=95000, monthly_five=112500, amount=23750 WHERE name IN ('Épicerie','Epicerie') AND monthly_four=0 AND monthly_five=0");
 }
 
 const pad = n => String(n).padStart(2, '0');
@@ -244,7 +261,18 @@ function allOccurrences(from, to) {
 
 function categoryStarts(category, until) {
   if (!category.start_date || category.start_date > until) return [];
-  const start = category.start_date, out = [start];
+  const start = category.start_date;
+  // Une limite mensuelle répartie à la semaine ne réserve jamais le budget
+  // complet le premier jour. Ses portions arrivent uniquement le jour choisi
+  // (par exemple chaque jeudi pour l’épicerie).
+  if (category.mode === 'monthly_weekly') {
+    const wanted = Number(category.renewal);
+    let next = addDays(start, (wanted - dow(start) + 7) % 7);
+    const out = [];
+    for (let i = 0; next <= until && i < 600; i++, next = addDays(next, 7)) out.push(next);
+    return out;
+  }
+  const out = [start];
   if (category.frequency === 'w') {
     const wanted = Number(category.renewal);
     let next = addDays(start, ((wanted - dow(start) + 7) % 7) || 7);
@@ -261,12 +289,28 @@ function categoryStarts(category, until) {
   return [...new Set(out)].sort();
 }
 function monthKey(d) { return d.slice(0, 7); }
+function lastDayOfMonth(date) {
+  const [year, month] = monthKey(date).split('-').map(Number);
+  return iso(new Date(Date.UTC(year, month, 0)));
+}
+function weekdayCountInMonth(month, weekday) {
+  const first = `${month}-01`, last = lastDayOfMonth(first);
+  let count = 0;
+  for (let date = first; date <= last; date = addDays(date, 1)) if (dow(date) === weekday) count++;
+  return count;
+}
+function regularPeriodAmount(category, due) {
+  if (category.mode !== 'monthly_weekly') return category.amount;
+  const count = weekdayCountInMonth(monthKey(due), Number(category.renewal));
+  const budget = count >= 5 ? category.monthly_five : category.monthly_four;
+  return count ? Math.round(budget / count) : 0;
+}
 function categoryPeriods(category, until) {
   const periods = [];
   for (const due of categoryStarts(category, until)) {
     const changed = one('SELECT * FROM limit_overrides WHERE category_id=? AND due_date=?', category.id, due);
     const date = changed && changed.moved_to ? changed.moved_to : due;
-    const amount = changed && changed.amount != null ? changed.amount : category.amount;
+    const amount = changed && changed.amount != null ? changed.amount : regularPeriodAmount(category, due);
     if (date <= until && amount > 0) periods.push({ due, date, amount, moved: !!(changed && changed.moved_to), adjusted: !!changed });
   }
   return periods.sort((a, b) => a.date.localeCompare(b.date));
@@ -314,6 +358,17 @@ function categoryReserve(category, day, transactions) {
   const spent = transactions.filter(t => t.kind === 'expense' && t.date <= day && t.date >= category.start_date && monthKey(t.date) === monthKey(day)).reduce((sum, t) => sum + amountInCategory(t, category.id), 0);
   return Math.max(0, allocated - spent);
 }
+function categoryMonthlySummary(category, day, transactions) {
+  const month = monthKey(day), last = lastDayOfMonth(day);
+  const allPeriods = categoryPeriods(category, last)
+    .filter(period => monthKey(period.date) === month);
+  const budget = allPeriods.reduce((sum, period) => sum + period.amount, 0);
+  const released = allPeriods.filter(period => period.date <= day).reduce((sum, period) => sum + period.amount, 0);
+  const spent = transactions
+    .filter(transaction => transaction.kind === 'expense' && transaction.date <= day && transaction.date >= category.start_date && monthKey(transaction.date) === month)
+    .reduce((sum, transaction) => sum + amountInCategory(transaction, category.id), 0);
+  return { month_budget: budget, month_spent: spent, month_remaining: budget - spent, released };
+}
 
 function baseData() {
   return {
@@ -338,7 +393,10 @@ function buildState() {
   const reservesFor = day => {
     const reserves = {};
     for (const category of categories) {
-      if (!category.amount || !category.start_date || category.start_date > day) continue;
+      const hasBudget = category.mode === 'monthly_weekly'
+        ? category.monthly_four > 0 || category.monthly_five > 0
+        : category.amount > 0;
+      if (!hasBudget || !category.start_date || category.start_date > day) continue;
       if (category.funding === 'income') {
         const allocated = [...funded.values()].filter(period => period.category.id === category.id && period.funded_on <= day && monthKey(period.due) === monthKey(day)).reduce((sum, period) => sum + period.amount, 0);
         reserves[category.name] = Math.max(0, allocated - categorySpent(category, day));
@@ -405,7 +463,10 @@ function buildState() {
     const reserves = reservesFor(d);
     const limitEvents = [];
     for (const category of categories) {
-      if (!category.amount || !category.start_date || category.start_date > d) continue;
+      const hasBudget = category.mode === 'monthly_weekly'
+        ? category.monthly_four > 0 || category.monthly_five > 0
+        : category.amount > 0;
+      if (!hasBudget || !category.start_date || category.start_date > d) continue;
       if (category.funding !== 'income') for (const period of categoryPeriods(category, d)) {
         if (period.date === d) limitEvents.push({ category_id: category.id, name: category.name, amount: period.amount, due: period.due, date: period.date, moved: period.moved, adjusted: period.adjusted });
       }
@@ -423,7 +484,16 @@ function buildState() {
   const todayRow = daily[0] || { reserves: {} };
   const visibleCategories = categories.map(c => {
     const periods = c.funding === 'income' ? incomeFundedPeriods(c, t, horizon) : categoryPeriods(c, horizon);
-    return { ...c, reserve: todayRow.reserves[c.name] || 0, periods: periods.filter(p => p.date >= t && p.date <= addDays(t, 30)), starts: periods.filter(p => p.date >= t && p.date <= addDays(t, 30)).map(p => p.date) };
+    const upcomingPeriods = periods.filter(p => p.date >= t && p.date <= addDays(t, 30));
+    const monthly = c.mode === 'monthly_weekly' ? categoryMonthlySummary(c, t, transactions) : {};
+    return {
+      ...c,
+      ...monthly,
+      reserve: todayRow.reserves[c.name] || 0,
+      periods: upcomingPeriods,
+      starts: upcomingPeriods.map(p => p.date),
+      next_period: upcomingPeriods.find(p => p.date > t) || null
+    };
   });
   const firstNegative = daily.find(d => d.safe < 0) || null;
   const toReview = transactions.filter(tx =>
@@ -520,14 +590,14 @@ function action(body) {
       set('bank_cents', money(body.bank)); set('checkpoint_date', t); set('checkpoint_at', Date.now()); set('setup_complete', body.complete ? '1' : '0');
       if (body.seed_limits) {
         const suggestions = [
-          ['Épicerie', 22500, 'w', '4', 'start'],
+          ['Épicerie', 23750, 'w', '4', 'start', 'monthly_weekly', 95000, 112500],
           ['Essence Alex', 5000, 'w', '4', 'start'],
           ['Essence Jenny', 5000, 'w', '2', 'start'],
           ['Lait et Couches', 15000, 'm', 'last', 'income'],
           ['Pharmacie et Médicaments', 10000, 'm', 'last', 'income']
         ];
-        for (const [name, amount, frequency, renewal, funding] of suggestions) {
-          run('INSERT OR IGNORE INTO categories(name,amount,frequency,renewal,start_date,funding) VALUES(?,?,?,?,?,?)', name, amount, frequency, renewal, t, funding);
+        for (const [name, amount, frequency, renewal, funding, mode = 'period', monthlyFour = 0, monthlyFive = 0] of suggestions) {
+          run('INSERT OR IGNORE INTO categories(name,amount,frequency,renewal,start_date,funding,mode,monthly_four,monthly_five) VALUES(?,?,?,?,?,?,?,?,?)', name, amount, frequency, renewal, t, funding, mode, monthlyFour, monthlyFive);
         }
       }
       return body.seed_limits ? 'Solde et limites de départ enregistrés.' : 'Solde de départ enregistré.';
@@ -537,16 +607,24 @@ function action(body) {
       return 'Solde vérifié. La prévision repart de ce montant.';
     }
     case 'category': {
-      const name = clean(body.name, 'Nom de limite', 80), amount = money(body.amount);
-      const frequency = ['w', 'm'].includes(body.frequency) ? body.frequency : 'w';
+      const name = clean(body.name, 'Nom de limite', 80);
+      const mode = body.mode === 'monthly_weekly' ? 'monthly_weekly' : 'period';
+      const frequency = mode === 'monthly_weekly' ? 'w' : ['w', 'm'].includes(body.frequency) ? body.frequency : 'w';
       const renewal = frequency === 'w' ? String(Math.max(0, Math.min(6, Number(body.renewal)))) : (body.renewal === 'last' ? 'last' : String(Math.max(1, Math.min(28, Number(body.renewal)))));
-      const funding = frequency === 'm' && body.funding === 'income' ? 'income' : 'start';
+      const funding = mode === 'period' && frequency === 'm' && body.funding === 'income' ? 'income' : 'start';
+      const monthlyFour = mode === 'monthly_weekly' ? money(body.monthly_four) : 0;
+      const monthlyFive = mode === 'monthly_weekly' ? money(body.monthly_five) : 0;
+      if (mode === 'monthly_weekly' && (!monthlyFour || !monthlyFive)) throw Error('Inscrivez les budgets des mois à 4 et à 5 renouvellements.');
+      // amount demeure rempli pour la compatibilité des anciennes données;
+      // les calculs du mode mensuel réparti utilisent exclusivement les deux
+      // budgets mensuels ci-dessus.
+      const amount = mode === 'monthly_weekly' ? Math.round(monthlyFour / 4) : money(body.amount);
       const start = String(body.start_date || '');
       if (!validDate(start)) throw Error('Choisis la date de début de la limite.');
       if (body.id) {
         if (!categoryById(body.id)) throw Error('Limite introuvable.');
-        run('UPDATE categories SET name=?,amount=?,frequency=?,renewal=?,start_date=?,funding=? WHERE id=?', name, amount, frequency, renewal, start, funding, Number(body.id));
-      } else run('INSERT INTO categories(name,amount,frequency,renewal,start_date,funding) VALUES(?,?,?,?,?,?)', name, amount, frequency, renewal, start, funding);
+        run('UPDATE categories SET name=?,amount=?,frequency=?,renewal=?,start_date=?,funding=?,mode=?,monthly_four=?,monthly_five=? WHERE id=?', name, amount, frequency, renewal, start, funding, mode, monthlyFour, monthlyFive, Number(body.id));
+      } else run('INSERT INTO categories(name,amount,frequency,renewal,start_date,funding,mode,monthly_four,monthly_five) VALUES(?,?,?,?,?,?,?,?,?)', name, amount, frequency, renewal, start, funding, mode, monthlyFour, monthlyFive);
       return 'Limite enregistrée.';
     }
     case 'delete_category': {
@@ -568,7 +646,8 @@ function action(body) {
         return `Renouvellement de ${category.name} déplacé au ${moved}.`;
       }
       const amount = money(body.amount);
-      if (amount > category.amount) throw Error('Le montant temporaire ne peut pas dépasser la limite habituelle.');
+      const normal = regularPeriodAmount(category, due);
+      if (amount > normal) throw Error('Le montant temporaire ne peut pas dépasser la portion habituelle.');
       run('INSERT OR REPLACE INTO limit_overrides(category_id,due_date,moved_to,amount) VALUES(?,?,NULL,?)', category.id, due, amount);
       return `Limite de ${category.name} ajustée pour cette période.`;
     }
@@ -725,8 +804,9 @@ function budgetSnapshot(month) {
   const categories = q('SELECT * FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE');
   const transactions = withTransactionSplits(q('SELECT * FROM transactions WHERE date>=? AND date<=?', first, last));
   const entries = categories.map(c => {
-    const starts = categoryStarts(c, last).filter(d => d >= first && d <= last);
-    const planned = starts.length * c.amount;
+    const planned = c.mode === 'monthly_weekly'
+      ? categoryPeriods(c, last).filter(period => period.date >= first && period.date <= last).reduce((sum, period) => sum + period.amount, 0)
+      : categoryStarts(c, last).filter(d => d >= first && d <= last).length * c.amount;
     const spent = transactions.filter(t => t.kind === 'expense').reduce((sum, t) => sum + amountInCategory(t, c.id), 0);
     return { ...c, planned, spent, remaining: planned - spent };
   });

@@ -66,8 +66,19 @@ function polishInterface() {
 }
 function upcomingByKind(kind) { return state.data.upcoming.filter(e => e.kind === kind); }
 function categoryName(id) { return state.data.categories.find(c => c.id === id)?.name || 'Sans limite'; }
-function nextLimitText(c) { const starts = c.starts || []; const next = starts.find(d => d > state.data.today); if (!next) return 'aucun renouvellement sous 30 jours'; return c.funding === 'income' ? `à couvrir avant ${dateFmt(next)}` : `renouvelle ${dateFmt(next)}`; }
-function progressWidth(c) { if (!c.amount) return 0; return Math.max(0, Math.min(100, (c.reserve / c.amount) * 100)); }
+function isMonthlyWeekly(c) { return c.mode === 'monthly_weekly'; }
+function nextLimitText(c) {
+  const next = c.next_period || (c.periods || []).find(period => period.date > state.data.today);
+  if (!next) return 'aucun renouvellement sous 30 jours';
+  if (isMonthlyWeekly(c)) return `prochaine portion de ${money(next.amount)} le ${dateFmt(next.date)}`;
+  return c.funding === 'income' ? `à couvrir avant ${dateFmt(next.date || next)}` : `renouvelle ${dateFmt(next.date || next)}`;
+}
+function progressWidth(c) {
+  const total = isMonthlyWeekly(c) ? c.month_budget : c.amount;
+  const remaining = isMonthlyWeekly(c) ? c.month_remaining : c.reserve;
+  if (!total) return 0;
+  return Math.max(0, Math.min(100, (remaining / total) * 100));
+}
 function checkpointText(settings) {
   if (settings.checkpointAge === null || settings.checkpointAge === undefined) return 'Solde à vérifier';
   if (settings.checkpointAge === 0) return 'Solde vérifié aujourd’hui';
@@ -112,12 +123,17 @@ function renderToday() {
   }
   const income = d.nextIncome;
   const bill = upcomingByKind('expense')[0];
-  const urgent = [...d.categories].filter(c => c.amount > 0).sort((a,b) => (a.reserve / a.amount) - (b.reserve / b.amount))[0];
+  const limitRatio = category => {
+    const total = isMonthlyWeekly(category) ? category.month_budget : category.amount;
+    const remaining = isMonthlyWeekly(category) ? category.month_remaining : category.reserve;
+    return total ? remaining / total : 1;
+  };
+  const urgent = [...d.categories].filter(c => c.amount > 0).sort((a,b) => limitRatio(a) - limitRatio(b))[0];
   const focus = ensureTodayFocus();
   if (focus) {
     const incomeBody = income ? `<b>${escape(income.name)}</b><small>${dateFmt(income.due)} · ${money(income.amount)}</small>` : '<b>Ajoutez un revenu</b><small>La prévision sera plus juste.</small>';
     const billBody = bill ? `<b>${escape(bill.name)}</b><small>${dateFmt(bill.due)} · ${money(bill.amount)}</small>` : '<b>Aucune facture prévue</b><small>Votre plan est calme.</small>';
-    const limitBody = urgent ? `<b>${escape(urgent.name)}</b><small>${money(urgent.reserve)} restant · ${nextLimitText(urgent)}</small>` : '<b>Aucune limite urgente</b><small>Vos limites sont confortables.</small>';
+    const limitBody = urgent ? `<b>${escape(urgent.name)}</b><small>${isMonthlyWeekly(urgent) ? `${money(urgent.month_remaining)} restant ce mois · ${money(urgent.reserve)} protégé` : `${money(urgent.reserve)} restant · ${nextLimitText(urgent)}`}</small>` : '<b>Aucune limite urgente</b><small>Vos limites sont confortables.</small>';
     focus.innerHTML = `${income ? `<button type="button" class="safe-focus-item income" data-occurrence="${income.rid}|${income.nominal}">` : '<div class="safe-focus-item income">'}<span>Prochain revenu</span>${incomeBody}${income ? '</button>' : '</div>'}${bill ? `<button type="button" class="safe-focus-item bill" data-occurrence="${bill.rid}|${bill.nominal}">` : '<div class="safe-focus-item bill">'}<span>Prochaine facture</span>${billBody}${bill ? '</button>' : '</div>'}${urgent ? `<button type="button" class="safe-focus-item limit" data-edit-limit="${urgent.id}">` : '<div class="safe-focus-item limit">'}<span>Limite à surveiller</span>${limitBody}${urgent ? '</button>' : '</div>'}`;
   }
   setText('#checkpoint-label', checkpointText(d.settings));
@@ -135,7 +151,7 @@ function renderToday() {
         ? { title:'Ajuster le plan avant le point bas', copy:`Prévu le ${dateFmt(d.firstNegative.date)}.`, control:'data-open="adjust"', label:'Voir les options' }
         : { title:'Aucune action urgente', copy:'Votre prévision et votre solde sont à jour.', control:'data-open="review"', label:'Revue rapide' };
   $('#glance').innerHTML = `<article class="card glance-card trust ${needsBalance ? 'needs-check' : ''}"><small>Solde de confiance · ${checkpointText(d.settings)}</small><b>${money(confidence.startingBank ?? d.settings.bank)} → ${money(d.settings.expectedBank)}</b><span>Confirmé ${checkpointDate} · ${confidenceFlow}</span><span class="trust-state ${confidence.openEvents?.length ? 'warning' : ''}">${confidenceOpen}</span><div class="glance-actions"><button class="mini" type="button" data-open="checkpoint">Vérifier mon solde</button><button class="mini" type="button" data-open="review">Revue rapide</button></div></article><article class="card glance-card guide"><small>Votre prochaine action</small><b>${escape(action.title)}</b><span>${escape(action.copy)}</span><div class="glance-actions"><button class="mini" type="button" ${action.control}>${action.label}</button></div></article>`;
-  const limits = [...d.categories].filter(c => c.amount).sort((a,b) => a.reserve - b.reserve);
+  const limits = [...d.categories].filter(c => c.amount).sort((a,b) => limitRatio(a) - limitRatio(b));
   $('#today-limits').innerHTML = limits.length ? limits.slice(0,5).map(limitRow).join('') : `<div class="empty">Ajoutez une limite pour protéger une dépense variable dans votre disponible.</div>`;
   const events = d.upcoming.slice(0,7);
   $('#today-events').innerHTML = events.length ? events.map(eventRow).join('') : `<div class="empty">Aucune échéance. Ajoutez vos paies et factures dans Plan.</div>`;
@@ -153,7 +169,12 @@ function limitRow(c, plan = false) {
   const ratio = progressWidth(c), css = ratio <= 20 ? 'over' : ratio <= 45 ? 'warn' : '';
   const override = state.data.limitOverrides?.find(o => o.category_id === c.id);
   const changed = override ? `<small class="negative">Ajustement ponctuel prévu.</small>` : '';
-  return `<div class="limit-item"><div class="grow"><b>${escape(c.name)}</b><small>${money(c.reserve)} restant · ${nextLimitText(c)}</small>${changed}<div class="bar"><i class="${css}" style="width:${ratio}%"></i></div></div><div class="amount">${money(c.amount)}</div>${plan ? `<div class="actions"><button class="mini" data-edit-limit="${c.id}">Modifier</button>${override ? `<button class="mini danger" data-cancel-limit="${c.id}|${override.due_date}">Annuler l’ajustement</button>` : ''}</div>` : ''}</div>`;
+  const detail = isMonthlyWeekly(c)
+    ? `${money(c.month_remaining)} restant ce mois · ${money(c.reserve)} protégé maintenant`
+    : `${money(c.reserve)} restant · ${nextLimitText(c)}`;
+  const amount = isMonthlyWeekly(c) ? `${money(c.month_budget)}<small>/ mois</small>` : money(c.amount);
+  const extra = isMonthlyWeekly(c) ? `<small>${nextLimitText(c)}</small>` : '';
+  return `<div class="limit-item"><div class="grow"><b>${escape(c.name)}</b><small>${detail}</small>${extra}${changed}<div class="bar"><i class="${css}" style="width:${ratio}%"></i></div></div><div class="amount">${amount}</div>${plan ? `<div class="actions"><button class="mini" data-edit-limit="${c.id}">Modifier</button>${override ? `<button class="mini danger" data-cancel-limit="${c.id}|${override.due_date}">Annuler l’ajustement</button>` : ''}</div>` : ''}</div>`;
 }
 function eventRow(e) {
   return `<button class="event-item link" data-occurrence="${e.rid}|${e.nominal}" type="button"><div class="grow"><b>${escape(e.name)}</b><small>${dateFmt(e.due)}${e.moved ? ' · date déplacée' : ''}</small></div><div class="amount ${e.kind === 'income' ? 'positive' : 'negative'}">${signed(e.amount,e.kind)}</div></button>`;
@@ -453,7 +474,8 @@ async function renderBudget() {
     const stateClass = c.remaining < 0 ? 'over' : ratio >= .8 ? 'warn' : '';
     const status = c.remaining < 0 ? `Dépassement de ${money(Math.abs(c.remaining))}` : c.remaining === 0 ? 'Limite atteinte' : `${money(c.remaining)} restant`;
     const comparison = c.previousSpent ? `Mois dernier : ${money(c.previousSpent)}` : `Moyenne 3 mois : ${money(c.averageSpent)}`;
-    return `<article class="budget-ledger-row ${stateClass}"><div class="budget-ledger-category"><h3>${escape(c.name)}</h3><p>${labelFrequency(c.frequency)} · ${percent}% utilisé · ${comparison}</p><div class="budget-progress" aria-label="${percent}% utilisé"><i class="${stateClass}" style="width:${width}%"></i></div></div><div class="budget-ledger-number"><small>Budget</small><b>${money(c.planned)}</b></div><div class="budget-ledger-number"><small>Dépensé</small><b>${money(c.spent)}</b></div><div class="budget-ledger-number remaining ${stateClass}"><small>Restant</small><b>${status}</b></div><div class="budget-ledger-action"><button class="mini" type="button" data-edit-limit="${c.id}">Modifier</button></div></article>`;
+    const frequency = isMonthlyWeekly(c) ? 'Budget mensuel · protégé chaque semaine' : labelFrequency(c.frequency);
+    return `<article class="budget-ledger-row ${stateClass}"><div class="budget-ledger-category"><h3>${escape(c.name)}</h3><p>${frequency} · ${percent}% utilisé · ${comparison}</p><div class="budget-progress" aria-label="${percent}% utilisé"><i class="${stateClass}" style="width:${width}%"></i></div></div><div class="budget-ledger-number"><small>Budget</small><b>${money(c.planned)}</b></div><div class="budget-ledger-number"><small>Dépensé</small><b>${money(c.spent)}</b></div><div class="budget-ledger-number remaining ${stateClass}"><small>Restant</small><b>${status}</b></div><div class="budget-ledger-action"><button class="mini" type="button" data-edit-limit="${c.id}">Modifier</button></div></article>`;
   }).join('')}` : '';
   $('#budget-empty').hidden = b.categories.length > 0;
 }
@@ -716,8 +738,42 @@ function updateTransactionFields() {
   if(kind!=='expense') $('#tx-rule-hint').textContent='';
   if(matching){ setText('#match-label',kind==='income'?'Associer à un revenu prévu':'Associer à une facture prévue'); setText('#match-copy',kind==='income'?'Évite de compter deux fois une paie, rente ou allocation déjà prévue.':'Évite de compter deux fois une facture déjà prévue.'); }
 }
-function prepareLimit(c=null) { const f=$('#limit-form'); f.reset(); f.id.value=c?.id||''; f.name.value=c?.name||''; f.amount.value=c?(c.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=c?.frequency||'w'; f.funding.value=c?.funding||'start'; f.start_date.value=c?.start_date||state.data.today; if(c?.frequency==='m') f.monthly_renewal.value=c.renewal; else f.renewal.value=c?.renewal||'4'; $('#limit-title').textContent=c?'Modifier la limite':'Ajouter une limite'; $('#delete-limit').hidden=!c; updateLimitFields(); open('limit'); }
-function updateLimitFields() { const monthly=$('#limit-frequency').value==='m'; $('#limit-weekday').hidden=monthly; $('#limit-monthday').hidden=!monthly; $('#limit-funding').hidden=!monthly; if(!monthly) $('#limit-form').funding.value='start'; }
+function prepareLimit(c=null) {
+  const f=$('#limit-form');
+  f.reset();
+  f.id.value=c?.id||'';
+  f.name.value=c?.name||'';
+  f.mode.value=c?.mode||'period';
+  f.amount.value=c?(c.amount/100).toFixed(2).replace('.',','):'';
+  f.monthly_four.value=c?.monthly_four ? (c.monthly_four/100).toFixed(2).replace('.',',') : '950,00';
+  f.monthly_five.value=c?.monthly_five ? (c.monthly_five/100).toFixed(2).replace('.',',') : '1125,00';
+  f.frequency.value=c?.frequency||'w';
+  f.funding.value=c?.funding||'start';
+  f.start_date.value=c?.start_date||state.data.today;
+  if(c?.frequency==='m') f.monthly_renewal.value=c.renewal; else f.renewal.value=c?.renewal||'4';
+  $('#limit-title').textContent=c?'Modifier la limite':'Ajouter une limite';
+  $('#delete-limit').hidden=!c;
+  updateLimitFields();
+  open('limit');
+}
+function updateLimitFields() {
+  const form=$('#limit-form'), monthlyWeekly=form.mode.value==='monthly_weekly', monthly=form.frequency.value==='m';
+  $('#limit-amount-field').hidden=monthlyWeekly;
+  $('#limit-frequency-field').hidden=monthlyWeekly;
+  $('#limit-monthly-four-field').hidden=!monthlyWeekly;
+  $('#limit-monthly-five-field').hidden=!monthlyWeekly;
+  $('#limit-weekday').hidden=monthly && !monthlyWeekly;
+  $('#limit-monthday').hidden=!monthly || monthlyWeekly;
+  $('#limit-funding').hidden=!monthly || monthlyWeekly;
+  form.amount.disabled=monthlyWeekly;
+  form.monthly_four.disabled=!monthlyWeekly;
+  form.monthly_five.disabled=!monthlyWeekly;
+  $('#limit-mode-help').textContent=monthlyWeekly
+    ? 'Le budget du mois est divisé automatiquement entre ses 4 ou 5 renouvellements. Vous pouvez dépasser une semaine tant que le total du mois reste dans le budget.'
+    : 'Choisissez un montant et sa fréquence.';
+  if(monthlyWeekly) { form.frequency.value='w'; form.funding.value='start'; }
+  if(!monthly) form.funding.value='start';
+}
 function prepareRule(rule=null) { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||'income'; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':'Ajouter une règle'; $('#delete-recurring').hidden=!rule; open('recurring'); }
 function prepareOccurrence(key) { const [rid,due]=key.split('|'); const calendarEvents = state.calendar?.days.flatMap(day => day.events) || [], checkpointEvents = state.data.checkpointActivity?.openEvents || []; const event=[...state.data.upcoming,...calendarEvents,...checkpointEvents].find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
 function updateCheckpointDifference() {
@@ -837,6 +893,7 @@ function wire() {
   $('#tx-split-rows').addEventListener('input',updateSplitTotal);
   $('#tx-split-rows').addEventListener('change',updateSplitTotal);
   $('#limit-frequency').addEventListener('change',updateLimitFields);
+  $('#limit-mode').addEventListener('change',updateLimitFields);
   $('#budget-prev').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()-1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#budget-next').addEventListener('click',()=>{const d=new Date(`${state.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);state.month=d.toISOString().slice(0,7);renderBudget();});
   $('#calendar-prev').addEventListener('click',()=>{const current=state.calendarMonth || state.data.today.slice(0,7), candidate=shiftedMonthClient(current,-1); if(!state.calendar || candidate>=state.calendar.minMonth){state.calendarMonth=candidate;renderCalendar();}});
@@ -850,7 +907,7 @@ function wire() {
   $('#csv-file').addEventListener('change',async event=>{const file=event.target.files?.[0]; if(!file)return; try{await loadCsv(file);}catch(error){state.csv=null;renderCsvPreview();toast(error.message);}});
   $('#csv-method').addEventListener('change',renderCsvPreview);
   $('#csv-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget, dialog=form.closest('dialog');try{const rows=csvRows(), values=filled(form);await act({action:'import_transactions',rows,method:values.method,included:!!values.included});state.csv=null;close(dialog);}catch(error){toast(error.message);}});
-  $('#limit-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{const v=filled(form); if(v.frequency==='m')v.renewal=v.monthly_renewal;delete v.monthly_renewal;await act({...v,action:'category'});close(form.closest('dialog'));}catch(error){toast(error.message);}});
+  $('#limit-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{const v=filled(form); if(v.mode!=='monthly_weekly'&&v.frequency==='m')v.renewal=v.monthly_renewal;delete v.monthly_renewal;await act({...v,action:'category'});close(form.closest('dialog'));}catch(error){toast(error.message);}});
   $('#delete-limit').addEventListener('click',async()=>{const id=$('#limit-form').id.value;if(id&&confirm('Supprimer cette limite ? Les transactions restent conservées.')){await act({action:'delete_category',id});close($('#dialog-limit'));}});
   $('#recurring-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;try{await act({...filled(form),action:'recurring'});close(form.closest('dialog'));}catch(error){toast(error.message);}});
   $('#delete-recurring').addEventListener('click',async()=>{const id=$('#recurring-form').id.value;if(id&&confirm('Supprimer cette règle ?')){await act({action:'delete_recurring',id});close($('#dialog-recurring'));}});

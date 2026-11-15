@@ -23,8 +23,15 @@ async function render() {
   $('#safe30').textContent = money(current.safe30.safe);
   $('#safe30-note').textContent = `Point le plus bas : ${date(current.safe30.date)}.`;
   $('#today-date').textContent = date(current.today);
-  $('#grocery').textContent = grocery ? money(grocery.reserve) : '—';
-  $('#grocery-note').textContent = grocery ? `Restant · ${grocery.starts.find(start => start > current.today) ? `renouvelle ${date(grocery.starts.find(start => start > current.today))}` : 'prochain renouvellement à venir'}` : 'Ajoutez une limite nommée Épicerie dans Plan.';
+  $('#grocery').textContent = grocery ? money(grocery.mode === 'monthly_weekly' ? grocery.month_remaining : grocery.reserve) : '—';
+  if (!grocery) {
+    $('#grocery-note').textContent = 'Ajoutez une limite nommée Épicerie dans Plan.';
+  } else if (grocery.mode === 'monthly_weekly') {
+    const next = grocery.next_period;
+    $('#grocery-note').textContent = `Ce mois-ci : ${money(grocery.month_spent)} dépensés sur ${money(grocery.month_budget)} · ${money(grocery.reserve)} protégé maintenant${next ? ` · prochaine portion ${money(next.amount)} le ${date(next.date)}` : ''}.`;
+  } else {
+    $('#grocery-note').textContent = `Restant · ${grocery.starts.find(start => start > current.today) ? `renouvelle ${date(grocery.starts.find(start => start > current.today))}` : 'prochain renouvellement à venir'}`;
+  }
   const actual = current.transactions.filter(transaction => transaction.date === current.today).map(transaction => amountLine(transaction.description || (transaction.kind === 'income' ? 'Revenu' : 'Dépense'), transaction.amount, transaction.kind, 'Saisi'));
   const planned = day.events.map(event => amountLine(event.name, event.amount, event.kind, 'Prévu'));
   const limits = day.limitEvents.map(event => amountLine(event.name, event.amount, 'expense', event.funded ? 'Limite mise de côté' : 'Limite renouvelée'));
