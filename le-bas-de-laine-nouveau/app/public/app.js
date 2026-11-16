@@ -37,7 +37,7 @@ function changePage(page) {
   document.body.dataset.page = page;
   $$('.page').forEach(el => el.hidden = el.id !== `page-${page}`);
   $$('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
-  const titles = { today:['Aujourd’hui','Votre disponible, jour après jour.'], transactions:['Transactions','Votre historique et vos nouvelles opérations.'], plan:['Plan','Ce qui arrive, dans un seul endroit.'], calendar:['Calendrier','Votre prévision mensuelle, jour par jour.'], budget:['Budget','Prévu, dépensé, restant.'] };
+  const titles = { today:['Aujourd’hui','Votre marge de manœuvre, jour après jour.'], transactions:['Registre','Chaque opération, à sa place.'], plan:['À venir','Le fil des revenus, factures et limites.'], calendar:['Calendrier','Votre argent dans le temps.'], budget:['Le mois','Prévu, dépensé, restant.'] };
   setText('#top-title', titles[page][0]); setText('#top-subtitle', titles[page][1]);
   if (page === 'budget') renderBudget();
   if (page === 'calendar') renderCalendar();
@@ -56,11 +56,11 @@ function changePlanView(view) {
 }
 function polishInterface() {
   const copy = {
-    today: ['30 jours', 'Votre disponible', 'Le minimum après votre plan.'],
-    transactions: ['Journal d’argent', 'Transactions', 'Recherchez, filtrez et classez sans quitter la liste.'],
-    plan: ['Ce qui est prévu', 'Plan', 'Revenus, factures et limites.'],
-    calendar: ['Prévision mensuelle', 'Calendrier', 'Le disponible prévu et les opérations importantes, chaque jour.'],
-    budget: ['Vue mensuelle', 'Budget', 'Prévu, dépensé et restant par catégorie.']
+    today: ['Les 30 prochains jours', 'Votre marge', 'Le montant prudent après votre plan.'],
+    transactions: ['Le registre', 'Transactions', 'Cherchez, classez et retrouvez chaque opération.'],
+    plan: ['Le fil à venir', 'À venir', 'Revenus, factures et limites, au même endroit.'],
+    calendar: ['La ligne du mois', 'Calendrier', 'Les mouvements importants, jour par jour.'],
+    budget: ['Le mois en chiffres', 'Budget', 'Prévu, dépensé, restant par catégorie.']
   };
   for (const [page, [eyebrow, title, subtitle]] of Object.entries(copy)) {
     const header = $(`#page-${page} .page-head`);
