@@ -60,12 +60,18 @@
         </section>
 
         <section class="page" id="page-plan" hidden>
-          <div class="page-head"><div><div class="eyebrow">Ce qui est prévu</div><h2>Plan</h2><p>Trois sections courtes. Ouvrez seulement celle que vous voulez modifier.</p></div><div class="top-actions"><button class="secondary" data-open="limit" type="button">＋ Limite</button><button class="primary" data-open="recurring" type="button">＋ Règle</button></div></div>
-          <div class="plan-accordion" aria-label="Votre plan">
-            <details class="card plan-group" id="plan-income-group"><summary><span><b>Revenus</b><small id="plan-income-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="income-list"></div></details>
-            <details class="card plan-group" id="plan-bill-group"><summary><span><b>Factures</b><small id="plan-bill-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="bill-list"></div></details>
-            <details class="card plan-group" id="plan-limit-group"><summary><span><b>Limites</b><small id="plan-limit-meta">Chargement…</small></span><span class="plan-group-hint">Gérer</span></summary><div class="plan-group-body" id="limit-list"></div></details>
-            <details class="card plan-group plan-support"><summary><span><b>Solde et données</b><small id="plan-checkpoint">—</small></span><span class="plan-group-hint">Ouvrir</span></summary><div class="plan-group-body"><div class="notice" id="plan-checkpoint-detail">Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.</div><div class="plan-support-actions"><button class="secondary" data-open="checkpoint">Vérifier mon solde</button><button class="secondary" data-page-link="budget">Budget mensuel</button><a class="secondary" href="/api/export">Exporter mes données</a></div></div></details>
+          <div class="page-head"><div><div class="eyebrow">Ce qui est prévu</div><h2>Plan</h2><p>Revenus, factures et limites : une section à la fois.</p></div><div class="top-actions"><button class="secondary" data-open="limit" type="button">＋ Limite</button><button class="primary" data-open="recurring" type="button">＋ Règle</button></div></div>
+          <nav class="plan-tabs" id="plan-tabs" aria-label="Sections du plan" role="tablist">
+            <button class="active" type="button" role="tab" aria-selected="true" data-plan-view="income">Revenus <small id="plan-income-count">—</small></button>
+            <button type="button" role="tab" aria-selected="false" data-plan-view="bills">Factures <small id="plan-bill-count">—</small></button>
+            <button type="button" role="tab" aria-selected="false" data-plan-view="limits">Limites <small id="plan-limit-count">—</small></button>
+            <button type="button" role="tab" aria-selected="false" data-plan-view="balance">Solde <small>et données</small></button>
+          </nav>
+          <div class="plan-panels" id="plan-panels">
+            <section class="plan-panel" data-plan-panel="income" role="tabpanel"><div class="plan-panel-head"><div><h3>Revenus récurrents</h3><p id="plan-income-meta">Chargement…</p></div><button class="secondary" data-open="recurring" data-rule-kind="income" type="button">＋ Revenu</button></div><div class="plan-list" id="income-list"></div></section>
+            <section class="plan-panel" data-plan-panel="bills" role="tabpanel" hidden><div class="plan-panel-head"><div><h3>Factures récurrentes</h3><p id="plan-bill-meta">Chargement…</p></div><button class="secondary" data-open="recurring" data-rule-kind="expense" type="button">＋ Facture</button></div><div class="plan-list" id="bill-list"></div></section>
+            <section class="plan-panel" data-plan-panel="limits" role="tabpanel" hidden><div class="plan-panel-head"><div><h3>Limites de dépenses</h3><p id="plan-limit-meta">Chargement…</p></div><button class="secondary" data-open="limit" type="button">＋ Limite</button></div><div class="plan-list" id="limit-list"></div></section>
+            <section class="plan-panel plan-panel-balance" data-plan-panel="balance" role="tabpanel" hidden><div class="plan-panel-head"><div><h3>Solde et données</h3><p id="plan-checkpoint">—</p></div><button class="secondary" data-open="checkpoint" type="button">Vérifier mon solde</button></div><div class="plan-balance-detail" id="plan-checkpoint-detail">Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.</div><div class="plan-support-actions"><button class="secondary" data-page-link="budget">Voir le budget</button><a class="secondary" href="/api/export">Exporter mes données</a></div></section>
           </div>
           <button class="secondary mobile-budget-link" type="button" data-page-link="budget">Voir le budget mensuel</button>
         </section>

@@ -2,7 +2,7 @@
 'use strict';
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
-const state = { data: null, page: 'today', month: null, calendarMonth: null, calendar: null, selectedTransactions: new Set(), csv: null };
+const state = { data: null, page: 'today', month: null, calendarMonth: null, calendar: null, planView: 'income', selectedTransactions: new Set(), csv: null };
 const money = cents => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format((Number(cents) || 0) / 100);
 const signed = (cents, kind) => `${kind === 'income' ? '+' : '−'}${money(Math.abs(cents))}`;
 const dateFmt = value => new Intl.DateTimeFormat('fr-CA', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${value}T12:00:00Z`));
@@ -42,6 +42,17 @@ function changePage(page) {
   if (page === 'budget') renderBudget();
   if (page === 'calendar') renderCalendar();
   window.scrollTo({ top:0, behavior:'instant' });
+}
+function changePlanView(view) {
+  const valid = ['income','bills','limits','balance'];
+  if (!valid.includes(view)) return;
+  state.planView = view;
+  $$('[data-plan-view]').forEach(button => {
+    const active = button.dataset.planView === view;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  $$('[data-plan-panel]').forEach(panel => { panel.hidden = panel.dataset.planPanel !== view; });
 }
 function polishInterface() {
   const copy = {
@@ -344,7 +355,7 @@ function ensurePlanBrief() {
   brief = document.createElement('section');
   brief.id = 'plan-brief';
   brief.className = 'plan-brief';
-  $('.plan-accordion')?.insertAdjacentElement('beforebegin', brief);
+  $('#plan-tabs')?.insertAdjacentElement('beforebegin', brief);
   return brief;
 }
 function renderPlan() {
@@ -372,7 +383,7 @@ function renderPlan() {
   if (brief) {
     const nextCopy = nextEvent ? `<b>${escape(nextEvent.name)}</b><small>${nextEvent.kind === 'income' ? 'Revenu' : 'Facture'} · ${dateFmt(nextEvent.due)} · ${signed(nextEvent.amount,nextEvent.kind)}</small>` : '<b>Aucune échéance prochaine</b><small>Ajoutez vos revenus et factures ci-dessous.</small>';
     const limitCopy = urgent ? `<b>${escape(urgent.name)}</b><small>${money(urgent.reserve)} restant · ${nextLimitText(urgent)}</small>` : '<b>Aucune limite à surveiller</b><small>Ajoutez Épicerie, Essence ou une autre limite.</small>';
-    brief.innerHTML = `<article class="card plan-brief-main"><div><div class="eyebrow">La prochaine étape</div>${nextCopy}</div>${nextEvent ? `<button class="primary" type="button" data-occurrence="${nextEvent.rid}|${nextEvent.nominal}">Gérer</button>` : '<button class="secondary" type="button" data-open="recurring">Ajouter une règle</button>'}</article><article class="card plan-brief-item limit">${urgent ? `<button type="button" data-edit-limit="${urgent.id}">` : '<div>'}<span>Limite à suivre</span>${limitCopy}${urgent ? '</button>' : '</div>'}</article><article class="card plan-brief-item action"><div><span>Fiabilité du plan</span><b>${escape(action.title)}</b><small>${escape(action.copy)}</small></div><button class="mini" type="button" ${action.control}>${action.label}</button></article>`;
+    brief.innerHTML = `<div class="plan-summary-next"><span>Prochaine échéance</span>${nextCopy}</div><div class="plan-summary-limit">${urgent ? `<button type="button" data-edit-limit="${urgent.id}">` : '<div>'}<span>Limite à surveiller</span>${limitCopy}${urgent ? '</button>' : '</div>'}</div><div class="plan-summary-action"><div><span>À faire</span><b>${escape(action.title)}</b><small>${escape(action.copy)}</small></div><button class="mini" type="button" ${action.control}>${action.label}</button></div>`;
   }
   $('#income-list').innerHTML = listRules('income', 'Ajoutez une paie, une rente ou une allocation.');
   $('#bill-list').innerHTML = listRules('expense', 'Ajoutez vos factures fixes.');
@@ -380,8 +391,12 @@ function renderPlan() {
   setText('#plan-income-meta', incomeRules.length ? `${plural(incomeRules.length, 'règle')} · ${nextIncome ? `prochaine : ${dateFmt(nextIncome.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
   setText('#plan-bill-meta', billRules.length ? `${plural(billRules.length, 'règle')} · ${nextBill ? `prochaine : ${dateFmt(nextBill.due)}` : 'aucune échéance dans 30 jours'}` : 'Aucune règle');
   setText('#plan-limit-meta', limits.length ? `${plural(limits.length, 'limite')} · ${urgent ? `${urgent.name} : ${money(urgent.reserve)} restant` : 'à suivre'}` : 'Aucune limite');
+  setText('#plan-income-count', incomeRules.length || '0');
+  setText('#plan-bill-count', billRules.length || '0');
+  setText('#plan-limit-count', limits.length || '0');
   setText('#plan-checkpoint', settings.checkpointDate ? `${checkpointText(settings)}.` : 'Aucun solde vérifié : inscrivez votre solde actuel pour démarrer.');
   setText('#plan-checkpoint-detail', settings.checkpointDate ? `Solde inscrit : ${money(settings.bank)} · solde prévu aujourd’hui : ${money(settings.expectedBank)} · écart depuis la vérification : ${signedMoney(settings.checkpointChange)}.` : 'Le solde réel est le point de départ. Les opérations saisies après sa vérification s’ajoutent automatiquement.');
+  changePlanView(state.planView);
 }
 function labelFrequency(f) { return ({w:'chaque semaine',b:'aux 2 semaines',m:'chaque mois',a:'chaque année'})[f] || f; }
 function shiftedMonthClient(month, offset) { const date = new Date(`${month}-01T12:00:00Z`); date.setUTCMonth(date.getUTCMonth() + offset); return date.toISOString().slice(0, 7); }
@@ -774,7 +789,7 @@ function updateLimitFields() {
   if(monthlyWeekly) { form.frequency.value='w'; form.funding.value='start'; }
   if(!monthly) form.funding.value='start';
 }
-function prepareRule(rule=null) { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||'income'; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':'Ajouter une règle'; $('#delete-recurring').hidden=!rule; open('recurring'); }
+function prepareRule(rule=null, kind='income') { const f=$('#recurring-form'); f.reset(); f.id.value=rule?.id||''; f.name.value=rule?.name||''; f.kind.value=rule?.kind||kind; f.amount.value=rule?(rule.amount/100).toFixed(2).replace('.',','):''; f.frequency.value=rule?.frequency||'m'; f.anchor_date.value=rule?.anchor_date||state.data.today; f.adjustment.value=rule?.adjustment||'auto'; f.method.value=rule?.method||'joint'; $('#recurring-title').textContent=rule?'Modifier la règle':kind==='expense'?'Ajouter une facture':'Ajouter un revenu'; $('#delete-recurring').hidden=!rule; open('recurring'); }
 function prepareOccurrence(key) { const [rid,due]=key.split('|'); const calendarEvents = state.calendar?.days.flatMap(day => day.events) || [], checkpointEvents = state.data.checkpointActivity?.openEvents || []; const event=[...state.data.upcoming,...calendarEvents,...checkpointEvents].find(e=>String(e.rid)===rid&&e.nominal===due); if(!event)return; const f=$('#occurrence-form'); f.reset(); f.recurring_id.value=rid;f.due_date.value=due;$('#occurrence-copy').textContent=`${event.name} · ${dateFmt(event.due)} · ${money(event.amount)}`;open('occurrence'); }
 function updateCheckpointDifference() {
   const value = parseCents($('#checkpoint-bank').value), expected = state.data.settings.expectedBank;
@@ -841,11 +856,12 @@ function wire() {
     const button=event.target.closest('button,[data-page-link]'); if(!button)return;
     if(button.dataset.page) return changePage(button.dataset.page);
     if(button.dataset.pageLink) return changePage(button.dataset.pageLink);
+    if(button.dataset.planView) return changePlanView(button.dataset.planView);
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
     if(button.dataset.reviewClassify !== undefined) { close($('#dialog-review')); changePage('transactions'); $('#tx-status').value='unclassified'; renderTransactions(); return; }
     if(button.dataset.reviewCalendar !== undefined) { close($('#dialog-review')); return changePage('calendar'); }
     if(button.dataset.reviewWeekOccurrence) { close($('#dialog-review')); return prepareOccurrence(button.dataset.reviewWeekOccurrence); }
-    if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='review')prepareReview(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
+    if(button.dataset.open) { const parentDialog=button.closest('dialog'); if(parentDialog) close(parentDialog); if(button.dataset.open==='transaction')prepareTransaction(); else if(button.dataset.open==='limit')prepareLimit(); else if(button.dataset.open==='recurring')prepareRule(null, button.dataset.ruleKind || 'income'); else if(button.dataset.open==='merchant-rules')prepareMerchantRules(); else if(button.dataset.open==='csv')prepareCsv(); else if(button.dataset.open==='adjust')prepareAdjust(); else if(button.dataset.open==='checkpoint')prepareCheckpoint(); else if(button.dataset.open==='review')prepareReview(); else if(button.dataset.open==='afford'){ $('#afford-form').reset();$('#afford-form').date.value=state.data.today;$('#afford-result').hidden=true;open('afford'); } else open(button.dataset.open); return; }
     if(button.dataset.recentMerchant) { const transaction = state.data.transactions.find(item => String(item.id) === button.dataset.recentMerchant); if (!transaction) return; const form = $('#transaction-form'); form.description.value = transaction.description; resetTransactionSuggestions(); applyTransactionRule(); refreshTransactionMatches(); return; }
     if(button.hasAttribute('data-close')) return close(button.closest('dialog'));
     if(button.dataset.useMatch) {

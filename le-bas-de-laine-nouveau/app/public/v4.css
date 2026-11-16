@@ -335,3 +335,138 @@ body[data-page=plan] .topbar { min-height: 54px; padding-block: 8px; justify-con
   .mobile-nav { border-top-color: var(--line); background: color-mix(in srgb, var(--card) 95%, transparent); }
   .mobile-nav button.active { color: var(--teal); }
 }
+
+/* 4.1 — Une structure de registre : moins de cartes, plus de lignes lisibles.
+   Cette passe ne modifie ni les données ni le moteur de prévision. */
+body { background: #fafaf8; }
+:root[data-theme=dark] body { background: #141815; }
+
+.content { max-width: 1480px; padding-top: 22px; }
+.page-head { align-items: flex-end; margin-bottom: 14px; }
+.page-head h2 { font-size: 1.55rem; }
+.page-head p { margin-top: 3px; }
+
+/* Accueil : le chiffre et la prévision sont la surface principale. */
+#page-today .page-head p { display: none; }
+.safe-hero.hero { padding: 20px; border-top-width: 2px; }
+.safe-hero-head { padding-bottom: 8px; }
+.safe-lead { margin: 4px 0 0; }
+.safe-primary { margin-top: 12px; border: 0; border-radius: 0; overflow: visible; }
+.safe-primary > div { padding: 5px 0 14px; }
+.safe-primary > div + div { padding-left: 22px; background: transparent; border-left: 1px solid var(--line); }
+.safe-primary h2 { margin: 3px 0; font-size: clamp(3rem, 5vw, 4.6rem); letter-spacing: -.07em; }
+.safe-focus { margin-top: 2px; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.safe-focus-item { padding: 10px 10px 9px 0; background: transparent; }
+.safe-focus-item + .safe-focus-item { padding-left: 13px; border-left: 1px solid var(--line); }
+.safe-focus-item:hover { background: transparent; color: var(--teal); }
+.safe-low-detail { display: none; }
+.safe-calculation { margin-top: 5px; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.safe-calculation > div { padding: 9px 0; background: transparent; border: 0; }
+.safe-calculation > div + div { padding-left: 12px; border-left: 1px solid var(--line); }
+.safe-calculation .safe-total { background: transparent; }
+.chart-wrap { margin-top: 5px; padding: 8px 0 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+.chart-wrap svg { height: 185px; }
+.chart-details { margin-top: 6px; border-radius: 0; }
+.quick-check { padding-top: 10px; border-top: 1px solid var(--line); }
+.quick-check input { background: transparent; }
+.glance { gap: 0; align-content: start; border-top: 2px solid var(--teal); }
+.glance-card { padding: 15px 0; border: 0; border-bottom: 1px solid var(--line); border-left: 0; border-radius: 0; background: transparent; }
+.glance-card b { font-size: 1rem; }
+.glance-card.trust { border-left: 0; }
+.section-card { padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+.section-head { padding: 13px 0 2px; }
+.limit-list,.event-list { padding: 0; }
+.limit-item,.event-item { padding: 12px 0; }
+
+/* Transactions : une table est une table, pas une pile de surfaces. */
+.ledger-page .page-head, .calendar-page .page-head, .budget-page .page-head { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.transaction-ledger { border-radius: 0; border-inline: 0; box-shadow: none; }
+.transaction-ledger .table th { background: transparent; border-bottom: 1px solid var(--line); }
+.transaction-ledger .table td { border-bottom-color: var(--line); }
+.transaction-ledger-meta { border-top: 0; border-bottom: 1px solid var(--line); background: transparent; }
+.transaction-category { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.ledger-row-actions .mini { border-radius: 3px; }
+
+/* Plan : de vrais onglets et un seul registre ouvert. */
+body[data-page=plan] .topbar .title { display: none; }
+body[data-page=plan] .topbar { min-height: 62px; padding-block: 12px; justify-content: space-between; }
+.plan-brief { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 0; margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.plan-brief > * { min-width: 0; padding: 11px 13px 12px 0; }
+.plan-brief > * + * { padding-left: 15px; border-left: 1px solid var(--line); }
+.plan-brief span { display: block; color: var(--muted); font-size: .64rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.plan-brief b { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .86rem; }
+.plan-brief small { display: block; margin-top: 2px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: .71rem; }
+.plan-summary-limit button { width: 100%; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.plan-summary-action { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+.plan-summary-action .mini { flex: 0 0 auto; }
+.plan-tabs { display: flex; gap: 0; margin-top: 18px; border-bottom: 1px solid var(--line); }
+.plan-tabs button { position: relative; padding: 9px 16px 10px; border: 0; background: transparent; color: var(--muted); font-size: .82rem; font-weight: 750; }
+.plan-tabs button:hover { color: var(--ink); }
+.plan-tabs button.active { color: var(--teal); }
+.plan-tabs button.active:after { position: absolute; right: 13px; bottom: -1px; left: 13px; height: 2px; background: var(--teal); content: ''; }
+.plan-tabs small { margin-left: 3px; color: inherit; opacity: .72; font: inherit; }
+.plan-panels { min-height: 360px; }
+.plan-panel { padding: 18px 0 0; }
+.plan-panel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.plan-panel-head h3 { margin: 0; font-size: 1rem; }
+.plan-panel-head p { margin: 3px 0 0; color: var(--muted); font-size: .75rem; }
+.plan-list .compact-row, .plan-list .limit-item { min-height: 57px; padding: 11px 4px; }
+.plan-list .compact-row strong { font-size: .85rem; }
+.plan-list .compact-row small { font-size: .72rem; }
+.plan-list .limit-item .amount { font-size: .82rem; }
+.plan-balance-detail { max-width: 680px; padding: 14px 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+.plan-support-actions { padding-top: 2px; }
+
+/* Budget : lignes et colonnes plutôt que panneaux. */
+.budget-console { margin-bottom: 8px; }
+.budget-console .budget-summary { gap: 42px; padding-bottom: 12px; }
+.budget-console .budget-summary-card b { font-size: 1.08rem; }
+.budget-priority { padding: 8px 0!important; }
+.budget-categories { padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; background: transparent; }
+.budget-section-head { padding: 13px 0 8px; border: 0; }
+.budget-ledger-head { padding-inline: 0; background: transparent; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.budget-ledger-row { padding: 12px 0; background: transparent; }
+.budget-ledger-number small { display: none; }
+.budget-ledger-row.warn { box-shadow: inset 3px 0 var(--gold); padding-left: 9px; }
+.budget-ledger-row.over { box-shadow: inset 3px 0 var(--red); padding-left: 9px; }
+.budget-ledger-action .mini { padding-right: 0; }
+
+/* Calendrier : la grille est la page; les résumés deviennent secondaires. */
+.calendar-dashboard { margin-bottom: 10px; }
+.calendar-summary, .calendar-agenda { border-radius: 0; box-shadow: none; }
+.calendar-board { padding: 0; border-radius: 0; border-inline: 0; box-shadow: none; }
+.calendar-board-head { padding: 10px 0; }
+.calendar-board .calendar-weekdays { border-inline: 0; }
+.calendar-board .calendar-grid { border-inline: 0; }
+
+@media (max-width: 820px) {
+  .content { padding-top: 15px; }
+  #page-today .page-head { margin-bottom: 10px; }
+  .safe-hero.hero { padding: 16px; }
+  .safe-primary > div { padding: 4px 0 12px; }
+  .safe-primary > div + div { padding: 10px 0 0; border-top: 1px solid var(--line); border-left: 0; }
+  .safe-focus-item { padding: 10px 0; }
+  .safe-focus-item + .safe-focus-item { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
+  .safe-calculation > div { padding: 9px 0; }
+  .safe-calculation > div:nth-child(odd) { padding-right: 10px; }
+  .safe-calculation > div:nth-child(even) { padding-left: 10px; }
+  .safe-calculation > div + div { border-left: 0; }
+  .safe-calculation > div:nth-child(even) { border-left: 1px solid var(--line); }
+  .chart-wrap svg { height: 156px; }
+  .section-card { margin-top: 16px; }
+  .plan-brief { grid-template-columns: 1fr; margin-top: 2px; }
+  .plan-brief > * { padding: 10px 0; }
+  .plan-brief > * + * { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
+  .plan-tabs { margin-top: 13px; overflow-x: auto; }
+  .plan-tabs button { flex: 0 0 auto; padding-inline: 12px; }
+  .plan-panels { min-height: 0; }
+  .plan-panel { padding-top: 14px; }
+  .plan-panel-head { align-items: flex-start; }
+  .plan-list .compact-row, .plan-list .limit-item { padding-block: 11px; }
+  .budget-console .budget-summary { gap: 7px; }
+  .budget-categories { border-top: 1px solid var(--line); }
+  .budget-ledger-head { padding-inline: 0; }
+  .budget-ledger-row { padding-inline: 0; }
+  .budget-ledger-number small { display: block; }
+  .calendar-board { margin-inline: 0; }
+}
