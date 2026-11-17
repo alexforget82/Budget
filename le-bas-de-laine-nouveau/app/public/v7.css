@@ -1,0 +1,95 @@
+/* Le Bas de Laine 7 — poste de pilotage.
+   Cette couche abandonne la colonne de navigation : l'application devient un
+   espace horizontal où la prévision est l'objet principal. */
+
+@media (min-width: 821px) {
+  .app { display: block; min-height: 100vh; }
+
+  /* Une barre unique plutôt qu'un menu vertical. */
+  .sidebar {
+    position: sticky; top: 0; z-index: 30; display: flex; flex-direction: row;
+    align-items: center; gap: 26px; min-height: 64px; height: 64px; padding: 0 32px;
+    overflow: visible; background: var(--card); color: var(--ink);
+    border-right: 0; border-bottom: 1px solid var(--line);
+  }
+  .brand { flex: 0 0 auto; padding: 0; }
+  .brand img { width: 31px; height: 31px; border-radius: 8px; }
+  .brand strong { font-size: .88rem; }
+  .brand small { display: none; }
+  .nav { display: flex; align-items: center; gap: 3px; min-width: 0; padding: 0; border: 0; }
+  .nav button { min-height: 32px; padding: 6px 9px; border-radius: 5px; font-size: .76rem; }
+  .nav button.active { color: var(--teal); background: color-mix(in srgb, var(--teal) 9%, var(--card)); }
+  .side-bottom { display: block; margin: 0 0 0 auto; padding: 0 0 0 18px; border-top: 0; border-left: 1px solid var(--line); font-size: .66rem; line-height: 1.2; }
+  .side-bottom button { margin-top: 3px; font-size: .68rem; }
+
+  .main { min-width: 0; }
+  .topbar { top: 64px; z-index: 20; min-height: 50px; padding: 8px 34px; background: color-mix(in srgb, var(--paper) 92%, transparent); }
+  .topbar .title { display: block!important; }
+  .topbar .title h1 { font-size: .82rem; letter-spacing: .01em; text-transform: uppercase; }
+  .topbar .title p { display: none; }
+  body[data-page="transactions"] .topbar,body[data-page="calendar"] .topbar,body[data-page="budget"] .topbar,body[data-page="plan"] .topbar { min-height: 50px; padding-block: 8px; justify-content: space-between; }
+  .content { max-width: 1480px; padding: 30px 34px 64px; }
+}
+
+/* Accueil : une vraie table de contrôle, différente d'un empilement de cartes. */
+@media (min-width: 981px) {
+  .dashboard { display: block; }
+  .safe-hero.hero {
+    display: grid; grid-template-columns: minmax(280px, .82fr) minmax(0, 1.7fr);
+    grid-template-areas:
+      "head chart"
+      "primary chart"
+      "focus chart"
+      "calculation chart"
+      "quick chart"
+      "rail rail";
+    column-gap: 0; row-gap: 0; padding: 0; border-radius: 12px;
+  }
+  .safe-hero-head { grid-area: head; padding: 22px 24px 0; }
+  .safe-primary { grid-area: primary; display: block; margin: 14px 24px 0; border-bottom: 0; }
+  .safe-primary > div { padding: 0; }
+  .safe-primary > div + div { display: none; }
+  .safe-primary h2 { font-size: clamp(3.6rem, 5vw, 5.75rem); }
+  .safe-focus { grid-area: focus; display: grid; grid-template-columns: 1fr; margin: 17px 24px 0; border-top: 1px solid var(--line); }
+  .safe-focus-item { padding: 10px 0; }
+  .safe-focus-item + .safe-focus-item { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
+  .safe-calculation { grid-area: calculation; display: grid; grid-template-columns: 1fr 1fr; margin: 0 24px; border-top: 1px solid var(--line); }
+  .safe-calculation > div { padding: 10px 0; }
+  .safe-calculation > div:nth-child(even) { padding-left: 12px; border-left: 1px solid var(--line); }
+  .safe-calculation > div:nth-child(3) { border-top: 1px solid var(--line); }
+  .safe-calculation > div:nth-child(4) { border-top: 1px solid var(--line); }
+  .chart-wrap { grid-area: chart; align-self: stretch; min-height: 392px; margin: 20px 20px 20px 0; padding: 20px; border-radius: 9px; }
+  .chart-wrap svg { height: 255px; }
+  .quick-check { grid-area: quick; margin: 15px 24px 20px; }
+  .flow-rail-wrap { grid-area: rail; margin: 0 24px 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .flow-rail { max-width: 100%; }
+  .glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .glance-card { min-height: 126px; }
+}
+
+/* Les pages de travail ressemblent à des feuilles financières continues. */
+@media (min-width: 821px) {
+  .page-head { align-items: center; margin-bottom: 15px; }
+  .page-head .eyebrow { display: none; }
+  .page-head h2 { margin: 0; font-size: 1.42rem; }
+  .page-head p { display: none; }
+  .ledger-controls { border-radius: 8px; }
+  .transaction-ledger,.plan-panel,.budget-categories,.calendar-board { border-radius: 8px; }
+  .plan-brief { display: grid; grid-template-columns: 1.15fr 1fr 1fr; border-radius: 8px; }
+  .plan-tabs { margin-bottom: 8px; }
+  .budget-console { border-radius: 8px; }
+  .today-secondary { gap: 12px; }
+}
+
+/* Sur iPhone, on conserve les raccourcis du bas; aucune mini-colonne de bureau. */
+@media (max-width: 820px) {
+  .topbar { background: color-mix(in srgb, var(--paper) 94%, transparent); }
+  .page-head .eyebrow { display: none; }
+  .page-head h2 { margin-top: 0; }
+  .safe-hero-head { padding-bottom: 2px; }
+  .safe-primary h2 { font-size: 3.35rem; }
+  /* Le graphique reste manipulable avec son curseur : la seconde frise est
+     redondante sur téléphone et allongeait inutilement la page. */
+  .flow-rail-wrap { display: none; }
+  #today-limits .limit-item:nth-child(n+4),#today-events .event-item:nth-child(n+4) { display: none; }
+}

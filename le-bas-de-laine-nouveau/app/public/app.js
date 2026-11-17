@@ -37,7 +37,7 @@ function changePage(page) {
   document.body.dataset.page = page;
   $$('.page').forEach(el => el.hidden = el.id !== `page-${page}`);
   $$('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
-  const titles = { today:['Aujourd’hui','Votre marge de manœuvre, jour après jour.'], transactions:['Journal','Chaque opération, à sa place.'], plan:['Horizon','Le fil des revenus, factures et limites.'], calendar:['Calendrier','Votre argent dans le temps.'], budget:['Budget','Prévu, dépensé, restant.'] };
+  const titles = { today:['Aujourd’hui','Votre prévision sur 30 jours.'], transactions:['Transactions','Chaque opération, à sa place.'], plan:['Plan','Revenus, factures et limites.'], calendar:['Calendrier','Votre argent dans le temps.'], budget:['Budget','Prévu, dépensé, restant.'] };
   setText('#top-title', titles[page][0]); setText('#top-subtitle', titles[page][1]);
   if (page === 'budget') renderBudget();
   if (page === 'calendar') renderCalendar();
@@ -57,8 +57,8 @@ function changePlanView(view) {
 function polishInterface() {
   const copy = {
     today: ['Les 30 prochains jours', 'Votre marge', 'Le montant prudent après votre plan.'],
-    transactions: ['Le journal', 'Journal', 'Cherchez, classez et retrouvez chaque opération.'],
-    plan: ['Votre horizon', 'Horizon', 'Revenus, factures et limites, au même endroit.'],
+    transactions: ['Transactions', 'Transactions', 'Cherchez, classez et retrouvez chaque opération.'],
+    plan: ['Votre plan', 'Plan', 'Revenus, factures et limites, au même endroit.'],
     calendar: ['La ligne du mois', 'Calendrier', 'Les mouvements importants, jour par jour.'],
     budget: ['Le mois en chiffres', 'Budget', 'Prévu, dépensé, restant par catégorie.']
   };
