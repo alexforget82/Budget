@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/v4.css">
   <link rel="stylesheet" href="/v5.css">
+  <link rel="stylesheet" href="/v6.css">
 </head>
 <body>
   <div class="app">
@@ -17,8 +18,8 @@
       <div class="brand"><img src="/logo-noel.svg" alt=""><div><strong>Le Bas de Laine</strong><small id="side-version">Nouvelle base · 2.7.0</small></div></div>
       <nav class="nav" id="nav">
         <button class="active" data-page="today">⌂ <span>Aujourd’hui</span></button>
-        <button data-page="transactions">↕ <span>Registre</span></button>
-        <button data-page="plan">☷ <span>À venir</span></button>
+        <button data-page="transactions">↕ <span>Journal</span></button>
+        <button data-page="plan">☷ <span>Horizon</span></button>
         <button data-page="calendar">□ <span>Calendrier</span></button>
         <button data-page="budget">▥ <span>Le mois</span></button>
       </nav>
@@ -35,10 +36,11 @@
           <div class="page-head"><div><div class="eyebrow">Votre repère des 30 prochains jours</div><h2>Votre disponible prudent</h2><p>Le montant le plus bas après les factures, les cartes et les limites.</p></div><button class="secondary" type="button" data-open="afford">Puis-je faire cet achat ?</button></div>
           <div class="grid dashboard">
             <article class="card hero pad safe-hero">
-              <div class="safe-hero-head"><div><div class="eyebrow">Safe-to-Spend · 30 jours</div><p class="safe-lead">Le minimum que vous pouvez dépenser sans vous mettre dans le trouble.</p></div><div class="safe-hero-actions"><button class="hero-review" type="button" data-open="review">Revue rapide</button><span class="safe-status" id="safe-status">Prévision</span></div></div>
+              <div class="safe-hero-head"><div><div class="eyebrow">Votre marge · 30 jours</div><p class="safe-lead">Le minimum que vous pouvez dépenser sans vous mettre dans le trouble.</p></div><div class="safe-hero-actions"><button class="hero-review" type="button" data-open="review">Revue rapide</button><span class="safe-status" id="safe-status">Prévision</span></div></div>
               <div class="safe-primary"><div><small>Minimum prévu</small><h2 id="safe30">—</h2><p class="caption" id="safe30-note">Chargement de votre prévision…</p></div><div class="safe-next"><small>Minimum avant le prochain revenu</small><b id="safe-until">—</b><span id="safe-next-note">—</span></div></div>
               <div class="safe-low-detail" id="safe-low-detail" aria-live="polite"></div>
-              <div class="safe-calculation" aria-label="Calcul du Safe-to-Spend d’aujourd’hui"><div><small>Compte conjoint</small><b id="safe-bank">—</b></div><div><small>Cartes à payer</small><b id="safe-cards">—</b></div><div><small>Limites réservées</small><b id="safe-limits">—</b></div><div class="safe-total"><small>Disponible maintenant</small><b id="safe-now">—</b></div></div>
+              <div class="safe-calculation" aria-label="Calcul du disponible d’aujourd’hui"><div><small>Compte conjoint</small><b id="safe-bank">—</b></div><div><small>Cartes à payer</small><b id="safe-cards">—</b></div><div><small>Limites réservées</small><b id="safe-limits">—</b></div><div class="safe-total"><small>Disponible maintenant</small><b id="safe-now">—</b></div></div>
+              <section class="flow-rail-wrap" aria-label="Le fil des 30 prochains jours"><div class="flow-rail-head"><span>Le fil des 30 jours</span><small>Chaque arrêt change votre disponible.</small></div><ol class="flow-rail" id="flow-rail"></ol></section>
               <div class="chart-wrap"><svg id="safe-chart" aria-label="Prévision quotidienne du disponible. Touchez une journée pour voir son détail."></svg><input class="range" id="safe-slider" type="range" min="0" max="29" value="0"><div class="chart-day"><span id="chart-date">Aujourd’hui</span><b id="chart-value">—</b></div><div class="chart-legend"><span><i class="income-dot"></i>Revenu</span><span><i class="expense-dot"></i>Facture</span><span><i class="limit-dot"></i>Limite</span></div><div class="chart-details" id="chart-details" aria-live="polite"></div></div>
               <div class="quick-check"><input id="quick-amount" type="text" inputmode="decimal" placeholder="Montant"><button id="quick-afford" type="button">Vérifier un achat</button></div>
             </article>
@@ -92,7 +94,7 @@
       </div>
     </main>
   </div>
-  <nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile"><button class="active" data-page="today">⌂<br>Aujourd’hui</button><button data-page="transactions">↕<br>Registre</button><button class="mobile-add" type="button" data-open="transaction">＋<br>Ajouter</button><button data-page="plan">☷<br>À venir</button><button data-page="calendar">□<br>Calendrier</button></nav>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile"><button class="active" data-page="today">⌂<br>Aujourd’hui</button><button data-page="transactions">↕<br>Journal</button><button class="mobile-add" type="button" data-open="transaction">＋<br>Ajouter</button><button data-page="plan">☷<br>Horizon</button><button data-page="calendar">□<br>Calendrier</button></nav>
 
   <dialog class="dialog" id="dialog-setup"><h3>Bienvenue dans Le Bas de Laine</h3><form id="setup-form"><p>En quatre petites étapes, vous aurez un disponible déjà utile. Commencez par le vrai solde du compte conjoint.</p><div class="steps"><div class="step"><b>1. Solde</b><span>maintenant</span></div><div class="step"><b>2. Revenus</b><span>dans Plan</span></div><div class="step"><b>3. Factures</b><span>dans Plan</span></div><div class="step"><b>4. Limites</b><span>dans Plan</span></div></div><div class="form-grid" style="margin-top:16px"><label class="field full">Solde actuel du compte conjoint<input required name="bank" inputmode="decimal" placeholder="ex. 1 250,00"></label><label class="field full" style="display:flex;grid-template-columns:auto 1fr;align-items:start;gap:9px;font-weight:500"><input type="checkbox" name="seed_limits" value="1" checked style="width:auto;margin-top:3px"><span><b>Ajouter mes cinq limites de départ</b><small>Épicerie, Essence Alex, Essence Jenny, Lait et Couches, Pharmacie et Médicaments. Vous pourrez tout modifier dans Plan.</small></span></label></div><div class="dialog-actions"><button class="secondary" type="button" data-close>Plus tard</button><button class="primary" type="submit">Commencer</button></div></form></dialog>
   <dialog class="dialog" id="dialog-checkpoint"><h3>Vérifier mon solde</h3><form id="checkpoint-form"><p>Comparez le vrai solde du compte conjoint avec le solde prévu. Enregistrer ce solde devient votre nouveau point de départ; les achats de carte restent protégés séparément.</p><div class="checkpoint-preview"><div><small>Dernier solde confirmé</small><b id="checkpoint-start">—</b><span id="checkpoint-date">—</span></div><div><small>Solde prévu aujourd’hui</small><b id="checkpoint-expected">—</b><span id="checkpoint-flow">—</span></div></div><section class="checkpoint-review" id="checkpoint-review" aria-live="polite"></section><div class="form-grid" style="margin-top:16px"><label class="field full">Solde réel dans la banque<input required name="bank" id="checkpoint-bank" inputmode="decimal" placeholder="ex. 1 250,00"><small id="checkpoint-difference">Inscrivez le solde vu dans votre banque pour comparer.</small></label></div><div class="dialog-actions"><button class="secondary" type="button" data-open="transaction">Ajouter une opération oubliée</button><button class="secondary" type="button" data-close>Annuler</button><button class="primary" type="submit">Enregistrer le solde</button></div></form></dialog>

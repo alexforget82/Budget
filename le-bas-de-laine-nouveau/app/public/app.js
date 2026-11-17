@@ -37,7 +37,7 @@ function changePage(page) {
   document.body.dataset.page = page;
   $$('.page').forEach(el => el.hidden = el.id !== `page-${page}`);
   $$('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
-  const titles = { today:['Aujourd’hui','Votre marge de manœuvre, jour après jour.'], transactions:['Registre','Chaque opération, à sa place.'], plan:['À venir','Le fil des revenus, factures et limites.'], calendar:['Calendrier','Votre argent dans le temps.'], budget:['Le mois','Prévu, dépensé, restant.'] };
+  const titles = { today:['Aujourd’hui','Votre marge de manœuvre, jour après jour.'], transactions:['Journal','Chaque opération, à sa place.'], plan:['Horizon','Le fil des revenus, factures et limites.'], calendar:['Calendrier','Votre argent dans le temps.'], budget:['Budget','Prévu, dépensé, restant.'] };
   setText('#top-title', titles[page][0]); setText('#top-subtitle', titles[page][1]);
   if (page === 'budget') renderBudget();
   if (page === 'calendar') renderCalendar();
@@ -57,8 +57,8 @@ function changePlanView(view) {
 function polishInterface() {
   const copy = {
     today: ['Les 30 prochains jours', 'Votre marge', 'Le montant prudent après votre plan.'],
-    transactions: ['Le registre', 'Transactions', 'Cherchez, classez et retrouvez chaque opération.'],
-    plan: ['Le fil à venir', 'À venir', 'Revenus, factures et limites, au même endroit.'],
+    transactions: ['Le journal', 'Journal', 'Cherchez, classez et retrouvez chaque opération.'],
+    plan: ['Votre horizon', 'Horizon', 'Revenus, factures et limites, au même endroit.'],
     calendar: ['La ligne du mois', 'Calendrier', 'Les mouvements importants, jour par jour.'],
     budget: ['Le mois en chiffres', 'Budget', 'Prévu, dépensé, restant par catégorie.']
   };
@@ -220,12 +220,44 @@ function renderChart() {
   ];
   const explanation = eventRows.length ? `<ul class="chart-events">${eventRows.join('')}</ul>` : `<p class="chart-quiet">Aucune paie, facture ou limite ne change ce jour-là.</p>`;
   $('#chart-details').innerHTML = `<div class="chart-detail-head"><b>Le ${dateFmt(day.date)}</b><span class="${change < 0 ? 'negative' : change > 0 ? 'positive' : ''}">${previous ? `${change >= 0 ? '+' : '−'}${money(Math.abs(change))} depuis hier` : 'Point de départ'}</span></div>${explanation}<div class="chart-calculation"><span>Compte ${money(day.cash)}</span><span>Cartes −${money(day.cards)}</span><span>Limites −${money(day.limits)}</span></div>`;
+  renderFlowRail(days, index);
   svg.onclick = event => {
     const rect = svg.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     slider.value = String(Math.round(ratio * (days.length - 1)));
     renderChart();
   };
+}
+function renderFlowRail(days, selectedIndex) {
+  const rail = $('#flow-rail');
+  if (!rail) return;
+  const lowDate = state.data.safe30?.date;
+  const important = days
+    .map((day, index) => ({ day, index }))
+    .filter(({ day, index }) => index === 0 || day.date === lowDate || (day.events || []).length || (day.limitEvents || []).length);
+  /* Le point bas et la journée consultée ne doivent jamais disparaître si le
+     mois contient beaucoup de mouvements. */
+  const keep = new Set([0, selectedIndex]);
+  const lowIndex = days.findIndex(day => day.date === lowDate);
+  if (lowIndex >= 0) keep.add(lowIndex);
+  for (const { index } of important) {
+    if (keep.size >= 10) break;
+    keep.add(index);
+  }
+  const visible = [...keep].sort((a, b) => a - b).map(index => ({ day: days[index], index }));
+  rail.innerHTML = visible.map(({ day, index }) => {
+    const entries = [
+      ...(day.events || []).map(event => ({ name:event.name, kind:event.kind === 'income' ? 'income' : 'bill' })),
+      ...(day.limitEvents || []).map(event => ({ name:event.name, kind:'limit' }))
+    ];
+    const kinds = [...new Set(entries.map(entry => entry.kind))].join(' ');
+    const labels = entries.length
+      ? entries.slice(0, 2).map(entry => escape(entry.name)).join(' · ') + (entries.length > 2 ? ` +${entries.length - 2}` : '')
+      : 'Point de départ';
+    const selected = index === selectedIndex ? ' selected' : '';
+    const low = day.date === lowDate ? ' low' : '';
+    return `<li class="flow-stop ${kinds}${selected}${low}"><button type="button" data-flow-day="${index}" aria-label="Voir le ${dateFmt(day.date)}"><time>${index === 0 ? 'Aujourd’hui' : dayFmt(day.date)}</time><i></i><strong>${money(day.safe)}</strong><span>${labels}</span></button></li>`;
+  }).join('');
 }
 function transactionCategory(t) {
   if (t.kind !== 'expense') return '—';
@@ -856,6 +888,7 @@ function wire() {
     const button=event.target.closest('button,[data-page-link]'); if(!button)return;
     if(button.dataset.page) return changePage(button.dataset.page);
     if(button.dataset.pageLink) return changePage(button.dataset.pageLink);
+    if(button.dataset.flowDay !== undefined) { $('#safe-slider').value = button.dataset.flowDay; renderChart(); return; }
     if(button.dataset.planView) return changePlanView(button.dataset.planView);
     if(button.dataset.chartDay) { const dayIndex=state.data.daily.slice(0,30).findIndex(day=>day.date===button.dataset.chartDay); if(dayIndex>=0){ $('#safe-slider').value=String(dayIndex); renderChart(); document.querySelector('#safe-chart')?.scrollIntoView({behavior:'smooth',block:'center'}); } return; }
     if(button.dataset.reviewClassify !== undefined) { close($('#dialog-review')); changePage('transactions'); $('#tx-status').value='unclassified'; renderTransactions(); return; }
