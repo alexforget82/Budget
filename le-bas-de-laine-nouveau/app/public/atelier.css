@@ -206,3 +206,18 @@ html[data-theme="dark"] .add { color:#102018; } html[data-theme="dark"] .form-gr
 .ledger-tools { grid-template-columns:minmax(230px,1fr) 145px 170px 190px auto auto; }.welcome-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:2px solid var(--ink); border-bottom:1px solid var(--ink); }.welcome-grid > div { min-height:235px; padding:20px 20px 22px 0; }.welcome-grid > div + div { padding-left:20px; border-left:1px solid var(--rule); }.welcome-grid span { color:var(--green); font-size:.72rem; font-weight:850; letter-spacing:.08em; }.welcome-grid h2 { margin:22px 0 6px; font-size:1.12rem; }.welcome-grid p { margin:0; color:var(--soft); font-size:.8rem; }.welcome-grid .add { margin-top:20px; }
 @media (max-width:940px) { .ledger-tools { grid-template-columns:minmax(200px,1fr) 130px 150px auto; }.ledger-tools select:last-of-type { display:none; } }
 @media (max-width:680px) { .ledger-tools { grid-template-columns:1fr 1fr; }.ledger-tools input:first-child { grid-column:1/-1; }.ledger-tools input[type="month"] { min-width:0; }.ledger-tools select:last-of-type { display:block; }.ledger-tools button { min-width:0; padding-inline:7px; }.welcome-grid { grid-template-columns:1fr 1fr; }.welcome-grid > div { min-height:170px; padding:15px 12px 18px 0; }.welcome-grid > div:nth-child(3) { border-left:0; padding-left:0; }.welcome-grid > div:nth-child(even) { padding-left:12px; }.welcome-grid h2 { margin-top:12px; } }
+
+/* Composition bureau : le graphe est un outil de lecture, pas une affiche.
+   On utilise la largeur de l'écran et on supprime les pastilles qui masquaient
+   la courbe lorsque plusieurs mouvements tombaient le même jour. */
+@media (min-width:941px) {
+  .atelier-shell { max-width:1880px; padding-right:clamp(28px,4vw,76px); padding-left:clamp(28px,4vw,76px); }
+  .runway { grid-template-columns:minmax(280px,.62fr) minmax(560px,1.45fr) minmax(250px,.5fr); min-height:405px; background:var(--panel); }
+  .margin-column { padding:22px 26px 20px 20px; background:color-mix(in srgb,var(--canvas) 35%,transparent); }
+  .forecast-stage { padding:22px 26px 16px; }.forecast-svg { min-height:222px; max-height:268px; margin:7px 0; }
+  .signal-column { padding:22px 20px; }.margin-value { font-size:clamp(3.4rem,4.8vw,5.2rem); }
+  .today-ledger { gap:42px; }.view-head { margin-bottom:19px; }
+}
+.selected-axis { opacity:.45; stroke-dasharray:1.5 2.4; }.event-tick { stroke-width:1.1; stroke-linecap:round; vector-effect:non-scaling-stroke; }.forecast-area { opacity:.82; }.forecast-line { stroke-width:1.4; }.marker-selected { stroke-width:1.2; }
+html[data-theme="dark"] .runway { background:linear-gradient(110deg,#162321 0%,#14201e 54%,#172522 100%); } html[data-theme="dark"] .margin-column { background:#182522; } html[data-theme="dark"] .forecast-area { fill:#1d5646; opacity:.72; } html[data-theme="dark"] .axis { stroke:#5a7067; } html[data-theme="dark"] .selected-axis { stroke:#b7c9c0; } html[data-theme="dark"] .marker-selected { fill:#172522; }
+.event-tick.marker-income { stroke:var(--green); }.event-tick.marker-expense { stroke:var(--red); }.event-tick.marker-limit { stroke:var(--gold); }

@@ -84,11 +84,14 @@ function forecastSvg(days, selectedIndex) {
   const positions = values.map((value, index) => ({ x: 3 + (index / Math.max(1, values.length - 1)) * 94, y: 88 - ((value - low) / range) * 70 }));
   const points = positions.map(point => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
   const selected = positions[selectedIndex] || positions[0];
-  const markers = days.flatMap((item, index) => [
-    ...(item.events || []).map((event, offset) => `<circle class="marker-${event.kind === 'income' ? 'income' : 'expense'}" cx="${cap(positions[index].x + (offset - .5) * 2.2, 2, 98).toFixed(2)}" cy="${positions[index].y.toFixed(2)}" r="1.85"><title>${escape(event.name)}</title></circle>`),
-    ...(item.limitEvents || []).map((event, offset) => `<rect class="marker-limit" x="${cap(positions[index].x + ((item.events || []).length + offset - .5) * 2.2, 2, 98).toFixed(2)}" y="${(positions[index].y - 1.65).toFixed(2)}" width="3.3" height="3.3"><title>${escape(event.name)}</title></rect>`)
-  ]).join('');
-  return `<svg class="forecast-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Prévision du disponible"><line class="axis" x1="0" y1="90" x2="100" y2="90"/><line class="selected-axis" x1="${selected.x}" y1="8" x2="${selected.x}" y2="90"/><path class="forecast-area" d="M3 90 L${points.replaceAll(' ', ' L')} L97 90 Z"/><polyline class="forecast-line" points="${points}"/>${markers}<circle class="marker-selected" cx="${selected.x}" cy="${selected.y}" r="2.9"/></svg>`;
+  const markers = days.map((item, index) => {
+    const events = [...(item.events || []), ...(item.limitEvents || [])];
+    if (!events.length) return '';
+    const kind = events.some(event => event.kind === 'income') ? 'income' : events.some(event => event.kind === 'expense') ? 'expense' : 'limit';
+    const names = events.map(event => event.name).join(' · ');
+    return `<line class="event-tick marker-${kind}" x1="${positions[index].x.toFixed(2)}" y1="92" x2="${positions[index].x.toFixed(2)}" y2="96"><title>${escape(names)}</title></line>`;
+  }).join('');
+  return `<svg class="forecast-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Prévision du disponible"><line class="axis" x1="0" y1="90" x2="100" y2="90"/><line class="selected-axis" x1="${selected.x}" y1="8" x2="${selected.x}" y2="90"/><path class="forecast-area" d="M3 90 L${points.replaceAll(' ', ' L')} L97 90 Z"/><polyline class="forecast-line" points="${points}"/>${markers}<circle class="marker-selected" cx="${selected.x}" cy="${selected.y}" r="2.35"/></svg>`;
 }
 
 function eventText(event) { return event.kind === 'income' ? 'Revenu prévu' : 'Facture prévue'; }
