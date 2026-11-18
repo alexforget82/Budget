@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#182421">
+  <title>Le Bas de Laine — Atelier</title>
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/atelier.css">
+</head>
+<body>
+  <main class="atelier-shell">
+    <header class="atelier-header">
+      <a class="atelier-brand" href="/atelier.html" aria-label="Le Bas de Laine, accueil">
+        <img src="/logo.svg" alt="">
+        <span>Le Bas de Laine<small>8.0 · Atelier</small></span>
+      </a>
+      <nav class="atelier-nav" aria-label="Sections">
+        <button class="active" data-view="today">Aujourd’hui</button>
+        <button data-view="transactions">Transactions</button>
+        <button data-view="plan">Plan</button>
+        <button data-view="budget">Budget</button>
+        <button data-view="calendar">Calendrier</button>
+      </nav>
+      <div class="atelier-actions">
+        <button id="atelier-checkpoint" class="checkpoint" type="button" data-open="checkpoint">Solde à vérifier</button>
+        <button class="add" type="button" data-open="transaction">Ajouter</button>
+      </div>
+    </header>
+
+    <section class="atelier-view" id="atelier-view" aria-live="polite"></section>
+  </main>
+
+  <dialog class="atelier-dialog" id="atelier-modal"></dialog>
+  <div class="atelier-toast" id="atelier-toast" hidden></div>
+  <script src="/atelier.js"></script>
+</body>
+</html>

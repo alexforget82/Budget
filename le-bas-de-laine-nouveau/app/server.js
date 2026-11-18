@@ -932,7 +932,16 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="le-bas-de-laine-${today()}.json"` }); return res.end(JSON.stringify({ format: 'le-bas-de-laine-v3', exported: today(), tables }, null, 2));
   }
   if (url.pathname === '/api/action' && req.method === 'POST') return readBody(req, (error, body) => { if (error) return respond(res, { error: error.message }, 400); try { const note = action(body); if (note && typeof note === 'object') return respond(res, note); const state = buildState(); state.note = note; respond(res, state); } catch (err) { respond(res, { error: err.message }, 400); } });
-  const requested = url.pathname === '/' ? 'index.html' : /^\/simple\/?$/.test(url.pathname) ? 'simple.html' : url.pathname.replace(/^\//, '');
+  // Atelier devient l'interface principale. L'ancienne interface reste
+  // volontairement disponible à /classic pendant la transition : c'est le
+  // même moteur et les mêmes données, seulement une porte de retour visuelle.
+  const requested = url.pathname === '/'
+    ? 'atelier.html'
+    : /^\/classic\/?$/.test(url.pathname)
+      ? 'index.html'
+      : /^\/simple\/?$/.test(url.pathname)
+        ? 'simple.html'
+        : url.pathname.replace(/^\//, '');
   const file = path.resolve(PUBLIC, requested);
   if (!file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); return res.end('Introuvable'); }
   res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });

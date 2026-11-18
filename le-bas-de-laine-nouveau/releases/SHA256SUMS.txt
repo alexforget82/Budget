@@ -24,3 +24,4 @@ be3ff2af609ff8a5d76986d6f9d1961e41a3bedcacda2d56ec183c94e17a34ba  Le-bas-de-lain
 b8fa3fc18e7142cc3487da0df2e4c652ce420837828904f1eb1db13b75537717  Le-bas-de-laine-5.0.0.zip
 c7e3cf9d18747dcc5e1ccefb99952d8ecca2c8832238c7b102ba9daec0f3c25f  Le-bas-de-laine-6.0.0.zip
 c246b6350ddd1625299c2543e8c57eabfb231627e70562bf4cb4b6a90f586358  Le-bas-de-laine-7.0.0.zip
+8f8dc2316c41fece90fa1657fcb1fe9fdbd21c7b97b0b3d74c8194b08addbf33  releases/Le-bas-de-laine-8.0.0.zip
