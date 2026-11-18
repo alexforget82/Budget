@@ -13,7 +13,7 @@
     <header class="atelier-header">
       <a class="atelier-brand" href="/atelier.html" aria-label="Le Bas de Laine, accueil">
         <img src="/logo.svg" alt="">
-        <span>Le Bas de Laine<small>8.0 · Atelier</small></span>
+        <span>Le Bas de Laine<small>8.1 · Atelier</small></span>
       </a>
       <nav class="atelier-nav" aria-label="Sections">
         <button class="active" data-view="today">Aujourd’hui</button>
@@ -23,6 +23,7 @@
         <button data-view="calendar">Calendrier</button>
       </nav>
       <div class="atelier-actions">
+        <button id="atelier-theme" class="theme-toggle" type="button" aria-label="Changer le thème">Thème</button>
         <button id="atelier-checkpoint" class="checkpoint" type="button" data-open="checkpoint">Solde à vérifier</button>
         <button class="add" type="button" data-open="transaction">Ajouter</button>
       </div>
@@ -30,6 +31,14 @@
 
     <section class="atelier-view" id="atelier-view" aria-live="polite"></section>
   </main>
+
+  <nav class="atelier-mobile-nav" aria-label="Navigation mobile">
+    <button data-view="today">Aujourd’hui</button>
+    <button data-view="transactions">Transactions</button>
+    <button class="mobile-add" type="button" data-open="transaction" aria-label="Ajouter une transaction">+</button>
+    <button data-view="plan">Plan</button>
+    <button data-view="calendar">Calendrier</button>
+  </nav>
 
   <dialog class="atelier-dialog" id="atelier-modal"></dialog>
   <div class="atelier-toast" id="atelier-toast" hidden></div>

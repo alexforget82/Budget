@@ -4,7 +4,8 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const atelier = {
   data: null, view: 'today', selectedDay: 0, transactionQuery: '',
-  transactionKind: '', month: null, calendar: null, calendarDay: null
+  transactionKind: '', transactionMonth: null, transactionCategory: '', month: null,
+  calendar: null, calendarDay: null
 };
 
 const money = cents => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format((Number(cents) || 0) / 100);
@@ -13,6 +14,21 @@ const day = value => new Intl.DateTimeFormat('fr-CA', { weekday: 'short', day: '
 const monthLabel = value => new Intl.DateTimeFormat('fr-CA', { month: 'long', year: 'numeric' }).format(new Date(`${value}-01T12:00:00Z`));
 const escape = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&gt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));
 const cap = (value, min, max) => Math.max(min, Math.min(max, value));
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('bas-de-laine-theme', theme);
+  const button = $('#atelier-theme');
+  if (button) {
+    button.textContent = theme === 'dark' ? 'Clair' : 'Sombre';
+    button.setAttribute('aria-label', theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre');
+  }
+}
+
+function initialiseTheme() {
+  const stored = localStorage.getItem('bas-de-laine-theme');
+  applyTheme(stored || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+}
 
 async function api(path, body) {
   const response = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
@@ -52,6 +68,7 @@ function empty(copy = 'Aucune donnée pour le moment.') { return `<div class="em
 async function refresh({ keepCalendar = false } = {}) {
   atelier.data = await api('/api/state');
   atelier.month ||= atelier.data.today.slice(0, 7);
+  atelier.transactionMonth ??= atelier.data.today.slice(0, 7);
   if (!keepCalendar) atelier.calendar = null;
   $('#atelier-checkpoint').textContent = checkpointCopy(atelier.data);
   render();
@@ -97,8 +114,14 @@ function plainEventRow(event) {
   return `<button class="plain-row row-button" type="button" data-open-occurrence="${event.rid}|${event.due}"><div><b>${escape(event.name)}</b><small>${escape(day(event.due))} · ${eventText(event)}</small></div><strong class="${event.kind === 'income' ? 'positive' : 'negative'}">${signed(event.amount, event.kind)}</strong></button>`;
 }
 
+function renderWelcome() {
+  $('#atelier-view').innerHTML = `${viewHead('Bienvenue', 'Mettons de l’ordre', 'Quatre petites étapes suffisent pour obtenir un disponible fiable.')}
+    <section class="welcome-grid"><div><span>01</span><h2>Le solde</h2><p>Commencez par le montant qui apparaît dans le compte conjoint aujourd’hui.</p><button class="add" type="button" data-open="setup">Commencer</button></div><div><span>02</span><h2>Les revenus</h2><p>Ajoutez ensuite les paies, la RRQ ou les allocations dans le Plan.</p></div><div><span>03</span><h2>Les factures</h2><p>Inscrivez seulement les sommes qui reviennent réellement.</p></div><div><span>04</span><h2>Les limites</h2><p>Épicerie, essence et le reste : l’application les protégera pour vous.</p></div></section>`;
+}
+
 function renderToday() {
   const data = atelier.data;
+  if (!data.settings.setupComplete) return renderWelcome();
   const days = data.daily.slice(0, 30);
   const selectedIndex = cap(atelier.selectedDay, 0, Math.max(0, days.length - 1));
   atelier.selectedDay = selectedIndex;
@@ -120,14 +143,19 @@ function renderToday() {
 function renderTransactions() {
   const query = atelier.transactionQuery.trim().toLocaleLowerCase('fr-CA');
   const kind = atelier.transactionKind;
+  const month = atelier.transactionMonth;
+  const category = atelier.transactionCategory;
   const rows = [...atelier.data.transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).filter(transaction => {
     const haystack = `${transaction.description} ${categoryName(transaction.category_id)}`.toLocaleLowerCase('fr-CA');
-    return (!query || haystack.includes(query)) && (!kind || transaction.kind === kind);
+    return (!query || haystack.includes(query))
+      && (!kind || transaction.kind === kind)
+      && (!month || transaction.date.startsWith(month))
+      && (!category || Number(transaction.category_id) === Number(category));
   });
   const income = rows.filter(transaction => transaction.kind === 'income').reduce((sum, transaction) => sum + transaction.amount, 0);
   const outflow = rows.filter(transaction => transaction.kind !== 'income').reduce((sum, transaction) => sum + transaction.amount, 0);
   $('#atelier-view').innerHTML = `${viewHead('Registre', 'Transactions', 'Une ligne par mouvement. Touchez une ligne pour la corriger.', '<button class="add" type="button" data-open="transaction">Ajouter une transaction</button>')}
-    <section class="ledger-tools"><input id="atelier-search" placeholder="Rechercher un commerçant ou une catégorie" value="${escape(atelier.transactionQuery)}"><select id="atelier-kind"><option value="">Toutes les opérations</option><option value="expense" ${kind === 'expense' ? 'selected' : ''}>Dépenses</option><option value="income" ${kind === 'income' ? 'selected' : ''}>Revenus</option><option value="card_payment" ${kind === 'card_payment' ? 'selected' : ''}>Paiements de carte</option></select><button class="tool" type="button" data-open="merchant-rules">Règles commerçants</button></section>
+    <section class="ledger-tools"><input id="atelier-search" placeholder="Rechercher un commerçant ou une catégorie" value="${escape(atelier.transactionQuery)}"><input id="atelier-transaction-month" aria-label="Mois" type="month" value="${escape(month || '')}"><select id="atelier-kind"><option value="">Toutes les opérations</option><option value="expense" ${kind === 'expense' ? 'selected' : ''}>Dépenses</option><option value="income" ${kind === 'income' ? 'selected' : ''}>Revenus</option><option value="card_payment" ${kind === 'card_payment' ? 'selected' : ''}>Paiements de carte</option></select><select id="atelier-category-filter"><option value="">Toutes les catégories</option>${categoryOptions(category, false)}</select><button class="tool" type="button" data-clear-transaction-filters>Tout</button><button class="tool" type="button" data-open="merchant-rules">Règles</button></section>
     <table class="ledger-table"><thead><tr><th>Date</th><th>Commerçant</th><th>Catégorie</th><th>Compte</th><th>Montant</th></tr></thead><tbody>${rows.length ? rows.map(transaction => `<tr tabindex="0" role="button" data-edit-transaction="${transaction.id}"><td class="subtle">${escape(day(transaction.date))}</td><td><span class="merchant">${escape(transaction.description || (transaction.kind === 'income' ? 'Revenu' : 'Sans description'))}</span></td><td><span class="tag">${escape(transaction.kind === 'expense' ? categoryName(transaction.category_id) : '—')}</span></td><td class="subtle">${transaction.method === 'card' ? 'Carte' : 'Conjoint'}</td><td class="${transaction.kind === 'income' ? 'positive' : 'negative'}"><b>${signed(transaction.amount, transaction.kind)}</b></td></tr>`).join('') : `<tr><td colspan="5">${empty()}</td></tr>`}</tbody></table>
     <footer class="ledger-foot"><span>Entrées <b class="positive">${money(income)}</b></span><span>Sorties <b class="negative">${money(outflow)}</b></span><span>Net <b class="${income - outflow >= 0 ? 'positive' : 'negative'}">${income - outflow >= 0 ? '+' : '−'}${money(Math.abs(income - outflow))}</b></span></footer>`;
 }
@@ -156,7 +184,7 @@ async function renderBudget() {
     const categories = [...budget.categories].sort((a, b) => (b.planned ? b.spent / b.planned : 0) - (a.planned ? a.spent / a.planned : 0));
     $('#atelier-view').innerHTML = `${viewHead('Le mois', 'Budget', monthLabel(budget.month), '<button class="tool" type="button" data-month="prev">←</button><button class="tool" type="button" data-month="next">→</button>')}
       <section class="budget-summary"><div><small>Revenus prévus</small><b class="positive">${money(budget.income)}</b></div><div><small>Planifié</small><b>${money(budget.fixed + budget.variable)}</b></div><div><small>Reste du plan</small><b class="${remaining >= 0 ? 'positive' : 'negative'}">${money(remaining)}</b></div></section>
-      <table class="budget-grid"><thead><tr><th>Catégorie</th><th>Budget</th><th>Dépensé</th><th>Restant</th></tr></thead><tbody>${categories.length ? categories.map(category => { const ratio = category.planned ? category.spent / category.planned : 0; const style = category.remaining < 0 ? 'over' : ratio >= .8 ? 'warn' : ''; return `<tr tabindex="0" role="button" data-edit-limit="${category.id}"><td><span class="budget-name">${escape(category.name)}</span><span class="budget-note">${Math.round(ratio * 100)} % utilisé</span><div class="budget-bar ${style}"><i style="width:${cap(ratio * 100, 0, 100)}%"></i></div></td><td>${money(category.planned)}</td><td>${money(category.spent)}</td><td class="${category.remaining >= 0 ? 'positive' : 'negative'}"><b>${money(category.remaining)}</b></td></tr>`; }).join('') : `<tr><td colspan="4">${empty()}</td></tr>`}</tbody></table>`;
+      <table class="budget-grid"><thead><tr><th>Catégorie</th><th>Budget</th><th>Dépensé</th><th>Restant</th></tr></thead><tbody>${categories.length ? categories.map(category => { const ratio = category.planned ? category.spent / category.planned : 0; const style = category.remaining < 0 ? 'over' : ratio >= .8 ? 'warn' : ''; const status = category.remaining < 0 ? ['over', 'Dépassement'] : ratio >= .8 ? ['watch', 'À surveiller'] : ['good', 'En bonne voie']; return `<tr tabindex="0" role="button" data-edit-limit="${category.id}"><td><span class="budget-name">${escape(category.name)}</span><span class="budget-note">${Math.round(ratio * 100)} % utilisé</span><span class="budget-status ${status[0]}">${status[1]}</span><div class="budget-bar ${style}"><i style="width:${cap(ratio * 100, 0, 100)}%"></i></div></td><td>${money(category.planned)}</td><td>${money(category.spent)}</td><td class="${category.remaining >= 0 ? 'positive' : 'negative'}"><b>${money(category.remaining)}</b></td></tr>`; }).join('') : `<tr><td colspan="4">${empty()}</td></tr>`}</tbody></table>`;
   } catch (error) { $('#atelier-view').innerHTML = viewHead('Le mois', 'Budget', '') + empty(error.message); }
 }
 
@@ -188,7 +216,7 @@ async function renderCalendar() {
 
 function render() {
   if (!atelier.data) return;
-  $$('.atelier-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === atelier.view));
+  $$('.atelier-nav [data-view],.atelier-mobile-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === atelier.view));
   if (atelier.view === 'today') return renderToday();
   if (atelier.view === 'transactions') return renderTransactions();
   if (atelier.view === 'plan') return renderPlan();
@@ -256,11 +284,11 @@ function openLimit(id = null) {
     <label>Date de début<input required name="start_date" type="date" value="${escape(category.start_date || atelier.data.today)}"></label>
     <label class="period-only">Montant par période<input name="amount" inputmode="decimal" value="${category.mode === 'period' && item ? moneyInput(category.amount) : ''}" placeholder="0,00"></label>
     <label class="period-only">Période<select name="frequency" data-limit-frequency>${option('w', 'Chaque semaine', category.frequency)}${option('m', 'Chaque mois', category.frequency)}</select></label>
-    <label class="renewal-field">Jour du renouvellement<input required name="renewal" data-limit-renewal value="${escape(category.renewal)}" inputmode="numeric" placeholder="4"></label>
+    <label class="renewal-field">Jour du renouvellement<select required name="renewal" data-limit-renewal data-current-renewal="${escape(category.renewal)}"></select></label>
     <label class="period-only monthly-funding">Protection<select name="funding">${option('start', 'Dès le départ', category.funding)}${option('income', 'Au prochain revenu', category.funding)}</select></label>
     <label class="monthly-only">Mois à 4 semaines<input name="monthly_four" inputmode="decimal" value="${category.mode === 'monthly_weekly' && item ? moneyInput(category.monthly_four) : ''}" placeholder="0,00"></label>
     <label class="monthly-only">Mois à 5 semaines<input name="monthly_five" inputmode="decimal" value="${category.mode === 'monthly_weekly' && item ? moneyInput(category.monthly_five) : ''}" placeholder="0,00"></label>
-    <p class="form-note wide" data-limit-help>Pour une limite hebdomadaire, 0 = dimanche et 4 = jeudi. Pour une limite mensuelle, inscrivez 1 à 28, ou « last » pour le dernier jour du mois.</p>`;
+    <p class="form-note wide" data-limit-help>Choisissez le rythme et le jour : aucun numéro à retenir.</p>`;
   const footer = `${item ? `<button class="danger-link" type="button" data-dialog-delete="category" data-id="${item.id}">Supprimer</button>` : ''}<span></span><button class="quiet" value="cancel" formmethod="dialog">Annuler</button><button class="add" type="submit">Enregistrer</button>`;
   formShell('limit', item ? 'Modifier une limite' : 'Nouvelle limite', item ? 'Corriger la limite' : 'Ce montant sera protégé automatiquement', content, footer);
   updateLimitForm($('#atelier-modal form'));
@@ -274,15 +302,21 @@ function updateLimitForm(form) {
   $$('.monthly-funding', form).forEach(node => { node.hidden = mode !== 'period' || frequency !== 'm'; });
   const renewal = $('[data-limit-renewal]', form);
   const help = $('[data-limit-help]', form);
-  if (mode === 'monthly_weekly') {
-    renewal.value = renewal.value === 'last' ? '4' : renewal.value;
-    help.textContent = 'Choisissez le jour hebdomadaire : 0 = dimanche et 4 = jeudi. Le budget du mois est réparti entre les semaines.';
-  } else if (frequency === 'w') {
-    renewal.value = renewal.value === 'last' ? '4' : renewal.value;
-    help.textContent = '0 = dimanche, 1 = lundi, … 4 = jeudi, 6 = samedi.';
-  } else {
-    help.textContent = 'Inscrivez 1 à 28, ou « last » pour le dernier jour du mois.';
-  }
+  const weekly = mode === 'monthly_weekly' || frequency === 'w';
+  const current = renewal.value || renewal.dataset.currentRenewal || (weekly ? '4' : 'last');
+  const days = [['0','Dimanche'],['1','Lundi'],['2','Mardi'],['3','Mercredi'],['4','Jeudi'],['5','Vendredi'],['6','Samedi']];
+  const monthly = [['last','Dernier jour du mois'], ...Array.from({ length: 28 }, (_, index) => [String(index + 1), `Le ${index + 1}`])];
+  const options = weekly ? days : monthly;
+  renewal.innerHTML = options.map(([value, label]) => option(value, label, current === 'last' && weekly ? '4' : current)).join('');
+  renewal.dataset.currentRenewal = renewal.value;
+  help.textContent = weekly
+    ? 'Le budget est renouvelé le jour choisi chaque semaine.'
+    : 'Le budget est renouvelé chaque mois à cette date.';
+}
+
+function openSetup() {
+  const content = `<p class="form-note wide">Vous pourrez corriger ce solde plus tard avec « Vérifier mon solde ». Rien n’est importé ou supprimé.</p><label class="wide">Solde actuel du compte conjoint<input required name="bank" inputmode="decimal" placeholder="0,00"></label><label class="check wide"><input type="checkbox" name="seed_limits" checked> Créer les limites de départ : épicerie, essence, lait et couches, pharmacie</label>`;
+  formShell('setup', 'Configuration initiale', 'Votre point de départ', content, '<button class="quiet" value="cancel" formmethod="dialog">Plus tard</button><button class="add" type="submit">Continuer</button>');
 }
 
 function openCheckpoint() {
@@ -319,6 +353,7 @@ function formData(form) {
   const raw = Object.fromEntries(new FormData(form).entries());
   raw.included = form.elements.included?.checked || false;
   raw.remember_rule = form.elements.remember_rule?.checked || false;
+  raw.seed_limits = form.elements.seed_limits?.checked || false;
   return raw;
 }
 
@@ -327,6 +362,7 @@ async function saveForm(form) {
   if (form.dataset.form === 'transaction') return api('/api/action', { action: 'transaction', ...values });
   if (form.dataset.form === 'recurring') return api('/api/action', { action: 'recurring', ...values });
   if (form.dataset.form === 'limit') return api('/api/action', { action: 'category', ...values });
+  if (form.dataset.form === 'setup') return api('/api/action', { action: 'setup', complete: true, ...values });
   if (form.dataset.form === 'checkpoint') return api('/api/action', { action: 'checkpoint', ...values });
   if (form.dataset.form === 'occurrence') return api('/api/action', { action: 'occurrence', state: 'paid', ...values });
   if (form.dataset.form === 'afford') return api('/api/action', { action: 'afford', ...values });
@@ -373,11 +409,13 @@ function wire() {
   document.addEventListener('click', event => {
     const element = event.target.closest('button,[data-view-link],tr[data-edit-transaction],tr[data-edit-limit]');
     if (!element) return;
+    if (element.id === 'atelier-theme') return applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
     if (element.dataset.view) { atelier.view = element.dataset.view; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (element.dataset.viewLink) { event.preventDefault(); atelier.view = element.dataset.viewLink; render(); return; }
     if (element.dataset.open === 'transaction') return openTransaction();
     if (element.dataset.open === 'recurring') return openRecurring(null, element.dataset.ruleKind || 'expense');
     if (element.dataset.open === 'limit') return openLimit();
+    if (element.dataset.open === 'setup') return openSetup();
     if (element.dataset.open === 'checkpoint') return openCheckpoint();
     if (element.dataset.open === 'afford') return openAfford();
     if (element.dataset.open === 'merchant-rules') return openMerchantRules();
@@ -386,6 +424,7 @@ function wire() {
     if (element.dataset.editLimit) return openLimit(element.dataset.editLimit);
     if (element.dataset.openOccurrence) return openOccurrence(element.dataset.openOccurrence);
     if (element.dataset.month) return shiftMonth(element.dataset.month === 'next' ? 1 : -1);
+    if (element.dataset.clearTransactionFilters !== undefined) { atelier.transactionMonth = ''; atelier.transactionCategory = ''; atelier.transactionKind = ''; atelier.transactionQuery = ''; return renderTransactions(); }
     if (element.dataset.calendarDay) { atelier.calendarDay = element.dataset.calendarDay; return renderCalendar(); }
     if (element.dataset.closeCalendarDetail !== undefined) { atelier.calendarDay = null; return renderCalendar(); }
     if (element.dataset.dialogDelete) return deleteThing(element.dataset.dialogDelete, element.dataset.id);
@@ -398,6 +437,8 @@ function wire() {
   });
   document.addEventListener('change', event => {
     if (event.target.id === 'atelier-kind') { atelier.transactionKind = event.target.value; renderTransactions(); }
+    if (event.target.id === 'atelier-transaction-month') { atelier.transactionMonth = event.target.value; renderTransactions(); }
+    if (event.target.id === 'atelier-category-filter') { atelier.transactionCategory = event.target.value; renderTransactions(); }
     if (event.target.matches('[data-limit-mode],[data-limit-frequency]')) updateLimitForm(event.target.closest('form'));
   });
   $('#atelier-modal').addEventListener('submit', async event => {
@@ -419,5 +460,6 @@ function wire() {
   });
 }
 
+initialiseTheme();
 wire();
 refresh().catch(error => { $('#atelier-view').innerHTML = `<div class="empty-state"><b>Impossible de lire le budget.</b><span>${escape(error.message)}</span></div>`; });
