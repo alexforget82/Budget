@@ -16,7 +16,16 @@ const MAX_BODY = 50 * 1024;
 fs.mkdirSync(DATA, { recursive: true, mode: 0o700 });
 
 function appToday() {
-  return process.env.BDL9_TODAY || new Date().toISOString().slice(0, 10);
+  if (process.env.BDL9_TODAY) return process.env.BDL9_TODAY;
+  // Le serveur peut tourner en UTC alors que le budget familial est au Québec.
+  // toISOString() basculait donc au lendemain vers 19 h en hiver, et faisait
+  // disparaître les revenus prévus « demain » de l’écran courant.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: process.env.BDL9_TIME_ZONE || 'America/Toronto',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter(item => item.type !== 'literal').map(item => [item.type, item.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function copyDailyBackup() {
