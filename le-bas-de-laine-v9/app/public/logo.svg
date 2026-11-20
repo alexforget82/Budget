@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Le Bas de Laine">
+  <defs>
+    <linearGradient id="laine" x1="44" y1="25" x2="205" y2="228" gradientUnits="userSpaceOnUse"><stop stop-color="#126141"/><stop offset="1" stop-color="#063A2B"/></linearGradient>
+    <clipPath id="bas"><path d="M75 29c-10 0-18 8-18 18v88c0 18 7 33 20 44l47 40c12 10 30 10 42 0l29-26c15-13 17-36 4-51l-46-51V47c0-10-8-18-18-18H75Z"/></clipPath>
+  </defs>
+  <circle cx="128" cy="128" r="112" fill="#F6F0E4"/><circle cx="128" cy="128" r="103" fill="none" stroke="#D4A342" stroke-width="5"/>
+  <path d="M75 29c-10 0-18 8-18 18v88c0 18 7 33 20 44l47 40c12 10 30 10 42 0l29-26c15-13 17-36 4-51l-46-51V47c0-10-8-18-18-18H75Z" fill="url(#laine)"/>
+  <g clip-path="url(#bas)" fill="none" stroke="#8ED8BB" stroke-linecap="round" stroke-width="7" opacity=".9"><path d="M35 65 150-6M30 101 177 8M33 140 204 30M48 175 224 65M82 215 223 125"/><path d="M40 15 151 86M28 51 174 144M30 91 195 195M51 137 158 228"/></g>
+  <path d="M57 83h96" stroke="#D4A342" stroke-width="12"/><path d="M89 55c-8 8-12 16-12 26 0 15 11 27 26 27s26-12 26-27c0-10-4-18-12-26l-14 12-14-12Z" fill="#F6F0E4"/><path d="M103 59v38M87 78h32" stroke="#126141" stroke-width="5" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4efe5">
+  <title>Le Bas de Laine</title>
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="app-shell" id="appShell" hidden>
+    <header class="topbar">
+      <a class="brand" href="#today" aria-label="Le Bas de Laine, accueil">
+        <img src="/logo.svg" alt="">
+        <span>Le Bas de Laine<small id="versionText">v9</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Navigation principale">
+        <button class="nav-link active" data-route="today">Aujourd’hui</button>
+        <button class="nav-link" data-route="transactions">Transactions</button>
+        <button class="nav-link" data-route="recurring">Récurrences</button>
+        <button class="nav-link" data-route="limits">Limites</button>
+        <button class="nav-link" data-route="calendar">Calendrier</button>
+      </nav>
+      <div class="top-actions">
+        <button class="quiet-button" id="themeButton" aria-label="Changer l’apparence">Apparence</button>
+        <button class="avatar-button" data-route="settings" aria-label="Réglages">Réglages</button>
+        <button class="add-button" id="quickAdd">Ajouter</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page active" data-page="today" aria-labelledby="todayTitle">
+        <div class="page-heading day-heading">
+          <div>
+            <p class="eyebrow" id="dateLabel">AUJOURD’HUI</p>
+            <h1 id="todayTitle">Votre marge</h1>
+            <p class="intro">Ce qui reste réellement disponible, après les factures et les limites déjà déclenchées.</p>
+          </div>
+          <button class="outline-button" id="purchaseButton">Puis-je me permettre cet achat ?</button>
+        </div>
+
+        <section class="today-grid" aria-label="Résumé financier">
+          <article class="available-panel">
+            <p class="metric-label">Disponible aujourd’hui</p>
+            <p class="metric major" id="availableAmount">—</p>
+            <div class="formula-line"><span>Solde réel</span><strong id="cashAmount">—</strong></div>
+            <div class="formula-line"><span>Limites protégées</span><strong id="reserveAmount">—</strong></div>
+            <button class="text-button" id="explainButton">Voir le calcul</button>
+          </article>
+          <article class="minimum-panel">
+            <p class="metric-label">Point le plus bas · 30 jours</p>
+            <p class="metric" id="minimumAmount">—</p>
+            <p class="minimum-date" id="minimumDate">—</p>
+            <div class="rule"></div>
+            <p class="subtle" id="minimumWhy">La prévision se met à jour chaque jour.</p>
+          </article>
+          <aside class="nearby-panel" aria-label="Prochains mouvements">
+            <p class="metric-label">Les prochains mouvements</p>
+            <div id="nearbyEvents" class="event-stack"></div>
+          </aside>
+        </section>
+
+        <section class="ledger-section" aria-labelledby="ledgerTitle">
+          <div class="section-heading">
+            <div><p class="eyebrow">PRÉVISION</p><h2 id="ledgerTitle">Les 30 prochains jours</h2></div>
+            <p class="subtle">Touchez une journée pour voir son détail.</p>
+          </div>
+          <div class="forecast-legend"><span><i class="legend income"></i> Revenu</span><span><i class="legend bill"></i> Facture ou achat</span><span><i class="legend reserve"></i> Limite</span></div>
+          <div id="forecastRows" class="forecast-rows"></div>
+        </section>
+
+        <section class="limits-glance" aria-labelledby="limitsGlanceTitle">
+          <div class="section-heading inline"><div><p class="eyebrow">CE MOIS-CI</p><h2 id="limitsGlanceTitle">Limites en cours</h2></div><button class="text-button" data-route="limits">Gérer les limites</button></div>
+          <div id="limitGlance" class="limit-glance-list"></div>
+        </section>
+      </section>
+
+      <section class="page" data-page="transactions" aria-labelledby="transactionsTitle">
+        <div class="page-heading split-heading">
+          <div><p class="eyebrow">REGISTRE</p><h1 id="transactionsTitle">Transactions</h1><p class="intro">Une ligne par mouvement. Une dépense classée dans une limite la consomme automatiquement.</p></div>
+          <button class="add-button" data-open-editor="transaction">Nouvelle transaction</button>
+        </div>
+        <section class="quick-entry" aria-labelledby="entryTitle">
+          <h2 id="entryTitle">Saisie rapide</h2>
+          <form id="quickTransactionForm" class="entry-form">
+            <select name="kind" aria-label="Type"><option value="expense">Dépense</option><option value="income">Revenu</option></select>
+            <input name="description" required maxlength="80" placeholder="Description, ex. IGA">
+            <input name="amount" required inputmode="decimal" placeholder="0,00" aria-label="Montant">
+            <input name="date" required type="date" aria-label="Date">
+            <select name="limit_id" id="quickLimit" aria-label="Limite"><option value="">Sans limite</option></select>
+            <button class="add-button" type="submit">Enregistrer</button>
+          </form>
+        </section>
+        <div class="table-toolbar"><label><span class="sr-only">Rechercher</span><input id="transactionSearch" type="search" placeholder="Rechercher une transaction"></label><span id="transactionSummary" class="subtle"></span></div>
+        <div class="table-wrap"><table class="ledger-table"><thead><tr><th>Date</th><th>Description</th><th>Limite</th><th class="amount-cell">Montant</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="transactionRows"></tbody><tfoot id="transactionFoot"></tfoot></table></div>
+      </section>
+
+      <section class="page" data-page="recurring" aria-labelledby="recurringTitle">
+        <div class="page-heading split-heading"><div><p class="eyebrow">CE QUI REVIENT</p><h1 id="recurringTitle">Récurrences</h1><p class="intro">Les revenus et les factures sont prévus une fois. Le mouvement réel se saisit seulement quand il arrive.</p></div><button class="add-button" data-open-editor="recurring">Nouvelle récurrence</button></div>
+        <div class="recurring-layout">
+          <section class="rule-list"><div class="section-heading inline"><h2>Revenus</h2><span id="incomeCount" class="count"></span></div><div id="incomeRules"></div></section>
+          <section class="rule-list"><div class="section-heading inline"><h2>Factures</h2><span id="billCount" class="count"></span></div><div id="billRules"></div></section>
+        </div>
+      </section>
+
+      <section class="page" data-page="limits" aria-labelledby="limitsTitle">
+        <div class="page-heading split-heading"><div><p class="eyebrow">ARGENT MIS DE CÔTÉ</p><h1 id="limitsTitle">Limites</h1><p class="intro">Tu choisis quand une limite protège le disponible : chaque semaine, deux semaines, mois ou autre cadence.</p></div><button class="add-button" data-open-editor="limit">Nouvelle limite</button></div>
+        <div class="limits-table-wrap"><table class="limits-table"><thead><tr><th>Limite</th><th>Budget</th><th>Dépensé</th><th>Restant</th><th>Protection suivante</th><th></th></tr></thead><tbody id="limitRows"></tbody></table></div>
+      </section>
+
+      <section class="page" data-page="calendar" aria-labelledby="calendarTitle">
+        <div class="page-heading split-heading"><div><p class="eyebrow">VUE MENSUELLE</p><h1 id="calendarTitle">Calendrier</h1><p class="intro">Le disponible prévu et les mouvements importants, jour par jour.</p></div><div class="month-controls"><button class="quiet-button" id="previousMonth" aria-label="Mois précédent">←</button><strong id="calendarMonth">—</strong><button class="quiet-button" id="nextMonth" aria-label="Mois suivant">→</button></div></div>
+        <div class="calendar-weekdays" aria-hidden="true"><span>lun.</span><span>mar.</span><span>mer.</span><span>jeu.</span><span>ven.</span><span>sam.</span><span>dim.</span></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <section class="page" data-page="settings" aria-labelledby="settingsTitle">
+        <div class="page-heading"><p class="eyebrow">RÉGLAGES</p><h1 id="settingsTitle">Votre point de départ</h1><p class="intro">Le solde vérifié est la seule vérité du compte conjoint. Vérifie-le quand tu veux; les nouveaux mouvements continueront ensuite à l’ajuster.</p></div>
+        <div class="settings-layout">
+          <form id="balanceForm" class="setting-card"><h2>Vérifier le solde</h2><p class="subtle" id="verifiedLabel">—</p><label>Solde réel du compte<input name="balance" required inputmode="decimal" placeholder="0,00"></label><label>Date de vérification<input name="date" required type="date"></label><button class="add-button" type="submit">Enregistrer le solde</button></form>
+          <section class="setting-card"><h2>Apparence</h2><p class="subtle">Le thème sombre est conçu séparément pour conserver le contraste.</p><div class="segmented" id="themeChoices"><button data-theme="system">Système</button><button data-theme="light">Clair</button><button data-theme="dark">Sombre</button></div></section>
+          <section class="setting-card"><h2>Accès et sauvegarde</h2><p class="subtle">La vue simplifiée est réservée au Safe-to-Spend et à la vérification d’achat. Une sauvegarde locale est aussi créée automatiquement chaque jour.</p><div class="setting-actions"><a class="outline-button" href="/simple" target="_blank" rel="noopener">Vue simplifiée</a><a class="text-button" href="/api/export">Télécharger mes données</a></div></section>
+        </div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Navigation mobile"><button data-route="today">Aujourd’hui</button><button data-route="transactions">Transactions</button><button class="mobile-add" id="mobileQuickAdd" aria-label="Ajouter une transaction">+</button><button data-route="calendar">Calendrier</button><button id="mobileMore">Plus</button></nav>
+  </div>
+
+  <section class="onboarding" id="onboarding" hidden aria-labelledby="setupTitle">
+    <div class="setup-mark"><img src="/logo.svg" alt=""><span>Le Bas de Laine</span></div>
+    <div class="setup-copy"><p class="eyebrow">CONFIGURATION INITIALE</p><h1 id="setupTitle">On part du vrai solde.</h1><p>En deux minutes : ton solde conjoint aujourd’hui, puis tes revenus, factures et limites. Aucun montant ne doit être entré deux fois.</p></div>
+    <form id="setupForm" class="setup-form"><label>Solde actuel du compte conjoint<input name="balance" required inputmode="decimal" placeholder="ex. 1 250,00" autofocus></label><label>Date de ce solde<input name="date" required type="date"></label><label>Prénom (facultatif)<input name="owner_name" maxlength="60" placeholder="Alex"></label><button class="add-button" type="submit">Commencer</button></form>
+    <p class="setup-note">Tu pourras ajouter les paies, factures et limites juste après. Cette nouvelle application n’écrit jamais dans Sillage ou ton ancienne version.</p>
+  </section>
+
+  <dialog id="editorDialog" class="editor-dialog"><form method="dialog" id="editorForm"><div class="dialog-heading"><div><p class="eyebrow" id="editorEyebrow">AJOUTER</p><h2 id="editorTitle">—</h2></div><button class="quiet-button" value="cancel">Fermer</button></div><div id="editorFields" class="editor-fields"></div><div class="dialog-actions"><button type="button" class="danger-button" id="deleteItem" hidden>Supprimer</button><span></span><button type="button" class="quiet-button" id="cancelEditor">Annuler</button><button type="submit" class="add-button">Enregistrer</button></div></form></dialog>
+  <dialog id="purchaseDialog" class="editor-dialog purchase-dialog"><form method="dialog" id="purchaseForm"><div class="dialog-heading"><div><p class="eyebrow">VÉRIFICATION RAPIDE</p><h2>Puis-je me permettre cet achat ?</h2></div><button class="quiet-button" value="cancel">Fermer</button></div><p class="subtle">Le résultat vérifie le point le plus bas des 30 jours après cet achat.</p><div class="editor-fields compact"><label>Montant<input name="amount" required inputmode="decimal" placeholder="0,00" autofocus></label><label>Date<input name="date" required type="date"></label></div><div id="purchaseResult" class="purchase-result" hidden></div><div class="dialog-actions"><span></span><button type="submit" class="add-button">Vérifier</button></div></form></dialog>
+  <dialog id="dayDialog" class="editor-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow" id="dayDialogEyebrow">JOURNÉE</p><h2 id="dayDialogTitle">—</h2></div><button class="quiet-button">Fermer</button></div><div id="dayDialogContent" class="day-dialog-content"></div></form></dialog>
+  <dialog id="moreDialog" class="editor-dialog more-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">NAVIGATION</p><h2>Plus d’options</h2></div><button class="quiet-button">Fermer</button></div><div class="more-links"><button data-route="recurring">Récurrences</button><button data-route="limits">Limites</button><button data-route="settings">Réglages</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

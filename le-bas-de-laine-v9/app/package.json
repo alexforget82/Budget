@@ -1,0 +1,11 @@
+{
+  "name": "le-bas-de-laine-v9",
+  "private": true,
+  "version": "9.0.0-dev",
+  "description": "Budget familial simple, local et testable.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
