@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4efe5">
+  <meta name="theme-color" content="#151a20">
   <title>Le Bas de Laine</title>
   <link rel="icon" href="/logo.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -19,7 +19,7 @@
       <nav class="main-nav" aria-label="Navigation principale">
         <button class="nav-link active" data-route="today">Aujourd’hui</button>
         <button class="nav-link" data-route="transactions">Transactions</button>
-        <button class="nav-link" data-route="recurring">Récurrences</button>
+        <button class="nav-link" data-route="recurring">Plan</button>
         <button class="nav-link" data-route="limits">Limites</button>
         <button class="nav-link" data-route="calendar">Calendrier</button>
       </nav>
@@ -35,8 +35,8 @@
         <div class="page-heading day-heading">
           <div>
             <p class="eyebrow" id="dateLabel">AUJOURD’HUI</p>
-            <h1 id="todayTitle">Votre marge</h1>
-            <p class="intro">Ce qui reste réellement disponible, après les factures et les limites déjà déclenchées.</p>
+            <h1 id="todayTitle">Tableau de bord</h1>
+            <p class="intro">Ton argent disponible, les protections et ce qui arrive ensuite.</p>
           </div>
           <button class="outline-button" id="purchaseButton">Puis-je me permettre cet achat ?</button>
         </div>
@@ -64,9 +64,10 @@
 
         <section class="ledger-section" aria-labelledby="ledgerTitle">
           <div class="section-heading">
-            <div><p class="eyebrow">PRÉVISION</p><h2 id="ledgerTitle">Les 30 prochains jours</h2></div>
-            <p class="subtle">Touchez une journée pour voir son détail.</p>
+            <div><p class="eyebrow">CASH FLOW</p><h2 id="ledgerTitle">Les 30 prochains jours</h2></div>
+            <p class="subtle">Clique une journée pour en voir le détail.</p>
           </div>
+          <div class="forecast-chart-card"><div id="forecastChart" class="forecast-chart" aria-label="Évolution du disponible sur 30 jours"></div><div id="forecastChartSummary" class="forecast-chart-summary"></div></div>
           <div class="forecast-legend"><span><i class="legend income"></i> Revenu</span><span><i class="legend bill"></i> Facture ou achat</span><span><i class="legend reserve"></i> Limite</span></div>
           <div id="forecastRows" class="forecast-rows"></div>
         </section>
@@ -79,8 +80,8 @@
 
       <section class="page" data-page="transactions" aria-labelledby="transactionsTitle">
         <div class="page-heading split-heading">
-          <div><p class="eyebrow">REGISTRE</p><h1 id="transactionsTitle">Transactions</h1><p class="intro">Une ligne par mouvement. Une dépense classée dans une limite la consomme automatiquement.</p></div>
-          <button class="add-button" data-open-editor="transaction">Nouvelle transaction</button>
+          <div><p class="eyebrow">ACTIVITÉ</p><h1 id="transactionsTitle">Transactions</h1><p class="intro">Ton registre. Une dépense associée à une limite la consomme immédiatement.</p></div>
+          <button class="add-button" data-open-editor="transaction">+ Nouvelle transaction</button>
         </div>
         <section class="quick-entry" aria-labelledby="entryTitle">
           <h2 id="entryTitle">Saisie rapide</h2>
@@ -98,20 +99,30 @@
       </section>
 
       <section class="page" data-page="recurring" aria-labelledby="recurringTitle">
-        <div class="page-heading split-heading"><div><p class="eyebrow">CE QUI REVIENT</p><h1 id="recurringTitle">Récurrences</h1><p class="intro">Les revenus et les factures sont prévus une fois. Le mouvement réel se saisit seulement quand il arrive.</p></div><button class="add-button" data-open-editor="recurring">Nouvelle récurrence</button></div>
-        <div class="recurring-layout">
-          <section class="rule-list"><div class="section-heading inline"><h2>Revenus</h2><span id="incomeCount" class="count"></span></div><div id="incomeRules"></div></section>
-          <section class="rule-list"><div class="section-heading inline"><h2>Factures</h2><span id="billCount" class="count"></span></div><div id="billRules"></div></section>
+        <div class="page-heading split-heading"><div><p class="eyebrow">À VENIR</p><h1 id="recurringTitle">Plan</h1><p class="intro">Les entrées et sorties qui reviennent. Le mouvement réel ne se saisit qu’une seule fois, lorsqu’il arrive.</p></div><button class="add-button" data-open-editor="recurring">+ Ajouter au plan</button></div>
+        <div class="plan-layout">
+          <aside class="plan-summary" aria-label="Résumé des 30 prochains jours">
+            <p class="metric-label">PROCHAINS 30 JOURS</p>
+            <div class="plan-total income"><span>Revenus prévus</span><strong id="planIncomeTotal">—</strong></div>
+            <div class="plan-total bill"><span>Factures prévues</span><strong id="planBillTotal">—</strong></div>
+            <div class="plan-total reserve"><span>Limites protégées aujourd’hui</span><strong id="planReserveTotal">—</strong></div>
+            <div class="plan-total available"><span>Disponible maintenant</span><strong id="planAvailableTotal">—</strong></div>
+            <p class="subtle">Les limites se protègent à leur vraie date : elles ne créent pas une dépense bancaire.</p>
+          </aside>
+          <div class="recurring-layout">
+            <section class="rule-list"><div class="section-heading inline"><h2>Revenus</h2><span id="incomeCount" class="count"></span></div><div id="incomeRules"></div></section>
+            <section class="rule-list"><div class="section-heading inline"><h2>Factures</h2><span id="billCount" class="count"></span></div><div id="billRules"></div></section>
+          </div>
         </div>
       </section>
 
       <section class="page" data-page="limits" aria-labelledby="limitsTitle">
-        <div class="page-heading split-heading"><div><p class="eyebrow">ARGENT MIS DE CÔTÉ</p><h1 id="limitsTitle">Limites</h1><p class="intro">Tu choisis quand une limite protège le disponible : chaque semaine, deux semaines, mois ou autre cadence.</p></div><button class="add-button" data-open-editor="limit">Nouvelle limite</button></div>
+        <div class="page-heading split-heading"><div><p class="eyebrow">ARGENT MIS DE CÔTÉ</p><h1 id="limitsTitle">Limites</h1><p class="intro">Des budgets qui protègent le Safe-to-Spend à la date et à la cadence que tu choisis.</p></div><button class="add-button" data-open-editor="limit">+ Nouvelle limite</button></div>
         <div class="limits-table-wrap"><table class="limits-table"><thead><tr><th>Limite</th><th>Budget</th><th>Dépensé</th><th>Restant</th><th>Protection suivante</th><th></th></tr></thead><tbody id="limitRows"></tbody></table></div>
       </section>
 
       <section class="page" data-page="calendar" aria-labelledby="calendarTitle">
-        <div class="page-heading split-heading"><div><p class="eyebrow">VUE MENSUELLE</p><h1 id="calendarTitle">Calendrier</h1><p class="intro">Le disponible prévu et les mouvements importants, jour par jour.</p></div><div class="month-controls"><button class="quiet-button" id="previousMonth" aria-label="Mois précédent">←</button><strong id="calendarMonth">—</strong><button class="quiet-button" id="nextMonth" aria-label="Mois suivant">→</button></div></div>
+        <div class="page-heading split-heading"><div><p class="eyebrow">VUE MENSUELLE</p><h1 id="calendarTitle">Calendrier</h1><p class="intro">Le disponible prévu, les revenus, factures et protections au fil des jours.</p></div><div class="month-controls"><button class="quiet-button" id="previousMonth" aria-label="Mois précédent">←</button><strong id="calendarMonth">—</strong><button class="quiet-button" id="nextMonth" aria-label="Mois suivant">→</button></div></div>
         <div class="calendar-weekdays" aria-hidden="true"><span>lun.</span><span>mar.</span><span>mer.</span><span>jeu.</span><span>ven.</span><span>sam.</span><span>dim.</span></div>
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
@@ -140,7 +151,7 @@
   <dialog id="editorDialog" class="editor-dialog"><form method="dialog" id="editorForm"><div class="dialog-heading"><div><p class="eyebrow" id="editorEyebrow">AJOUTER</p><h2 id="editorTitle">—</h2></div><button class="quiet-button" value="cancel">Fermer</button></div><div id="editorFields" class="editor-fields"></div><div class="dialog-actions"><button type="button" class="danger-button" id="deleteItem" hidden>Supprimer</button><span></span><button type="button" class="quiet-button" id="cancelEditor">Annuler</button><button type="submit" class="add-button">Enregistrer</button></div></form></dialog>
   <dialog id="purchaseDialog" class="editor-dialog purchase-dialog"><form method="dialog" id="purchaseForm"><div class="dialog-heading"><div><p class="eyebrow">VÉRIFICATION RAPIDE</p><h2>Puis-je me permettre cet achat ?</h2></div><button class="quiet-button" value="cancel">Fermer</button></div><p class="subtle">Le résultat vérifie le point le plus bas des 30 jours après cet achat.</p><div class="editor-fields compact"><label>Montant<input name="amount" required inputmode="decimal" placeholder="0,00" autofocus></label><label>Date<input name="date" required type="date"></label></div><div id="purchaseResult" class="purchase-result" hidden></div><div class="dialog-actions"><span></span><button type="submit" class="add-button">Vérifier</button></div></form></dialog>
   <dialog id="dayDialog" class="editor-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow" id="dayDialogEyebrow">JOURNÉE</p><h2 id="dayDialogTitle">—</h2></div><button class="quiet-button">Fermer</button></div><div id="dayDialogContent" class="day-dialog-content"></div></form></dialog>
-  <dialog id="moreDialog" class="editor-dialog more-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">NAVIGATION</p><h2>Plus d’options</h2></div><button class="quiet-button">Fermer</button></div><div class="more-links"><button data-route="recurring">Récurrences</button><button data-route="limits">Limites</button><button data-route="settings">Réglages</button></div></form></dialog>
+  <dialog id="moreDialog" class="editor-dialog more-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">NAVIGATION</p><h2>Plus d’options</h2></div><button class="quiet-button">Fermer</button></div><div class="more-links"><button data-route="recurring">Plan</button><button data-route="limits">Limites</button><button data-route="settings">Réglages</button></div></form></dialog>
   <dialog id="guideDialog" class="editor-dialog guide-dialog"><section><div class="dialog-heading"><div><p class="eyebrow" id="guideCount">BIEN DÉMARRER · 1 / 4</p><h2 id="guideTitle">—</h2></div><button class="quiet-button" id="guideDismiss">Fermer</button></div><div class="guide-progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="guide-body" id="guideBody"></div><div class="dialog-actions guide-actions"><button type="button" class="quiet-button" id="guideBack">Retour</button><span></span><button type="button" class="quiet-button" id="guideLater">Plus tard</button><button type="button" class="add-button" id="guideNext">Suivant</button></div></section></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/app.js"></script>

@@ -55,6 +55,9 @@ function toast(message) {
 async function loadState() {
   state = await api('/state');
   document.documentElement.dataset.theme = state.settings.theme;
+  const followsSystem = state.settings.theme === 'system';
+  const lightTheme = state.settings.theme === 'light' || (followsSystem && window.matchMedia('(prefers-color-scheme: light)').matches);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', lightTheme ? '#f5f6f8' : '#171b20');
   $$('[data-logo]').forEach(image => { image.src = holidayLogo(state.today) ? '/logo-noel.svg' : '/logo.svg'; });
   $('#versionText').textContent = `v${state.version.replace('-dev', '')}`;
   document.title = `Le Bas de Laine · v${state.version.replace('-dev', '')}`;
@@ -98,6 +101,7 @@ function renderToday() {
   const nearby = forecast.events.slice(0, 4);
   $('#nearbyEvents').innerHTML = nearby.length ? nearby.map(event => `
     <div class="event"><span class="event-date">${escapeHTML(prettyDate(event.date))}</span><span class="event-name">${escapeHTML(event.name)}</span><span class="${event.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${event.amount_cents >= 0 ? '+' : '−'}${absMoney(event.amount_cents)}</span></div>`).join('') : '<p class="subtle">Aucun mouvement prévu pour le moment.</p>';
+  renderForecastChart(forecast);
   $('#forecastRows').innerHTML = forecast.days.map(day => {
     const pills = [...day.events];
     const lowClass = day.date === forecast.minimum_date ? ' is-low' : '';
@@ -109,6 +113,43 @@ function renderToday() {
     const over = limit.spent_cents > limit.budget_cents;
     return `<article class="limit-glance"><div class="limit-glance-name"><span>${escapeHTML(limit.name)}</span><span>${money(limit.remaining_cents)} restant</span></div><p class="limit-glance-meta">${money(limit.spent_cents)} dépensé sur ${money(limit.budget_cents)} · ${limit.next_start ? `prochaine protection ${escapeHTML(prettyDate(limit.next_start).toLowerCase())}` : 'à venir'}</p><div class="limit-bar${over ? ' over' : ''}"><span style="width:${percentage}%"></span></div></article>`;
   }).join('') : '<p class="subtle">Ajoute une limite pour réserver une portion du disponible à la cadence qui te convient.</p>';
+}
+
+function renderForecastChart(forecast) {
+  const target = $('#forecastChart');
+  const summary = $('#forecastChartSummary');
+  if (!target || !summary || !forecast.days.length) return;
+  const days = forecast.days;
+  const values = days.map(day => Number(day.available_cents));
+  const lowValue = Math.min(...values);
+  const highValue = Math.max(...values);
+  const lowIndex = values.indexOf(lowValue);
+  const width = 760;
+  const height = 188;
+  const pad = { top: 14, right: 10, bottom: 25, left: 10 };
+  const range = Math.max(1, highValue - lowValue);
+  const x = index => pad.left + (index / Math.max(1, days.length - 1)) * (width - pad.left - pad.right);
+  const y = value => pad.top + (1 - (value - lowValue) / range) * (height - pad.top - pad.bottom);
+  const points = days.map((day, index) => `${x(index).toFixed(1)},${y(day.available_cents).toFixed(1)}`).join(' ');
+  const area = `${pad.left},${height - pad.bottom} ${points} ${x(days.length - 1)},${height - pad.bottom}`;
+  const markerIndexes = new Set([0, lowIndex, days.length - 1]);
+  days.forEach((day, index) => { if (day.events.length) markerIndexes.add(index); });
+  const labels = [lowValue, Math.round((lowValue + highValue) / 2), highValue];
+  const grid = labels.map(value => `<g><line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${y(value)}" y2="${y(value)}"/><text class="chart-label" x="${pad.left}" y="${Math.max(10, y(value) - 5)}">${escapeHTML(money(value))}</text></g>`).join('');
+  const markers = [...markerIndexes].sort((a, b) => a - b).map(index => {
+    const day = days[index];
+    const detail = day.events.map(event => event.name).join(' · ') || 'Aucun mouvement';
+    return `<circle class="chart-point${index === lowIndex ? ' low' : ''}" data-chart-day="${day.date}" cx="${x(index)}" cy="${y(day.available_cents)}" r="${index === lowIndex ? 5 : 3.5}" role="button" tabindex="0"><title>${escapeHTML(`${prettyDate(day.date)} · ${money(day.available_cents)} · ${detail}`)}</title></circle>`;
+  }).join('');
+  const start = days[0];
+  const end = days.at(-1);
+  target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Évolution du disponible prévu"><g>${grid}</g><polygon class="chart-fill" points="${area}"/><polyline class="chart-line" points="${points}"/>${markers}<text class="chart-label" x="${pad.left}" y="${height - 4}">${escapeHTML(prettyDate(start.date))}</text><text class="chart-label" x="${width - pad.right}" y="${height - 4}" text-anchor="end">${escapeHTML(prettyDate(end.date))}</text></svg>`;
+  summary.innerHTML = `<div class="chart-stat"><span>Aujourd’hui</span><strong>${money(forecast.available_cents)}</strong></div><div class="chart-stat"><span>Point le plus bas</span><strong>${money(forecast.minimum_cents)}</strong><span>${escapeHTML(prettyDate(forecast.minimum_date).toLowerCase())}</span></div>`;
+  $$('[data-chart-day]', target).forEach(marker => {
+    const open = () => showDay(marker.dataset.chartDay);
+    marker.addEventListener('click', open);
+    marker.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } });
+  });
 }
 
 function renderLimitOptions() {
@@ -129,6 +170,13 @@ function renderTransactions() {
 }
 
 function renderRecurring() {
+  const planned = state.forecast.events;
+  const income = planned.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount_cents, 0);
+  const bills = planned.filter(item => item.type === 'bill').reduce((sum, item) => sum + Math.abs(item.amount_cents), 0);
+  $('#planIncomeTotal').textContent = `+${money(income)}`;
+  $('#planBillTotal').textContent = `−${money(bills)}`;
+  $('#planReserveTotal').textContent = `−${money(state.forecast.reserve_cents)}`;
+  $('#planAvailableTotal').textContent = money(state.forecast.available_cents);
   const render = (kind, target, count) => {
     const list = state.recurring.filter(item => item.kind === kind);
     $(count).textContent = `${list.length} règle${list.length > 1 ? 's' : ''}`;
@@ -359,6 +407,7 @@ function bind() {
   $$('[data-route]').forEach(button => button.addEventListener('click', () => go(button.dataset.route)));
   $('#quickAdd').addEventListener('click', () => openEditor('transaction'));
   $('#mobileQuickAdd').addEventListener('click', () => openEditor('transaction'));
+  $('#explainButton').addEventListener('click', () => showDay(state.today));
   $('#mobileMore').addEventListener('click', () => $('#moreDialog').showModal());
   $('#openGuide').addEventListener('click', () => openGuide(0));
   $('#guideDismiss').addEventListener('click', () => $('#guideDialog').close());

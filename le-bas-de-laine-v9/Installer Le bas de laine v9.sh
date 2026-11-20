@@ -80,7 +80,11 @@ Categories=Office;Finance;
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now "$UNIT_NAME"
+systemctl --user enable "$UNIT_NAME"
+# enable --now ne redémarre pas un service déjà actif. À chaque mise à jour,
+# il faut charger le nouveau server.js, sans quoi la page peut encore afficher
+# le numéro de la version précédente.
+systemctl --user restart "$UNIT_NAME"
 
 if ! systemctl --user is-active --quiet "$UNIT_NAME"; then
   echo "Le service n’a pas démarré. Dernières lignes :"
