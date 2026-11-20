@@ -10,6 +10,9 @@ let state = null;
 let calendarPayload = null;
 let calendarMonth = null;
 let editing = null;
+let guideStep = 0;
+let guideResume = null;
+let guideAutoShown = false;
 
 function localToday() { return new Date().toLocaleDateString('en-CA'); }
 function money(cents) { return formatter.format((Number(cents) || 0) / 100); }
@@ -59,6 +62,10 @@ async function loadState() {
   $('#appShell').hidden = false;
   if (!calendarMonth) calendarMonth = state.today.slice(0, 7);
   renderAll();
+  if (!guideAutoShown && !state.settings.onboarding_complete && !state.recurring.length && !state.limit_config.length) {
+    guideAutoShown = true;
+    setTimeout(() => openGuide(0), 180);
+  }
 }
 
 function renderAll() {
@@ -145,6 +152,58 @@ function renderSettings() {
   $$('#themeChoices button').forEach(button => button.classList.toggle('active', button.dataset.theme === state.settings.theme));
 }
 
+function renderGuide() {
+  const incomeCount = state.recurring.filter(item => item.kind === 'income').length;
+  const billCount = state.recurring.filter(item => item.kind === 'bill').length;
+  const limitCount = state.limit_config.length;
+  const content = [
+    {
+      title: 'Le vrai point de départ',
+      body: `<h3>Ton solde conjoint est la base.</h3><p>Il comprend tout ce qui est déjà passé à la banque. Les nouveaux revenus et dépenses modifieront ensuite ce montant automatiquement.</p><p class="guide-status">Solde enregistré : ${money(state.settings.balance_cents)} · ${escapeHTML(prettyDate(state.settings.balance_verified_on).toLowerCase())}</p>`,
+      action: 'Vérifier le solde', route: 'settings'
+    },
+    {
+      title: 'Les revenus réguliers',
+      body: `<h3>Ajoute ce qui entre.</h3><p>Paies, RRQ, ACE ou allocations : une seule règle suffit. L’application détecte ensuite les mois avec une paie supplémentaire selon la vraie fréquence.</p><p class="guide-status">${incomeCount} revenu${incomeCount > 1 ? 's' : ''} configuré${incomeCount > 1 ? 's' : ''}</p>`,
+      action: 'Ajouter un revenu', create: 'income'
+    },
+    {
+      title: 'Les factures à prévoir',
+      body: `<h3>Ajoute seulement ce qui revient.</h3><p>Une facture prévue protège le disponible jusqu’à ce qu’elle soit saisie comme payée. Tu peux modifier une seule occurrence sans changer le mois suivant.</p><p class="guide-status">${billCount} facture${billCount > 1 ? 's' : ''} configurée${billCount > 1 ? 's' : ''}</p>`,
+      action: 'Ajouter une facture', create: 'bill'
+    },
+    {
+      title: 'Les limites à protéger',
+      body: `<h3>Choisis quand l’argent se met de côté.</h3><p>Épicerie, essence et tout autre budget peuvent être protégés chaque semaine, deux semaines, mois ou autre cadence. Une limite ne crée jamais une deuxième dépense.</p><p class="guide-status">${limitCount} limite${limitCount > 1 ? 's' : ''} configurée${limitCount > 1 ? 's' : ''}</p>`,
+      action: 'Ajouter une limite', create: 'limit'
+    }
+  ];
+  const current = content[guideStep];
+  $('#guideCount').textContent = `BIEN DÉMARRER · ${guideStep + 1} / 4`;
+  $('#guideTitle').textContent = current.title;
+  $('#guideBody').innerHTML = `${current.body}<button class="outline-button" type="button" id="guideAction">${current.action}</button>`;
+  $$('.guide-progress i').forEach((item, index) => item.classList.toggle('active', index <= guideStep));
+  $('#guideBack').hidden = guideStep === 0;
+  $('#guideNext').textContent = guideStep === 3 ? 'Terminer le guide' : 'Suivant';
+  $('#guideAction').addEventListener('click', () => {
+    if (current.route) {
+      $('#guideDialog').close();
+      go(current.route);
+      return;
+    }
+    guideResume = Math.min(guideStep + 1, 3);
+    $('#guideDialog').close();
+    openEditor(current.create === 'limit' ? 'limit' : 'recurring', null, { kind: current.create });
+  });
+}
+
+function openGuide(step = 0) {
+  if (!state?.settings.configured) return;
+  guideStep = Math.max(0, Math.min(3, step));
+  renderGuide();
+  if (!$('#guideDialog').open) $('#guideDialog').showModal();
+}
+
 async function loadCalendar() {
   if (!state?.settings.configured) return;
   calendarPayload = await api(`/calendar?month=${calendarMonth}`);
@@ -218,7 +277,7 @@ function commonFrequency(selected) { return `<select name="frequency">${option('
 function commonAdjustment(selected) { return `<select name="adjustment">${option('none', selected, 'Ne pas déplacer')}${option('previous', selected, 'Jour ouvrable précédent')}${option('next', selected, 'Jour ouvrable suivant')}</select>`; }
 function commonDateMode(selected) { return `<select name="date_mode">${option('anchor', selected, 'Jour choisi')}${option('last_day', selected, 'Dernier jour du mois')}${option('last_business_day', selected, 'Dernier jour ouvrable du mois')}</select>`; }
 
-function openEditor(type, item = null) {
+function openEditor(type, item = null, preset = {}) {
   editing = { type, item };
   const form = $('#editorForm');
   const fields = $('#editorFields');
@@ -231,7 +290,8 @@ function openEditor(type, item = null) {
     fields.innerHTML = `<label>Type<select name="kind">${option('expense', item?.amount_cents >= 0 ? 'income' : 'expense', 'Dépense')}${option('income', item?.amount_cents >= 0 ? 'income' : 'expense', 'Revenu')}</select></label><label>Montant<input name="amount" required inputmode="decimal" value="${item ? inputMoney(item.amount_cents) : ''}" placeholder="0,00"></label><label class="full">Description<input name="description" required maxlength="80" value="${escapeHTML(item?.description || '')}" placeholder="ex. IGA"></label><label>Date<input name="date" required type="date" value="${item?.date || state.today}"></label><label>Limite<select name="limit_id">${limits}</select></label><p class="field-note">Un achat dans une limite diminue le solde réel et consomme la réserve correspondante : il n’est pas compté deux fois.</p>`;
   } else if (type === 'recurring') {
     $('#editorTitle').textContent = item ? 'Modifier la récurrence' : 'Nouvelle récurrence';
-    fields.innerHTML = `<label>Type<select name="kind">${option('income', item?.kind || 'income', 'Revenu')}${option('bill', item?.kind || 'income', 'Facture')}</select></label><label>Montant<input name="amount" required inputmode="decimal" value="${item ? inputMoney(item.amount_cents) : ''}" placeholder="0,00"></label><label class="full">Nom<input name="name" required maxlength="80" value="${escapeHTML(item?.name || '')}" placeholder="ex. Paie Alex ou Bell"></label><label>Fréquence${commonFrequency(item?.frequency || 'monthly')}</label><label>Échéance mensuelle${commonDateMode(item?.date_mode || 'anchor')}</label><label>Date de départ<input name="anchor_date" required type="date" value="${item?.anchor_date || state.today}"></label><label>Deuxième jour (si 2 fois/mois)<input name="second_day" type="number" min="1" max="31" value="${item?.second_day || 15}"></label><label>Si week-end ou férié${commonAdjustment(item?.adjustment || 'none')}</label><p class="field-note">Pour la Rente RRQ, choisis « dernier jour ouvrable du mois ». Le déplacement sera affiché dans le calendrier.</p>`;
+    const recurringKind = item?.kind || preset.kind || 'income';
+    fields.innerHTML = `<label>Type<select name="kind">${option('income', recurringKind, 'Revenu')}${option('bill', recurringKind, 'Facture')}</select></label><label>Montant<input name="amount" required inputmode="decimal" value="${item ? inputMoney(item.amount_cents) : ''}" placeholder="0,00"></label><label class="full">Nom<input name="name" required maxlength="80" value="${escapeHTML(item?.name || '')}" placeholder="ex. Paie Alex ou Bell"></label><label>Fréquence${commonFrequency(item?.frequency || 'monthly')}</label><label>Échéance mensuelle${commonDateMode(item?.date_mode || 'anchor')}</label><label>Date de départ<input name="anchor_date" required type="date" value="${item?.anchor_date || state.today}"></label><label>Deuxième jour (si 2 fois/mois)<input name="second_day" type="number" min="1" max="31" value="${item?.second_day || 15}"></label><label>Si week-end ou férié${commonAdjustment(item?.adjustment || 'none')}</label><p class="field-note">Pour la Rente RRQ, choisis « dernier jour ouvrable du mois ». Le déplacement sera affiché dans le calendrier.</p>`;
   } else {
     $('#editorTitle').textContent = item ? 'Modifier la limite' : 'Nouvelle limite';
     fields.innerHTML = `<label class="full">Nom<input name="name" required maxlength="80" value="${escapeHTML(item?.name || '')}" placeholder="ex. Épicerie"></label><label>Montant à protéger<input name="amount" required inputmode="decimal" value="${item ? inputMoney(item.amount_cents) : ''}" placeholder="0,00"></label><label>Quand la protéger${commonFrequency(item?.frequency || 'weekly')}</label><label>Échéance mensuelle${commonDateMode(item?.date_mode || 'anchor')}</label><label>Première protection<input name="anchor_date" required type="date" value="${item?.anchor_date || state.today}"></label><label>Deuxième jour (si 2 fois/mois)<input name="second_day" type="number" min="1" max="31" value="${item?.second_day || 15}"></label><label>Si week-end ou férié${commonAdjustment(item?.adjustment || 'none')}</label><label>Mode de budget<select name="mode">${option('period', item?.mode || 'period', 'Montant strict par période')}${option('monthly_flexible', item?.mode || 'period', 'Budget mensuel, libéré par période')}</select></label><p class="field-note">« Budget mensuel, libéré par période » convient à l’épicerie : 225 $ se protège chaque jeudi, sans réserver le mois au complet d’avance. Le total se remet à zéro le mois suivant.</p>`;
@@ -259,6 +319,11 @@ async function saveEditor(event) {
     $('#editorDialog').close();
     toast(item ? 'Modification enregistrée.' : 'Ajouté au budget.');
     await loadState();
+    if (guideResume !== null) {
+      const next = guideResume;
+      guideResume = null;
+      openGuide(next);
+    }
   } catch (error) { toast(error.message); }
 }
 
@@ -289,6 +354,23 @@ function bind() {
   $('#quickAdd').addEventListener('click', () => openEditor('transaction'));
   $('#mobileQuickAdd').addEventListener('click', () => openEditor('transaction'));
   $('#mobileMore').addEventListener('click', () => $('#moreDialog').showModal());
+  $('#openGuide').addEventListener('click', () => openGuide(0));
+  $('#guideDismiss').addEventListener('click', () => $('#guideDialog').close());
+  $('#guideLater').addEventListener('click', () => $('#guideDialog').close());
+  $('#guideBack').addEventListener('click', () => { guideStep = Math.max(0, guideStep - 1); renderGuide(); });
+  $('#guideNext').addEventListener('click', async () => {
+    if (guideStep < 3) {
+      guideStep += 1;
+      renderGuide();
+      return;
+    }
+    try {
+      await api('/settings', { method: 'PUT', body: JSON.stringify({ onboarding_complete: true }) });
+      $('#guideDialog').close();
+      toast('Configuration guidée terminée. Tu peux toujours rouvrir le guide dans Réglages.');
+      await loadState();
+    } catch (error) { toast(error.message); }
+  });
   $$('[data-open-editor]').forEach(button => button.addEventListener('click', () => openEditor(button.dataset.openEditor)));
   $('#purchaseButton').addEventListener('click', () => { $('#purchaseForm [name=date]').value = state.today; $('#purchaseResult').hidden = true; $('#purchaseDialog').showModal(); });
   $('#themeButton').addEventListener('click', () => go('settings'));

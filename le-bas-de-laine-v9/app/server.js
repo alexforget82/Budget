@@ -137,7 +137,8 @@ function settings() {
     balance_verified_on: getSetting('balance_verified_on', ''),
     theme: getSetting('theme', 'system'),
     owner_name: getSetting('owner_name', ''),
-    share_token: getSetting('share_token', '')
+    share_token: getSetting('share_token', ''),
+    onboarding_complete: getSetting('onboarding_complete', '0') === '1'
   };
 }
 
@@ -366,6 +367,7 @@ async function handleApi(request, response, url) {
     if (!validDate(date)) throw Error('Date de vérification invalide.');
     setBalance(balance, date);
     setSetting('configured', '1');
+    setSetting('onboarding_complete', '0');
     setSetting('owner_name', String(payload.owner_name || '').trim().slice(0, 60));
     if (!getSetting('share_token')) setSetting('share_token', crypto.randomBytes(18).toString('base64url'));
     return json(response, 201, buildState(appToday(), 30));
@@ -374,6 +376,7 @@ async function handleApi(request, response, url) {
     const payload = await readJson(request);
     if (payload.theme && !['light', 'dark', 'system'].includes(payload.theme)) throw Error('Thème invalide.');
     if (payload.theme) setSetting('theme', payload.theme);
+    if (typeof payload.onboarding_complete === 'boolean') setSetting('onboarding_complete', payload.onboarding_complete ? '1' : '0');
     if (payload.balance_cents !== undefined) {
       const amount = integer(payload.balance_cents, 'Solde', { min: -9_000_000_000, max: 9_000_000_000 });
       const date = String(payload.balance_verified_on || appToday());

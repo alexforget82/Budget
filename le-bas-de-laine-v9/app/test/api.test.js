@@ -57,6 +57,11 @@ test('l’API applique une limite une seule fois et protège les données', asyn
   const put = (pathname, body) => app.request(pathname, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
   await post('/api/setup', { balance_cents: 100_000, date: '2026-11-19' });
+  let onboarding = await app.request('/api/state');
+  assert.equal(onboarding.settings.onboarding_complete, false);
+  await put('/api/settings', { onboarding_complete: true });
+  onboarding = await app.request('/api/state');
+  assert.equal(onboarding.settings.onboarding_complete, true);
   const limit = await post('/api/limits', { name: 'Épicerie', amount_cents: 22_500, frequency: 'weekly', anchor_date: '2026-11-19', mode: 'period' });
   let state = await app.request('/api/state');
   assert.equal(state.forecast.available_cents, 77_500);
