@@ -184,12 +184,21 @@ function showDay(date) {
   const events = [...(day?.events || []), ...fromCalendar.filter(item => !(day?.events || []).some(existing => existing.id === item.id))];
   const limits = day?.limits || [];
   $('#dayDialogContent').innerHTML = [
-    ...events.map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>${item.type === 'income' ? 'Revenu prévu' : 'Facture ou mouvement prévu'}${item.adjusted ? ' · date déplacée' : ''}</small>${item.recurring_id ? `<button class="text-button" data-edit-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-event-date="${item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Modifier cette occurrence</button>` : ''}</span><strong class="${item.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${item.amount_cents >= 0 ? '+' : '−'}${absMoney(item.amount_cents)}</strong></div>`),
+    ...events.map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>${item.type === 'income' ? 'Revenu prévu' : item.type === 'pending_bill' ? 'Facture échue, à confirmer' : 'Facture ou mouvement prévu'}${item.adjusted ? ' · date déplacée' : ''}</small>${item.recurring_id ? `<button class="text-button" data-edit-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-event-date="${item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Modifier cette occurrence</button>${item.date <= state.today ? `<button class="text-button" data-pay-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Saisir comme payé</button>` : ''}` : ''}</span><strong class="${item.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${item.amount_cents >= 0 ? '+' : '−'}${absMoney(item.amount_cents)}</strong></div>`),
     ...limits.filter(item => item.reserve_cents).map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>Réserve de limite active</small></span><strong>− ${money(item.reserve_cents)}</strong></div>`),
     !events.length && !limits.length ? '<p class="subtle">Aucun mouvement ou réserve à cette date.</p>' : ''
   ].join('');
   $$('[data-edit-occurrence]', $('#dayDialogContent')).forEach(button => button.addEventListener('click', () => {
     openOccurrenceEditor({ recurring_id: Number(button.dataset.editOccurrence), due_date: button.dataset.dueDate, date: button.dataset.eventDate, amount_cents: Number(button.dataset.amount), name: button.dataset.name });
+  }));
+  $$('[data-pay-occurrence]', $('#dayDialogContent')).forEach(button => button.addEventListener('click', async () => {
+    if (!confirm(`Saisir « ${button.dataset.name} » comme payé aujourd’hui ?`)) return;
+    try {
+      await api(`/occurrences/${button.dataset.payOccurrence}/${button.dataset.dueDate}/pay`, { method: 'POST', body: JSON.stringify({ amount_cents: Number(button.dataset.amount), date: state.today }) });
+      $('#dayDialog').close();
+      toast('Mouvement enregistré une seule fois.');
+      await loadState();
+    } catch (error) { toast(error.message); }
   }));
   $('#dayDialog').showModal();
 }

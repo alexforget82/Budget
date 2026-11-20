@@ -76,9 +76,18 @@ test('l’API applique une limite une seule fois et protège les données', asyn
   assert.equal(changed.date, '2026-11-27');
   assert.equal(changed.amount_cents, 121_000);
 
+  const bill = await post('/api/recurring', { name: 'Garderie', kind: 'bill', amount_cents: 4_825, frequency: 'monthly', anchor_date: '2026-11-20', adjustment: 'none' });
+  state = await app.request('/api/state?date=2026-11-21');
+  assert.equal(state.forecast.pending_bills.length, 1);
+  const beforePay = state.forecast.available_cents;
+  await post(`/api/occurrences/${bill.id}/2026-11-20/pay`, { amount_cents: 4_825, date: '2026-11-19' });
+  state = await app.request('/api/state?date=2026-11-21');
+  assert.equal(state.forecast.pending_bills.length, 0);
+  assert.equal(state.forecast.available_cents, beforePay);
+
   const exportData = await app.request('/api/export');
   assert.equal(exportData.format, 'le-bas-de-laine-v9');
-  assert.equal(exportData.transactions.length, 1);
+  assert.equal(exportData.transactions.length, 2);
   await app.request(`/api/limits/${limit.id}`, { method: 'DELETE' });
   state = await app.request('/api/state');
   assert.equal(state.limit_config.length, 0);

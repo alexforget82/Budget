@@ -1,7 +1,7 @@
 {
   "name": "le-bas-de-laine-v9",
   "private": true,
-  "version": "9.0.0-dev",
+  "version": "9.0.1",
   "description": "Budget familial simple, local et testable.",
   "type": "commonjs",
   "scripts": {

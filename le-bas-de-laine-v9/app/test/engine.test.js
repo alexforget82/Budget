@@ -96,3 +96,12 @@ test('une seule occurrence peut être déplacée et modifiée sans toucher la r�
   const occurrences = recurringOccurrences(rule, '2026-11-01', '2026-12-31', overrides);
   assert.deepEqual(occurrences.map(item => [item.date, item.amount_cents]), [['2026-11-23', -9_250], ['2026-12-20', -8_000]]);
 });
+
+test('une facture échue reste retenue tant que le solde n’est pas reverifié', () => {
+  const result = simulate({
+    asOfDate: '2026-11-21', balance_cents: 100_000,
+    pendingBills: [{ id: 'pending:1', type: 'pending_bill', date: '2026-11-20', name: 'Garderie · à confirmer', amount_cents: -4_825 }]
+  });
+  assert.equal(result.available_cents, 95_175);
+  assert.equal(result.days[0].events[0].type, 'pending_bill');
+});

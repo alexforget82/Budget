@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
-const { addDays, compareDate, recurringOccurrences, simulate, validDate } = require('./lib/engine');
+const { addDays, adjustBusinessDay, compareDate, recurringOccurrences, simulate, validDate } = require('./lib/engine');
 
 const PORT = Number(process.env.PORT || 3050);
 const DATA = process.env.BDL9_DATA || path.join(__dirname, 'data');
@@ -254,16 +254,27 @@ function records() {
   };
 }
 
+function pendingBillsSince(checkpointDate, asOf, recurring, occurrenceStates) {
+  if (!validDate(checkpointDate) || compareDate(checkpointDate, asOf) >= 0) return [];
+  const overrides = new Map(occurrenceStates.map(item => [`${item.recurring_id}:${item.due_date}`, item]));
+  return recurring
+    .filter(rule => rule.kind === 'bill')
+    .flatMap(rule => recurringOccurrences(rule, addDays(checkpointDate, 1), asOf, overrides))
+    .filter(item => compareDate(item.date, asOf) <= 0)
+    .map(item => ({ ...item, type: 'pending_bill', name: `${item.name} · à confirmer` }));
+}
+
 function buildState(asOf = appToday(), horizon = 30) {
   const prefs = settings();
   const data = records();
+  const pendingBills = pendingBillsSince(prefs.balance_verified_on, asOf, data.recurring, data.occurrenceStates);
   const forecast = simulate({
     asOfDate: asOf,
     balance_cents: prefs.balance_cents,
     transactions: data.transactions,
     recurring: data.recurring,
     limits: data.limits,
-    occurrenceStates: data.occurrenceStates,
+    occurrenceStates: data.occurrenceStates, pendingBills,
     days: horizon
   });
   const limitRows = data.limits.map(limit => forecast.days[0].limits.find(item => item.id === limit.id) || {
@@ -396,6 +407,25 @@ async function handleApi(request, response, url) {
     const amount = rule.kind === 'income' ? unsignedAmount : -unsignedAmount;
     run('INSERT INTO occurrence_states(recurring_id,due_date,state,moved_to,amount_cents) VALUES(?,?,?,?,?) ON CONFLICT(recurring_id,due_date) DO UPDATE SET state=excluded.state,moved_to=excluded.moved_to,amount_cents=excluded.amount_cents', recurringId, dueDate, state, movedTo, amount);
     return json(response, 200, { ok: true });
+  }
+  const payOccurrenceMatch = pathname.match(/^\/api\/occurrences\/(\d+)\/(\d{4}-\d{2}-\d{2})\/pay$/);
+  if (payOccurrenceMatch && method === 'POST') {
+    const recurringId = Number(payOccurrenceMatch[1]);
+    const dueDate = payOccurrenceMatch[2];
+    const rule = one('SELECT * FROM recurring WHERE id=?', recurringId);
+    if (!rule || !validDate(dueDate)) throw Error('Occurrence introuvable.');
+    const payload = await readJson(request);
+    const override = one('SELECT * FROM occurrence_states WHERE recurring_id=? AND due_date=?', recurringId, dueDate);
+    if (override?.state === 'paid') throw Error('Cette occurrence est déjà enregistrée.');
+    const date = String(payload.date || override?.moved_to || adjustBusinessDay(dueDate, rule.adjustment || 'none'));
+    if (!validDate(date)) throw Error('Date de paiement invalide.');
+    const unsigned = payload.amount_cents === undefined ? Math.abs(override?.amount_cents ?? rule.amount_cents) : integer(payload.amount_cents, 'Montant', { min: 1, max: 999_999_999 });
+    const amount = rule.kind === 'income' ? unsigned : -unsigned;
+    const transaction = { date, description: rule.name, amount_cents: amount, limit_id: null, created_at: Date.now() };
+    const result = run('INSERT INTO transactions(date,description,amount_cents,limit_id,created_at) VALUES(?,?,?,?,?)', transaction.date, transaction.description, transaction.amount_cents, transaction.limit_id, transaction.created_at);
+    withCurrentBalanceChange(null, { ...transaction, id: Number(result.lastInsertRowid) });
+    run('INSERT INTO occurrence_states(recurring_id,due_date,state,moved_to,amount_cents) VALUES(?,?,?,?,?) ON CONFLICT(recurring_id,due_date) DO UPDATE SET state=excluded.state,moved_to=excluded.moved_to,amount_cents=excluded.amount_cents', recurringId, dueDate, 'paid', date, amount);
+    return json(response, 201, { id: Number(result.lastInsertRowid) });
   }
   if (pathname === '/api/limits' && method === 'POST') {
     const value = limitInput(await readJson(request));

@@ -253,7 +253,7 @@ function activeLimitReserve(limit, date, transactions) {
   };
 }
 
-function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], limits = [], occurrenceStates = [], days = 30 }) {
+function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], limits = [], occurrenceStates = [], pendingBills = [], days = 30 }) {
   if (!validDate(asOfDate)) throw Error('Date de référence invalide.');
   const end = addDays(asOfDate, days);
   const overrideMap = new Map(occurrenceStates.map(item => [`${item.recurring_id}:${item.due_date}`, item]));
@@ -270,12 +270,12 @@ function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], 
     list.push(event);
     grouped.set(event.date, list);
   }
-  let cash = Number(balance_cents || 0);
+  let cash = Number(balance_cents || 0) + pendingBills.reduce((sum, item) => sum + Number(item.amount_cents || 0), 0);
   const daysOut = [];
   let minimum = null;
   for (let offset = 0; offset <= days; offset += 1) {
     const date = addDays(asOfDate, offset);
-    const dayEvents = grouped.get(date) || [];
+    const dayEvents = offset === 0 ? [...(grouped.get(date) || []), ...pendingBills] : (grouped.get(date) || []);
     if (offset > 0) cash += dayEvents.reduce((sum, event) => sum + Number(event.amount_cents), 0);
     const reserves = limits.map(limit => activeLimitReserve(limit, date, transactions)).filter(Boolean);
     const reserveTotal = reserves.reduce((sum, item) => sum + item.reserve_cents, 0);
@@ -295,7 +295,8 @@ function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], 
     days: daysOut,
     events: futureEvents,
     next_income: futureEvents.find(item => item.type === 'income') || null,
-    next_bill: futureEvents.find(item => item.type === 'bill') || null
+    next_bill: futureEvents.find(item => item.type === 'bill') || null,
+    pending_bills: pendingBills
   };
 }
 
