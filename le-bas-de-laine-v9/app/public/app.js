@@ -29,6 +29,10 @@ function prettyDate(value, long = false) {
   return (long ? dateLong : dateShort).format(date).replace(/^./, letter => letter.toUpperCase());
 }
 function escapeHTML(value) { return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]); }
+function holidayLogo(date) {
+  const stamp = String(date || '').slice(5);
+  return stamp >= '11-15' || stamp <= '01-07';
+}
 function frequencyLabel(value) {
   return ({ weekly: 'Chaque semaine', biweekly: 'Aux 2 semaines', monthly: 'Chaque mois', twice_monthly: '2 fois par mois', quarterly: 'Aux 3 mois', semiannual: 'Aux 6 mois', yearly: 'Chaque année' })[value] || value;
 }
@@ -51,6 +55,7 @@ function toast(message) {
 async function loadState() {
   state = await api('/state');
   document.documentElement.dataset.theme = state.settings.theme;
+  $$('[data-logo]').forEach(image => { image.src = holidayLogo(state.today) ? '/logo-noel.svg' : '/logo.svg'; });
   $('#versionText').textContent = `v${state.version.replace('-dev', '')}`;
   if (!state.settings.configured) {
     $('#onboarding').hidden = false;

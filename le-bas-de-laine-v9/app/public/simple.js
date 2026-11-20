@@ -16,6 +16,8 @@ async function call(path, options = {}) {
 async function refresh() {
   const state = await call('/simple');
   document.documentElement.dataset.theme = 'system';
+  const stamp = String(state.today || '').slice(5);
+  document.querySelectorAll('[data-logo]').forEach(image => { image.src = stamp >= '11-15' || stamp <= '01-07' ? '/logo-noel.svg' : '/logo.svg'; });
   document.querySelector('#simpleAvailable').textContent = fmt(state.forecast.available_cents);
   document.querySelector('#simpleMinimum').textContent = `Point le plus bas sur 30 jours : ${fmt(state.forecast.minimum_cents)} · ${date(state.forecast.minimum_date)}`;
   document.querySelector('#simpleUpdated').textContent = `Mis à jour · ${date(state.today)}`;

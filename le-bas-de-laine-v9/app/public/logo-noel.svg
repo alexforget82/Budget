@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Le Bas de Laine, édition des Fêtes">
+  <defs>
+    <linearGradient id="winterWool" x1="65" y1="37" x2="184" y2="219" gradientUnits="userSpaceOnUse"><stop stop-color="#183D6A"/><stop offset="1" stop-color="#0B2445"/></linearGradient>
+    <clipPath id="sock"><path d="M76 31c-11 0-19 9-19 20v83c0 19 8 35 22 46l45 36c12 10 30 10 42 0l28-24c16-13 17-37 4-52l-45-49V51c0-11-8-20-19-20H76Z"/></clipPath>
+  </defs>
+  <circle cx="128" cy="128" r="113" fill="#F2F7FC"/>
+  <circle cx="128" cy="128" r="104" fill="none" stroke="#D8AD5A" stroke-width="5"/>
+  <path d="M76 31c-11 0-19 9-19 20v83c0 19 8 35 22 46l45 36c12 10 30 10 42 0l28-24c16-13 17-37 4-52l-45-49V51c0-11-8-20-19-20H76Z" fill="url(#winterWool)"/>
+  <g clip-path="url(#sock)" fill="none" stroke="#98D6F3" stroke-linecap="round" stroke-width="7" opacity=".92"><path d="M34 80 169-7M25 123 203 10M39 167 226 50M69 212 227 110"/><path d="M36 17 152 91M25 61 180 161M30 104 188 207M58 151 142 223"/></g>
+  <path d="M57 85h96" stroke="#C95061" stroke-width="12"/>
+  <g stroke="#B9E5FA" stroke-linecap="round" stroke-width="7" fill="none"><path d="M105 126v52M79 152h52M87 134l36 36M123 134l-36 36"/><path d="m105 126 8 10m-8-10-8 10m8 42 8-10m-8 10-8-10m-26-16 10-8m-10 8 10 8m42-8-10-8m10 8-10 8"/></g>
+  <circle cx="75" cy="113" r="5" fill="#D8AD5A"/><circle cx="142" cy="113" r="5" fill="#D8AD5A"/>
+</svg>

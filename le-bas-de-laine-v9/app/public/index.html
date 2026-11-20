@@ -13,7 +13,7 @@
   <div class="app-shell" id="appShell" hidden>
     <header class="topbar">
       <a class="brand" href="#today" aria-label="Le Bas de Laine, accueil">
-        <img src="/logo.svg" alt="">
+        <img data-logo src="/logo.svg" alt="">
         <span>Le Bas de Laine<small id="versionText">v9</small></span>
       </a>
       <nav class="main-nav" aria-label="Navigation principale">
@@ -131,7 +131,7 @@
   </div>
 
   <section class="onboarding" id="onboarding" hidden aria-labelledby="setupTitle">
-    <div class="setup-mark"><img src="/logo.svg" alt=""><span>Le Bas de Laine</span></div>
+    <div class="setup-mark"><img data-logo src="/logo.svg" alt=""><span>Le Bas de Laine</span></div>
     <div class="setup-copy"><p class="eyebrow">CONFIGURATION INITIALE</p><h1 id="setupTitle">On part du vrai solde.</h1><p>En deux minutes : ton solde conjoint aujourd’hui, puis tes revenus, factures et limites. Aucun montant ne doit être entré deux fois.</p></div>
     <form id="setupForm" class="setup-form"><label>Solde actuel du compte conjoint<input name="balance" required inputmode="decimal" placeholder="ex. 1 250,00" autofocus></label><label>Date de ce solde<input name="date" required type="date"></label><label>Prénom (facultatif)<input name="owner_name" maxlength="60" placeholder="Alex"></label><button class="add-button" type="submit">Commencer</button></form>
     <p class="setup-note">Tu pourras ajouter les paies, factures et limites juste après. Cette nouvelle application n’écrit jamais dans Sillage ou ton ancienne version.</p>
