@@ -490,7 +490,14 @@ function serveStatic(request, response, pathname) {
   if (!file.startsWith(`${PUBLIC}${path.sep}`)) return fail(response, 403, 'Accès refusé.');
   fs.readFile(file, (error, data) => {
     if (error) return fail(response, 404, 'Page introuvable.');
-    response.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+    response.writeHead(200, {
+      'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream',
+      // L'application s'installe localement et est souvent ouverte comme une
+      // app iPhone : ne jamais laisser Safari conserver l'ancienne interface
+      // ou l'ancien numéro de version après une mise à jour.
+      'Cache-Control': 'no-store, max-age=0',
+      'X-Le-Bas-De-Laine-Version': VERSION
+    });
     response.end(data);
   });
 }

@@ -253,6 +253,23 @@ function activeLimitReserve(limit, date, transactions) {
   };
 }
 
+// Une protection n'est pas un mouvement bancaire. C'est toutefois un moment
+// important de la prévision : il doit donc être visible, sous le vrai nom de
+// la limite, dans la ligne du jour et le calendrier. On ne l'ajoute jamais au
+// solde; la réserve est calculée séparément par activeLimitReserve().
+function limitProtectionEvent(limit, date) {
+  if (!limit.active || !validDate(limit.anchor_date)) return null;
+  if (!periodStarts(limit, date, date).includes(date)) return null;
+  return {
+    id: `reserve:${limit.id}:${date}`,
+    type: 'reserve',
+    date,
+    name: `${limit.name} · réserve`,
+    amount_cents: -Math.abs(Number(limit.amount_cents || 0)),
+    limit_id: limit.id
+  };
+}
+
 function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], limits = [], occurrenceStates = [], pendingBills = [], days = 30 }) {
   if (!validDate(asOfDate)) throw Error('Date de référence invalide.');
   const end = addDays(asOfDate, days);
@@ -275,8 +292,15 @@ function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], 
   let minimum = null;
   for (let offset = 0; offset <= days; offset += 1) {
     const date = addDays(asOfDate, offset);
-    const dayEvents = offset === 0 ? [...(grouped.get(date) || []), ...pendingBills] : (grouped.get(date) || []);
-    if (offset > 0) cash += dayEvents.reduce((sum, event) => sum + Number(event.amount_cents), 0);
+    // Seuls les mouvements connus modifient le solde. Les protections de
+    // limites servent à expliquer la réserve, sans jamais être déduites une
+    // deuxième fois du compte.
+    const cashEvents = grouped.get(date) || [];
+    if (offset > 0) cash += cashEvents.reduce((sum, event) => sum + Number(event.amount_cents), 0);
+    const protectionEvents = limits.map(limit => limitProtectionEvent(limit, date)).filter(Boolean);
+    const dayEvents = offset === 0
+      ? [...cashEvents, ...pendingBills, ...protectionEvents]
+      : [...cashEvents, ...protectionEvents];
     const reserves = limits.map(limit => activeLimitReserve(limit, date, transactions)).filter(Boolean);
     const reserveTotal = reserves.reduce((sum, item) => sum + item.reserve_cents, 0);
     const available = cash - reserveTotal;
@@ -284,7 +308,10 @@ function simulate({ asOfDate, balance_cents, transactions = [], recurring = [], 
     daysOut.push(row);
     if (!minimum || row.available_cents < minimum.available_cents) minimum = row;
   }
-  const futureEvents = events.slice().sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+  const futureEvents = daysOut
+    .flatMap(day => day.events)
+    .filter(event => compareDate(event.date, asOfDate) > 0)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
   return {
     as_of: asOfDate,
     balance_cents: Number(balance_cents || 0),

@@ -94,7 +94,7 @@ if command -v tailscale >/dev/null 2>&1; then
 fi
 
 echo
-echo "Le Bas de Laine v9 est prêt."
+echo "Le Bas de Laine v$(cat "$APP_DEST/VERSION") est prêt."
 echo "Cet ordinateur : http://localhost:$PORT"
 if [ -n "$TAIL_IP" ]; then
   echo "iPhone sur Tailscale : http://$TAIL_IP:$PORT"

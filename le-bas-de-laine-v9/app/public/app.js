@@ -57,6 +57,7 @@ async function loadState() {
   document.documentElement.dataset.theme = state.settings.theme;
   $$('[data-logo]').forEach(image => { image.src = holidayLogo(state.today) ? '/logo-noel.svg' : '/logo.svg'; });
   $('#versionText').textContent = `v${state.version.replace('-dev', '')}`;
+  document.title = `Le Bas de Laine · v${state.version.replace('-dev', '')}`;
   if (!state.settings.configured) {
     $('#onboarding').hidden = false;
     $('#appShell').hidden = true;
@@ -97,11 +98,8 @@ function renderToday() {
   const nearby = forecast.events.slice(0, 4);
   $('#nearbyEvents').innerHTML = nearby.length ? nearby.map(event => `
     <div class="event"><span class="event-date">${escapeHTML(prettyDate(event.date))}</span><span class="event-name">${escapeHTML(event.name)}</span><span class="${event.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${event.amount_cents >= 0 ? '+' : '−'}${absMoney(event.amount_cents)}</span></div>`).join('') : '<p class="subtle">Aucun mouvement prévu pour le moment.</p>';
-  let previousReserve = null;
   $('#forecastRows').innerHTML = forecast.days.map(day => {
     const pills = [...day.events];
-    if (previousReserve !== null && day.reserve_cents !== previousReserve) pills.push({ type: 'reserve', name: day.reserve_cents > previousReserve ? 'Limite protégée' : 'Fin de période' });
-    previousReserve = day.reserve_cents;
     const lowClass = day.date === forecast.minimum_date ? ' is-low' : '';
     return `<button class="forecast-row${lowClass}" data-day="${day.date}"><span class="forecast-date">${escapeHTML(prettyDate(day.date))}</span><span class="forecast-events">${pills.slice(0, 3).map(event => `<i class="event-pill ${escapeHTML(event.type)}">${escapeHTML(event.name)}</i>`).join('') || '<i class="event-pill">—</i>'}</span><span class="forecast-reserve">${day.reserve_cents ? `Réserve ${money(day.reserve_cents)}` : ''}</span><strong class="forecast-value">${money(day.available_cents)}</strong></button>`;
   }).join('');
@@ -231,7 +229,10 @@ async function loadCalendar() {
     const date = `${calendarMonth}-${String(day).padStart(2, '0')}`;
     const row = dayMap.get(date);
     const list = events.get(date) || [];
-    const items = list.slice(0, 2).map(item => `<span class="calendar-item ${item.type === 'income' ? 'income' : 'bill'}">${escapeHTML(item.name)}</span>`).join('');
+    const items = list.slice(0, 2).map(item => {
+      const kind = item.type === 'income' ? 'income' : item.type === 'reserve' ? 'reserve' : 'bill';
+      return `<span class="calendar-item ${kind}">${escapeHTML(item.name)}</span>`;
+    }).join('');
     const extra = list.length > 2 ? `<span class="more-events">+ ${list.length - 2} autre${list.length > 3 ? 's' : ''}</span>` : '';
     cells.push(`<button class="calendar-day${date === state.today ? ' today' : ''}" data-calendar-day="${date}"><span class="calendar-date">${day}</span>${row ? `<strong class="calendar-amount">${money(row.available_cents)}</strong>` : ''}${items}${extra}</button>`);
   }
@@ -248,7 +249,7 @@ function showDay(date) {
   const events = [...(day?.events || []), ...fromCalendar.filter(item => !(day?.events || []).some(existing => existing.id === item.id))];
   const limits = day?.limits || [];
   $('#dayDialogContent').innerHTML = [
-    ...events.map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>${item.type === 'income' ? 'Revenu prévu' : item.type === 'pending_bill' ? 'Facture échue, à confirmer' : 'Facture ou mouvement prévu'}${item.adjusted ? ' · date déplacée' : ''}</small>${item.recurring_id ? `<button class="text-button" data-edit-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-event-date="${item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Modifier cette occurrence</button>${item.date <= state.today ? `<button class="text-button" data-pay-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Saisir comme payé</button>` : ''}` : ''}</span><strong class="${item.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${item.amount_cents >= 0 ? '+' : '−'}${absMoney(item.amount_cents)}</strong></div>`),
+    ...events.map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>${item.type === 'income' ? 'Revenu prévu' : item.type === 'reserve' ? 'Nouvelle protection de limite' : item.type === 'pending_bill' ? 'Facture échue, à confirmer' : 'Facture ou mouvement prévu'}${item.adjusted ? ' · date déplacée' : ''}</small>${item.recurring_id ? `<button class="text-button" data-edit-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-event-date="${item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Modifier cette occurrence</button>${item.date <= state.today ? `<button class="text-button" data-pay-occurrence="${item.recurring_id}" data-due-date="${item.rawDate || item.date}" data-amount="${Math.abs(item.amount_cents)}" data-name="${escapeHTML(item.name)}">Saisir comme payé</button>` : ''}` : ''}</span><strong class="${item.type === 'reserve' ? '' : item.amount_cents >= 0 ? 'amount-positive' : 'amount-negative'}">${item.amount_cents >= 0 ? '+' : '−'}${absMoney(item.amount_cents)}</strong></div>`),
     ...limits.filter(item => item.reserve_cents).map(item => `<div class="day-detail"><span>${escapeHTML(item.name)}<small>Réserve de limite active</small></span><strong>− ${money(item.reserve_cents)}</strong></div>`),
     !events.length && !limits.length ? '<p class="subtle">Aucun mouvement ou réserve à cette date.</p>' : ''
   ].join('');

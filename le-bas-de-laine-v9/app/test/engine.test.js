@@ -105,3 +105,28 @@ test('une facture échue reste retenue tant que le solde n’est pas reverifié'
   assert.equal(result.available_cents, 95_175);
   assert.equal(result.days[0].events[0].type, 'pending_bill');
 });
+
+test('chaque nouvelle protection est nommée dans la prévision sans toucher au solde', () => {
+  const result = simulate({
+    asOfDate: '2026-11-19',
+    balance_cents: 100_000,
+    limits: [
+      { id: 31, name: 'Essence Jenny', amount_cents: 4_000, frequency: 'weekly', anchor_date: '2026-11-24', active: 1, mode: 'period' },
+      { id: 32, name: 'Épicerie', amount_cents: 22_500, frequency: 'weekly', anchor_date: '2026-11-26', active: 1, mode: 'monthly_flexible' },
+      { id: 33, name: 'Essence Alex', amount_cents: 6_000, frequency: 'weekly', anchor_date: '2026-11-26', active: 1, mode: 'period' }
+    ]
+  });
+  const on24 = result.days.find(day => day.date === '2026-11-24');
+  const on26 = result.days.find(day => day.date === '2026-11-26');
+  assert.deepEqual(on24.events.map(item => [item.type, item.name, item.amount_cents]), [
+    ['reserve', 'Essence Jenny · réserve', -4_000]
+  ]);
+  assert.deepEqual(on26.events.map(item => [item.type, item.name, item.amount_cents]), [
+    ['reserve', 'Épicerie · réserve', -22_500],
+    ['reserve', 'Essence Alex · réserve', -6_000]
+  ]);
+  assert.equal(on26.cash_cents, 100_000);
+  assert.equal(on26.reserve_cents, 32_500);
+  assert.equal(on26.available_cents, 67_500);
+  assert.ok(result.events.some(item => item.name === 'Épicerie · réserve'));
+});
